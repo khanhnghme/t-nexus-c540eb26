@@ -1185,6 +1185,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          max_file_size_mb: number
           max_members_per_workspace: number
           max_projects_per_workspace: number
           max_storage_mb: number
@@ -1195,6 +1196,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          max_file_size_mb?: number
           max_members_per_workspace?: number
           max_projects_per_workspace?: number
           max_storage_mb?: number
@@ -1205,6 +1207,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          max_file_size_mb?: number
           max_members_per_workspace?: number
           max_projects_per_workspace?: number
           max_storage_mb?: number
@@ -1262,6 +1265,7 @@ export type Database = {
           bio: string | null
           created_at: string
           current_status: string | null
+          downgraded_at: string | null
           email: string
           email_notifications: boolean
           full_name: string
@@ -1295,6 +1299,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           current_status?: string | null
+          downgraded_at?: string | null
           email: string
           email_notifications?: boolean
           full_name: string
@@ -1328,6 +1333,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           current_status?: string | null
+          downgraded_at?: string | null
           email?: string
           email_notifications?: boolean
           full_name?: string
@@ -2556,6 +2562,14 @@ export type Database = {
         Returns: string
       }
       generate_workspace_slug: { Args: { _name: string }; Returns: string }
+      get_account_storage_usage: {
+        Args: { _owner_id: string }
+        Returns: number
+      }
+      get_account_unique_members: {
+        Args: { _owner_id: string }
+        Returns: number
+      }
       get_email_by_student_id: {
         Args: { _student_id: string }
         Returns: string
@@ -2571,6 +2585,10 @@ export type Database = {
       get_workspace_role: {
         Args: { _user_id: string; _workspace_id: string }
         Returns: string
+      }
+      get_workspace_storage_usage: {
+        Args: { _workspace_id: string }
+        Returns: number
       }
       has_role: {
         Args: {
