@@ -51,7 +51,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useWorkspaceBilling, formatPlanName } from '@/hooks/useWorkspaceBilling';
 import TopBar from '@/components/layout/TopBar';
-import { ChevronsUpDown, Check, Plus } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
 /*  Upgrade Box                                                        */
@@ -142,7 +141,6 @@ export default function DashboardLayout({
   const { locale } = useLanguage();
   const isDark = theme === 'dark';
   const { sidebarCollapsed, toggleSidebar } = useDashboardLayoutContext();
-  const { activeWorkspace, workspaces, switchWorkspace, isAvailable } = useWorkspace();
 
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -214,55 +212,18 @@ export default function DashboardLayout({
           sidebarCollapsed && 'sidebar-collapsed',
           isMobileOpen && 'mobile-sidebar-open'
         )}>
-          {/* Cell 1: Top-left — Workspace Switcher */}
+          {/* Cell 1: Top-left — Logo */}
           <div className="grid-cell-logo">
-            {isAvailable && activeWorkspace ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 min-w-0 w-full px-1 py-1 rounded-lg hover:bg-accent/50 transition-colors">
-                    <div className="ws-avatar-mini shrink-0">
-                      {activeWorkspace.name.charAt(0).toUpperCase()}
-                    </div>
-                    <span className="sidebar-logo-text whitespace-nowrap overflow-hidden">
-                      <span className="text-xs font-semibold truncate" style={{ color: 'var(--_sb-fg)' }}>
-                        {activeWorkspace.name}
-                      </span>
-                    </span>
-                    <ChevronsUpDown className="w-3 h-3 shrink-0 opacity-40 sidebar-logo-text" style={{ color: 'var(--_sb-muted)' }} />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  <div className="px-2 py-1.5">
-                    <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Workspaces</p>
-                  </div>
-                  {workspaces.map(ws => (
-                    <DropdownMenuItem
-                      key={ws.id}
-                      onClick={() => switchWorkspace(ws.id)}
-                      className={cn('gap-2', ws.id === activeWorkspace.id && 'bg-accent')}
-                    >
-                      <div className="ws-avatar-mini">
-                        {ws.name.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="truncate flex-1 text-sm">{ws.name}</span>
-                      {ws.id === activeWorkspace.id && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
-                    </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate('/workspace/new')} className="gap-2">
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>{locale === 'vi' ? 'Tạo Workspace mới' : 'Create new Workspace'}</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Link to="/dashboard" className="flex items-center gap-2 min-w-0">
-                <img src={tNexusLogo} alt="T-Nexus" className="h-7 w-7 shrink-0" />
-                <span className="sidebar-logo-text whitespace-nowrap overflow-hidden">
-                  <img src={tNexusTextWhite} alt="T-Nexus" className="h-[15px] w-auto max-w-full" />
-                </span>
-              </Link>
-            )}
+            <Link to="/dashboard" className="flex items-center gap-2 min-w-0">
+              <img src={tNexusLogo} alt="T-Nexus" className="h-7 w-7 shrink-0" />
+              <span className="sidebar-logo-text whitespace-nowrap overflow-hidden">
+                <img
+                  src={tNexusTextWhite}
+                  alt="T-Nexus"
+                  className="h-[15px] w-auto max-w-full"
+                />
+              </span>
+            </Link>
 
             {/* Desktop toggle */}
             <button
