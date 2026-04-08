@@ -15,8 +15,8 @@ interface WorkspaceBilling {
  * Fetches cascading billing info for the active workspace:
  * - Owner's plan name (from profiles.user_plan via owner_id)
  * - Owner's display name
- * - Current project count in workspace
- * - Max projects limit from plan_limits (null = UNLIMITED)
+ * - Total project count across ALL workspaces owned by this owner (account-wide)
+ * - Max projects limit from plan_limits (null = UNLIMITED, account-wide total)
  */
 export function useWorkspaceBilling(): WorkspaceBilling {
   const { activeWorkspace } = useWorkspace();
@@ -35,18 +35,31 @@ export function useWorkspaceBilling(): WorkspaceBilling {
       return;
     }
 
-    const fetch = async () => {
+    const fetchBilling = async () => {
       try {
-        const [planRes, ownerRes, countRes] = await Promise.all([
-          // Get plan text via RPC
+        const [planRes, ownerRes] = await Promise.all([
           supabase.rpc('get_workspace_plan', { _workspace_id: activeWorkspace.id }),
-          // Get owner profile
           supabase.from('profiles').select('id, full_name, user_plan').eq('id', activeWorkspace.owner_id).maybeSingle(),
-          // Count projects in workspace
-          supabase.from('groups').select('id', { count: 'exact', head: true }).eq('workspace_id', activeWorkspace.id),
         ]);
 
         const planText = planRes.data as string | null;
+
+        // Count total projects across ALL workspaces owned by this owner (Global Pool)
+        const { data: ownerWorkspaces } = await supabase
+          .from('workspaces')
+          .select('id')
+          .eq('owner_id', activeWorkspace.owner_id);
+
+        const ownerWsIds = ownerWorkspaces?.map(w => w.id) ?? [];
+        let totalProjectCount = 0;
+
+        if (ownerWsIds.length > 0) {
+          const { count } = await supabase
+            .from('groups')
+            .select('id', { count: 'exact', head: true })
+            .in('workspace_id', ownerWsIds);
+          totalProjectCount = count ?? 0;
+        }
 
         // Get limits from plan_limits table
         let maxProjects: number | null = null;
@@ -63,7 +76,7 @@ export function useWorkspaceBilling(): WorkspaceBilling {
           ownerPlan: planText,
           ownerName: ownerRes.data?.full_name ?? null,
           ownerId: activeWorkspace.owner_id,
-          projectCount: countRes.count ?? 0,
+          projectCount: totalProjectCount,
           maxProjects,
           isLoading: false,
         });
@@ -73,7 +86,7 @@ export function useWorkspaceBilling(): WorkspaceBilling {
       }
     };
 
-    fetch();
+    fetchBilling();
   }, [activeWorkspace?.id, activeWorkspace?.owner_id]);
 
   return billing;
