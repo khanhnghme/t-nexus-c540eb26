@@ -71,6 +71,7 @@ interface MessageItemProps {
 
 export default function MessageItem({ message, isOwn, showAvatar = true, showName = true, members = [], groupId, onTaskClick, onDelete, onReply }: MessageItemProps) {
   const { user, isAdmin } = useAuth();
+  const { locale, translations: { app: { communication: comm } } } = useLanguage();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [profileToView, setProfileToView] = useState<Profile | null>(null);
