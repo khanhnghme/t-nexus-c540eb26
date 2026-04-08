@@ -1,96 +1,129 @@
 
 
-## ĐÃ RÕ KIẾN TRÚC T-NEXUS
+## Redesign Dashboard Layout — CSS Grid 4 Zones
 
----
+### Tổng quan
 
-## Kế hoạch Rà soát & Refactor theo System Instructions
+Chuyển layout từ `position: fixed sidebar + margin-left content` sang **CSS Grid 2 cột × 2 hàng** với đường border rõ ràng phân chia 4 khu vực:
 
-### Tổng quan các vi phạm phát hiện
+```text
+┌──────────────────┬────────────────────────────────────────────┐
+│  [Logo + Toggle] │        TOP BAR (breadcrumb, search, user) │
+├──────────────────┼────────────────────────────────────────────┤
+│                  │                                            │
+│  SIDEBAR NAV     │              MAIN CONTENT                  │
+│  (scrollable)    │              (Outlet)                      │
+│                  │                                            │
+├──────────────────┤                                            │
+│  [Upgrade+User]  │                                            │
+└──────────────────┴────────────────────────────────────────────┘
+```
 
-**Vi phạm 1 — Hard-code giới hạn project (NGHIÊM TRỌNG)**
-- `src/pages/Groups.tsx` dòng 269: `profile.project_limit ?? 2` → hard-code fallback = 2
-- `src/pages/Dashboard.tsx` dòng 66: `DEFAULT_PROJECT_LIMIT = 2`
-- `src/pages/PersonalInfo.tsx` dòng 26: `DEFAULT_PROJECT_LIMIT = 2`
+### Thay đổi chi tiết
 
-**Vi phạm 2 — Logic quyền tạo Project sai**
-- `canCreateProject = isAdmin || isLeader` (dùng system role thay vì workspace role)
-- Theo kiến trúc: chỉ `workspace_owner` và `workspace_admin` được tạo project; `workspace_member` bị cấm
-- Hiện tại `isLeader = isSystemAdmin` → bất kỳ system admin nào đều được tạo (đúng), nhưng workspace_owner/admin không phải system admin thì KHÔNG tạo được (sai)
+#### File 1: `src/components/layout/DashboardLayout.tsx`
 
-**Vi phạm 3 — Nhãn UI "Group"/"Nhóm" còn sót**
-- `src/pages/Groups.tsx`: "Chưa có nhóm nào", "tạo nhóm nào", "Quản lý các nhóm"
-- `src/components/scores/`: "Chấm theo nhóm", "TB nhóm"
-- `src/pages/Tips.tsx`: nhiều chỗ dùng "nhóm" thay vì "dự án"
-- `src/lib/roleLabels.ts`: "Trưởng nhóm", "Phó nhóm" (đây là label project role — cần giữ hay đổi?)
-- Nhiều file khác (~23 file có "nhóm")
+**Cấu trúc HTML mới** — thay thế fragment hiện tại bằng một wrapper grid:
 
-**Vi phạm 4 — `workspace_guest` vẫn tồn tại trong type definitions**
-- `src/types/database.ts`: `WorkspaceRole` type vẫn có `workspace_guest`
-- `src/lib/roleLabels.ts`, `src/components/SidebarTreeNav.tsx`, `src/pages/WorkspaceMembers.tsx` vẫn xử lý `workspace_guest`
-- Theo kiến trúc: guest KHÔNG tồn tại trong `workspace_members`, chỉ ở `group_members` với `is_guest = true`
+```text
+<div class="dashboard-grid">
+  <!-- Cell 1: Top-left (logo) -->
+  <div class="grid-cell-logo">
+    Logo + sidebar toggle
+  </div>
+  
+  <!-- Cell 2: Top-right (top bar) -->  
+  <div class="grid-cell-topbar">
+    Breadcrumb/page title + search + theme toggle + user avatar
+  </div>
+  
+  <!-- Cell 3: Bottom-left (sidebar nav, scrollable) -->
+  <div class="grid-cell-sidebar">
+    <SidebarTreeNav />
+  </div>
+  
+  <!-- Cell 4: Bottom-left-bottom (user card) — inside sidebar cell -->
+  <!-- Sidebar cell uses flex-col: nav scrolls, bottom sticks -->
+  
+  <!-- Cell 5: Main content -->
+  <div class="grid-cell-content">
+    <Outlet />
+  </div>
+</div>
+```
 
----
+**Top Bar nội dung:**
+- Bên trái: Breadcrumb động theo route (VD: "Trang chủ", "Dự án", "Cài đặt")
+- Bên phải: Theme toggle + User avatar nhỏ (quick menu)
 
-### Chi tiết thay đổi
+**Sidebar cell** giữ nguyên nội dung hiện có (SidebarTreeNav + UpgradeBox + UserProfile) nhưng bỏ `position: fixed`, dùng grid placement.
 
-#### Phase 1: Sửa logic quyền tạo Project (quan trọng nhất)
+**Collapsed state**: Grid column trái co lại từ 252px → 56px, giữ nguyên logic hiện có.
 
-**File: `src/pages/Groups.tsx`**
-- Thay `isLeader` bằng logic workspace role: cho phép tạo nếu `workspaceRole` là `workspace_owner` hoặc `workspace_admin`, HOẶC user là `isSystemAdmin`
-- Xóa hard-code `profile.project_limit ?? 2` → query `plan_limits` table dựa trên workspace owner's plan. Nếu null → UNLIMITED
-- Cập nhật UI disable/enable nút tạo project theo workspace role mới
+#### File 2: `src/index.css` — CSS Grid thay thế fixed positioning
 
-**File: `src/pages/Dashboard.tsx`**
-- Xóa `DEFAULT_PROJECT_LIMIT = 2`
-- Sửa `canCreateProject` dùng workspace role thay vì `isAdmin || isLeader`
-- Query `plan_limits` cho `max_projects_per_workspace`, fallback UNLIMITED nếu null
+Thay thế toàn bộ block `.dashboard-sidebar` + `.dashboard-content-area`:
 
-**File: `src/pages/PersonalInfo.tsx`**
-- Xóa `DEFAULT_PROJECT_LIMIT = 2`
-- Sửa `canCreateProject` tương tự Dashboard
+```css
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 252px 1fr;
+  grid-template-rows: 52px 1fr;
+  height: 100vh;
+  width: 100vw;
+  transition: grid-template-columns 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
 
-#### Phase 2: Xóa `workspace_guest` khỏi hệ thống
+.dashboard-grid.sidebar-collapsed {
+  grid-template-columns: 56px 1fr;
+}
 
-**File: `src/types/database.ts`**
-- Xóa `'workspace_guest'` khỏi `WorkspaceRole` type
+/* Đường border phân chia */
+.grid-cell-logo {
+  grid-row: 1; grid-column: 1;
+  border-right: 1px solid var(--_sb-border-strong);
+  border-bottom: 1px solid var(--_sb-border-strong);
+}
 
-**File: `src/lib/roleLabels.ts`**
-- Xóa case `workspace_guest`
+.grid-cell-topbar {
+  grid-row: 1; grid-column: 2;
+  border-bottom: 1px solid var(--_sb-border-strong);
+}
 
-**File: `src/components/SidebarTreeNav.tsx`**
-- Xóa case `workspace_guest`, default fallback về `workspace_member`
+.grid-cell-sidebar {
+  grid-row: 2; grid-column: 1;
+  border-right: 1px solid var(--_sb-border-strong);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Ô nhỏ cuối (user profile) tách bằng border-top bên trong */
+}
 
-**File: `src/pages/WorkspaceMembers.tsx`**
-- Xóa case `workspace_guest`
+.grid-cell-content {
+  grid-row: 2; grid-column: 2;
+  overflow-y: auto;
+}
+```
 
-#### Phase 3: Đổi nhãn UI "Group"/"Nhóm" → "Project"/"Dự án"
+**Đường kẻ quan trọng:**
+1. **Ngang full-width** (dòng 1 vs dòng 2): `border-bottom` trên logo + topbar cells
+2. **Dọc full-height** (cột 1 vs cột 2): `border-right` trên logo + sidebar cells
+3. **Ngang riêng sidebar** (nav vs user): `border-top` trên `.sidebar-bottom` (đã có sẵn)
 
-Rà soát ~23 file, đổi các chuỗi hiển thị:
-- "nhóm" → "dự án" (trong context project)
-- Giữ "nhóm" khi nó thực sự chỉ nhóm người (VD: "Chấm theo nhóm" = chấm cả nhóm cùng lúc → giữ nguyên)
-- "Trưởng nhóm" / "Phó nhóm" trong roleLabels → đổi thành "Trưởng dự án" / "Phó dự án" (hoặc giữ nếu bạn thích)
+#### File 3: Tạo `src/components/layout/TopBar.tsx`
 
-Các file chính cần sửa nhãn:
-- `src/pages/Groups.tsx` — "Chưa có nhóm nào" → "Chưa có dự án nào", etc.
-- `src/pages/Tips.tsx` — nhiều chỗ "trưởng nhóm", "nhóm"
-- `src/components/scores/` — "TB nhóm"
-- `src/lib/roleLabels.ts` — "Trưởng nhóm" → "Trưởng dự án"
+Component mới cho khu vực top bar:
+- Hiển thị page title/breadcrumb dựa trên `location.pathname`
+- Bên phải: search hint, theme toggle, user avatar mini
+- Đồng bộ style với sidebar tokens
 
-**Lưu ý**: API/Database queries giữ nguyên `groups`, `group_members` — chỉ đổi UI labels.
+#### Mobile responsive
 
-#### Phase 4: Tạo helper đọc `plan_limits` động
-
-Tạo hook `usePlanLimits` hoặc utility function:
-- Query `plan_limits` table theo plan của workspace owner
-- Cache kết quả
-- Trả về limits với fallback UNLIMITED (null = unlimited)
-- Dùng ở Groups.tsx, Dashboard.tsx thay cho hard-code
-
----
+- Dưới 768px: Grid chuyển thành single column, ẩn sidebar, giữ mobile topbar + drawer hiện có
+- Top bar desktop ẩn trên mobile, mobile topbar hiện
 
 ### Không thay đổi
-- Database schema (bảng `groups`, `group_members` giữ nguyên tên)
-- Edge Functions (không vi phạm nào phát hiện)
-- RLS policies (đã đúng logic)
+- Logic sidebar collapsed/expanded (giữ nguyên)
+- SidebarTreeNav, UpgradeBox, UserProfile (giữ nguyên nội dung)
+- Routing, contexts, dialogs (giữ nguyên)
 
