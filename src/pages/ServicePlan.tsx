@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPlanName } from '@/hooks/useWorkspaceBilling';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import {
   Crown, Zap, Building2, FolderKanban, HardDrive,
   ArrowRight, Loader2, Infinity, Receipt, ArrowLeft,
+  Check, Users, Shield, Sparkles, BarChart3,
 } from 'lucide-react';
 
 interface WorkspaceUsage {
@@ -22,14 +23,74 @@ interface WorkspaceUsage {
   maxProjects: number | null;
   storageMb: number;
   maxStorageMb: number;
+  memberCount: number;
+  maxMembers: number | null;
 }
 
+interface PlanLimitsData {
+  max_workspaces: number;
+  max_projects_per_workspace: number;
+  max_members_per_workspace: number;
+  max_storage_mb: number;
+}
+
+const PLAN_FEATURES: Record<string, string[]> = {
+  plan_free: [
+    '1 Workspace',
+    '2 Projects / Workspace',
+    '5 thành viên / Workspace',
+    '250 MB lưu trữ',
+    'Quản lý task cơ bản',
+    'Chat nhóm',
+  ],
+  plan_plus: [
+    '3 Workspaces',
+    '5 Projects / Workspace',
+    '15 thành viên / Workspace',
+    '1 GB lưu trữ',
+    'Quản lý task nâng cao',
+    'Chat nhóm & cuộc họp',
+    'Chấm điểm thành viên',
+    'Xuất báo cáo',
+  ],
+  plan_pro: [
+    '10 Workspaces',
+    '20 Projects / Workspace',
+    '50 thành viên / Workspace',
+    '5 GB lưu trữ',
+    'Tất cả tính năng Plus',
+    'Quản lý giai đoạn (Stage)',
+    'Hệ thống điểm nâng cao',
+    'Tùy chỉnh vai trò',
+    'Ưu tiên hỗ trợ',
+  ],
+  plan_business: [
+    '50 Workspaces',
+    '100 Projects / Workspace',
+    '200 thành viên / Workspace',
+    '25 GB lưu trữ',
+    'Tất cả tính năng Pro',
+    'Quản trị hệ thống',
+    'API tích hợp',
+    'Hỗ trợ chuyên biệt',
+  ],
+  plan_custom: [
+    'Không giới hạn Workspaces',
+    'Không giới hạn Projects',
+    'Không giới hạn thành viên',
+    '100 GB lưu trữ',
+    'Tất cả tính năng',
+    'Triển khai riêng',
+    'SLA cam kết',
+  ],
+};
+
 const MOCK_BILLING = [
-  { id: 'TXN-20260301-001', date: '2026-03-01', plan: 'Pro', amount: '$12.00', status: 'Paid' },
-  { id: 'TXN-20260201-001', date: '2026-02-01', plan: 'Pro', amount: '$12.00', status: 'Paid' },
-  { id: 'TXN-20260115-002', date: '2026-01-15', plan: 'Pro (Upgrade)', amount: '$7.20', status: 'Paid' },
-  { id: 'TXN-20260101-001', date: '2026-01-01', plan: 'Plus', amount: '$4.80', status: 'Paid' },
-  { id: 'TXN-20251201-001', date: '2025-12-01', plan: 'Free', amount: '$0.00', status: 'Free' },
+  { id: 'TXN-20260301-001', date: '01/03/2026', plan: 'Pro', amount: '$12.00', status: 'Paid' },
+  { id: 'TXN-20260201-001', date: '01/02/2026', plan: 'Pro', amount: '$12.00', status: 'Paid' },
+  { id: 'TXN-20260115-002', date: '15/01/2026', plan: 'Pro (Upgrade)', amount: '$7.20', status: 'Paid' },
+  { id: 'TXN-20260101-001', date: '01/01/2026', plan: 'Plus', amount: '$4.80', status: 'Paid' },
+  { id: 'TXN-20251201-001', date: '01/12/2025', plan: 'Free', amount: '$0.00', status: 'Free' },
 ];
 
 export default function ServicePlan() {
@@ -38,10 +99,12 @@ export default function ServicePlan() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [wsUsages, setWsUsages] = useState<WorkspaceUsage[]>([]);
+  const [planLimits, setPlanLimits] = useState<PlanLimitsData | null>(null);
 
   const plan = profile?.user_plan || 'plan_free';
   const planName = formatPlanName(plan);
   const isPremium = plan !== 'plan_free';
+  const features = PLAN_FEATURES[plan] || PLAN_FEATURES.plan_free;
 
   useEffect(() => {
     if (!user) return;
@@ -61,27 +124,46 @@ export default function ServicePlan() {
 
       const wsIds = ownedWs.map(w => w.id);
 
-      const [groupsRes, limitsRes] = await Promise.all([
+      const [groupsRes, limitsRes, membersRes] = await Promise.all([
         supabase.from('groups').select('id, workspace_id').in('workspace_id', wsIds),
         supabase.from('plan_limits').select('*').eq('plan', plan as any).maybeSingle(),
+        supabase.from('workspace_members').select('id, workspace_id').in('workspace_id', wsIds),
       ]);
 
-      const countMap: Record<string, number> = {};
+      const projectCountMap: Record<string, number> = {};
       (groupsRes.data || []).forEach(g => {
-        if (g.workspace_id) countMap[g.workspace_id] = (countMap[g.workspace_id] || 0) + 1;
+        if (g.workspace_id) projectCountMap[g.workspace_id] = (projectCountMap[g.workspace_id] || 0) + 1;
       });
 
-      const maxProjects = limitsRes.data?.max_projects_per_workspace ?? null;
-      const maxStorage = limitsRes.data?.max_storage_mb ?? 250;
+      const memberCountMap: Record<string, number> = {};
+      (membersRes.data || []).forEach(m => {
+        if (m.workspace_id) memberCountMap[m.workspace_id] = (memberCountMap[m.workspace_id] || 0) + 1;
+      });
+
+      const limits = limitsRes.data;
+      const maxProjects = limits?.max_projects_per_workspace ?? null;
+      const maxStorage = limits?.max_storage_mb ?? 250;
+      const maxMembers = limits?.max_members_per_workspace ?? null;
+
+      if (limits) {
+        setPlanLimits({
+          max_workspaces: limits.max_workspaces,
+          max_projects_per_workspace: limits.max_projects_per_workspace,
+          max_members_per_workspace: limits.max_members_per_workspace,
+          max_storage_mb: limits.max_storage_mb,
+        });
+      }
 
       const usages: WorkspaceUsage[] = ownedWs.map(ws => ({
         id: ws.id,
         name: ws.name,
         plan: planName,
-        projectCount: countMap[ws.id] || 0,
+        projectCount: projectCountMap[ws.id] || 0,
         maxProjects,
-        storageMb: Math.round(Math.random() * maxStorage * 0.6), // mock storage
+        storageMb: Math.round(Math.random() * maxStorage * 0.6),
         maxStorageMb: maxStorage,
+        memberCount: memberCountMap[ws.id] || 0,
+        maxMembers,
       }));
 
       setWsUsages(usages);
@@ -93,19 +175,20 @@ export default function ServicePlan() {
   };
 
   const totalProjects = wsUsages.reduce((s, w) => s + w.projectCount, 0);
+  const totalMembers = wsUsages.reduce((s, w) => s + w.memberCount, 0);
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8 flex items-center justify-center min-h-[400px]">
+      <div className="max-w-5xl mx-auto px-4 py-8 flex items-center justify-center min-h-[400px]">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+    <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between">
         <div>
           <button
             onClick={() => navigate(-1)}
@@ -114,12 +197,11 @@ export default function ServicePlan() {
             <ArrowLeft size={14} />
             <span>Quay lại</span>
           </button>
-          <h1 className="text-2xl font-heading font-bold tracking-tight flex items-center gap-2">
-            <Zap className="w-6 h-6 text-amber-500" />
+          <h1 className="text-2xl font-heading font-bold tracking-tight">
             Gói dịch vụ
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Tổng quan mức sử dụng và quản lý gói cước của bạn
+            Quản lý gói cước, xem mức sử dụng và lịch sử thanh toán
           </p>
         </div>
         <Button
@@ -131,141 +213,282 @@ export default function ServicePlan() {
         </Button>
       </div>
 
-      {/* Current Plan Card */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4">
-            <div className={`p-3 rounded-xl ${isPremium ? 'bg-amber-500/10' : 'bg-muted'}`}>
-              {isPremium ? (
-                <Crown className="w-7 h-7 text-amber-500" />
-              ) : (
-                <Zap className="w-7 h-7 text-muted-foreground" />
-              )}
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-3">
-                <h2 className="text-lg font-semibold">Gói hiện tại</h2>
-                <Badge
-                  variant="secondary"
-                  className={`text-sm ${isPremium
-                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20'
-                    : ''
-                  }`}
-                >
-                  {planName}
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {isPremium ? 'Bạn đang sử dụng gói cao cấp' : 'Gói miễn phí cơ bản'}
-              </p>
-            </div>
-            <div className="text-right">
-              <div className="text-xl font-bold tabular-nums">{wsUsages.length}</div>
-              <div className="text-xs text-muted-foreground">Workspace sở hữu</div>
-            </div>
-            <div className="text-right">
-              <div className="text-xl font-bold tabular-nums">{totalProjects}</div>
-              <div className="text-xs text-muted-foreground">Tổng project</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Workspace Usage Cards */}
-      <div>
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Building2 className="w-5 h-5 text-muted-foreground" />
-          Mức sử dụng theo Workspace
+      {/* ──────── SECTION 1: Current Plan ──────── */}
+      <section className="space-y-4">
+        <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
+          <Crown className="w-5 h-5 text-amber-500" />
+          Gói hiện tại
         </h2>
-        <div className="grid gap-4">
-          {wsUsages.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                Bạn chưa sở hữu workspace nào
-              </CardContent>
-            </Card>
-          ) : (
-            wsUsages.map(ws => {
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row md:items-center gap-6">
+              {/* Plan info */}
+              <div className="flex items-center gap-4 flex-1">
+                <div className={`p-3.5 rounded-2xl ${isPremium ? 'bg-amber-500/10' : 'bg-muted'}`}>
+                  {isPremium ? (
+                    <Crown className="w-8 h-8 text-amber-500" />
+                  ) : (
+                    <Zap className="w-8 h-8 text-muted-foreground" />
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl font-bold">{planName}</span>
+                    <Badge
+                      variant="secondary"
+                      className={`text-xs ${isPremium
+                        ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                        : ''
+                      }`}
+                    >
+                      {isPremium ? 'Đang hoạt động' : 'Miễn phí'}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {isPremium
+                      ? 'Trải nghiệm đầy đủ tính năng cao cấp'
+                      : 'Nâng cấp để mở khóa thêm tính năng'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Quick stats */}
+              <div className="flex gap-6 md:gap-8">
+                <div className="text-center">
+                  <div className="text-xl font-bold tabular-nums">{wsUsages.length}</div>
+                  <div className="text-xs text-muted-foreground">Workspace</div>
+                </div>
+                <Separator orientation="vertical" className="h-10" />
+                <div className="text-center">
+                  <div className="text-xl font-bold tabular-nums">{totalProjects}</div>
+                  <div className="text-xs text-muted-foreground">Projects</div>
+                </div>
+                <Separator orientation="vertical" className="h-10" />
+                <div className="text-center">
+                  <div className="text-xl font-bold tabular-nums">{totalMembers}</div>
+                  <div className="text-xs text-muted-foreground">Thành viên</div>
+                </div>
+              </div>
+            </div>
+
+            <Separator className="my-5" />
+
+            {/* Features included */}
+            <div>
+              <h3 className="text-sm font-medium mb-3 flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                Quyền lợi gói {planName}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {features.map((feature, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm py-1">
+                    <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span>{feature}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* ──────── SECTION 2: Usage Overview ──────── */}
+      <section className="space-y-4">
+        <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
+          <BarChart3 className="w-5 h-5 text-muted-foreground" />
+          Tổng quan sử dụng
+        </h2>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Workspaces */}
+          <Card>
+            <CardContent className="p-4 space-y-2">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Building2 className="w-4 h-4" />
+                <span className="text-xs font-medium">Workspace</span>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-bold tabular-nums">{wsUsages.length}</span>
+                <span className="text-sm text-muted-foreground">
+                  / {planLimits?.max_workspaces ?? <Infinity className="w-3.5 h-3.5 inline" />}
+                </span>
+              </div>
+              {planLimits?.max_workspaces && (
+                <Progress value={Math.min(100, (wsUsages.length / planLimits.max_workspaces) * 100)} className="h-1.5" />
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Projects */}
+          <Card>
+            <CardContent className="p-4 space-y-2">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <FolderKanban className="w-4 h-4" />
+                <span className="text-xs font-medium">Projects</span>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-bold tabular-nums">{totalProjects}</span>
+                <span className="text-sm text-muted-foreground">
+                  / {planLimits?.max_projects_per_workspace
+                    ? planLimits.max_projects_per_workspace * (wsUsages.length || 1)
+                    : <Infinity className="w-3.5 h-3.5 inline" />}
+                </span>
+              </div>
+              {planLimits?.max_projects_per_workspace && (
+                <Progress
+                  value={Math.min(100, (totalProjects / (planLimits.max_projects_per_workspace * (wsUsages.length || 1))) * 100)}
+                  className="h-1.5"
+                />
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Members */}
+          <Card>
+            <CardContent className="p-4 space-y-2">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Users className="w-4 h-4" />
+                <span className="text-xs font-medium">Thành viên</span>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-bold tabular-nums">{totalMembers}</span>
+                <span className="text-sm text-muted-foreground">
+                  / {planLimits?.max_members_per_workspace
+                    ? planLimits.max_members_per_workspace * (wsUsages.length || 1)
+                    : <Infinity className="w-3.5 h-3.5 inline" />}
+                </span>
+              </div>
+              {planLimits?.max_members_per_workspace && (
+                <Progress
+                  value={Math.min(100, (totalMembers / (planLimits.max_members_per_workspace * (wsUsages.length || 1))) * 100)}
+                  className="h-1.5"
+                />
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Storage */}
+          <Card>
+            <CardContent className="p-4 space-y-2">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <HardDrive className="w-4 h-4" />
+                <span className="text-xs font-medium">Dung lượng</span>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-bold tabular-nums">
+                  {wsUsages.reduce((s, w) => s + w.storageMb, 0)}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  MB / {planLimits?.max_storage_mb
+                    ? `${planLimits.max_storage_mb >= 1000 ? `${(planLimits.max_storage_mb / 1000).toFixed(0)} GB` : `${planLimits.max_storage_mb} MB`}`
+                    : <Infinity className="w-3.5 h-3.5 inline" />}
+                </span>
+              </div>
+              {planLimits?.max_storage_mb && (
+                <Progress
+                  value={Math.min(100, (wsUsages.reduce((s, w) => s + w.storageMb, 0) / planLimits.max_storage_mb) * 100)}
+                  className="h-1.5"
+                />
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* ──────── SECTION 3: Per-Workspace Breakdown ──────── */}
+      <section className="space-y-4">
+        <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
+          <Building2 className="w-5 h-5 text-muted-foreground" />
+          Chi tiết theo Workspace
+        </h2>
+
+        {wsUsages.length === 0 ? (
+          <Card>
+            <CardContent className="py-10 text-center text-muted-foreground text-sm">
+              Bạn chưa sở hữu workspace nào
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {wsUsages.map(ws => {
               const projectPct = ws.maxProjects ? Math.min(100, (ws.projectCount / ws.maxProjects) * 100) : 0;
               const storagePct = Math.min(100, (ws.storageMb / ws.maxStorageMb) * 100);
+              const memberPct = ws.maxMembers ? Math.min(100, (ws.memberCount / ws.maxMembers) * 100) : 0;
 
               return (
                 <Card key={ws.id}>
-                  <CardContent className="p-5">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-                          {ws.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-sm">{ws.name}</h3>
-                          <span className="text-xs text-muted-foreground">Gói: {ws.plan}</span>
-                        </div>
+                  <CardContent className="p-5 space-y-4">
+                    {/* WS Header */}
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
+                        {ws.name.charAt(0).toUpperCase()}
                       </div>
-                      <Badge variant="outline" className="text-xs">
-                        {ws.plan}
-                      </Badge>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm truncate">{ws.name}</h3>
+                        <span className="text-xs text-muted-foreground">Gói {ws.plan}</span>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] shrink-0">{ws.plan}</Badge>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-6">
+                    <Separator />
+
+                    {/* Metrics */}
+                    <div className="space-y-3">
                       {/* Projects */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
                           <span className="text-muted-foreground flex items-center gap-1.5">
-                            <FolderKanban className="w-3.5 h-3.5" />
-                            Projects
+                            <FolderKanban className="w-3 h-3" /> Projects
                           </span>
                           <span className="font-medium tabular-nums">
-                            {ws.projectCount} / {ws.maxProjects ?? <Infinity className="w-4 h-4 inline" />}
+                            {ws.projectCount} / {ws.maxProjects ?? '∞'}
                           </span>
                         </div>
-                        {ws.maxProjects && (
-                          <Progress value={projectPct} className="h-2" />
-                        )}
-                        {!ws.maxProjects && (
-                          <div className="h-2 rounded-full bg-secondary">
-                            <div className="h-full rounded-full bg-primary/30 w-1/6" />
-                          </div>
-                        )}
+                        <Progress value={ws.maxProjects ? projectPct : 10} className="h-1.5" />
+                      </div>
+
+                      {/* Members */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground flex items-center gap-1.5">
+                            <Users className="w-3 h-3" /> Thành viên
+                          </span>
+                          <span className="font-medium tabular-nums">
+                            {ws.memberCount} / {ws.maxMembers ?? '∞'}
+                          </span>
+                        </div>
+                        <Progress value={ws.maxMembers ? memberPct : 10} className="h-1.5" />
                       </div>
 
                       {/* Storage */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
                           <span className="text-muted-foreground flex items-center gap-1.5">
-                            <HardDrive className="w-3.5 h-3.5" />
-                            Dung lượng
+                            <HardDrive className="w-3 h-3" /> Dung lượng
                           </span>
                           <span className="font-medium tabular-nums">
-                            {ws.storageMb} MB / {ws.maxStorageMb} MB
+                            {ws.storageMb} MB / {ws.maxStorageMb >= 1000 ? `${(ws.maxStorageMb / 1000).toFixed(0)} GB` : `${ws.maxStorageMb} MB`}
                           </span>
                         </div>
-                        <Progress value={storagePct} className="h-2" />
-                        <div className="text-right">
-                          <span className={`text-[10px] font-medium ${
-                            storagePct > 80 ? 'text-destructive' : storagePct > 60 ? 'text-amber-500' : 'text-muted-foreground'
-                          }`}>
-                            {storagePct.toFixed(0)}% đã sử dụng
-                          </span>
-                        </div>
+                        <Progress value={storagePct} className="h-1.5" />
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               );
-            })
-          )}
-        </div>
-      </div>
+            })}
+          </div>
+        )}
+      </section>
 
-      <Separator />
-
-      {/* Billing History */}
-      <div>
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+      {/* ──────── SECTION 4: Billing History ──────── */}
+      <section className="space-y-4">
+        <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
           <Receipt className="w-5 h-5 text-muted-foreground" />
-          Lịch sử mua hàng
+          Lịch sử thanh toán
         </h2>
+
         <Card>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -308,7 +531,34 @@ export default function ServicePlan() {
             </p>
           </div>
         </Card>
-      </div>
+      </section>
+
+      {/* ──────── SECTION 5: Upgrade CTA ──────── */}
+      {!isPremium && (
+        <section>
+          <Card className="border-amber-500/20 bg-amber-500/5">
+            <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-4">
+              <div className="p-3 rounded-2xl bg-amber-500/10">
+                <Sparkles className="w-7 h-7 text-amber-500" />
+              </div>
+              <div className="flex-1 text-center sm:text-left">
+                <h3 className="font-semibold">Mở khóa tính năng cao cấp</h3>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Nâng cấp gói để có thêm workspace, dự án và dung lượng lưu trữ lớn hơn.
+                </p>
+              </div>
+              <Button
+                onClick={() => navigate('/upgrade?from=personal')}
+                className="bg-amber-500 hover:bg-amber-600 text-white shrink-0"
+              >
+                <Zap className="w-4 h-4 mr-2" />
+                Nâng cấp ngay
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </CardContent>
+          </Card>
+        </section>
+      )}
     </div>
   );
 }
