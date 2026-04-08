@@ -279,7 +279,7 @@ export const vi: Translations = {
         features: [
           '1 Workspace được tạo',
           'Tổng 2 dự án trên toàn tài khoản',
-          '250 MB tổng lưu trữ (gộp tất cả Workspace)',
+          '500 MB tổng lưu trữ (gộp tất cả Workspace)',
           'Upload tối đa 5 MB / file',
           'Tổng 5 suất thành viên (unique seat, dùng chung cho tất cả WS)',
           'Họp tối đa 15 phút',
@@ -291,9 +291,9 @@ export const vi: Translations = {
         description: 'Dành cho nhóm nhỏ và chuyên gia cộng tác.',
         cta: 'Bắt đầu',
         features: [
-          '3 Workspace được tạo',
+          '5 Workspace được tạo',
           'Tổng 20 dự án (phân bổ tùy ý cho các WS)',
-          '5 GB tổng lưu trữ (gộp tất cả Workspace)',
+          '10 GB tổng lưu trữ (gộp tất cả Workspace)',
           'Upload tối đa 100 MB / file',
           'Tổng 15 suất thành viên (unique seat, dùng chung cho tất cả WS)',
           'Mở khóa tính năng Plus cho mọi thành viên',
@@ -309,9 +309,9 @@ export const vi: Translations = {
         description: 'Dành cho nhóm phát triển nhanh để tối đa năng suất.',
         cta: 'Bắt đầu',
         features: [
-          '10 Workspace được tạo',
+          '20 Workspace được tạo',
           'Tổng 150 dự án (phân bổ tùy ý cho các WS)',
-          '25 GB tổng lưu trữ (gộp tất cả Workspace)',
+          '50 GB tổng lưu trữ (gộp tất cả Workspace)',
           'Upload tối đa 5 GB / file',
           'Tổng 50 suất thành viên (unique seat, dùng chung cho tất cả WS)',
           'Mở khóa tính năng Pro cho mọi thành viên',
@@ -327,9 +327,9 @@ export const vi: Translations = {
         description: 'Dành cho tổ chức vừa đến lớn vận hành ở quy mô.',
         cta: 'Bắt đầu',
         features: [
-          '30 Workspace được tạo',
+          '50 Workspace được tạo',
           'Tổng 1.500 dự án (phân bổ tùy ý cho các WS)',
-          '100 GB tổng lưu trữ (gộp tất cả Workspace)',
+          '200 GB tổng lưu trữ (gộp tất cả Workspace)',
           'Upload tối đa 5 GB / file',
           'Tổng 150 suất thành viên (unique seat, dùng chung cho tất cả WS)',
           'Mở khóa tính năng Business cho mọi thành viên',
@@ -366,7 +366,7 @@ export const vi: Translations = {
     perAccount: '/ chủ sở hữu / tháng',
     addOns: [
       { emoji: '📋', name: 'Dự án', price: '$2.49', unit: '/ +50 dự án tổng cộng / tháng', note: 'Số dự án mua thêm sẽ được cộng vào tổng giới hạn tài khoản, bạn có thể sử dụng chúng trong bất kỳ Workspace nào bạn đang sở hữu.' },
-      { emoji: '📦', name: 'Lưu trữ', price: '$2.49', unit: '/ +5 GB tổng / tháng', note: 'Mở rộng dung lượng tổng lưu trữ (dùng chung cho tất cả Workspace).' },
+      { emoji: '📦', name: 'Lưu trữ', price: '$2.49', unit: '/ +20 GB tổng / tháng', note: 'Mở rộng dung lượng tổng lưu trữ (dùng chung cho tất cả Workspace).' },
       { emoji: '👥', name: 'Thành viên', price: '$2.49', unit: '/ +10 suất thành viên tổng / tháng', note: 'Mỗi người (1 email) tham gia nhiều WS chỉ tính 1 suất. Số suất mua thêm được cộng vào tổng kho tài khoản.' },
     ],
 
@@ -376,8 +376,8 @@ export const vi: Translations = {
       {
         category: 'Tài khoản & Workspace',
         rows: [
-          { label: 'Workspace được tạo / tài khoản', free: '1', plus: '3', pro: '10', business: '30', enterprise: 'Không giới hạn' },
-          { label: 'Tổng lưu trữ (gộp tất cả Workspace)', free: '250 MB', plus: '5 GB', pro: '25 GB', business: '100 GB', enterprise: 'Không giới hạn' },
+          { label: 'Workspace được tạo / tài khoản', free: '1', plus: '5', pro: '20', business: '50', enterprise: 'Không giới hạn' },
+          { label: 'Tổng lưu trữ (gộp tất cả Workspace)', free: '500 MB', plus: '10 GB', pro: '50 GB', business: '200 GB', enterprise: 'Không giới hạn' },
           { label: 'Giới hạn upload / file', free: '5 MB', plus: '100 MB', pro: '5 GB', business: '5 GB', enterprise: '5 GB' },
         ],
       },
