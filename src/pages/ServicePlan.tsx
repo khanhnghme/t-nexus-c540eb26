@@ -550,6 +550,14 @@ export default function ServicePlan() {
               </div>
             )}
           </section>
+
+          {/* Cleanup Panel - show when over limits */}
+          {accountLimits.isOverLimits && (
+            <section className="space-y-4">
+              <Separator />
+              <AccountCleanupPanel onCleanupComplete={fetchUsages} />
+            </section>
+          )}
         </TabsContent>
 
         {/* ──────── TAB 3: Lịch sử thanh toán ──────── */}
