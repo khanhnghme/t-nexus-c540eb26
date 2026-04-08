@@ -54,7 +54,7 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
   const [expandedWs, setExpandedWs] = useState<Set<string>>(new Set());
   const [selectedWs, setSelectedWs] = useState<Set<string>>(new Set());
   const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set());
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmStep, setConfirmStep] = useState<0 | 1 | 2>(0); // 0=closed, 1=step1, 2=step2
   const [confirmText, setConfirmText] = useState('');
 
   useEffect(() => {
