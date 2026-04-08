@@ -12,6 +12,7 @@ import TaskEditDialog from '@/components/TaskEditDialog';
 import StageEditDialog from '@/components/StageEditDialog';
 import ProjectActivityLog from '@/components/ProjectActivityLog';
 import ShareSettingsCard from '@/components/ShareSettingsCard';
+import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -228,7 +229,7 @@ export default function GroupDetail() {
         })) as Task[]);
       }
 
-import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
+
       // Check for active meetings (in_progress status)
       const { data: activeMeetings } = await supabase
         .from('meetings')
