@@ -52,8 +52,7 @@ export default function CalendarHeader({
       return format(currentDate, "MMMM, yyyy", { locale: dateLocale });
     }
     if (viewMode === 'week') {
-      const weekLabel = locale === 'vi' ? 'Tuần' : 'Week';
-      return `${weekLabel} ${format(currentDate, "w", { locale: dateLocale })} - ${format(currentDate, "MMMM yyyy", { locale: dateLocale })}`;
+      return `${cal.weekLabel} ${format(currentDate, "w", { locale: dateLocale })} - ${format(currentDate, "MMMM yyyy", { locale: dateLocale })}`;
     }
     return format(currentDate, "EEEE, dd MMMM yyyy", { locale: dateLocale });
   };

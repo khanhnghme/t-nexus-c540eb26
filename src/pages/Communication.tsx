@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { useLanguage } from '@/contexts/LanguageContext';
 import MentionInput from '@/components/communication/MentionInput';
 import MessageItem from '@/components/communication/MessageItem';
 import { parseMessageContent, type ParsedMention } from '@/lib/messageParser';
@@ -80,6 +81,8 @@ export default function Communication() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const { locale, translations: { app: t } } = useLanguage();
+  const comm = t.communication;
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [projects, setProjects] = useState<Project[]>([]);
@@ -547,8 +550,8 @@ export default function Communication() {
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
-        title: 'Lỗi',
-        description: 'Không thể gửi tin nhắn',
+        title: comm.error,
+        description: comm.cannotSendMessage,
         variant: 'destructive'
       });
     } finally {
@@ -585,7 +588,7 @@ export default function Communication() {
       setMentions(prev => prev.map(m => ({ ...m, is_read: true })));
       fetchProjects();
       toast({
-        title: 'Đã đánh dấu tất cả là đã đọc'
+        title: comm.markedAllRead
       });
     } catch (error) {
       console.error('Error marking all as read:', error);
@@ -597,7 +600,7 @@ export default function Communication() {
     setMessages(prev => prev.filter(m => m.id !== messageId));
 
     deleteWithUndo({
-      description: 'Đã xóa tin nhắn',
+      description: comm.messageDeleted,
       onDelete: async () => {
         await supabase.from('message_mentions').delete().eq('message_id', messageId);
         const { error } = await supabase.from('project_messages').delete().eq('id', messageId).eq('user_id', user?.id);
@@ -622,12 +625,12 @@ export default function Communication() {
   const formatMessageDate = (dateStr: string) => {
     const date = new Date(dateStr);
     if (isToday(date)) return format(date, 'HH:mm');
-    if (isYesterday(date)) return 'Hôm qua';
+    if (isYesterday(date)) return comm.yesterdayLabel;
     return format(date, 'dd/MM');
   };
 
   const formatRelativeTime = (dateStr: string) => {
-    return formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale: vi });
+    return formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale: locale === 'vi' ? vi : undefined });
   };
 
   const groupMessagesByDate = (msgs: Message[]) => {
@@ -636,9 +639,9 @@ export default function Communication() {
 
     msgs.forEach(msg => {
       const msgDate = new Date(msg.created_at);
-      let dateLabel = format(msgDate, 'EEEE, dd/MM/yyyy', { locale: vi });
-      if (isToday(msgDate)) dateLabel = 'Hôm nay';
-      else if (isYesterday(msgDate)) dateLabel = 'Hôm qua';
+      let dateLabel = format(msgDate, 'EEEE, dd/MM/yyyy', { locale: locale === 'vi' ? vi : undefined });
+      if (isToday(msgDate)) dateLabel = comm.todayLabel;
+      else if (isYesterday(msgDate)) dateLabel = comm.yesterdayLabel;
 
       if (dateLabel !== currentDate) {
         currentDate = dateLabel;
@@ -672,9 +675,9 @@ export default function Communication() {
                 )}
               </div>
               <div>
-                <h1 className="text-2xl font-heading font-bold tracking-tight">Trao đổi</h1>
+                <h1 className="text-2xl font-heading font-bold tracking-tight">{comm.title}</h1>
                 <p className="text-muted-foreground text-sm">
-                  {projects.length} dự án • {totalUnreadMentions > 0 ? `${totalUnreadMentions} thông báo mới` : 'Không có thông báo mới'}
+                  {(comm.projectCount as string).replace('{n}', String(projects.length))} • {totalUnreadMentions > 0 ? (comm.newNotifications as string).replace('{n}', String(totalUnreadMentions)) : comm.noNewNotifications}
                 </p>
               </div>
             </div>
@@ -689,7 +692,7 @@ export default function Communication() {
                 </div>
                 <div>
                   <p className="text-xl font-bold">{projects.length}</p>
-                  <p className="text-xs text-muted-foreground">Dự án</p>
+                  <p className="text-xs text-muted-foreground">{comm.projects}</p>
                 </div>
               </CardContent>
             </Card>
@@ -700,7 +703,7 @@ export default function Communication() {
                 </div>
                 <div>
                   <p className="text-xl font-bold">{totalUnreadMentions}</p>
-                  <p className="text-xs text-muted-foreground">Chưa đọc</p>
+                  <p className="text-xs text-muted-foreground">{comm.unread}</p>
                 </div>
               </CardContent>
             </Card>
@@ -711,7 +714,7 @@ export default function Communication() {
                 </div>
                 <div>
                   <p className="text-xl font-bold">{projects.reduce((acc, p) => acc + (p.member_count || 0), 0)}</p>
-                  <p className="text-xs text-muted-foreground">Thành viên</p>
+                  <p className="text-xs text-muted-foreground">{comm.membersLabel}</p>
                 </div>
               </CardContent>
             </Card>
@@ -720,8 +723,8 @@ export default function Communication() {
           {/* Project List */}
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-16">
-              <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
-              <p className="text-muted-foreground">Đang tải dự án...</p>
+               <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
+               <p className="text-muted-foreground">{comm.loadingProjects}</p>
             </div>
           ) : projects.length === 0 ? (
             <Card className="border-dashed">
@@ -729,16 +732,16 @@ export default function Communication() {
                 <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
                   <FolderKanban className="w-8 h-8 text-muted-foreground" />
                 </div>
-                <h3 className="font-semibold text-lg mb-2">Chưa có dự án nào</h3>
-                <p className="text-muted-foreground text-sm max-w-sm mx-auto">
-                  Bạn chưa tham gia dự án nào. Hãy tham gia hoặc tạo dự án mới để bắt đầu trao đổi.
-                </p>
+                 <h3 className="font-semibold text-lg mb-2">{comm.noProjects}</h3>
+                 <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+                   {comm.noProjectsDesc}
+                 </p>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Các dự án</h2>
+                <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{comm.projectsHeader}</h2>
               </div>
               {projects.map((project, index) => (
                 <Card 
@@ -795,9 +798,9 @@ export default function Communication() {
                           <p className="text-sm text-muted-foreground truncate">
                             {project.last_message}
                           </p>
-                        ) : (
-                          <p className="text-sm text-muted-foreground/60 italic">
-                            Chưa có tin nhắn
+                         ) : (
+                           <p className="text-sm text-muted-foreground/60 italic">
+                             {comm.noMessages}
                           </p>
                         )}
                       </div>
@@ -858,8 +861,8 @@ export default function Communication() {
             <div>
               <h1 className="text-base font-bold">{selectedProject.name}</h1>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                <span>{projectMembers.length} thành viên</span>
+                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                 <span>{(comm.membersCount as string).replace('{n}', String(projectMembers.length))}</span>
               </div>
             </div>
           </div>
@@ -890,14 +893,14 @@ export default function Communication() {
             <TabsList className="w-fit bg-muted/50 p-1 rounded-full">
               <TabsTrigger value="all" className="gap-1.5 rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm text-xs px-4">
                 <MessageSquare className="w-3.5 h-3.5" />
-                Chat
+                 {comm.chatTab}
                 <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0 rounded-full">
                   {messages.length}
                 </Badge>
               </TabsTrigger>
               <TabsTrigger value="mentions" className="gap-1.5 rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm text-xs px-4">
                 <AtSign className="w-3.5 h-3.5" />
-                @Tôi
+                {comm.mentionsTab}
                 {unreadMentionsCount > 0 && (
                   <Badge variant="destructive" className="ml-1 px-1.5 py-0 text-[10px] rounded-full animate-pulse">
                     {unreadMentionsCount}
@@ -918,10 +921,10 @@ export default function Communication() {
                       <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center mb-4">
                         <Sparkles className="w-10 h-10 text-primary/60" />
                       </div>
-                      <h3 className="font-semibold text-lg mb-2">Bắt đầu trò chuyện</h3>
-                      <p className="text-muted-foreground text-sm text-center max-w-xs">
-                        Gửi tin nhắn đầu tiên để trao đổi với các thành viên
-                      </p>
+                       <h3 className="font-semibold text-lg mb-2">{comm.startConversation}</h3>
+                       <p className="text-muted-foreground text-sm text-center max-w-xs">
+                         {comm.startConversationDesc}
+                       </p>
                     </div>
                   )}
                   {groupMessagesByDate(messages).map((group, groupIdx) => (
@@ -986,7 +989,7 @@ export default function Communication() {
                 onSend={handleSendMessage}
                 members={projectMembers}
                 tasks={projectTasks}
-                placeholder={replyingTo ? `Trả lời ${replyingTo.user_name}...` : "Nhập tin nhắn... @ tag, # task"}
+                placeholder={replyingTo ? (comm.replyPlaceholder as string).replace('{name}', replyingTo.user_name || '') : comm.messagePlaceholder}
                 isSending={isSending}
               />
             </div>
@@ -1001,12 +1004,12 @@ export default function Communication() {
                   <div className="flex items-center gap-2">
                     <Bell className="w-4 h-4 text-primary" />
                     <span className="text-sm font-medium">
-                      {unreadMentionsCount > 0 ? `${unreadMentionsCount} chưa đọc` : 'Tất cả đã đọc'}
+                      {unreadMentionsCount > 0 ? (comm.unreadCount as string).replace('{n}', String(unreadMentionsCount)) : comm.allRead}
                     </span>
                   </div>
                   {unreadMentionsCount > 0 && (
                     <Button variant="ghost" size="sm" onClick={handleMarkAllAsRead} className="text-xs">
-                      Đánh dấu tất cả đã đọc
+                      {comm.markAllRead}
                     </Button>
                   )}
                 </div>
@@ -1018,10 +1021,10 @@ export default function Communication() {
                     <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
                       <AtSign className="w-8 h-8 text-muted-foreground/50" />
                     </div>
-                    <h3 className="font-semibold mb-2">Chưa có ai nhắc đến bạn</h3>
-                    <p className="text-muted-foreground text-sm text-center max-w-xs">
-                      Khi có người nhắc đến bạn bằng @, bạn sẽ thấy thông báo tại đây
-                    </p>
+                     <h3 className="font-semibold mb-2">{comm.noMentions}</h3>
+                     <p className="text-muted-foreground text-sm text-center max-w-xs">
+                       {comm.noMentionsDesc}
+                     </p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -1068,7 +1071,7 @@ export default function Communication() {
                                 </span>
                                 {!mention.is_read && (
                                   <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0">
-                                    Mới
+                                    {comm.newBadge}
                                   </Badge>
                                 )}
                               </div>

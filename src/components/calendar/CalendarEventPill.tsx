@@ -2,8 +2,9 @@ import { CalendarEvent } from '@/types/calendar';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { vi as viLocale } from 'date-fns/locale';
 import { AlertTriangle, CheckCircle2, Circle, Loader2 } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface CalendarEventPillProps {
   event: CalendarEvent;
@@ -12,6 +13,10 @@ interface CalendarEventPillProps {
 }
 
 export default function CalendarEventPill({ event, compact = false, onEventClick }: CalendarEventPillProps) {
+  const { locale, translations: { app: t } } = useLanguage();
+  const cal = t.calendar;
+  const dateLocale = locale === 'vi' ? viLocale : undefined;
+
   const isOverdue = event.type === 'task' && event.taskStatus !== 'DONE' && event.taskStatus !== 'VERIFIED' && event.date < new Date();
   const isDone = event.type === 'task' && (event.taskStatus === 'DONE' || event.taskStatus === 'VERIFIED');
   const isInProgress = event.type === 'task' && event.taskStatus === 'IN_PROGRESS';
@@ -78,19 +83,19 @@ export default function CalendarEventPill({ event, compact = false, onEventClick
       <TooltipContent side="top" className="max-w-[250px]">
         <p className="font-semibold">{event.title}</p>
         {event.type === 'task' && event.projectName && (
-          <p className="text-xs text-muted-foreground">📁 Dự án: {event.projectName}</p>
+          <p className="text-xs text-muted-foreground">📁 {cal.project}: {event.projectName}</p>
         )}
         <p className="text-xs text-muted-foreground">
-          🕐 {format(event.date, "HH:mm dd/MM/yyyy", { locale: vi })}
+          🕐 {format(event.date, "HH:mm dd/MM/yyyy", { locale: dateLocale })}
         </p>
         {event.type === 'task' && isOverdue && (
-          <p className="text-xs text-destructive font-medium">⚠ Quá hạn</p>
+          <p className="text-xs text-destructive font-medium">⚠ {cal.overdue}</p>
         )}
         {event.type === 'task' && isDone && (
-          <p className="text-xs text-green-600 font-medium">✅ Hoàn thành</p>
+          <p className="text-xs text-green-600 font-medium">✅ {cal.completed}</p>
         )}
         {event.type === 'task' && isInProgress && (
-          <p className="text-xs text-amber-600 font-medium">⏳ Đang thực hiện</p>
+          <p className="text-xs text-amber-600 font-medium">⏳ {cal.inProgress}</p>
         )}
         {event.description && (
           <p className="text-xs mt-1">{event.description}</p>
