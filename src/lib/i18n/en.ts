@@ -687,6 +687,7 @@ export const en = {
       notifications: 'Notifications',
       lightMode: 'Light mode',
       darkMode: 'Dark mode',
+      servicePlan: 'Service Plan',
     },
     dashboard: {
       joinedFrom: 'Joined',

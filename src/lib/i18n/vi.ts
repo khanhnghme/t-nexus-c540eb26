@@ -675,6 +675,7 @@ export const vi: Translations = {
       notifications: 'Thông báo',
       lightMode: 'Chế độ sáng',
       darkMode: 'Chế độ tối',
+      servicePlan: 'Gói dịch vụ',
     },
     dashboard: {
       joinedFrom: 'Tham gia từ',

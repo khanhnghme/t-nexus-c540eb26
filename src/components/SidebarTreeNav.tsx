@@ -160,7 +160,7 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
           <TreeItemCollapsed key={item.href} icon={item.icon} label={item.name} href={item.href} active={isPathActive(item.href)} />
         ))}
         <TreeItemCollapsed icon={UserCircle} label={t?.account || 'Account'} href="/personal-info" active={isPathActive('/personal-info') || isPathActive('/account-settings')} />
-        <TreeItemCollapsed icon={CreditCard} label={t?.servicePlan || 'Gói dịch vụ'} href="/service-plan" active={isPathActive('/service-plan')} />
+        <TreeItemCollapsed icon={CreditCard} label={t?.servicePlan || 'Service Plan'} href="/service-plan" active={isPathActive('/service-plan')} />
 
         {/* Admin */}
         {isAdmin && adminItems.map(item => (
@@ -299,7 +299,7 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
             className={cn('sidebar-nav-item', isPathActive('/service-plan') && 'active')}
           >
             <CreditCard className="nav-icon" strokeWidth={1.8} />
-            <span className="nav-label">{t?.servicePlan || 'Gói dịch vụ'}</span>
+            <span className="nav-label">{t?.servicePlan || 'Service Plan'}</span>
           </Link>
         </>
       )}
