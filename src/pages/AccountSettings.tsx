@@ -191,7 +191,7 @@ export default function AccountSettings() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
+        <h1 className="text-2xl font-heading font-bold tracking-tight flex items-center gap-2">
           <Settings className="w-6 h-6 text-primary" />
           {isVi ? 'Cài đặt' : 'Settings'}
         </h1>

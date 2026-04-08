@@ -704,7 +704,7 @@ export default function Dashboard() {
                 </div>
                 <div className="relative z-10 text-center space-y-4">
                   <img src={invitationIllustration} alt={t?.invitationIllustrationAlt || 'Join invitation'} className="w-40 h-40 object-contain mx-auto drop-shadow-2xl" />
-                   <h2 className="text-2xl font-bold">{t?.invitationTitle || 'Invitations'}</h2>
+                   <h2 className="text-lg font-heading font-semibold">{t?.invitationTitle || 'Invitations'}</h2>
                    <p className="text-sm opacity-80 leading-relaxed">
                      {t?.invitationDesc || 'List of Project and Workspace invitations you have received.'}
                    </p>
@@ -943,7 +943,7 @@ export default function Dashboard() {
           <CardHeader className="pb-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <CardTitle className="text-xl font-heading">{t?.myProjects || 'My Projects'}</CardTitle>
+                <CardTitle className="text-lg font-heading font-semibold">{t?.myProjects || 'My Projects'}</CardTitle>
                 <CardDescription>{t?.projectsYouJoined || 'Projects you are participating in'}</CardDescription>
               </div>
               <div className="flex items-center gap-2">

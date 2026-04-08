@@ -280,7 +280,7 @@ export default function AdminSystem() {
           <div className="flex items-center gap-3">
             <Shield className="w-7 h-7 text-foreground" />
             <div>
-              <h1 className="text-2xl font-bold">Quản trị hệ thống</h1>
+              <h1 className="text-2xl font-heading font-bold tracking-tight">Quản trị hệ thống</h1>
               <p className="text-muted-foreground text-sm">Các chức năng quản trị đặc biệt dành cho Admin chính</p>
             </div>
           </div>

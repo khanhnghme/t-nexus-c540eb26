@@ -114,7 +114,7 @@ export default function ServicePlan() {
             <ArrowLeft size={14} />
             <span>Quay lại</span>
           </button>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl font-heading font-bold tracking-tight flex items-center gap-2">
             <Zap className="w-6 h-6 text-amber-500" />
             Gói dịch vụ
           </h1>
@@ -160,11 +160,11 @@ export default function ServicePlan() {
               </p>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold tabular-nums">{wsUsages.length}</div>
+              <div className="text-xl font-bold tabular-nums">{wsUsages.length}</div>
               <div className="text-xs text-muted-foreground">Workspace sở hữu</div>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold tabular-nums">{totalProjects}</div>
+              <div className="text-xl font-bold tabular-nums">{totalProjects}</div>
               <div className="text-xs text-muted-foreground">Tổng project</div>
             </div>
           </div>

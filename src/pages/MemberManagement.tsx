@@ -836,7 +836,7 @@ export default function MemberManagement() {
         <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-heading font-bold">Thành viên hệ thống</h1>
+              <h1 className="text-2xl font-heading font-bold tracking-tight">Thành viên hệ thống</h1>
               <p className="text-muted-foreground">
                 Quản lý tài khoản thành viên trong hệ thống. Thêm thành viên vào project tại trang chi tiết project.
               </p>
