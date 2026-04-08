@@ -446,7 +446,7 @@ export default function AdminUsers() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-primary" />
-                Thành viên theo nhóm
+                {t.membersByGroup}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -455,7 +455,7 @@ export default function AdminUsers() {
                   <Loader2 className="w-6 h-6 animate-spin text-primary" />
                 </div>
               ) : members.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Chưa có thành viên nào trong các nhóm bạn quản lý.</p>
+                <p className="text-sm text-muted-foreground">{t.noMembers}</p>
               ) : (
                 <ScrollArea className="max-h-[480px] pr-3">
                   <div className="space-y-3">
@@ -478,7 +478,7 @@ export default function AdminUsers() {
                             <div>
                               <div className="flex items-center gap-2">
                                 <p className="font-medium">
-                                  {m.fullName || 'Không rõ tên'}
+                                  {m.fullName || t.unknownName}
                                 </p>
                                 <Badge variant="outline" className="text-[11px]">
                                   {m.role === 'project_owner'
@@ -494,7 +494,7 @@ export default function AdminUsers() {
                                 {m.email}
                               </p>
                               <p className="text-xs text-muted-foreground mt-0.5">
-                                Nhóm: <span className="font-medium">{m.groupName}</span>
+                                {t.group} <span className="font-medium">{m.groupName}</span>
                               </p>
                             </div>
                           </div>
@@ -504,9 +504,9 @@ export default function AdminUsers() {
                                 size="sm"
                                 variant="ghost"
                                 className="text-xs"
-                                onClick={(e) => { e.stopPropagation(); openPasswordDialog(m.userId, m.fullName || 'Không rõ tên'); }}
+                                onClick={(e) => { e.stopPropagation(); openPasswordDialog(m.userId, m.fullName || t.unknownName); }}
                               >
-                                <KeyRound className="w-4 h-4 mr-1" /> Mật khẩu
+                                <KeyRound className="w-4 h-4 mr-1" /> {t.password}
                               </Button>
                             )}
                             <Button
@@ -514,16 +514,16 @@ export default function AdminUsers() {
                               variant="ghost"
                               className="text-xs"
                               onClick={(e) => { e.stopPropagation(); handleViewProfile(m.userId); }}
-                            >
-                              <Eye className="w-4 h-4 mr-1" /> Xem hồ sơ
+                              >
+                                <Eye className="w-4 h-4 mr-1" /> {t.viewProfile}
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
                               className="text-xs"
                               onClick={(e) => { e.stopPropagation(); handleRemoveMember(m.id); }}
-                            >
-                              <UserMinus className="w-4 h-4 mr-1" /> Xoá khỏi nhóm
+                              >
+                                <UserMinus className="w-4 h-4 mr-1" /> {t.removeFromGroup}
                             </Button>
                           </div>
                         </div>
