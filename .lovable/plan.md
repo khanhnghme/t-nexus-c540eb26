@@ -1,82 +1,75 @@
 
 
-## Triển khai hoàn thiện chế độ Read-only
+## Fix Read-only Banner + Redesign trang Tổng quan Workspace
 
-### Hiện trạng
+### Vấn đề hiện tại
 
-**Đã có:**
-- Hook `useAccountReadOnly` + `useAccountLimitsCheck` — phát hiện trạng thái read-only
-- Banner `ReadOnlyBanner` — hiển thị trên DashboardLayout
-- Hook `useReadOnlyGuard` — guardAction() hiển thị toast + block
-- DB trigger `track_plan_downgrade` — tự động ghi `downgraded_at`
-- Edge function `check-grace-period` — hard delete ngày thứ 31
+**1. ReadOnlyBanner trên trang chủ quá to:**
+- Banner chiếm nhiều dòng, có tiêu đề + mô tả dài + 2 nút bấm
+- Yêu cầu: chỉ hiển thị 1 dòng nhỏ gọn trên trang chủ (dashboard), các vị trí khác giữ nguyên
 
-**Đã guard (4 chỗ):**
-- `Groups.tsx` — tạo project
-- `GroupDetail.tsx` — tạo stage, tạo task
-- `MemberManagementCard.tsx` — mời thành viên
-- `TaskNotes.tsx` — upload file đính kèm
+**2. WorkspaceSettings hiển thị sai/gây nhầm lẫn:**
+- Stats cards đọc từ `activeWorkspace.max_members`, `activeWorkspace.max_projects`, `activeWorkspace.max_storage_mb` — đây là giá trị **per-workspace** cũ (legacy), không phải account-wide limits thật
+- `storageUsed = 0` — hardcode placeholder, không query dữ liệu thật
+- Plan tab hiển thị `activeWorkspace.plan` (plan từ bảng workspaces) thay vì owner's plan từ profiles
+- BillingWidget hiển thị thông tin account-wide ngay trên workspace page → trùng lặp với Stats cards nhưng số liệu khác nhau → nhầm lẫn
 
-### Còn thiếu guard (12+ chỗ)
-
-| Component | Hành động cần guard |
-|-----------|-------------------|
-| `TaskEditDialog.tsx` | Chỉnh sửa task (save changes) |
-| `StageEditDialog.tsx` | Chỉnh sửa stage |
-| `CreateMeetingDialog.tsx` | Tạo cuộc họp |
-| `GroupInfoCard.tsx` | Chỉnh sửa thông tin project + upload ảnh |
-| `ResourceUploadDialog.tsx` | Upload tài liệu dự án |
-| `ProjectGuestInviteDialog.tsx` | Mời guest vào project |
-| `ShareSettingsCard.tsx` | Chỉnh sửa cài đặt chia sẻ |
-| `CreateWorkspace.tsx` | Tạo workspace mới |
-| `WorkspaceSettings.tsx` | Chỉnh sửa workspace |
-| `TaskComments.tsx` | Gửi comment |
-| `KanbanBoard.tsx` | Kéo thả task (thay đổi status) |
-| `MultiFileUploadSubmission.tsx` | Upload bài nộp |
-| `StageManagement.tsx` | Quản lý stage (xóa/sắp xếp) |
-| `scores/TaskScoringDialog.tsx` | Chấm điểm |
-| `MemberManagementCard.tsx` | Approve/reject request, change role, bulk actions (chưa guard hết) |
-| `ProjectActivityLog.tsx` | Xóa log (là hành động delete — cho phép theo chính sách) |
+---
 
 ### Kế hoạch
 
-#### Bước 1: Thêm `guardReadOnly()` vào tất cả mutation handlers
-Với mỗi component ở trên:
-1. Import `useReadOnlyGuard` 
-2. Gọi `guardAction: guardReadOnly` 
-3. Thêm `if (guardReadOnly()) return;` ở đầu mỗi handler tạo/sửa
+#### Bước 1: Compact ReadOnlyBanner cho Dashboard
+**File:** `src/components/ReadOnlyBanner.tsx`
 
-**Lưu ý chính sách**: Hành động **xóa** (delete) vẫn được phép khi read-only (để dọn dẹp). Chỉ block **tạo mới** và **chỉnh sửa**.
+- Thêm prop `compact?: boolean`
+- Khi `compact=true`: render 1 dòng duy nhất, inline, nhỏ gọn:
+  - `⚠️ Tài khoản chỉ đọc — Nâng cấp | Dọn dẹp` (link inline, không nút)
+  - Chiều cao ~32px, font-size text-xs
+- Khi `compact=false` (mặc định): giữ nguyên banner đầy đủ hiện tại
 
-#### Bước 2: Guard thêm các hành động trong MemberManagementCard
-Các action approve request, change role, bulk role change hiện chưa có guard — cần thêm.
+**File:** `src/components/layout/DashboardLayout.tsx`
+- Truyền `<ReadOnlyBanner compact />` ở vị trí hiện tại
 
-#### Bước 3: Disable UI buttons khi read-only
-Ngoài toast block, nên disable visual các nút "Tạo", "Lưu", "Gửi" khi `isReadOnly = true` để UX rõ ràng hơn — sử dụng `isReadOnly` từ hook.
+#### Bước 2: Redesign WorkspaceSettings — hiển thị đúng mô hình Global Pool
+**File:** `src/pages/WorkspaceSettings.tsx`
+
+Thay đổi chính:
+
+**Stats Cards (4 thẻ):**
+- **Thành viên**: hiển thị `memberCount` thực tế của WS này (không kèm limit — vì limit là account-wide)
+- **Dự án**: hiển thị `projectCount` thực tế của WS này
+- **Dung lượng**: query `get_workspace_storage_usage` RPC để lấy storage thật, thay `storageUsed = 0`
+- **Gói dịch vụ**: lấy owner's plan từ `useWorkspaceBilling()` thay vì `activeWorkspace.plan`
+
+Subtitle của mỗi stat card → hiển thị "đóng góp vào tổng" thay vì "Tối đa {n}" sai:
+- VD: "3 / 15 tổng tài khoản" thay vì "Tối đa 5"
+
+**Plan Tab:**
+- Hiển thị owner's plan (từ `useWorkspaceBilling`) thay vì `activeWorkspace.plan`
+- Plan details sử dụng account-wide limits từ `plan_limits` (thông qua `useWorkspaceBilling` hoặc fetch trực tiếp)
+
+**Bỏ BillingWidget** khỏi trang này — thông tin đã được tích hợp vào Stats cards và Plan tab, tránh trùng lặp gây nhầm lẫn.
+
+#### Bước 3: Cập nhật i18n
+**Files:** `src/lib/i18n/vi.ts`, `src/lib/i18n/en.ts`
+
+- Thêm keys mới cho workspace stats: `ofAccountTotal`, `wsContribution`
+- Sửa `maxMembers`, `maxProjects` subtitle thành "of {total} account-wide"
+
+---
 
 ### Files cần sửa
 
 | File | Hành động |
 |------|-----------|
-| `src/components/TaskEditDialog.tsx` | Guard handleSave |
-| `src/components/StageEditDialog.tsx` | Guard handleSave |
-| `src/components/CreateMeetingDialog.tsx` | Guard handleCreate |
-| `src/components/GroupInfoCard.tsx` | Guard handleSave + upload |
-| `src/components/ResourceUploadDialog.tsx` | Guard handleSubmitAll |
-| `src/components/ProjectGuestInviteDialog.tsx` | Guard handleInviteGuest |
-| `src/components/ShareSettingsCard.tsx` | Guard save actions |
-| `src/pages/CreateWorkspace.tsx` | Guard handleSubmit |
-| `src/pages/WorkspaceSettings.tsx` | Guard handleSave + handleDelete → cho phép delete |
-| `src/components/communication/TaskComments.tsx` | Guard handleSendComment |
-| `src/components/KanbanBoard.tsx` | Guard drag-drop status change |
-| `src/components/MultiFileUploadSubmission.tsx` | Guard upload |
-| `src/components/StageManagement.tsx` | Guard tạo/sửa (cho phép xóa) |
-| `src/components/scores/TaskScoringDialog.tsx` | Guard handleSaveScore |
-| `src/components/MemberManagementCard.tsx` | Guard thêm approve/reject/role change |
+| `src/components/ReadOnlyBanner.tsx` | Thêm mode compact |
+| `src/components/layout/DashboardLayout.tsx` | Truyền `compact` prop |
+| `src/pages/WorkspaceSettings.tsx` | Redesign stats, plan tab, bỏ BillingWidget, dùng dữ liệu thật |
+| `src/lib/i18n/vi.ts` | Cập nhật keys workspace |
+| `src/lib/i18n/en.ts` | Cập nhật keys workspace |
 
 ### Không thay đổi
-- `useAccountReadOnly.ts`, `ReadOnlyGuard.tsx`, `ReadOnlyBanner.tsx` — đã đúng
-- DB trigger `track_plan_downgrade` — đã đúng
-- Edge function `check-grace-period` — đã đúng
-- Hành động **xóa** — vẫn cho phép (theo chính sách dọn dẹp)
+- `useAccountReadOnly`, `useAccountLimitsCheck`, `useWorkspaceBilling` — logic đã đúng
+- ReadOnlyBanner ở các vị trí khác (nếu mở rộng sau) — giữ nguyên dạng đầy đủ
+- Enforcement guards — đã hoàn thiện
 
