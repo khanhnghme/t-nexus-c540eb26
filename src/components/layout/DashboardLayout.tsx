@@ -212,18 +212,9 @@ export default function DashboardLayout({
           sidebarCollapsed && 'sidebar-collapsed',
           isMobileOpen && 'mobile-sidebar-open'
         )}>
-          {/* Cell 1: Top-left — Logo */}
+          {/* Cell 1: Top-left — Workspace Switcher */}
           <div className="grid-cell-logo">
-            <Link to="/dashboard" className="flex items-center gap-2 min-w-0">
-              <img src={tNexusLogo} alt="T-Nexus" className="h-7 w-7 shrink-0" />
-              <span className="sidebar-logo-text whitespace-nowrap overflow-hidden">
-                <img
-                  src={tNexusTextWhite}
-                  alt="T-Nexus"
-                  className="h-[15px] w-auto max-w-full"
-                />
-              </span>
-            </Link>
+            <WorkspaceSwitcherCell collapsed={sidebarCollapsed} />
 
             {/* Desktop toggle */}
             <button
