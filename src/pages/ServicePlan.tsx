@@ -155,8 +155,10 @@ export default function ServicePlan() {
       });
 
       const memberCountMap: Record<string, number> = {};
+      const uniqueMemberIds = new Set<string>();
       (membersRes.data || []).forEach(m => {
         if (m.workspace_id) memberCountMap[m.workspace_id] = (memberCountMap[m.workspace_id] || 0) + 1;
+        if (m.user_id) uniqueMemberIds.add(m.user_id);
       });
 
       const limits = limitsRes.data;
