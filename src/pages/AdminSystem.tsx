@@ -455,7 +455,7 @@ export default function AdminSystem() {
                         </div>
                         <div>
                           <CardTitle className="text-base flex items-center gap-2">
-                            Ghi lỗi hệ thống
+                            {t.errorLogging}
                             <Badge variant={errorLoggingEnabled ? 'default' : 'outline'} className="text-[10px] px-1.5 py-0">
                               {errorLoggingEnabled ? 'BẬT' : 'TẮT'}
                             </Badge>
@@ -478,7 +478,7 @@ export default function AdminSystem() {
                               }, { onConflict: 'key' });
                             if (error) throw error;
                             setErrorLoggingEnabled(checked);
-                            toast({ title: checked ? 'Đã bật ghi lỗi' : 'Đã tắt ghi lỗi' });
+                            toast({ title: checked ? '{t.errorLoggingOnToast}' : '{t.errorLoggingOffToast}' });
                           } catch {
                             toast({ title: 'Lỗi', variant: 'destructive' });
                           } finally {
@@ -491,8 +491,8 @@ export default function AdminSystem() {
                   <CardContent className="pt-0">
                     <p className="text-xs text-muted-foreground">
                       {errorLoggingEnabled
-                        ? 'Tự động ghi lại các lỗi runtime, promise rejection và console error.'
-                        : 'Không ghi lỗi — lỗi chỉ hiện trong console trình duyệt.'}
+                        ? '{t.errorLoggingOnDesc}'
+                        : '{t.errorLoggingOffDesc}'}
                     </p>
                   </CardContent>
                 </Card>
@@ -507,7 +507,7 @@ export default function AdminSystem() {
                         </div>
                         <div>
                           <CardTitle className="text-base flex items-center gap-2">
-                            Xác thực email khi đăng ký
+                            {t.emailVerification}
                             <Badge variant={emailVerificationEnabled ? 'default' : 'outline'} className="text-[10px] px-1.5 py-0">
                               {emailVerificationEnabled ? 'BẬT' : 'TẮT'}
                             </Badge>
@@ -531,7 +531,7 @@ export default function AdminSystem() {
                             if (error) throw error;
                             setEmailVerificationEnabled(checked);
                             toast({
-                              title: checked ? 'Đã bật xác thực email' : 'Đã tắt xác thực email',
+                              title: checked ? '{t.emailVerifOnToast}' : '{t.emailVerifOffToast}',
                               description: checked
                                 ? 'Người đăng ký mới phải xác thực email trước khi hoàn tất.'
                                 : 'Tài khoản được tạo ngay mà không cần xác thực email.',
