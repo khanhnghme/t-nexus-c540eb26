@@ -46,6 +46,7 @@ import {
 import type { Group, GroupMember } from '@/types/database';
 import UserAvatar from '@/components/UserAvatar';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 
 interface MemberAvatar {
   avatar_url: string | null;
@@ -75,6 +76,7 @@ export default function Groups() {
   // Permission: workspace_owner, workspace_admin, or system_admin can create projects
   const canCreateProject = isSystemAdmin || workspaceRole === 'workspace_owner' || workspaceRole === 'workspace_admin';
   const { toast } = useToast();
+  const { guardAction: guardReadOnly } = useReadOnlyGuard();
   const [groups, setGroups] = useState<GroupWithMembers[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -258,6 +260,7 @@ export default function Groups() {
   };
 
   const handleCreateGroup = async () => {
+    if (guardReadOnly()) return;
     if (!newGroupName.trim()) {
       toast({
         title: 'Lỗi',

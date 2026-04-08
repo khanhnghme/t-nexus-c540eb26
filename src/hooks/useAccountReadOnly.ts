@@ -17,14 +17,14 @@ export function useAccountReadOnly() {
   const isReadOnly = isFree && !limits.isLoading && limits.isOverLimits;
 
   // Grace period: check if downgraded_at exists and calculate days remaining
-  const downgradadedAt = (profile as any)?.downgraded_at 
-    ? new Date((profile as any).downgraded_at) 
+  const downgradedAt = profile?.downgraded_at 
+    ? new Date(profile.downgraded_at) 
     : null;
   
   let graceDaysRemaining: number | null = null;
-  if (downgradadedAt && isReadOnly) {
+  if (downgradedAt && isReadOnly) {
     const daysSinceDowngrade = Math.floor(
-      (Date.now() - downgradadedAt.getTime()) / (1000 * 60 * 60 * 24)
+      (Date.now() - downgradedAt.getTime()) / (1000 * 60 * 60 * 24)
     );
     graceDaysRemaining = Math.max(0, 30 - daysSinceDowngrade);
   }
@@ -33,7 +33,7 @@ export function useAccountReadOnly() {
     isReadOnly,
     isLoading: limits.isLoading,
     graceDaysRemaining,
-    downgradadedAt,
+    downgradedAt,
     // Expose usage details for the banner
     workspaceCount: limits.workspaceCount,
     maxWorkspaces: limits.maxWorkspaces,

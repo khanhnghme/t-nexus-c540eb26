@@ -12,6 +12,7 @@ import TaskEditDialog from '@/components/TaskEditDialog';
 import StageEditDialog from '@/components/StageEditDialog';
 import ProjectActivityLog from '@/components/ProjectActivityLog';
 import ShareSettingsCard from '@/components/ShareSettingsCard';
+import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -67,6 +68,7 @@ export default function GroupDetail() {
   const routeId = projectSlug || projectId || groupId;
   const { user, isAdmin, profile } = useAuth();
   const { toast } = useToast();
+  const { guardAction: guardReadOnly } = useReadOnlyGuard();
   const { currentTab, setCurrentTab, goBack, goNext, canGoBack, canGoNext, isFirstTab, isLastTab } = useNavigation();
 
   const { setProjectInfo, setProjectNavProps } = useDashboardLayoutContext();
@@ -244,6 +246,7 @@ export default function GroupDetail() {
   };
 
   const handleCreateStage = async () => {
+    if (guardReadOnly()) return;
     if (!newStageName.trim() || !group) return;
     setIsCreatingStage(true);
     try {
@@ -268,6 +271,7 @@ export default function GroupDetail() {
   };
 
   const handleCreateTask = async () => {
+    if (guardReadOnly()) return;
     if (!newTaskTitle.trim() || (stages.length > 0 && !newTaskStageId)) return;
     setIsCreatingTask(true);
     try {
