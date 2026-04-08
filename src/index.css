@@ -1526,6 +1526,7 @@ html.no-animations [data-state="active"][role="tabpanel"] {
   border-right: 1px solid var(--_sb-border-strong);
   border-bottom: 1px solid var(--_sb-border-strong);
   overflow: hidden;
+  z-index: 3;
 }
 
 .dashboard-grid.sidebar-collapsed .grid-cell-logo {
@@ -1555,8 +1556,10 @@ html.no-animations [data-state="active"][role="tabpanel"] {
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
+  position: relative;
   background: hsl(var(--background));
   border-bottom: 1px solid var(--_sb-border-strong);
+  z-index: 3;
 }
 
 .dark .grid-cell-topbar {
@@ -1569,10 +1572,12 @@ html.no-animations [data-state="active"][role="tabpanel"] {
   grid-column: 1;
   display: flex;
   flex-direction: column;
+  position: relative;
   background: var(--_sb-bg);
   backdrop-filter: blur(16px) saturate(1.6);
   border-right: 1px solid var(--_sb-border-strong);
   overflow: hidden;
+  z-index: 3;
 }
 
 /* ── Cell 4: Bottom-right (Content) ── */
