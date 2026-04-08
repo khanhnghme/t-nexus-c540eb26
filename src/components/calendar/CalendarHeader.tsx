@@ -2,7 +2,8 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Plus, Building2 } from 'lucide-react';
 import { CalendarViewMode } from '@/types/calendar';
 import { format, isSameMonth } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { vi as viLocale } from 'date-fns/locale';
+import { useLanguage } from '@/contexts/LanguageContext';
 import {
   Select,
   SelectContent,
@@ -41,16 +42,20 @@ export default function CalendarHeader({
   wsFilter = 'all',
   onWsFilterChange,
 }: CalendarHeaderProps) {
+  const { locale, translations: { app: t } } = useLanguage();
+  const cal = t.calendar;
   const isCurrentMonth = isSameMonth(currentDate, new Date());
+  const dateLocale = locale === 'vi' ? viLocale : undefined;
 
   const getTitle = () => {
     if (viewMode === 'month') {
-      return format(currentDate, "MMMM, yyyy", { locale: vi });
+      return format(currentDate, "MMMM, yyyy", { locale: dateLocale });
     }
     if (viewMode === 'week') {
-      return `Tuần ${format(currentDate, "w", { locale: vi })} - ${format(currentDate, "MMMM yyyy", { locale: vi })}`;
+      const weekLabel = locale === 'vi' ? 'Tuần' : 'Week';
+      return `${weekLabel} ${format(currentDate, "w", { locale: dateLocale })} - ${format(currentDate, "MMMM yyyy", { locale: dateLocale })}`;
     }
-    return format(currentDate, "EEEE, dd MMMM yyyy", { locale: vi });
+    return format(currentDate, "EEEE, dd MMMM yyyy", { locale: dateLocale });
   };
 
   return (
@@ -71,7 +76,7 @@ export default function CalendarHeader({
           onClick={onToday}
           className={`ml-1 h-7 text-xs ${!isCurrentMonth ? 'bg-accent text-accent-foreground hover:bg-accent/90' : ''}`}
         >
-          Hôm nay
+          {cal.today}
         </Button>
       </div>
 
@@ -83,7 +88,7 @@ export default function CalendarHeader({
               <SelectValue placeholder="Workspace" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tất cả Workspace</SelectItem>
+              <SelectItem value="all">{cal.allWorkspaces}</SelectItem>
               {workspaces.map(ws => (
                 <SelectItem key={ws.id} value={ws.id}>{ws.name}</SelectItem>
               ))}
@@ -92,7 +97,7 @@ export default function CalendarHeader({
         )}
         <Button size="sm" onClick={onAddEvent} className="h-7 gap-1.5 text-xs bg-accent text-accent-foreground hover:bg-accent/90 shadow-sm">
           <Plus className="h-3.5 w-3.5" />
-          Tạo sự kiện
+          {cal.createEvent}
         </Button>
         <div className="flex rounded-md border border-input overflow-hidden">
           {(['month', 'week', 'day'] as CalendarViewMode[]).map((mode) => (
@@ -105,7 +110,7 @@ export default function CalendarHeader({
                   : 'bg-background text-muted-foreground hover:bg-accent/20'
               }`}
             >
-              {mode === 'month' ? 'Tháng' : mode === 'week' ? 'Tuần' : 'Ngày'}
+              {mode === 'month' ? cal.month : mode === 'week' ? cal.week : cal.day}
             </button>
           ))}
         </div>

@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { fixStorageUrl } from '@/lib/urlUtils';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,7 +48,6 @@ import type { Group, GroupMember } from '@/types/database';
 import UserAvatar from '@/components/UserAvatar';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
-
 interface MemberAvatar {
   avatar_url: string | null;
   full_name: string;
@@ -72,6 +72,9 @@ interface MemberToAdd {
 export default function Groups() {
   const { user, isSystemAdmin, profile } = useAuth();
   const { activeWorkspace, isAvailable: wsAvailable, workspaceRole } = useWorkspace();
+  const { translations: { app: t } } = useLanguage();
+  const g = t.groups;
+  const tc = t.common;
 
   // Permission: workspace_owner, workspace_admin, or system_admin can create projects
   const canCreateProject = isSystemAdmin || workspaceRole === 'workspace_owner' || workspaceRole === 'workspace_admin';
@@ -237,7 +240,7 @@ export default function Groups() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      toast({ title: 'Lỗi', description: 'Ảnh không được vượt quá 5MB', variant: 'destructive' });
+      toast({ title: g.errorTitle, description: g.imageTooBig, variant: 'destructive' });
       return;
     }
     setGroupImage(file);
@@ -263,8 +266,8 @@ export default function Groups() {
     if (guardReadOnly()) return;
     if (!newGroupName.trim()) {
       toast({
-        title: 'Lỗi',
-        description: 'Vui lòng nhập tên dự án',
+        title: g.errorTitle,
+        description: g.enterProjectName,
         variant: 'destructive',
       });
       return;
@@ -297,8 +300,8 @@ export default function Groups() {
 
         if (maxProjects !== null && totalProjects >= maxProjects) {
           toast({
-            title: 'Đã đạt giới hạn',
-            description: `Tài khoản đã đạt giới hạn ${maxProjects} dự án cho gói ${ownerPlan.replace('plan_', '').toUpperCase()}. Vui lòng nâng cấp hoặc xóa bớt dự án.`,
+            title: g.limitReached,
+            description: g.limitReachedDesc.replace('{n}', String(maxProjects)).replace('{plan}', ownerPlan.replace('plan_', '').toUpperCase()),
             variant: 'destructive',
           });
           return;
@@ -373,16 +376,18 @@ export default function Groups() {
           await supabase.from('notifications').insert({
             user_id: m.id,
             type: 'project_invited',
-            title: '📩 Lời mời tham gia project',
-            message: `${profile?.full_name || 'Leader'} đã mời bạn tham gia project "${newGroup.name}"`,
+            title: g.inviteTitle,
+            message: g.inviteMsg.replace('{leader}', profile?.full_name || 'Leader').replace('{project}', newGroup.name),
             group_id: newGroup.id,
           });
         }
       }
 
       toast({
-        title: 'Thành công',
-        description: `Đã tạo dự án "${newGroup.name}"${selectedMembers.length > 0 ? ` và gửi lời mời cho ${selectedMembers.length} thành viên` : ''}`,
+        title: g.successTitle,
+        description: selectedMembers.length > 0
+          ? g.createdWithInvites.replace('{name}', newGroup.name).replace('{n}', String(selectedMembers.length))
+          : g.createdProject.replace('{name}', newGroup.name),
       });
 
       setIsDialogOpen(false);
@@ -390,8 +395,8 @@ export default function Groups() {
       fetchGroups();
     } catch (error: any) {
       toast({
-        title: 'Lỗi',
-        description: error.message || 'Không thể tạo dự án',
+        title: g.errorTitle,
+        description: error.message || g.cannotCreate,
         variant: 'destructive',
       });
     } finally {
@@ -428,9 +433,9 @@ export default function Groups() {
         {/* Header */}
         <div className="space-y-4">
           <div>
-            <h1 className="text-2xl font-heading font-bold tracking-tight">Dự án của tôi</h1>
+            <h1 className="text-2xl font-heading font-bold tracking-tight">{g.title}</h1>
             <p className="text-muted-foreground mt-1">
-              Quản lý các dự án bạn tham gia
+              {g.subtitle}
             </p>
           </div>
 
@@ -456,13 +461,13 @@ export default function Groups() {
                     <Plus className="w-7 h-7" />
                   </div>
                   <div className="flex-1">
-                    <p className={`font-bold text-lg ${canCreateProject ? 'text-foreground' : 'text-muted-foreground'}`}>
-                      {canCreateProject ? 'Tạo dự án mới' : 'Tạo dự án mới — Bạn không có quyền tạo'}
+                  <p className={`font-bold text-lg ${canCreateProject ? 'text-foreground' : 'text-muted-foreground'}`}>
+                      {canCreateProject ? g.createNew : g.createNewNoPermission}
                     </p>
                     <p className="text-sm text-muted-foreground mt-0.5">
                       {canCreateProject
-                        ? 'Thiết lập project, thêm thành viên và bắt đầu quản lý công việc'
-                        : 'Chỉ Workspace Owner hoặc Admin mới được tạo dự án'}
+                        ? g.createDesc
+                        : g.noPermissionDesc}
                     </p>
                   </div>
                   {canCreateProject && (
@@ -484,7 +489,7 @@ export default function Groups() {
                     <div>
                       <h2 className="text-xl font-bold flex items-center gap-2">
                         <FolderKanban className="w-5 h-5 text-primary" />
-                        Tạo dự án mới
+                        {g.createDialogTitle}
                       </h2>
                       {wsAvailable && activeWorkspace ? (
                         <div className="flex items-center gap-1.5 mt-1">
@@ -492,12 +497,12 @@ export default function Groups() {
                             {activeWorkspace.name.charAt(0).toUpperCase()}
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            Dự án sẽ được tạo trong workspace <span className="font-semibold text-foreground">{activeWorkspace.name}</span>
+                            {g.willCreateIn} <span className="font-semibold text-foreground">{activeWorkspace.name}</span>
                           </p>
                         </div>
                       ) : (
                         <p className="text-sm text-muted-foreground mt-0.5">
-                          Điền thông tin dự án và thêm thành viên (tùy chọn)
+                          {g.fillInfo}
                         </p>
                       )}
                     </div>
@@ -513,17 +518,17 @@ export default function Groups() {
                       <div className="lg:col-span-3 p-6 space-y-5">
                         <div className="flex items-center gap-2 text-sm font-semibold text-primary uppercase tracking-wide">
                           <FileText className="w-4 h-4" />
-                          Thông tin dự án
+                          {g.projectInfo}
                         </div>
 
                         <div className="flex gap-3 items-end">
                           <div className="flex-1 space-y-2">
                             <Label htmlFor="group-name" className="flex items-center gap-1">
-                              Tên dự án <span className="text-destructive">*</span>
+                              {g.projectName} <span className="text-destructive">*</span>
                             </Label>
                             <Input
                               id="group-name"
-                              placeholder="VD: Đồ án môn học CNTT"
+                              placeholder={g.projectNamePlaceholder}
                               value={newGroupName}
                               onChange={(e) => setNewGroupName(e.target.value)}
                               className="text-base"
@@ -554,7 +559,7 @@ export default function Groups() {
                                 </button>
                               </div>
                             ) : (
-                              <div className="w-9 h-9 rounded-md border border-dashed border-muted-foreground/40 hover:border-primary/60 transition-colors flex items-center justify-center text-muted-foreground hover:text-primary" title="Tải ảnh bìa">
+                              <div className="w-9 h-9 rounded-md border border-dashed border-muted-foreground/40 hover:border-primary/60 transition-colors flex items-center justify-center text-muted-foreground hover:text-primary" title={g.coverImage}>
                                 <ImagePlus className="w-4 h-4" />
                               </div>
                             )}
@@ -564,11 +569,11 @@ export default function Groups() {
                         <div className="space-y-2">
                           <Label htmlFor="group-description" className="flex items-center gap-1">
                             <Target className="w-3.5 h-3.5" />
-                            Mô tả / Mục tiêu
+                            {g.descriptionGoal}
                           </Label>
                           <Textarea
                             id="group-description"
-                            placeholder="Mô tả chi tiết về dự án, mục tiêu cần đạt..."
+                            placeholder={g.descriptionPlaceholder}
                             value={newGroupDescription}
                             onChange={(e) => setNewGroupDescription(e.target.value)}
                             rows={3}
@@ -579,10 +584,10 @@ export default function Groups() {
                           <div className="space-y-2">
                             <Label className="flex items-center gap-1">
                               <BookOpen className="w-3.5 h-3.5" />
-                              Mã lớp
+                              {g.classCode}
                             </Label>
                             <Input
-                              placeholder="VD: 24C1INF50900301"
+                              placeholder={g.classCodePlaceholder}
                               value={newGroupClassCode}
                               onChange={(e) => setNewGroupClassCode(e.target.value)}
                             />
@@ -590,10 +595,10 @@ export default function Groups() {
                           <div className="space-y-2">
                             <Label className="flex items-center gap-1">
                               <GraduationCap className="w-3.5 h-3.5" />
-                              Giảng viên
+                              {g.instructor}
                             </Label>
                             <Input
-                              placeholder="VD: Nguyễn Văn A"
+                              placeholder={g.instructorPlaceholder}
                               value={newGroupInstructorName}
                               onChange={(e) => setNewGroupInstructorName(e.target.value)}
                             />
@@ -604,7 +609,7 @@ export default function Groups() {
                           <div className="space-y-2">
                             <Label className="flex items-center gap-1">
                               <Mail className="w-3.5 h-3.5" />
-                              Email giảng viên
+                              {g.instructorEmail}
                             </Label>
                             <Input
                               type="email"
@@ -616,7 +621,7 @@ export default function Groups() {
                           <div className="space-y-2">
                             <Label className="flex items-center gap-1">
                               <MessageSquare className="w-3.5 h-3.5" />
-                              Link Zalo nhóm
+                              {g.zaloLink}
                             </Label>
                             <Input
                               placeholder="https://zalo.me/..."
@@ -629,10 +634,10 @@ export default function Groups() {
                         <div className="space-y-2">
                           <Label className="flex items-center gap-1">
                             <Info className="w-3.5 h-3.5" />
-                            Ghi chú thêm
+                            {g.additionalNotes}
                           </Label>
                           <Textarea
-                            placeholder="Thông tin bổ sung, lưu ý đặc biệt..."
+                            placeholder={g.additionalNotesPlaceholder}
                             value={newGroupAdditionalInfo}
                             onChange={(e) => setNewGroupAdditionalInfo(e.target.value)}
                             rows={2}
@@ -644,21 +649,21 @@ export default function Groups() {
                       <div className="lg:col-span-2 p-6 flex flex-col min-h-0" style={{ maxHeight: 'calc(720px - 140px)' }}>
                         <div className="flex items-center gap-2 text-sm font-semibold text-primary uppercase tracking-wide flex-shrink-0">
                           <UserPlus className="w-4 h-4" />
-                          Thêm thành viên
+                          {g.addMembers}
                           <Badge variant="secondary" className="ml-auto text-xs">
-                            Tùy chọn
+                            {g.optional}
                           </Badge>
                         </div>
 
                         <p className="text-xs text-muted-foreground mt-2 flex-shrink-0">
-                          Chọn thành viên để thêm vào dự án. Có thể thêm sau khi tạo.
+                          {g.addMembersDesc}
                         </p>
 
                         {/* Search */}
                         <div className="relative mt-3 flex-shrink-0">
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
                           <Input
-                            placeholder="Nhập tên hoặc MSSV để tìm kiếm..."
+                            placeholder={g.searchPlaceholder}
                             value={memberSearch}
                             onChange={(e) => handleSearchMembers(e.target.value)}
                             className="pl-9 h-11 border-2 border-primary/30 focus-visible:border-primary focus-visible:ring-primary/20 bg-primary/5 placeholder:text-muted-foreground/70 font-medium"
@@ -694,7 +699,7 @@ export default function Groups() {
                                     <div className="text-xs text-muted-foreground/70 truncate">{p.email}</div>
                                   </div>
                                   {isSelected ? (
-                                    <Badge variant="secondary" className="text-xs flex-shrink-0">Đã chọn</Badge>
+                                    <Badge variant="secondary" className="text-xs flex-shrink-0">{g.selected}</Badge>
                                   ) : (
                                     <Plus className="w-4 h-4 text-primary flex-shrink-0" />
                                   )}
@@ -704,8 +709,8 @@ export default function Groups() {
                           ) : (
                             <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
                               <Search className="w-10 h-10 mb-2 opacity-30" />
-                              <p className="text-sm">{memberSearch && memberSearch.length >= 2 ? 'Không tìm thấy' : 'Nhập tên hoặc MSSV để tìm kiếm'}</p>
-                              {!memberSearch && <p className="text-xs mt-1">Nhập ít nhất 2 ký tự</p>}
+                              <p className="text-sm">{memberSearch && memberSearch.length >= 2 ? g.notFound : g.searchHint}</p>
+                              {!memberSearch && <p className="text-xs mt-1">{g.minChars}</p>}
                             </div>
                           )}
                         </div>
@@ -715,10 +720,10 @@ export default function Groups() {
                           <div className="mt-3 flex-shrink-0">
                             <div className="flex items-center justify-between mb-1.5">
                               <span className="text-xs font-medium">
-                                Đã chọn ({selectedMembers.length})
+                                {g.selectedCount.replace('{n}', String(selectedMembers.length))}
                               </span>
                               <Button variant="ghost" size="sm" className="text-xs h-6 px-2" onClick={() => setSelectedMembers([])}>
-                                Xóa tất cả
+                                {g.clearAll}
                               </Button>
                             </div>
                             <div className="flex flex-wrap gap-1.5">
@@ -740,22 +745,22 @@ export default function Groups() {
                   {/* Footer */}
                   <div className="flex items-center justify-between px-6 py-4 border-t bg-muted/30 flex-shrink-0">
                     <p className="text-xs text-muted-foreground">
-                      <span className="text-destructive">*</span> Chỉ tên dự án là bắt buộc, các trường còn lại có thể bổ sung sau.
+                      <span className="text-destructive">*</span> {g.requiredNote}
                     </p>
                     <div className="flex items-center gap-2">
                       <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                        Hủy
+                        {g.cancelBtn}
                       </Button>
                       <Button onClick={handleCreateGroup} disabled={isCreating || !newGroupName.trim()}>
                         {isCreating ? (
                           <>
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Đang tạo...
+                            {g.creating}
                           </>
                         ) : (
                           <>
                             <Plus className="w-4 h-4 mr-2" />
-                            Tạo dự án
+                            {g.createBtn}
                           </>
                         )}
                       </Button>
@@ -771,11 +776,9 @@ export default function Groups() {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-16">
               <FolderKanban className="w-16 h-16 text-muted-foreground/50 mb-4" />
-              <h3 className="text-lg font-medium mb-2">Chưa có dự án nào</h3>
+              <h3 className="text-lg font-medium mb-2">{g.noProjects}</h3>
               <p className="text-muted-foreground text-center max-w-md">
-                {canCreateProject
-                  ? 'Bạn chưa tham gia hoặc tạo dự án nào. Hãy tạo dự án mới để bắt đầu!'
-                  : 'Bạn chưa được thêm vào dự án nào. Hãy chờ được mời tham gia.'}
+                {canCreateProject ? g.noProjectsDescCanCreate : g.noProjectsDescNoCreate}
               </p>
             </CardContent>
           </Card>
@@ -839,7 +842,7 @@ export default function Groups() {
                       <div className="absolute top-3 right-3 drop-shadow-md">
                         {!group.myRole ? (
                           <Badge className="bg-muted text-muted-foreground shadow-lg font-medium text-[10px]">
-                            Chưa tham gia
+                            {g.notJoined}
                           </Badge>
                         ) : group.myRole === 'workspace_admin' ? (
                           <Badge className="bg-destructive text-destructive-foreground shadow-lg font-semibold">
@@ -849,16 +852,16 @@ export default function Groups() {
                         ) : user?.id === group.created_by ? (
                           <Badge className="bg-accent text-accent-foreground shadow-lg font-semibold">
                             <Crown className="w-3 h-3 mr-1" />
-                            Trưởng dự án
+                            {g.projectLeader}
                           </Badge>
                         ) : group.myRole === 'project_admin' ? (
                           <Badge className="bg-warning text-warning-foreground shadow-lg font-semibold">
                             <Crown className="w-3 h-3 mr-1" />
-                            Phó dự án
+                            {g.viceLeader}
                           </Badge>
                         ) : (
                           <Badge className="bg-foreground text-background shadow-lg font-medium">
-                            Thành viên
+                            {g.memberRole}
                           </Badge>
                         )}
                       </div>
@@ -875,7 +878,7 @@ export default function Groups() {
                             ))}
                           </div>
                           <span className="text-xs text-white/80 font-medium ml-1">
-                            {group.memberCount} thành viên
+                            {g.membersCount.replace('{n}', String(group.memberCount))}
                           </span>
                         </div>
                       </div>
@@ -889,7 +892,7 @@ export default function Groups() {
                           {group.description}
                         </p>
                       ) : (
-                        <p className="text-sm text-muted-foreground/50 italic">Chưa có mô tả</p>
+                        <p className="text-sm text-muted-foreground/50 italic">{g.noDescription}</p>
                       )}
 
                       {/* Info chips with color */}
@@ -919,7 +922,7 @@ export default function Groups() {
                           })}
                         </div>
                         <div className="flex items-center gap-1 text-xs text-primary font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          Mở dự án
+                          {g.openProject}
                           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                         </div>
                       </div>

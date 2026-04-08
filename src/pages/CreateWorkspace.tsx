@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,8 @@ export default function CreateWorkspace() {
   const { user } = useAuth();
   const { refreshWorkspaces } = useWorkspace();
   const navigate = useNavigate();
+  const { translations: { app: t } } = useLanguage();
+  const cw = t.createWorkspace;
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -37,17 +40,16 @@ export default function CreateWorkspace() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      toast.success('Tạo Workspace thành công!');
+      toast.success(cw.successToast);
       await refreshWorkspaces();
 
-      // Switch to new workspace if ID returned
       if (data?.workspace?.id) {
         localStorage.setItem('tnexus_active_workspace', data.workspace.id);
       }
 
       navigate('/workspace/settings');
     } catch (err: any) {
-      toast.error(err.message || 'Không thể tạo Workspace');
+      toast.error(err.message || cw.errorToast);
     } finally {
       setIsSubmitting(false);
     }
@@ -60,18 +62,16 @@ export default function CreateWorkspace() {
           <div className="mx-auto w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-2">
             <Building2 className="w-6 h-6 text-primary" />
           </div>
-          <CardTitle className="text-xl">Tạo Workspace mới</CardTitle>
-          <CardDescription>
-            Workspace giúp bạn tổ chức và quản lý các dự án theo nhóm
-          </CardDescription>
+          <CardTitle className="text-xl">{cw.title}</CardTitle>
+          <CardDescription>{cw.subtitle}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="ws-name">Tên Workspace *</Label>
+              <Label htmlFor="ws-name">{cw.nameLabel}</Label>
               <Input
                 id="ws-name"
-                placeholder="VD: Nhóm Nghiên cứu AI"
+                placeholder={cw.namePlaceholder}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 maxLength={100}
@@ -79,10 +79,10 @@ export default function CreateWorkspace() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ws-desc">Mô tả</Label>
+              <Label htmlFor="ws-desc">{cw.descLabel}</Label>
               <Textarea
                 id="ws-desc"
-                placeholder="Mô tả ngắn về workspace này..."
+                placeholder={cw.descPlaceholder}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 maxLength={500}
@@ -91,11 +91,11 @@ export default function CreateWorkspace() {
             </div>
             <div className="flex gap-3 pt-2">
               <Button type="button" variant="outline" className="flex-1" onClick={() => navigate(-1)}>
-                Hủy
+                {cw.cancelBtn}
               </Button>
               <Button type="submit" className="flex-1" disabled={isSubmitting || !name.trim()}>
                 {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Tạo Workspace
+                {cw.createBtn}
               </Button>
             </div>
           </form>
