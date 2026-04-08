@@ -109,6 +109,8 @@ export default function WorkspaceSettings() {
     }
   }, [ownerPlan]);
 
+  const { guardAction: guardReadOnly } = useReadOnlyGuard();
+
   if (!isAvailable || !activeWorkspace) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-4">
@@ -123,8 +125,6 @@ export default function WorkspaceSettings() {
   const planLabel = formatPlanName(ownerPlan);
   const isPremium = ownerPlan && ownerPlan !== 'plan_free';
   const isWsOwner = user?.id === ownerId;
-
-  const { guardAction: guardReadOnly } = useReadOnlyGuard();
 
   const handleSave = async () => {
     if (guardReadOnly()) return;
