@@ -189,6 +189,7 @@ export default function ServicePlan() {
       }));
 
       setWsUsages(usages);
+      setUniqueMemberCount(uniqueMemberIds.size);
     } catch (err) {
       console.warn('Error fetching service plan data:', err);
     } finally {
@@ -197,7 +198,7 @@ export default function ServicePlan() {
   };
 
   const totalProjects = wsUsages.reduce((s, w) => s + w.projectCount, 0);
-  const totalMembers = wsUsages.reduce((s, w) => s + w.memberCount, 0);
+  const totalMembers = uniqueMemberCount;
 
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value }, { replace: true });
