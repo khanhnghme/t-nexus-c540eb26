@@ -541,7 +541,7 @@ export default function AdminUsers() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <UserCheck className="w-5 h-5 text-primary" />
-                Yêu cầu tham gia nhóm
+                {t.joinRequests}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -550,7 +550,7 @@ export default function AdminUsers() {
                   <Loader2 className="w-6 h-6 animate-spin text-primary" />
                 </div>
               ) : approvals.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Hiện không có yêu cầu tham gia nào.</p>
+                <p className="text-sm text-muted-foreground">{t.noJoinRequests}</p>
               ) : (
                 <ScrollArea className="max-h-[480px] pr-3">
                   <div className="space-y-3">
@@ -561,17 +561,17 @@ export default function AdminUsers() {
                       >
                         <div className="flex flex-col gap-1">
                           <p className="font-medium">
-                            {a.userName || 'Không rõ tên'}
+                            {a.userName || t.unknownName}
                             <span className="text-xs text-muted-foreground ml-2">
                               {a.studentId && `${a.studentId} · `}
                               {a.email}
                             </span>
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            Nhóm: <span className="font-medium">{a.groupName}</span>
+                            {t.group} <span className="font-medium">{a.groupName}</span>
                           </p>
                           <p className="text-[11px] text-muted-foreground">
-                            Trạng thái hiện tại:{' '}
+                            {t.currentStatus}{' '}
                             <Badge
                               variant={
                                 a.status === 'pending'
@@ -594,7 +594,7 @@ export default function AdminUsers() {
                               onClick={() => handleApproveJoin(a)}
                             >
                               <Check className="w-4 h-4 mr-1" />
-                              Duyệt
+                              {t.approve}
                             </Button>
                             <Button
                               size="sm"
