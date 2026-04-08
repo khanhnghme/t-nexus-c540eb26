@@ -386,9 +386,9 @@ export default function AdminUsers() {
       <>
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
           <ShieldCheck className="w-10 h-10 text-muted-foreground" />
-          <h1 className="text-2xl font-heading font-semibold">Không có quyền truy cập</h1>
+          <h1 className="text-2xl font-heading font-semibold">{t.noAccess}</h1>
           <p className="text-sm text-muted-foreground max-w-md text-center">
-            Trang này chỉ dành cho Admin và các Leader nhóm. Nếu bạn nghĩ đây là lỗi, vui lòng liên hệ Leader hoặc Admin.
+            {t.noAccessDesc}
           </p>
         </div>
       </>
@@ -414,27 +414,27 @@ export default function AdminUsers() {
           <div>
             <h1 className="text-2xl font-heading font-bold tracking-tight flex items-center gap-2">
               <LayoutDashboard className="w-7 h-7 text-primary" />
-              {currentSection === 'members' && 'Thành viên nhóm'}
-              {currentSection === 'approvals' && 'Yêu cầu tham gia nhóm'}
-              {currentSection === 'tasks' && 'Task & phân công'}
-              {currentSection === 'scores' && 'Điểm & giai đoạn'}
-              {currentSection === 'groups' && 'Nhóm học phần'}
-              {currentSection === 'accounts' && 'Tài khoản (Admin)'}
-              {currentSection === 'activity' && 'Nhật ký hoạt động'}
+              {currentSection === 'members' && t.usersTitle}
+              {currentSection === 'approvals' && t.usersTitleApprovals}
+              {currentSection === 'tasks' && t.usersTitleTasks}
+              {currentSection === 'scores' && t.usersTitleScores}
+              {currentSection === 'groups' && t.usersTitleGroups}
+              {currentSection === 'accounts' && t.usersTitleAccounts}
+              {currentSection === 'activity' && t.usersTitleActivity}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {currentSection === 'members' && 'Xem và quản lý thành viên trong các nhóm bạn phụ trách.'}
-              {currentSection === 'approvals' && 'Duyệt hoặc từ chối các yêu cầu tham gia nhóm.'}
-              {currentSection === 'tasks' && 'Điều hướng nhanh tới các trang quản lý task hiện có.'}
-              {currentSection === 'scores' && 'Thông tin điểm số theo task và giai đoạn (sẽ mở rộng sau).'}
-              {currentSection === 'groups' && 'Liên kết tới trang quản lý nhóm học phần chi tiết.'}
-              {currentSection === 'accounts' && 'Dành cho OwnerSystem: duyệt tài khoản, khoá và cấp quyền Leader.'}
-              {currentSection === 'activity' && 'Tổng quan kế hoạch cho phần nhật ký hoạt động.'}
+              {currentSection === 'members' && t.usersDescMembers}
+              {currentSection === 'approvals' && t.usersDescApprovals}
+              {currentSection === 'tasks' && t.usersDescTasks}
+              {currentSection === 'scores' && t.usersDescScores}
+              {currentSection === 'groups' && t.usersDescGroups}
+              {currentSection === 'accounts' && t.usersDescAccounts}
+              {currentSection === 'activity' && t.usersDescActivity}
             </p>
           </div>
           <div className="text-right text-xs text-muted-foreground">
             <p>
-              Vai trò hiện tại:{' '}
+              {t.currentRole}{' '}
               <Badge variant="outline">{isAdmin ? 'OwnerSystem' : 'Leader'}</Badge>
             </p>
             {user?.email && <p className="mt-1">{user.email}</p>}
