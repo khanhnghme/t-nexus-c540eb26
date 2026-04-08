@@ -76,7 +76,7 @@ export default function PricingDocs() {
             {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
           <button
-            onClick={() => navigate(lp('/pricing'))}
+            onClick={() => navigate(-1)}
             style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', color: '#37352f', fontSize: 14, fontWeight: 500, padding: 0 }}
           >
             <ArrowLeft size={16} />
