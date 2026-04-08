@@ -176,13 +176,22 @@ export default function ServicePlan() {
         });
       }
 
+      // Fetch real storage usage per workspace using RPC
+      const storagePromises = ownedWs.map(async (ws) => {
+        const { data } = await supabase.rpc('get_workspace_storage_usage', { _workspace_id: ws.id });
+        return { wsId: ws.id, storageMb: Math.round(Number(data) || 0) };
+      });
+      const storageResults = await Promise.all(storagePromises);
+      const storageMap: Record<string, number> = {};
+      storageResults.forEach(r => { storageMap[r.wsId] = r.storageMb; });
+
       const usages: WorkspaceUsage[] = ownedWs.map(ws => ({
         id: ws.id,
         name: ws.name,
         plan: planName,
         projectCount: projectCountMap[ws.id] || 0,
         maxProjects,
-        storageMb: Math.round(Math.random() * maxStorage * 0.6),
+        storageMb: storageMap[ws.id] || 0,
         maxStorageMb: maxStorage,
         memberCount: memberCountMap[ws.id] || 0,
         maxMembers,
