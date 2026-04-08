@@ -267,8 +267,44 @@ export default function Groups() {
       return;
     }
 
-    // Project limit check removed — limits are enforced dynamically via plan_limits table
-    // If plan_limits returns null → UNLIMITED
+    // Enforce project limit: check account-wide total
+    try {
+      const ownerId = activeWorkspace?.owner_id || user!.id;
+      const { data: ownerWorkspaces } = await supabase
+        .from('workspaces')
+        .select('id')
+        .eq('owner_id', ownerId);
+      const ownerWsIds = ownerWorkspaces?.map(w => w.id) ?? [];
+      
+      if (ownerWsIds.length > 0) {
+        const { data: ownerProfile } = await supabase
+          .from('profiles')
+          .select('user_plan')
+          .eq('id', ownerId)
+          .maybeSingle();
+        const ownerPlan = ownerProfile?.user_plan || 'plan_free';
+
+        const [projectCountRes, limitsRes] = await Promise.all([
+          supabase.from('groups').select('id', { count: 'exact', head: true }).in('workspace_id', ownerWsIds),
+          supabase.from('plan_limits').select('max_projects_per_workspace').eq('plan', ownerPlan as any).maybeSingle(),
+        ]);
+
+        const totalProjects = projectCountRes.count ?? 0;
+        const maxProjects = limitsRes.data?.max_projects_per_workspace ?? null;
+
+        if (maxProjects !== null && totalProjects >= maxProjects) {
+          toast({
+            title: 'Đã đạt giới hạn',
+            description: `Tài khoản đã đạt giới hạn ${maxProjects} dự án cho gói ${ownerPlan.replace('plan_', '').toUpperCase()}. Vui lòng nâng cấp hoặc xóa bớt dự án.`,
+            variant: 'destructive',
+          });
+          return;
+        }
+      }
+    } catch (limitErr) {
+      console.warn('Error checking project limit:', limitErr);
+      // Continue with creation if limit check fails
+    }
 
     setIsCreating(true);
 

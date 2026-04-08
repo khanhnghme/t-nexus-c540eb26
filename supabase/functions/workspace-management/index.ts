@@ -78,6 +78,31 @@ serve(async (req: Request) => {
       if (!callerId) return err("Authentication required", 401);
       if (!body.name) return err("Name is required");
 
+      // Enforce workspace limit from plan_limits
+      const { data: callerProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("user_plan")
+        .eq("id", callerId)
+        .single();
+
+      const callerPlan = callerProfile?.user_plan || "plan_free";
+
+      const { data: limits } = await supabaseAdmin
+        .from("plan_limits")
+        .select("max_workspaces, max_projects_per_workspace, max_members_per_workspace, max_storage_mb")
+        .eq("plan", callerPlan)
+        .maybeSingle();
+
+      const maxWs = limits?.max_workspaces ?? 1;
+      const { count: currentWsCount } = await supabaseAdmin
+        .from("workspaces")
+        .select("id", { count: "exact", head: true })
+        .eq("owner_id", callerId);
+
+      if ((currentWsCount ?? 0) >= maxWs) {
+        return err(`Bạn đã đạt giới hạn ${maxWs} workspace cho gói ${callerPlan.replace("plan_", "").toUpperCase()}`);
+      }
+
       const { data: slug } = await supabaseAdmin.rpc("generate_workspace_slug", {
         _name: body.name,
       });
@@ -91,9 +116,9 @@ serve(async (req: Request) => {
           logo_url: body.logo_url || null,
           owner_id: callerId,
           plan: "free",
-          max_projects: 2,
-          max_members: 5,
-          max_storage_mb: 250,
+          max_projects: limits?.max_projects_per_workspace ?? 5,
+          max_members: limits?.max_members_per_workspace ?? 5,
+          max_storage_mb: limits?.max_storage_mb ?? 500,
         })
         .select()
         .single();
@@ -203,6 +228,45 @@ serve(async (req: Request) => {
         }
       }
 
+      // Enforce unique seat limit: check if invitee is already counted as a unique member
+      const { data: wsOwner } = await supabaseAdmin
+        .from("workspaces")
+        .select("owner_id")
+        .eq("id", body.workspace_id)
+        .single();
+
+      if (wsOwner) {
+        const isExistingSeat = inviteeProfile
+          ? await (async () => {
+              const { data: existsInAnyWs } = await supabaseAdmin
+                .from("workspace_members")
+                .select("user_id")
+                .in("workspace_id", (await supabaseAdmin.from("workspaces").select("id").eq("owner_id", wsOwner.owner_id)).data?.map((w: any) => w.id) || [])
+                .eq("user_id", inviteeProfile.id)
+                .maybeSingle();
+              return !!existsInAnyWs;
+            })()
+          : false;
+
+        if (!isExistingSeat) {
+          const { data: uniqueCount } = await supabaseAdmin.rpc("get_account_unique_members", {
+            _owner_id: wsOwner.owner_id,
+          });
+
+          const ownerPlan = (await supabaseAdmin.from("profiles").select("user_plan").eq("id", wsOwner.owner_id).single()).data?.user_plan || "plan_free";
+          const { data: limits } = await supabaseAdmin
+            .from("plan_limits")
+            .select("max_members_per_workspace")
+            .eq("plan", ownerPlan)
+            .maybeSingle();
+
+          const maxMembers = limits?.max_members_per_workspace ?? null;
+          if (maxMembers !== null && (uniqueCount ?? 0) >= maxMembers) {
+            return err(`Đã đạt giới hạn ${maxMembers} suất thành viên cho gói ${ownerPlan.replace("plan_", "").toUpperCase()}`);
+          }
+        }
+      }
+
       const { data: existingInvite } = await supabaseAdmin
         .from("workspace_invites")
         .select("id")
@@ -272,6 +336,67 @@ serve(async (req: Request) => {
         .select("id")
         .eq("email", body.email)
         .maybeSingle();
+
+      // Enforce unique seat limit for project guest invites
+      const { data: wsData } = await supabaseAdmin
+        .from("workspaces")
+        .select("owner_id")
+        .eq("id", body.workspace_id)
+        .single();
+
+      if (wsData) {
+        const isExistingSeat = inviteeProfile
+          ? await (async () => {
+              // Check if this user is already a member/guest in any of the owner's workspaces/projects
+              const { data: ownerWsList } = await supabaseAdmin.from("workspaces").select("id").eq("owner_id", wsData.owner_id);
+              const ownerWsIds = ownerWsList?.map((w: any) => w.id) || [];
+              if (ownerWsIds.length === 0) return false;
+              
+              const { data: existsAsWsMember } = await supabaseAdmin
+                .from("workspace_members")
+                .select("user_id")
+                .in("workspace_id", ownerWsIds)
+                .eq("user_id", inviteeProfile.id)
+                .maybeSingle();
+              if (existsAsWsMember) return true;
+
+              // Also check group_members for project guests
+              const { data: groups } = await supabaseAdmin
+                .from("groups")
+                .select("id")
+                .in("workspace_id", ownerWsIds);
+              const groupIds = groups?.map((g: any) => g.id) || [];
+              if (groupIds.length === 0) return false;
+
+              const { data: existsAsGuest } = await supabaseAdmin
+                .from("group_members")
+                .select("user_id")
+                .in("group_id", groupIds)
+                .eq("user_id", inviteeProfile.id)
+                .eq("is_guest", true)
+                .maybeSingle();
+              return !!existsAsGuest;
+            })()
+          : false;
+
+        if (!isExistingSeat) {
+          const { data: uniqueCount } = await supabaseAdmin.rpc("get_account_unique_members", {
+            _owner_id: wsData.owner_id,
+          });
+
+          const ownerPlan = (await supabaseAdmin.from("profiles").select("user_plan").eq("id", wsData.owner_id).single()).data?.user_plan || "plan_free";
+          const { data: limits } = await supabaseAdmin
+            .from("plan_limits")
+            .select("max_members_per_workspace")
+            .eq("plan", ownerPlan)
+            .maybeSingle();
+
+          const maxMembers = limits?.max_members_per_workspace ?? null;
+          if (maxMembers !== null && (uniqueCount ?? 0) >= maxMembers) {
+            return err(`Đã đạt giới hạn ${maxMembers} suất thành viên cho gói ${ownerPlan.replace("plan_", "").toUpperCase()}`);
+          }
+        }
+      }
 
       const { data: invite, error: invErr } = await supabaseAdmin
         .from("workspace_invites")
