@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { deleteWithUndo } from '@/lib/deleteWithUndo';
 import { logActivity as importedLogActivity } from '@/lib/activityLogger';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,7 +36,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { vi as viLocale } from 'date-fns/locale';
 import { 
   Activity, 
   Trash2, 
@@ -63,15 +64,6 @@ interface ActivityLog {
   created_at: string;
 }
 
-const actionTypeOptions = [
-  { value: 'all', label: 'Tất cả', icon: Activity },
-  { value: 'task', label: 'Task', icon: CheckSquare },
-  { value: 'group', label: 'Nhóm', icon: Users },
-  { value: 'project_member', label: 'Thành viên', icon: User },
-  { value: 'score', label: 'Điểm', icon: Star },
-  { value: 'auth', label: 'Đăng nhập', icon: LogIn },
-];
-
 const getActionTypeColor = (type: string) => {
   const colors: Record<string, string> = {
     task: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
@@ -96,6 +88,7 @@ const getActionTypeIcon = (type: string) => {
 
 export default function AdminActivity() {
   const { isAdmin, isLeader, profile } = useAuth();
+  const { locale, translations: { app: { admin: t } } } = useLanguage();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -103,6 +96,15 @@ export default function AdminActivity() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const actionTypeOptions = [
+    { value: 'all', label: t.filterAll, icon: Activity },
+    { value: 'task', label: t.filterTask, icon: CheckSquare },
+    { value: 'group', label: t.filterGroup, icon: Users },
+    { value: 'project_member', label: t.filterMember, icon: User },
+    { value: 'score', label: t.filterScore, icon: Star },
+    { value: 'auth', label: t.filterLogin, icon: LogIn },
+  ];
 
   const fetchLogs = async () => {
     setIsLoading(true);
@@ -131,7 +133,7 @@ export default function AdminActivity() {
       setLogs(data || []);
     } catch (error) {
       console.error('Error fetching logs:', error);
-      toast.error('Không thể tải nhật ký hoạt động');
+      toast.error(t.error);
     } finally {
       setIsLoading(false);
     }
@@ -153,12 +155,12 @@ export default function AdminActivity() {
 
   const handleDeleteByDateRange = async () => {
     if (!startDate || !endDate) {
-      toast.error('Vui lòng chọn khoảng thời gian để xóa');
+      toast.error(t.selectDateRange);
       return;
     }
 
     deleteWithUndo({
-      description: `Đã xóa nhật ký từ ${startDate} đến ${endDate}`,
+      description: t.deletedLogs.replace('{start}', startDate).replace('{end}', endDate),
       onDelete: async () => {
         const { error } = await supabase
           .from('activity_logs')
@@ -178,7 +180,7 @@ export default function AdminActivity() {
     setLogs(logs.filter(log => log.id !== logId));
 
     deleteWithUndo({
-      description: 'Đã xóa nhật ký',
+      description: t.deletedLog,
       onDelete: async () => {
         const { error } = await supabase.from('activity_logs').delete().eq('id', logId);
         if (error) throw error;
@@ -189,7 +191,6 @@ export default function AdminActivity() {
     });
   };
 
-  // Log current user activity for demo
   const logAdminActivity = async (action: string, actionType: string, description: string) => {
     if (!profile) return;
     
@@ -210,11 +211,13 @@ export default function AdminActivity() {
     return (
       <>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <p className="text-muted-foreground">Bạn không có quyền truy cập trang này</p>
+          <p className="text-muted-foreground">{t.noAccessDesc}</p>
         </div>
       </>
     );
   }
+
+  const dateFnsLocale = locale === 'vi' ? viLocale : undefined;
 
   return (
     <>
@@ -223,15 +226,15 @@ export default function AdminActivity() {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Activity className="w-6 h-6" />
-              Nhật ký hoạt động
+              {t.activityTitle}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Theo dõi tất cả hoạt động trong hệ thống
+              {t.activityDesc}
             </p>
           </div>
           <Button onClick={fetchLogs} variant="outline" size="sm">
             <RefreshCw className="w-4 h-4 mr-2" />
-            Làm mới
+            {t.refresh}
           </Button>
         </div>
 
@@ -240,26 +243,24 @@ export default function AdminActivity() {
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <Filter className="w-5 h-5" />
-              Bộ lọc
+              {t.filters}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              {/* Search */}
               <div className="relative lg:col-span-2">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Tìm kiếm theo tên, hành động..."
+                  placeholder={t.searchPlaceholder}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9"
                 />
               </div>
 
-              {/* Action Type Filter */}
               <Select value={actionTypeFilter} onValueChange={setActionTypeFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Loại hoạt động" />
+                  <SelectValue placeholder={t.activityType} />
                 </SelectTrigger>
                 <SelectContent>
                   {actionTypeOptions.map(option => (
@@ -273,7 +274,6 @@ export default function AdminActivity() {
                 </SelectContent>
               </Select>
 
-              {/* Date Range */}
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -281,7 +281,7 @@ export default function AdminActivity() {
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   className="pl-9"
-                  placeholder="Từ ngày"
+                  placeholder={t.fromDate}
                 />
               </div>
               <div className="relative">
@@ -291,36 +291,36 @@ export default function AdminActivity() {
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   className="pl-9"
-                  placeholder="Đến ngày"
+                  placeholder={t.toDate}
                 />
               </div>
             </div>
 
-            {/* Delete by date range */}
             {(isAdmin || isLeader) && startDate && endDate && (
               <div className="mt-4 pt-4 border-t flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
-                  Xóa nhật ký từ <strong>{format(new Date(startDate), 'dd/MM/yyyy')}</strong> đến <strong>{format(new Date(endDate), 'dd/MM/yyyy')}</strong>
+                  {t.deleteLogsFrom} <strong>{format(new Date(startDate), 'dd/MM/yyyy')}</strong> {t.to} <strong>{format(new Date(endDate), 'dd/MM/yyyy')}</strong>
                 </p>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" size="sm" disabled={isDeleting}>
                       <Trash2 className="w-4 h-4 mr-2" />
-                      Xóa theo ngày
+                      {t.deleteByDate}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Xác nhận xóa nhật ký?</AlertDialogTitle>
+                      <AlertDialogTitle>{t.confirmDeleteLogs}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Bạn có chắc chắn muốn xóa tất cả nhật ký từ {format(new Date(startDate), 'dd/MM/yyyy')} đến {format(new Date(endDate), 'dd/MM/yyyy')}? 
-                        Hành động này không thể hoàn tác.
+                        {t.confirmDeleteLogsDesc
+                          .replace('{start}', format(new Date(startDate), 'dd/MM/yyyy'))
+                          .replace('{end}', format(new Date(endDate), 'dd/MM/yyyy'))}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Hủy</AlertDialogCancel>
+                      <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
                       <AlertDialogAction onClick={handleDeleteByDateRange} className="bg-destructive hover:bg-destructive/90">
-                        Xóa
+                        {t.delete}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -333,9 +333,9 @@ export default function AdminActivity() {
         {/* Activity Logs Table */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Danh sách hoạt động</CardTitle>
+            <CardTitle className="text-lg">{t.activityList}</CardTitle>
             <CardDescription>
-              Hiển thị {filteredLogs.length} / {logs.length} bản ghi
+              {t.showingRecords.replace('{filtered}', String(filteredLogs.length)).replace('{total}', String(logs.length))}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -346,19 +346,19 @@ export default function AdminActivity() {
             ) : filteredLogs.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Activity className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>Không có nhật ký hoạt động nào</p>
+                <p>{t.noActivityLogs}</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[180px]">Thời gian</TableHead>
-                      <TableHead className="w-[150px]">Người dùng</TableHead>
-                      <TableHead className="w-[100px]">Loại</TableHead>
-                      <TableHead>Hành động</TableHead>
-                      <TableHead>Mô tả</TableHead>
-                      <TableHead className="w-[80px]">Thao tác</TableHead>
+                      <TableHead className="w-[180px]">{t.timeCol2}</TableHead>
+                      <TableHead className="w-[150px]">{t.userCol}</TableHead>
+                      <TableHead className="w-[100px]">{t.typeCol}</TableHead>
+                      <TableHead>{t.actionCol}</TableHead>
+                      <TableHead>{t.descriptionCol}</TableHead>
+                      <TableHead className="w-[80px]">{t.actionsCol}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -367,7 +367,7 @@ export default function AdminActivity() {
                       return (
                         <TableRow key={log.id}>
                           <TableCell className="font-mono text-sm">
-                            {format(new Date(log.created_at), 'HH:mm:ss dd/MM/yyyy', { locale: vi })}
+                            {format(new Date(log.created_at), 'HH:mm:ss dd/MM/yyyy', { locale: dateFnsLocale })}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
@@ -394,18 +394,18 @@ export default function AdminActivity() {
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Xóa nhật ký này?</AlertDialogTitle>
+                                  <AlertDialogTitle>{t.deleteThisLog}</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Bạn có chắc chắn muốn xóa nhật ký này không?
+                                    {t.deleteThisLogDesc}
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel>Hủy</AlertDialogCancel>
+                                  <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
                                   <AlertDialogAction 
                                     onClick={() => handleDeleteSingleLog(log.id)}
                                     className="bg-destructive hover:bg-destructive/90"
                                   >
-                                    Xóa
+                                    {t.delete}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { deleteWithUndo } from '@/lib/deleteWithUndo';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -66,6 +67,7 @@ interface PendingApprovalRow {
 
 export default function AdminUsers() {
   const { user, isAdmin, isLeader } = useAuth();
+  const { translations: { app: { admin: t } } } = useLanguage();
   const { toast } = useToast();
 
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -128,7 +130,7 @@ export default function AdminUsers() {
       .order('created_at', { ascending: false });
 
     if (error) {
-      toast({ title: 'Lỗi tải danh sách tài khoản', description: error.message, variant: 'destructive' });
+      toast({ title: t.errorLoadAccounts, description: error.message, variant: 'destructive' });
     } else if (data) {
       setProfiles(data as Profile[]);
     }
@@ -148,7 +150,7 @@ export default function AdminUsers() {
       .select('id, group_id, user_id, role, joined_at');
 
     if (gmError) {
-      toast({ title: 'Lỗi tải danh sách thành viên nhóm', description: gmError.message, variant: 'destructive' });
+      toast({ title: t.errorLoadMembers, description: gmError.message, variant: 'destructive' });
       setIsLoadingMembers(false);
       return;
     }
@@ -184,7 +186,7 @@ export default function AdminUsers() {
         fullName: p?.fullName,
         studentId: p?.studentId,
         email: p?.email,
-        groupName: groupsMap.get(m.group_id) || 'Không rõ nhóm',
+        groupName: groupsMap.get(m.group_id) || 't.unknownGroup',
         avatarUrl: p?.avatarUrl,
       };
     });
@@ -201,7 +203,7 @@ export default function AdminUsers() {
       .select('id, user_id, group_id, status, created_at');
 
     if (paError) {
-      toast({ title: 'Lỗi tải yêu cầu tham gia', description: paError.message, variant: 'destructive' });
+      toast({ title: t.errorLoadJoinRequests, description: paError.message, variant: 'destructive' });
       setIsLoadingApprovals(false);
       return;
     }
@@ -236,7 +238,7 @@ export default function AdminUsers() {
         userName: p?.fullName,
         studentId: p?.studentId,
         email: p?.email,
-        groupName: groupsMap.get(a.group_id) || 'Không rõ nhóm',
+        groupName: groupsMap.get(a.group_id) || 't.unknownGroup',
       };
     });
 
@@ -251,7 +253,7 @@ export default function AdminUsers() {
       toast({ title: 'Lỗi', description: error.message, variant: 'destructive' });
       return;
     }
-    toast({ title: 'Đã duyệt', description: 'Tài khoản đã được kích hoạt' });
+    toast({ title: t.approved, description: t.accountActivated });
     fetchProfiles();
   };
 
@@ -261,7 +263,7 @@ export default function AdminUsers() {
       toast({ title: 'Lỗi', description: error.message, variant: 'destructive' });
       return;
     }
-    toast({ title: 'Đã vô hiệu hóa', description: 'Tài khoản đã bị khoá' });
+    toast({ title: t.disabled, description: t.accountLocked });
     fetchProfiles();
   };
 
@@ -280,7 +282,7 @@ export default function AdminUsers() {
       return;
     }
 
-    toast({ title: 'Đã xóa', description: `Đã xóa tài khoản ${fullName} khỏi hệ thống` });
+    toast({ title: t.deletedAccount, description: `Đã xóa tài khoản ${fullName} khỏi hệ thống` });
     fetchProfiles();
   };
 
@@ -290,12 +292,12 @@ export default function AdminUsers() {
       toast({ title: 'Lỗi', description: error.message, variant: 'destructive' });
       return;
     }
-    toast({ title: 'Thành công', description: 'Đã cấp quyền Leader' });
+    toast({ title: t.grantedLeader, description: t.grantedLeaderDesc });
   };
 
   const handleRemoveMember = async (memberId: string) => {
     deleteWithUndo({
-      description: 'Đã xoá thành viên khỏi nhóm',
+      description: t.removedMember,
       onDelete: async () => {
         const { error } = await supabase.from('group_members').delete().eq('id', memberId);
         if (error) throw error;
@@ -339,7 +341,7 @@ export default function AdminUsers() {
       toast({ title: 'Thêm vào nhóm thành công nhưng lỗi khi cập nhật trạng thái tài khoản', description: profileError.message, variant: 'destructive' });
     }
 
-    toast({ title: 'Đã duyệt yêu cầu tham gia', description: 'Thành viên đã được thêm vào nhóm và có thể sử dụng hệ thống' });
+    toast({ title: t.addedToGroup, description: 'Thành viên đã được thêm vào nhóm và có thể sử dụng hệ thống' });
     fetchApprovals();
     fetchMembers();
   };
@@ -355,7 +357,7 @@ export default function AdminUsers() {
       return;
     }
 
-    toast({ title: 'Đã từ chối yêu cầu tham gia' });
+    toast({ title: t.rejectedJoin });
     fetchApprovals();
   };
 
@@ -384,9 +386,9 @@ export default function AdminUsers() {
       <>
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
           <ShieldCheck className="w-10 h-10 text-muted-foreground" />
-          <h1 className="text-2xl font-heading font-semibold">Không có quyền truy cập</h1>
+          <h1 className="text-2xl font-heading font-semibold">{t.noAccess}</h1>
           <p className="text-sm text-muted-foreground max-w-md text-center">
-            Trang này chỉ dành cho Admin và các Leader nhóm. Nếu bạn nghĩ đây là lỗi, vui lòng liên hệ Leader hoặc Admin.
+            {t.noAccessDesc}
           </p>
         </div>
       </>
@@ -412,27 +414,27 @@ export default function AdminUsers() {
           <div>
             <h1 className="text-2xl font-heading font-bold tracking-tight flex items-center gap-2">
               <LayoutDashboard className="w-7 h-7 text-primary" />
-              {currentSection === 'members' && 'Thành viên nhóm'}
-              {currentSection === 'approvals' && 'Yêu cầu tham gia nhóm'}
-              {currentSection === 'tasks' && 'Task & phân công'}
-              {currentSection === 'scores' && 'Điểm & giai đoạn'}
-              {currentSection === 'groups' && 'Nhóm học phần'}
-              {currentSection === 'accounts' && 'Tài khoản (Admin)'}
-              {currentSection === 'activity' && 'Nhật ký hoạt động'}
+              {currentSection === 'members' && t.usersTitle}
+              {currentSection === 'approvals' && t.usersTitleApprovals}
+              {currentSection === 'tasks' && t.usersTitleTasks}
+              {currentSection === 'scores' && t.usersTitleScores}
+              {currentSection === 'groups' && t.usersTitleGroups}
+              {currentSection === 'accounts' && t.usersTitleAccounts}
+              {currentSection === 'activity' && t.usersTitleActivity}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {currentSection === 'members' && 'Xem và quản lý thành viên trong các nhóm bạn phụ trách.'}
-              {currentSection === 'approvals' && 'Duyệt hoặc từ chối các yêu cầu tham gia nhóm.'}
-              {currentSection === 'tasks' && 'Điều hướng nhanh tới các trang quản lý task hiện có.'}
-              {currentSection === 'scores' && 'Thông tin điểm số theo task và giai đoạn (sẽ mở rộng sau).'}
-              {currentSection === 'groups' && 'Liên kết tới trang quản lý nhóm học phần chi tiết.'}
-              {currentSection === 'accounts' && 'Dành cho OwnerSystem: duyệt tài khoản, khoá và cấp quyền Leader.'}
-              {currentSection === 'activity' && 'Tổng quan kế hoạch cho phần nhật ký hoạt động.'}
+              {currentSection === 'members' && t.usersDescMembers}
+              {currentSection === 'approvals' && t.usersDescApprovals}
+              {currentSection === 'tasks' && t.usersDescTasks}
+              {currentSection === 'scores' && t.usersDescScores}
+              {currentSection === 'groups' && t.usersDescGroups}
+              {currentSection === 'accounts' && t.usersDescAccounts}
+              {currentSection === 'activity' && t.usersDescActivity}
             </p>
           </div>
           <div className="text-right text-xs text-muted-foreground">
             <p>
-              Vai trò hiện tại:{' '}
+              {t.currentRole}{' '}
               <Badge variant="outline">{isAdmin ? 'OwnerSystem' : 'Leader'}</Badge>
             </p>
             {user?.email && <p className="mt-1">{user.email}</p>}
@@ -444,7 +446,7 @@ export default function AdminUsers() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-primary" />
-                Thành viên theo nhóm
+                {t.membersByGroup}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -453,7 +455,7 @@ export default function AdminUsers() {
                   <Loader2 className="w-6 h-6 animate-spin text-primary" />
                 </div>
               ) : members.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Chưa có thành viên nào trong các nhóm bạn quản lý.</p>
+                <p className="text-sm text-muted-foreground">{t.noMembers}</p>
               ) : (
                 <ScrollArea className="max-h-[480px] pr-3">
                   <div className="space-y-3">
@@ -476,7 +478,7 @@ export default function AdminUsers() {
                             <div>
                               <div className="flex items-center gap-2">
                                 <p className="font-medium">
-                                  {m.fullName || 'Không rõ tên'}
+                                  {m.fullName || t.unknownName}
                                 </p>
                                 <Badge variant="outline" className="text-[11px]">
                                   {m.role === 'project_owner'
@@ -492,7 +494,7 @@ export default function AdminUsers() {
                                 {m.email}
                               </p>
                               <p className="text-xs text-muted-foreground mt-0.5">
-                                Nhóm: <span className="font-medium">{m.groupName}</span>
+                                {t.group} <span className="font-medium">{m.groupName}</span>
                               </p>
                             </div>
                           </div>
@@ -502,9 +504,9 @@ export default function AdminUsers() {
                                 size="sm"
                                 variant="ghost"
                                 className="text-xs"
-                                onClick={(e) => { e.stopPropagation(); openPasswordDialog(m.userId, m.fullName || 'Không rõ tên'); }}
+                                onClick={(e) => { e.stopPropagation(); openPasswordDialog(m.userId, m.fullName || t.unknownName); }}
                               >
-                                <KeyRound className="w-4 h-4 mr-1" /> Mật khẩu
+                                <KeyRound className="w-4 h-4 mr-1" /> {t.password}
                               </Button>
                             )}
                             <Button
@@ -512,16 +514,16 @@ export default function AdminUsers() {
                               variant="ghost"
                               className="text-xs"
                               onClick={(e) => { e.stopPropagation(); handleViewProfile(m.userId); }}
-                            >
-                              <Eye className="w-4 h-4 mr-1" /> Xem hồ sơ
+                              >
+                                <Eye className="w-4 h-4 mr-1" /> {t.viewProfile}
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
                               className="text-xs"
                               onClick={(e) => { e.stopPropagation(); handleRemoveMember(m.id); }}
-                            >
-                              <UserMinus className="w-4 h-4 mr-1" /> Xoá khỏi nhóm
+                              >
+                                <UserMinus className="w-4 h-4 mr-1" /> {t.removeFromGroup}
                             </Button>
                           </div>
                         </div>
@@ -539,7 +541,7 @@ export default function AdminUsers() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <UserCheck className="w-5 h-5 text-primary" />
-                Yêu cầu tham gia nhóm
+                {t.joinRequests}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -548,7 +550,7 @@ export default function AdminUsers() {
                   <Loader2 className="w-6 h-6 animate-spin text-primary" />
                 </div>
               ) : approvals.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Hiện không có yêu cầu tham gia nào.</p>
+                <p className="text-sm text-muted-foreground">{t.noJoinRequests}</p>
               ) : (
                 <ScrollArea className="max-h-[480px] pr-3">
                   <div className="space-y-3">
@@ -559,17 +561,17 @@ export default function AdminUsers() {
                       >
                         <div className="flex flex-col gap-1">
                           <p className="font-medium">
-                            {a.userName || 'Không rõ tên'}
+                            {a.userName || t.unknownName}
                             <span className="text-xs text-muted-foreground ml-2">
                               {a.studentId && `${a.studentId} · `}
                               {a.email}
                             </span>
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            Nhóm: <span className="font-medium">{a.groupName}</span>
+                            {t.group} <span className="font-medium">{a.groupName}</span>
                           </p>
                           <p className="text-[11px] text-muted-foreground">
-                            Trạng thái hiện tại:{' '}
+                            {t.currentStatus}{' '}
                             <Badge
                               variant={
                                 a.status === 'pending'
@@ -592,7 +594,7 @@ export default function AdminUsers() {
                               onClick={() => handleApproveJoin(a)}
                             >
                               <Check className="w-4 h-4 mr-1" />
-                              Duyệt
+                              {t.approve}
                             </Button>
                             <Button
                               size="sm"

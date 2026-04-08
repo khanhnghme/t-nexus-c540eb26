@@ -33,13 +33,15 @@ import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import uehLogoWhite from '@/assets/t-nexus-text-white.png';
 import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { vi as viLocale } from 'date-fns/locale';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function AdminSystem() {
   const { isAdmin, isLoading, user } = useAuth();
+  const { locale, translations: { app: { admin: t } } } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -47,7 +49,7 @@ export default function AdminSystem() {
   // Maintenance state
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
   const [showGuidePopover, setShowGuidePopover] = useState(false);
-  const [maintenanceMessage, setMaintenanceMessage] = useState('Hệ thống đang bảo trì, vui lòng quay lại sau.');
+  const [maintenanceMessage, setMaintenanceMessage] = useState(t.maintenanceDefault);
   const [maintenanceHours, setMaintenanceHours] = useState(0);
   const [customHours, setCustomHours] = useState('');
   const [maintenanceStart, setMaintenanceStart] = useState('');
@@ -132,7 +134,7 @@ export default function AdminSystem() {
         const val = maintenanceRes.data.value as { enabled?: boolean; message?: string; duration_hours?: number; duration_days?: number; start_at?: string; end_at?: string; scope?: string };
         setMaintenanceEnabled(val.enabled ?? false);
         setOrigMaintenanceEnabled(val.enabled ?? false);
-        setMaintenanceMessage(val.message ?? 'Hệ thống đang bảo trì, vui lòng quay lại sau.');
+        setMaintenanceMessage(val.message ?? t.maintenanceDefault);
         setMaintenanceScope((val.scope as 'post_login' | 'full') ?? 'post_login');
         // Support both legacy duration_days and new duration_hours
         const hours = val.duration_hours ?? (val.duration_days ? val.duration_days * 24 : 0);
@@ -247,13 +249,11 @@ export default function AdminSystem() {
       }
 
       toast({
-        title: 'Đã lưu cài đặt',
-        description: maintenanceEnabled
-          ? 'Chế độ bảo trì đã được BẬT.'
-          : 'Chế độ bảo trì đã TẮT.',
+        title: t.savedSettings,
+        description: maintenanceEnabled ? t.maintenanceOnToast : t.maintenanceOffToast,
       });
     } catch (err) {
-      toast({ title: 'Lỗi', description: 'Không thể lưu cài đặt', variant: 'destructive' });
+      toast({ title: t.error, description: t.cannotSave, variant: 'destructive' });
     } finally {
       setSaving(false);
       setShowMaintenanceConfirm(false);
@@ -266,7 +266,7 @@ export default function AdminSystem() {
     return (
       <>
         <div className="flex items-center justify-center py-20">
-          <p className="text-muted-foreground">Đang tải...</p>
+          <p className="text-muted-foreground">{t.loading}</p>
         </div>
       </>
     );
@@ -280,18 +280,18 @@ export default function AdminSystem() {
           <div className="flex items-center gap-3">
             <Shield className="w-7 h-7 text-foreground" />
             <div>
-              <h1 className="text-2xl font-heading font-bold tracking-tight">Quản trị hệ thống</h1>
-              <p className="text-muted-foreground text-sm">Các chức năng quản trị đặc biệt dành cho Admin chính</p>
+              <h1 className="text-2xl font-heading font-bold tracking-tight">{t.systemTitle}</h1>
+              <p className="text-muted-foreground text-sm">{t.systemDesc}</p>
             </div>
           </div>
 
           {/* Inline tabs */}
           <div className="flex flex-wrap gap-1.5">
             {([
-              { id: 'system', label: 'Hệ thống', icon: Wrench },
-              { id: 'notifications', label: 'Thông báo', icon: Mail },
-              { id: 'appearance', label: 'Giao diện', icon: Palette },
-              { id: 'analytics', label: 'Phân tích', icon: BarChart3 },
+              { id: 'system', label: t.tabSystem, icon: Wrench },
+              { id: 'notifications', label: t.tabNotifications, icon: Mail },
+              { id: 'appearance', label: t.tabAppearance, icon: Palette },
+              { id: 'analytics', label: t.tabAnalytics, icon: BarChart3 },
             ] as const).map((tab) => (
               <button
                 key={tab.id}
@@ -325,9 +325,9 @@ export default function AdminSystem() {
                       </div>
                       <div>
                         <CardTitle className="text-base flex items-center gap-2">
-                          Khóa hệ thống
+                          {t.lockSystem}
                           {maintenanceEnabled && (
-                            <Badge variant="destructive" className="text-[10px] px-1.5 py-0">BẬT</Badge>
+                            <Badge variant="destructive" className="text-[10px] px-1.5 py-0">{t.on}</Badge>
                           )}
                         </CardTitle>
                       </div>
@@ -343,18 +343,18 @@ export default function AdminSystem() {
                 </CardHeader>
                 <CardContent className="space-y-3 pt-0">
                   <p className="text-xs text-muted-foreground">
-                    Khi bật, toàn bộ thành viên (trừ Admin) sẽ không thể truy cập hệ thống.
+                    {t.maintenanceOnDesc}
                   </p>
 
                   <div className="space-y-1.5">
                     <Label className="text-xs flex items-center gap-1">
-                      <Shield className="w-3 h-3" /> Phạm vi khóa
+                      <Shield className="w-3 h-3" /> {t.lockScope}
                     </Label>
                     <Select value={maintenanceScope} onValueChange={(v: any) => setMaintenanceScope(v)}>
                       <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="post_login" className="text-xs">Sau đăng nhập</SelectItem>
-                        <SelectItem value="full" className="text-xs">Toàn bộ hệ thống</SelectItem>
+                        <SelectItem value="post_login" className="text-xs">{t.postLogin}</SelectItem>
+                        <SelectItem value="full" className="text-xs">{t.fullSystem}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -362,20 +362,20 @@ export default function AdminSystem() {
                   <div className="space-y-3">
                     <div className="space-y-1.5">
                       <Label className="text-xs flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> Thời gian bảo trì
+                        <Clock className="w-3 h-3" /> {t.maintenanceDuration}
                       </Label>
                       <div className="flex flex-wrap gap-1.5">
                         {[
-                          { value: 0, label: 'Vĩnh viễn' },
-                          { value: 1, label: '1 giờ' },
-                          { value: 2, label: '2 giờ' },
-                          { value: 3, label: '3 giờ' },
-                          { value: 6, label: '6 giờ' },
-                          { value: 12, label: '12 giờ' },
-                          { value: 24, label: '1 ngày' },
-                          { value: 48, label: '2 ngày' },
-                          { value: 72, label: '3 ngày' },
-                          { value: 168, label: '1 tuần' },
+                          { value: 0, label: t.forever },
+                          { value: 1, label: t.hours1 },
+                          { value: 2, label: t.hours2 },
+                          { value: 3, label: t.hours3 },
+                          { value: 6, label: t.hours6 },
+                          { value: 12, label: t.hours12 },
+                          { value: 24, label: t.days1 },
+                          { value: 48, label: t.days2 },
+                          { value: 72, label: t.days3 },
+                          { value: 168, label: t.weeks1 },
                         ].map((opt) => (
                           <Button
                             key={opt.value}
@@ -391,7 +391,7 @@ export default function AdminSystem() {
                         <Input
                           type="number"
                           min={1}
-                          placeholder="Tùy chỉnh (giờ)"
+                          placeholder={t.customHours}
                           value={customHours}
                           onChange={(e) => {
                             setCustomHours(e.target.value);
@@ -406,23 +406,23 @@ export default function AdminSystem() {
                     {maintenanceStart && maintenanceEnd ? (
                       <div className="rounded-lg border border-warning/30 bg-warning/5 p-2.5 space-y-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">Bắt đầu khóa:</span>
-                          <span className="text-sm font-medium">{format(new Date(maintenanceStart), "HH:mm - dd/MM/yyyy", { locale: vi })}</span>
+                          <span className="text-xs text-muted-foreground">{t.lockStart}</span>
+                          <span className="text-sm font-medium">{format(new Date(maintenanceStart), "HH:mm - dd/MM/yyyy", { locale: locale === "vi" ? viLocale : undefined })}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">Dự kiến mở lại:</span>
-                          <span className="text-sm font-semibold text-primary">{format(new Date(maintenanceEnd), "HH:mm - dd/MM/yyyy", { locale: vi })}</span>
+                          <span className="text-xs text-muted-foreground">{t.expectedReopen}</span>
+                          <span className="text-sm font-semibold text-primary">{format(new Date(maintenanceEnd), "HH:mm - dd/MM/yyyy", { locale: locale === "vi" ? viLocale : undefined })}</span>
                         </div>
                       </div>
                     ) : maintenanceHours > 0 ? (
                       <div className="rounded-lg border border-muted bg-muted/30 p-2.5 space-y-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">Bắt đầu khóa:</span>
-                          <span className="text-sm font-medium">Khi bấm xác nhận</span>
+                          <span className="text-xs text-muted-foreground">{t.lockStart}</span>
+                          <span className="text-sm font-medium">{t.whenConfirmed}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">Dự kiến mở lại:</span>
-                          <span className="text-sm font-semibold text-primary">{format(new Date(Date.now() + maintenanceHours * 3600000), "HH:mm - dd/MM/yyyy", { locale: vi })}</span>
+                          <span className="text-xs text-muted-foreground">{t.expectedReopen}</span>
+                          <span className="text-sm font-semibold text-primary">{format(new Date(Date.now() + maintenanceHours * 3600000), "HH:mm - dd/MM/yyyy", { locale: locale === "vi" ? viLocale : undefined })}</span>
                         </div>
                       </div>
                     ) : null}
@@ -430,11 +430,11 @@ export default function AdminSystem() {
 
                   {/* Maintenance message */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Thông báo bảo trì</Label>
+                    <Label className="text-xs">{t.maintenanceMsg}</Label>
                     <Textarea
                       value={maintenanceMessage}
                       onChange={(e) => setMaintenanceMessage(e.target.value)}
-                      placeholder="Nhập thông báo bảo trì..."
+                      placeholder={t.maintenanceMsgPlaceholder}
                       rows={2}
                       className="text-sm resize-none"
                     />
@@ -455,7 +455,7 @@ export default function AdminSystem() {
                         </div>
                         <div>
                           <CardTitle className="text-base flex items-center gap-2">
-                            Ghi lỗi hệ thống
+                            {t.errorLogging}
                             <Badge variant={errorLoggingEnabled ? 'default' : 'outline'} className="text-[10px] px-1.5 py-0">
                               {errorLoggingEnabled ? 'BẬT' : 'TẮT'}
                             </Badge>
@@ -478,7 +478,7 @@ export default function AdminSystem() {
                               }, { onConflict: 'key' });
                             if (error) throw error;
                             setErrorLoggingEnabled(checked);
-                            toast({ title: checked ? 'Đã bật ghi lỗi' : 'Đã tắt ghi lỗi' });
+                            toast({ title: checked ? '{t.errorLoggingOnToast}' : '{t.errorLoggingOffToast}' });
                           } catch {
                             toast({ title: 'Lỗi', variant: 'destructive' });
                           } finally {
@@ -491,8 +491,8 @@ export default function AdminSystem() {
                   <CardContent className="pt-0">
                     <p className="text-xs text-muted-foreground">
                       {errorLoggingEnabled
-                        ? 'Tự động ghi lại các lỗi runtime, promise rejection và console error.'
-                        : 'Không ghi lỗi — lỗi chỉ hiện trong console trình duyệt.'}
+                        ? '{t.errorLoggingOnDesc}'
+                        : '{t.errorLoggingOffDesc}'}
                     </p>
                   </CardContent>
                 </Card>
@@ -507,7 +507,7 @@ export default function AdminSystem() {
                         </div>
                         <div>
                           <CardTitle className="text-base flex items-center gap-2">
-                            Xác thực email khi đăng ký
+                            {t.emailVerification}
                             <Badge variant={emailVerificationEnabled ? 'default' : 'outline'} className="text-[10px] px-1.5 py-0">
                               {emailVerificationEnabled ? 'BẬT' : 'TẮT'}
                             </Badge>
@@ -531,7 +531,7 @@ export default function AdminSystem() {
                             if (error) throw error;
                             setEmailVerificationEnabled(checked);
                             toast({
-                              title: checked ? 'Đã bật xác thực email' : 'Đã tắt xác thực email',
+                              title: checked ? '{t.emailVerifOnToast}' : '{t.emailVerifOffToast}',
                               description: checked
                                 ? 'Người đăng ký mới phải xác thực email trước khi hoàn tất.'
                                 : 'Tài khoản được tạo ngay mà không cần xác thực email.',
@@ -569,7 +569,7 @@ export default function AdminSystem() {
                             <HardDrive className="w-4 h-4 text-primary" />
                           </div>
                           <div className="text-left">
-                            <CardTitle className="text-base">Di dời dữ liệu</CardTitle>
+                            <CardTitle className="text-base">{t.dataMigration}</CardTitle>
                             <CardDescription className="text-xs">Xuất/nhập toàn bộ dữ liệu hệ thống (42 bảng + 8 bucket storage)</CardDescription>
                           </div>
                         </div>
@@ -597,12 +597,12 @@ export default function AdminSystem() {
                     <div className="flex items-center gap-2.5">
                       <div className="p-2 rounded-lg bg-accent/10"><Mail className="w-4 h-4 text-accent" /></div>
                       <div>
-                        <CardTitle className="text-base">Thư thông báo bắt buộc</CardTitle>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">Hiển thị thông báo bắt buộc xem trước khi tắt</p>
+                        <CardTitle className="text-base">{t.notifLetters}</CardTitle>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{t.notifLettersDesc}</p>
                       </div>
                     </div>
                     <Button size="sm" className="gap-1.5" onClick={() => { setEditingNotif(null); setNotifTitle(''); setNotifContent(''); setNotifMode('post_login'); setNotifMinSeconds(15); setNotifExpiresAt(''); setNotifTargetUserIds([]); setUserSearchQuery(''); setNotifDialogOpen(true); }}>
-                      <Plus className="w-3.5 h-3.5" /> Tạo thư mới
+                      <Plus className="w-3.5 h-3.5" /> {t.createNotif}
                     </Button>
                   </div>
                 </CardHeader>
@@ -610,7 +610,7 @@ export default function AdminSystem() {
                   {notifications.length === 0 ? (
                     <div className="text-center py-6 space-y-2">
                       <Mail className="w-8 h-8 text-muted-foreground/30 mx-auto" />
-                      <p className="text-xs text-muted-foreground">Chưa có thư thông báo nào</p>
+                      <p className="text-xs text-muted-foreground">{t.noNotifs}</p>
                     </div>
                   ) : notifications.map((notif: any) => (
                     <div key={notif.id} className="group rounded-lg border bg-card hover:bg-muted/30 transition-colors px-4 py-3">
@@ -622,8 +622,8 @@ export default function AdminSystem() {
                             <div className="flex items-center flex-wrap gap-2 text-[11px] text-muted-foreground mt-0.5">
                               <span>{notif.display_mode === 'pre_login' ? '🔓 Trước ĐN' : '🔒 Sau ĐN'}</span>
                               <span className="inline-flex items-center gap-0.5"><Clock className="w-3 h-3" />{notif.min_view_seconds}s</span>
-                              {notif.expires_at && <span>⏳ {format(new Date(notif.expires_at), "dd/MM/yy", { locale: vi })}</span>}
-                              <span>📅 {format(new Date(notif.created_at), "dd/MM/yy HH:mm", { locale: vi })}</span>
+                              {notif.expires_at && <span>⏳ {format(new Date(notif.expires_at), "dd/MM/yy", { locale: locale === "vi" ? viLocale : undefined })}</span>}
+                              <span>📅 {format(new Date(notif.created_at), "dd/MM/yy HH:mm", { locale: locale === "vi" ? viLocale : undefined })}</span>
                               {Array.isArray(notif.target_user_ids) && notif.target_user_ids.length > 0 && (
                                 <span className="inline-flex items-center gap-0.5 text-accent font-medium">
                                   👤 {notif.target_user_ids.length} người
@@ -672,7 +672,7 @@ export default function AdminSystem() {
                       </div>
                       <div>
                         <CardTitle className="text-base flex items-center gap-2">
-                          Email Digest hàng ngày
+                          {t.emailDigest}
                           <Badge variant={emailDigestEnabled ? 'default' : 'outline'} className="text-[10px] px-1.5 py-0">
                             {emailDigestEnabled ? 'BẬT' : 'TẮT'}
                           </Badge>
@@ -749,7 +749,7 @@ export default function AdminSystem() {
                           {recentEmailLogs.map((log: any) => (
                             <div key={log.id} className="flex items-center justify-between text-[11px] bg-muted/20 rounded px-2 py-1">
                               <span className="truncate max-w-[180px]">{log.recipient_email}</span>
-                              <span className="text-muted-foreground">{format(new Date(log.sent_at), "HH:mm dd/MM", { locale: vi })}</span>
+                              <span className="text-muted-foreground">{format(new Date(log.sent_at), "HH:mm dd/MM", { locale: locale === "vi" ? viLocale : undefined })}</span>
                             </div>
                           ))}
                         </div>
@@ -769,12 +769,12 @@ export default function AdminSystem() {
                         } else {
                           await supabase.from('system_settings').insert({ key: 'email_daily_digest', value });
                         }
-                        toast({ title: 'Đã lưu cài đặt Email Digest' });
+                        toast({ title: '{t.savedEmailDigest}' });
                       } catch { toast({ title: 'Lỗi', variant: 'destructive' }); }
                       finally { setSavingEmailDigest(false); }
                     }}
                   >
-                    <Save className="w-4 h-4" /> Lưu cài đặt Email Digest
+                    <Save className="w-4 h-4" /> {t.saveEmailDigest}
                   </Button>
                 </CardContent>
               </Card>
@@ -794,7 +794,7 @@ export default function AdminSystem() {
                       </div>
                       <div>
                         <CardTitle className="text-base flex items-center gap-2">
-                          Video nền Dashboard
+                          {t.videoBg}
                           <Badge variant={videoBgEnabled ? 'default' : 'outline'} className="text-[10px] px-1.5 py-0">
                             {videoBgEnabled ? 'BẬT' : 'TẮT'}
                           </Badge>
@@ -811,10 +811,10 @@ export default function AdminSystem() {
                   <Tabs defaultValue="upload" className="w-full">
                     <TabsList className="w-full grid grid-cols-2">
                       <TabsTrigger value="upload" className="gap-1.5 text-xs">
-                        <Upload className="w-3 h-3" /> Tải video lên
+                        <Upload className="w-3 h-3" /> {t.uploadVideo}
                       </TabsTrigger>
                       <TabsTrigger value="link" className="gap-1.5 text-xs">
-                        <Link className="w-3 h-3" /> Dán link
+                        <Link className="w-3 h-3" /> {t.pasteLink}
                       </TabsTrigger>
                     </TabsList>
                     <TabsContent value="upload" className="space-y-2 mt-2">
@@ -834,9 +834,9 @@ export default function AdminSystem() {
                               .upload(fileName, file, { upsert: true });
                             if (uploadError) throw uploadError;
                             setVideoBgUrl(uploadData?.publicUrl || '');
-                            toast({ title: 'Đã tải video lên', description: file.name });
+                            toast({ title: '{t.videoUploaded}', description: file.name });
                           } catch (err: any) {
-                            toast({ title: 'Lỗi upload', description: err.message, variant: 'destructive' });
+                            toast({ title: '{t.uploadError}', description: err.message, variant: 'destructive' });
                           } finally {
                             setUploadingVideo(false);
                           }
@@ -844,7 +844,7 @@ export default function AdminSystem() {
                       />
                       {uploadingVideo && (
                         <p className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Loader2 className="w-3 h-3 animate-spin" /> Đang tải lên...
+                          <Loader2 className="w-3 h-3 animate-spin" /> {t.uploading}
                         </p>
                       )}
                     </TabsContent>
@@ -865,7 +865,7 @@ export default function AdminSystem() {
                   <Collapsible>
                     <CollapsibleTrigger asChild>
                       <Button variant="ghost" size="sm" className="w-full justify-between text-xs text-muted-foreground h-8 px-2">
-                        <span>Tùy chỉnh độ hiển thị từng trang</span>
+                        <span>{t.customizeVisibility}</span>
                         <ChevronDown className="w-3.5 h-3.5" />
                       </Button>
                     </CollapsibleTrigger>
@@ -925,16 +925,16 @@ export default function AdminSystem() {
                         } else {
                           await supabase.from('system_settings').insert({ key: 'dashboard_video_bg', value });
                         }
-                        toast({ title: 'Đã lưu cài đặt video nền' });
+                        toast({ title: '{t.savedVideoSettings}' });
                       } catch {
-                        toast({ title: 'Lỗi', description: 'Không thể lưu', variant: 'destructive' });
+                        toast({ title: 'Lỗi', description: '{t.cannotSaveVideo}', variant: 'destructive' });
                       } finally {
                         setSavingVideo(false);
                       }
                     }}
                   >
                     {savingVideo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Lưu cài đặt video
+                    {t.saveVideoSettings}
                   </Button>
                 </CardContent>
               </Card>
@@ -953,7 +953,7 @@ export default function AdminSystem() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-warning" />
-              Xác nhận thay đổi trạng thái
+              {t.confirmStatusChange}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {maintenanceEnabled !== origMaintenanceEnabled ? (
@@ -978,8 +978,8 @@ export default function AdminSystem() {
       {/* Notification Letter Dialog */}
       <Dialog open={notifDialogOpen} onOpenChange={setNotifDialogOpen}>
         <DialogContent className="max-w-lg">
-          <DialogTitle>{editingNotif ? 'Chỉnh sửa thư' : 'Tạo thư thông báo mới'}</DialogTitle>
-          <DialogDescription className="sr-only">Quản lý thư thông báo bắt buộc</DialogDescription>
+          <DialogTitle>{editingNotif ? t.editNotifDialog : t.createNotifDialog}</DialogTitle>
+          <DialogDescription className="sr-only">{t.notifDialogDesc}</DialogDescription>
           <div className="space-y-3">
             <div className="space-y-1.5">
               <Label className="text-xs">Tiêu đề</Label>
@@ -1100,12 +1100,12 @@ export default function AdminSystem() {
                 const { data: notifs } = await supabase.from('system_notifications').select('*').order('created_at', { ascending: false });
                 setNotifications(notifs || []);
                 setNotifDialogOpen(false);
-                toast({ title: editingNotif ? 'Đã cập nhật thư' : 'Đã tạo thư thông báo' });
+                toast({ title: editingNotif ? t.notifUpdated : t.notifCreated });
               } catch (err: any) { toast({ title: 'Lỗi', description: err.message, variant: 'destructive' }); }
               finally { setSavingNotif(false); }
             }}>
               {savingNotif ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {editingNotif ? 'Cập nhật' : 'Tạo thư'}
+              {editingNotif ? t.updateNotif : t.createNotifBtn}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1115,14 +1115,14 @@ export default function AdminSystem() {
       <Dialog open={emailHistoryOpen} onOpenChange={setEmailHistoryOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><History className="w-4 h-4" /> Lịch sử gửi Email Digest</DialogTitle>
-            <DialogDescription>50 bản ghi gần nhất từ hệ thống email queue</DialogDescription>
+            <DialogTitle className="flex items-center gap-2"><History className="w-4 h-4" /> {t.emailHistoryTitle}</DialogTitle>
+            <DialogDescription>{t.emailHistoryDesc}</DialogDescription>
           </DialogHeader>
           <ScrollArea className="max-h-[55vh]">
             {loadingHistory ? (
               <div className="flex items-center justify-center py-8"><Loader2 className="w-5 h-5 animate-spin" /></div>
             ) : emailHistoryLogs.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">Chưa có bản ghi nào</p>
+              <p className="text-sm text-muted-foreground text-center py-8">{t.noRecords}</p>
             ) : (
               <Table>
                 <TableHeader>
@@ -1142,7 +1142,7 @@ export default function AdminSystem() {
                           {log.status === 'sent' ? '✅ Đã gửi' : log.status === 'pending' ? '⏳ Chờ' : log.status === 'failed' ? '❌ Lỗi' : log.status === 'dlq' ? '💀 DLQ' : log.status === 'rate_limited' ? '🚫 Rate limit' : log.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{format(new Date(log.created_at), "HH:mm dd/MM/yyyy", { locale: vi })}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{format(new Date(log.created_at), "HH:mm dd/MM/yyyy", { locale: locale === "vi" ? viLocale : undefined })}</TableCell>
                       <TableCell className="text-xs text-destructive max-w-[200px] truncate" title={log.error_message || ''}>{log.error_message || '—'}</TableCell>
                     </TableRow>
                   ))}
