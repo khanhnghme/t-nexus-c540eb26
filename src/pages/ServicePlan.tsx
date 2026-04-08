@@ -566,6 +566,13 @@ export default function ServicePlan() {
           )}
         </TabsContent>
 
+        {/* ──────── TAB: Dọn dẹp ──────── */}
+        {accountLimits.isOverLimits && (
+          <TabsContent value="cleanup" className="space-y-6">
+            <AccountCleanupPanel onCleanupComplete={fetchUsages} />
+          </TabsContent>
+        )}
+
         {/* ──────── TAB 3: Lịch sử thanh toán ──────── */}
         <TabsContent value="billing" className="space-y-4">
           <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
