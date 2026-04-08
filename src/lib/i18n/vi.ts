@@ -1818,7 +1818,6 @@ export const vi: Translations = {
       emojiObjects: '🎉 Vật & Biểu tượng',
       emojiFood: '🍕 Đồ ăn',
     },
-  },
 
     pricingDocs: {
     backToPricing: 'Quay lại Bảng giá',
