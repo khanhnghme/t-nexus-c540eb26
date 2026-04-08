@@ -29,7 +29,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Users, Loader2, ArrowLeft, Layers, Trash2, FileText, Calendar, Send, Clock } from 'lucide-react';
 import LoadingScreen from '@/components/LoadingScreen';
-import ProjectNavigation from '@/components/ProjectNavigation';
+
 import ProcessScores from '@/components/scores/ProcessScores';
 import ProjectResources from '@/components/ProjectResources';
 import ProjectEvidenceExport from '@/components/ProjectEvidenceExport';
