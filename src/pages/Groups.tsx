@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { fixStorageUrl } from '@/lib/urlUtils';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,7 +48,6 @@ import type { Group, GroupMember } from '@/types/database';
 import UserAvatar from '@/components/UserAvatar';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
-
 interface MemberAvatar {
   avatar_url: string | null;
   full_name: string;
