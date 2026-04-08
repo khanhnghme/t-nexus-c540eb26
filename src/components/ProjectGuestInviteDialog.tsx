@@ -16,6 +16,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import UserAvatar from '@/components/UserAvatar';
+import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 
 interface ProjectGuestInviteDialogProps {
   groupId: string;
@@ -32,7 +33,10 @@ export default function ProjectGuestInviteDialog({ groupId, groupName, trigger }
   const [guestRole, setGuestRole] = useState('project_member');
   const [isInviting, setIsInviting] = useState(false);
 
+  const { guardAction: guardReadOnly } = useReadOnlyGuard();
+
   const handleInviteGuest = async () => {
+    if (guardReadOnly()) return;
     if (!guestEmail.trim()) return;
     setIsInviting(true);
 

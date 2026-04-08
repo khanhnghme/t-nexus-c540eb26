@@ -10,6 +10,7 @@ import { logActivity } from '@/lib/activityLogger';
 import { supabase } from '@/integrations/supabase/client';
 import { Share2, Copy, ExternalLink, Users, Activity, Loader2, Lock, Unlock, Eye, FolderOpen, KeyRound, Layers, Trophy, ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 
 interface ShareSettingsCardProps {
   groupId: string;
@@ -84,7 +85,10 @@ export default function ShareSettingsCard({
     ? `${window.location.origin}/project/${groupSlug}` 
     : null;
 
+  const { guardAction: guardReadOnly } = useReadOnlyGuard();
+
   const handleToggleShare = async (enabled: boolean) => {
+    if (guardReadOnly()) return;
     setIsUpdating(true);
     try {
       // Use slug as share_token for clean URLs
@@ -154,6 +158,7 @@ export default function ShareSettingsCard({
   };
 
   const handleToggleJoinCode = async (enabled: boolean) => {
+    if (guardReadOnly()) return;
     setIsUpdating(true);
     try {
       let newCode = localJoinCode;

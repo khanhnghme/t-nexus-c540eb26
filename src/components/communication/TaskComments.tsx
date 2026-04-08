@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import MentionInput from './MentionInput';
 import { parseMessageContent, renderMessageContent } from '@/lib/messageParser';
 import { cn } from '@/lib/utils';
+import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 
 interface Comment {
   id: string;
@@ -154,7 +155,10 @@ export default function TaskComments({ taskId, groupId, className }: TaskComment
     }
   };
 
+  const { guardAction: guardReadOnly } = useReadOnlyGuard();
+
   const handleSendComment = async () => {
+    if (guardReadOnly()) return;
     if (!commentInput.trim() || !user || isSending) return;
 
     setIsSending(true);

@@ -14,6 +14,7 @@ import { r2Storage } from '@/lib/r2Storage';
 import { useToast } from '@/hooks/use-toast';
 import { logActivity } from '@/lib/activityLogger';
 import { cn } from '@/lib/utils';
+import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 import {
   Upload,
   File,
@@ -208,7 +209,10 @@ export default function ResourceUploadDialog({
   const totalDone = pendingFiles.filter(f => f.status === 'done').length + pendingLinks.filter(l => l.status === 'done').length;
   const totalItems = pendingFiles.length + pendingLinks.length;
 
+  const { guardAction: guardReadOnly } = useReadOnlyGuard();
+
   const handleSubmitAll = async () => {
+    if (guardReadOnly()) return;
     if (totalPending === 0) return;
     setIsSubmitting(true);
 

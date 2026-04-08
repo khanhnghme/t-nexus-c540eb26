@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useFilePreview } from '@/contexts/FilePreviewContext';
+import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 
 export interface UploadedFile {
   file_path: string;
@@ -211,7 +212,10 @@ export default function MultiFileUploadSubmission({
     targetProgressRef.current = 100;
   }, []);
 
+  const { guardAction: guardReadOnly } = useReadOnlyGuard();
+
   const handleFilesSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (guardReadOnly()) return;
     const files = event.target.files;
     if (!files || files.length === 0) return;
 

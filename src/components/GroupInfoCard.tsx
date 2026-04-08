@@ -18,6 +18,7 @@ import { fixStorageUrl } from '@/lib/urlUtils';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { logActivity } from '@/lib/activityLogger';
+import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 import {
   BookOpen,
   User,
@@ -155,7 +156,10 @@ export default function GroupInfoCard({ group, canEdit, onUpdate, dialogOnly, in
     setEditImageUrl('');
   };
 
+  const { guardAction: guardReadOnly } = useReadOnlyGuard();
+
   const handleSave = async () => {
+    if (guardReadOnly()) return;
     if (!editName.trim()) {
       toast({
         title: 'Lỗi',

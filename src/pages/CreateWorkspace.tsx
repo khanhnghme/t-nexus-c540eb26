@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Building2, Loader2 } from 'lucide-react';
+import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 
 export default function CreateWorkspace() {
   const { user } = useAuth();
@@ -20,8 +21,11 @@ export default function CreateWorkspace() {
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const { guardAction: guardReadOnly } = useReadOnlyGuard();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (guardReadOnly()) return;
     if (!user || !name.trim()) return;
 
     setIsSubmitting(true);

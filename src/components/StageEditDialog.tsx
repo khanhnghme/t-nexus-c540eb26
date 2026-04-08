@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 import type { Stage } from '@/types/database';
+import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 
 interface StageEditDialogProps {
   stage: Stage | null;
@@ -46,7 +47,10 @@ export default function StageEditDialog({
     }
   }, [stage, isOpen]);
 
+  const { guardAction: guardReadOnly } = useReadOnlyGuard();
+
   const handleSave = async () => {
+    if (guardReadOnly()) return;
     if (!stage) return;
     if (!name.trim()) {
       toast({

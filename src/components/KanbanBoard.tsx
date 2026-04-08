@@ -40,6 +40,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { logActivity } from '@/lib/activityLogger';
 import type { Task, Stage, GroupMember, Profile } from '@/types/database';
 import { formatDateVN, isDeadlineOverdue } from '@/lib/datetime';
+import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 
 interface KanbanBoardProps {
   stages: Stage[];
@@ -138,7 +139,10 @@ export default function KanbanBoard({
     return isDeadlineOverdue(deadline);
   };
 
+  const { guardAction: guardReadOnly } = useReadOnlyGuard();
+
   const handleDragEnd = async (result: DropResult) => {
+    if (guardReadOnly()) return;
     if (!result.destination || !isLeaderInGroup) return;
 
     const taskId = result.draggableId;

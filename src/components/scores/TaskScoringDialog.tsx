@@ -39,6 +39,7 @@ import {
 import type { Task, GroupMember } from '@/types/database';
 import type { TaskScore } from '@/types/processScores';
 import { sendNotification } from '@/lib/notifications';
+import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 
 interface TaskScoringDialogProps {
   isOpen: boolean;
@@ -150,7 +151,10 @@ export default function TaskScoringDialog({
   };
 
   // Save individual member score
+  const { guardAction: guardReadOnly } = useReadOnlyGuard();
+
   const handleSaveScore = async (edit: MemberScoreEdit) => {
+    if (guardReadOnly()) return;
     if (!task || !user) return;
 
     setIsLoading(true);
@@ -247,6 +251,7 @@ export default function TaskScoringDialog({
 
   // Save group score (same score for all members)
   const handleSaveGroupScore = async () => {
+    if (guardReadOnly()) return;
     if (!task || !user || assignedMembers.length === 0) return;
 
     setIsLoading(true);
