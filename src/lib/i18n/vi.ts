@@ -1133,8 +1133,53 @@ export const vi: Translations = {
     ctaText: 'Đã sẵn sàng chọn gói phù hợp?',
     ctaButton: 'Xem bảng giá',
 
-    // CTA on Pricing/Upgrade pages
     pricingCta: 'Bạn có thắc mắc về cách tính giá?',
     pricingCtaLink: 'Xem hướng dẫn chi tiết',
+
+    // Table of Contents
+    tocTitle: 'Mục lục',
+    ch1Label: 'Chương 1: Hướng dẫn Bảng giá',
+    ch2Label: 'Chương 2: Chính sách khi hết hạn gói',
+    tocItems: {
+      s1: '1.1 Mô hình Chủ sở hữu trả tiền',
+      s2: '1.2 Suất thành viên duy nhất',
+      s3: '1.3 Tổng kho tài nguyên',
+      s4: '1.4 Add-ons',
+      s5: '1.5 Ví dụ thực tế',
+      s6: '1.6 Câu hỏi thường gặp',
+      ch2s1: '2.1 Khóa quyền chỉnh sửa',
+      ch2s2: '2.2 Thời hạn 30 ngày',
+      ch2s3: '2.3 Xóa vĩnh viễn',
+    },
+
+    // Chapter 2
+    ch2Title: 'Chính sách khi hết hạn gói',
+    ch2Subtitle: 'Khi gói trả phí hết hạn mà bạn không gia hạn, hệ thống sẽ áp dụng quy trình 3 giai đoạn sau đây để bảo vệ dữ liệu và đảm bảo công bằng.',
+
+    ch2s1Title: 'Khóa quyền chỉnh sửa (Read-only)',
+    ch2s1Desc: 'Ngay khi tài khoản trở về gói Free mà dữ liệu hiện có vượt quá hạn mức, hệ thống sẽ tự động chuyển sang chế độ chỉ đọc.',
+    ch2s1Allowed: ['Xem lại toàn bộ nội dung hiện có', 'Xóa bớt dữ liệu dư thừa', 'Tải xuống / xuất dữ liệu'],
+    ch2s1Blocked: ['Thêm dự án mới', 'Tải file mới lên', 'Mời thêm thành viên', 'Chỉnh sửa bất kỳ thông tin nào'],
+    ch2s1Callout: '💡 Mục tiêu: Muốn dùng tiếp thì phải dọn dẹp cho gọn hoặc trả tiền để mở khóa.',
+
+    ch2s2Title: 'Thời hạn 30 ngày — Cơ hội cuối cùng',
+    ch2s2Desc: 'Hệ thống cho bạn đúng 30 ngày kể từ khi bị khóa để đưa ra quyết định.',
+    ch2s2Options: [
+      { title: 'Lựa chọn A: Nâng cấp lại', desc: 'Thanh toán lại gói cũ (hoặc gói mới) để lấy lại toàn bộ quyền hạn ngay lập tức. Dữ liệu được giữ nguyên 100%.', icon: 'upgrade' },
+      { title: 'Lựa chọn B: Dọn dẹp dữ liệu', desc: 'Tự tay xóa bớt Workspace, Dự án, hoặc File dư thừa. Khi số lượng còn lại bằng hoặc thấp hơn mức gói Free, hệ thống sẽ tự động mở khóa quyền chỉnh sửa.', icon: 'cleanup' },
+    ],
+    ch2s2Callout: '💡 Bạn có 30 ngày để quyết định. Trong thời gian này dữ liệu vẫn an toàn, chỉ bị giới hạn quyền chỉnh sửa.',
+
+    ch2s3Title: 'Sau 30 ngày — Xóa vĩnh viễn (Hard Delete)',
+    ch2s3Desc: 'Nếu sau 30 ngày bạn vẫn không hành động và dữ liệu vẫn vượt hạn mức gói Free:',
+    ch2s3Actions: [
+      'Đúng ngày thứ 31, hệ thống sẽ tự động quét và xóa các dữ liệu dư thừa.',
+      'Dữ liệu bị xóa KHÔNG THỂ khôi phục.',
+    ],
+    ch2s3Rule: 'Nguyên tắc xóa: Hệ thống sẽ giữ lại những mục được tạo sớm nhất (đúng bằng hạn mức gói Free). Các mục tạo sau — tức mới hơn — sẽ bị xóa trắng, không thể hoàn tác.',
+    ch2s3Callout: '⚠️ Cảnh báo nghiêm trọng: Đây là hành động không thể hoàn tác. Hãy đảm bảo bạn đã sao lưu hoặc dọn dẹp dữ liệu trước khi hết thời hạn 30 ngày.',
+
+    ch2CtaText: 'Đừng để mất dữ liệu quan trọng!',
+    ch2CtaButton: 'Gia hạn gói ngay',
   },
 };

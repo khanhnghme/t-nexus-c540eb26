@@ -1145,6 +1145,50 @@ export const en = {
 
     pricingCta: 'Have questions about how pricing works?',
     pricingCtaLink: 'View detailed guide',
+
+    tocTitle: 'Table of Contents',
+    ch1Label: 'Chapter 1: Pricing Guide',
+    ch2Label: 'Chapter 2: Expiration Policies',
+    tocItems: {
+      s1: '1.1 Owner-based Billing',
+      s2: '1.2 Unique Seat Pool',
+      s3: '1.3 Global Resource Pool',
+      s4: '1.4 Add-ons',
+      s5: '1.5 Real-world Examples',
+      s6: '1.6 FAQ',
+      ch2s1: '2.1 Read-only Mode',
+      ch2s2: '2.2 30-Day Grace Period',
+      ch2s3: '2.3 Permanent Deletion',
+    },
+
+    ch2Title: 'Expiration Policies',
+    ch2Subtitle: 'When your paid plan expires without renewal, the system applies a 3-stage process to protect your data and ensure fairness.',
+
+    ch2s1Title: 'Read-only Mode (Edit Lock)',
+    ch2s1Desc: 'As soon as your account reverts to Free and current data exceeds the Free limits, the system automatically switches to read-only mode.',
+    ch2s1Allowed: ['View all existing content', 'Delete excess data', 'Download / export data'],
+    ch2s1Blocked: ['Create new projects', 'Upload new files', 'Invite new members', 'Edit any information'],
+    ch2s1Callout: '💡 Goal: To continue using the platform, either clean up your data or upgrade to unlock editing.',
+
+    ch2s2Title: '30-Day Grace Period — Last Chance',
+    ch2s2Desc: 'The system gives you exactly 30 days from the lock date to make your decision.',
+    ch2s2Options: [
+      { title: 'Option A: Upgrade', desc: 'Pay for your previous plan (or a new one) to restore all permissions immediately. Data is preserved 100%.', icon: 'upgrade' },
+      { title: 'Option B: Clean up', desc: 'Manually delete excess Workspaces, Projects, or Files. Once your usage falls within Free plan limits, editing is automatically unlocked.', icon: 'cleanup' },
+    ],
+    ch2s2Callout: '💡 You have 30 days to decide. During this time your data remains safe — only editing is restricted.',
+
+    ch2s3Title: 'After 30 Days — Permanent Deletion (Hard Delete)',
+    ch2s3Desc: 'If after 30 days you have not taken action and data still exceeds Free plan limits:',
+    ch2s3Actions: [
+      'On day 31, the system will automatically scan and delete excess data.',
+      'Deleted data CANNOT be recovered.',
+    ],
+    ch2s3Rule: 'Deletion rule: The system keeps the oldest items (up to the Free plan limit). Newer items beyond the limit will be permanently deleted and cannot be undone.',
+    ch2s3Callout: '⚠️ Critical warning: This action is irreversible. Make sure to back up or clean up your data before the 30-day deadline.',
+
+    ch2CtaText: 'Don\'t lose your important data!',
+    ch2CtaButton: 'Renew your plan now',
   },
 };
 
