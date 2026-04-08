@@ -23,6 +23,7 @@ import { renderMessageContent } from '@/lib/messageParser';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Profile, Task, ProjectRole } from '@/types/database';
@@ -201,7 +202,7 @@ export default function MessageItem({ message, isOwn, showAvatar = true, showNam
   };
 
   const formattedTime = format(new Date(message.created_at), 'HH:mm');
-  const formattedDateTime = format(new Date(message.created_at), "EEEE, dd/MM/yyyy 'lúc' HH:mm", { locale: vi });
+  const formattedDateTime = format(new Date(message.created_at), "EEEE, dd/MM/yyyy 'lúc' HH:mm", { locale: locale === 'vi' ? vi : undefined });
 
   return (
     <>
@@ -262,7 +263,7 @@ export default function MessageItem({ message, isOwn, showAvatar = true, showNam
                     onClick={() => setShowDeleteDialog(true)}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
-                    Xóa tin nhắn
+                     {comm.deleteMessage}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -321,7 +322,7 @@ export default function MessageItem({ message, isOwn, showAvatar = true, showNam
                         isOwn ? 'text-primary-foreground underline underline-offset-2' : 'text-primary'
                       )}
                       onClick={() => handleMentionClick(segment.content)}
-                      title={`Xem thông tin ${segment.content}`}
+                      title={(comm.viewInfo as string).replace('{name}', segment.content)}
                     >
                       {segment.content}
                     </span>
@@ -378,7 +379,7 @@ export default function MessageItem({ message, isOwn, showAvatar = true, showNam
               onClick={() => onTaskClick?.(message.source_task_id!)}
             >
               <ExternalLink className="w-3 h-3" />
-              Mở Task
+              {comm.openTask}
             </Button>
           )}
         </div>
@@ -388,19 +389,19 @@ export default function MessageItem({ message, isOwn, showAvatar = true, showNam
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Xóa tin nhắn?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tin nhắn này sẽ bị xóa vĩnh viễn. Bạn có chắc chắn?
+             <AlertDialogTitle>{comm.deleteMessageTitle}</AlertDialogTitle>
+             <AlertDialogDescription>
+               {comm.deleteMessageDesc}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Hủy</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{comm.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? 'Đang xóa...' : 'Xóa'}
+              {isDeleting ? comm.deleting : comm.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
