@@ -34,7 +34,7 @@ const SITE_URL = 'https://t-nexus.io.vn';
  * Public routes use URL-based locale prefix (/vi/auth, /en/pricing).
  * Internal routes (dashboard, workspace, etc.) use profile.preferred_locale.
  */
-const PUBLIC_CANONICAL_PATHS = ['/', '/auth', '/pricing', '/download', '/terms'];
+const PUBLIC_CANONICAL_PATHS = ['/', '/auth', '/pricing', '/download', '/terms', '/docs/pricing'];
 
 function isPublicRoute(pathname: string): boolean {
   const canonical = stripLocalePrefix(pathname);

@@ -1043,4 +1043,98 @@ export const vi: Translations = {
       sidebarTagline: 'Quản lý dự án nhóm',
     },
   },
+
+  pricingDocs: {
+    backToPricing: 'Quay lại Bảng giá',
+    title: 'Hướng dẫn chi tiết về Bảng giá T-Nexus',
+    subtitle: 'Hiểu rõ mô hình tính giá, cách phân bổ tài nguyên và quyền lợi của thành viên khi sử dụng T-Nexus.',
+
+    // Section 1
+    s1Title: 'Mô hình Chủ sở hữu trả tiền (Owner-based Billing)',
+    s1Desc: 'T-Nexus áp dụng mô hình thanh toán theo Chủ sở hữu. Chỉ người tạo và sở hữu Workspace mới phải trả tiền. Tất cả thành viên được mời vào đều được sử dụng đầy đủ tính năng cao cấp của gói đó mà không tốn thêm bất kỳ chi phí nào.',
+    s1Steps: [
+      { title: 'Owner mua gói', desc: 'Bạn chọn gói phù hợp (Plus, Pro, Business) và thanh toán cho tài khoản của mình.' },
+      { title: 'Tạo Workspace', desc: 'Tạo các không gian làm việc và dự án theo nhu cầu, phân bổ tài nguyên linh hoạt.' },
+      { title: 'Mời thành viên', desc: 'Thành viên tham gia miễn phí, hưởng toàn bộ tính năng cao cấp từ gói của bạn.' },
+    ],
+    s1Callout: '💡 Thành viên hưởng ké 0đ: Bạn chỉ trả tiền cho tài khoản chủ sở hữu. Tất cả người được mời vào đều sử dụng tính năng cao cấp (Họp, Nhật ký, Xuất dữ liệu...) theo gói của bạn hoàn toàn miễn phí.',
+
+    // Section 2
+    s2Title: 'Suất thành viên duy nhất (Unique Seat Pool)',
+    s2Desc: 'Mỗi người dùng (1 Email) chỉ chiếm 1 suất duy nhất trong tổng kho, dù họ tham gia vào 1 hay nhiều Workspace của bạn. Bạn không bao giờ bị "mất suất" oan khi mời nhân viên vào nhiều dự án.',
+    s2TableHeaders: ['Tình huống', 'Số Workspace tham gia', 'Suất chiếm dụng'],
+    s2TableRows: [
+      ['user-a@email.com', '3 Workspace', '1 suất'],
+      ['user-b@email.com', '1 Workspace', '1 suất'],
+      ['user-c@email.com', '5 Workspace', '1 suất'],
+    ],
+    s2Callout: '💡 1 Email = 1 Suất. Dù tham gia bao nhiêu Workspace, mỗi thành viên chỉ tính là 1 suất duy nhất trong tổng giới hạn của bạn.',
+
+    // Section 3
+    s3Title: 'Tổng kho tài nguyên (Global Resource Pool)',
+    s3Desc: 'Mọi giới hạn (Workspace, Dự án, Lưu trữ, Thành viên) là con số tổng cộng trên toàn tài khoản. Bạn có thể dồn toàn bộ tài nguyên vào 1 Workspace hoặc chia đều cho nhiều nơi tùy ý — hoàn toàn linh hoạt.',
+    s3TableHeaders: ['Tài nguyên', 'Free', 'Plus', 'Pro', 'Business'],
+    s3TableRows: [
+      ['Workspace', '1', '5', '20', '50'],
+      ['Tổng dự án', '2', '20', '150', '1.500'],
+      ['Lưu trữ', '500 MB', '10 GB', '50 GB', '200 GB'],
+      ['Suất thành viên', '5', '15', '50', '150'],
+      ['Giới hạn file', '5 MB/file', '100 MB/file', '5 GB/file', '5 GB/file'],
+    ],
+    s3Callout: '💡 Phân bổ linh hoạt: Ví dụ với gói Plus (20 dự án), bạn có thể tạo 15 dự án trong WS chính và 5 dự án trong WS phụ — hoặc 20 dự án trong 1 WS duy nhất.',
+
+    // Section 4
+    s4Title: 'Add-ons — Mở rộng theo nhu cầu',
+    s4Desc: 'Cần nhiều hơn giới hạn gói hiện tại? Mua thêm Add-on để cộng trực tiếp vào tổng kho tài khoản. Add-on áp dụng hiệu lực cho TẤT CẢ Workspace bạn sở hữu.',
+    s4Items: [
+      { name: '+50 Dự án', price: '$2.49/tháng', note: 'Cộng thêm 50 dự án vào tổng kho. Sử dụng trong bất kỳ Workspace nào.' },
+      { name: '+20 GB Lưu trữ', price: '$2.49/tháng', note: 'Mở rộng dung lượng lưu trữ tổng cộng trên toàn tài khoản.' },
+      { name: '+10 Suất thành viên', price: '$2.49/tháng', note: 'Thêm 10 suất thành viên unique vào tổng kho của bạn.' },
+    ],
+    s4Callout: '💡 Add-on chỉ khả dụng từ gói Plus trở lên. Số lượng mua thêm được cộng vào tổng kho tài khoản, không giới hạn theo từng Workspace.',
+
+    // Section 5
+    s5Title: 'Ví dụ thực tế',
+    s5Scenarios: [
+      {
+        title: '🎓 Kịch bản 1: Sinh viên dùng gói Free',
+        desc: 'Bạn Minh đang làm đồ án tốt nghiệp cùng 4 bạn trong nhóm.',
+        details: [
+          'Tạo 1 Workspace cho nhóm đồ án',
+          'Mời 4 thành viên (tổng 5/5 suất)',
+          'Tạo 2 dự án: "Đồ án chính" và "Tài liệu tham khảo"',
+          'Sử dụng 500 MB để lưu trữ file báo cáo',
+          '→ Hoàn toàn miễn phí, đủ dùng cho dự án nhỏ!',
+        ],
+      },
+      {
+        title: '👨‍💼 Kịch bản 2: Nhóm trưởng dùng gói Plus',
+        desc: 'Anh Hùng quản lý 3 nhóm dự án với tổng 15 thành viên.',
+        details: [
+          'Tạo 3 Workspace: "Dự án A", "Dự án B", "Nội bộ"',
+          'Mời 15 thành viên — một số người tham gia cả 3 WS nhưng chỉ tính 1 suất/người',
+          'Phân bổ 20 dự án: WS-A (10), WS-B (7), Nội bộ (3)',
+          'Dung lượng 10 GB chia sẻ giữa tất cả Workspace',
+          '→ Chỉ $4.80/tháng, thành viên dùng miễn phí!',
+        ],
+      },
+    ],
+
+    // Section 6
+    s6Title: 'Câu hỏi thường gặp',
+    s6Items: [
+      { q: 'Thành viên có phải trả tiền không?', a: 'Không. Chỉ Chủ sở hữu (Owner) trả tiền. Tất cả thành viên được mời vào đều sử dụng miễn phí toàn bộ tính năng của gói.' },
+      { q: 'Nếu 1 người tham gia 5 Workspace, tính mấy suất?', a: 'Chỉ tính 1 suất. Mỗi Email = 1 Suất duy nhất, bất kể tham gia bao nhiêu Workspace.' },
+      { q: 'Giới hạn dự án tính theo Workspace hay tài khoản?', a: 'Theo tài khoản. Tổng số dự án là con số chung, bạn phân bổ tùy ý cho các Workspace khác nhau.' },
+      { q: 'Add-on có áp dụng cho tất cả Workspace không?', a: 'Có. Add-on được cộng vào tổng kho tài khoản và có hiệu lực cho mọi Workspace bạn sở hữu.' },
+      { q: 'Hạ gói có mất dữ liệu không?', a: 'Dữ liệu vẫn được giữ nguyên. Tuy nhiên, nếu tài nguyên đang dùng vượt giới hạn gói mới, bạn cần điều chỉnh trước khi tạo thêm.' },
+    ],
+
+    ctaText: 'Đã sẵn sàng chọn gói phù hợp?',
+    ctaButton: 'Xem bảng giá',
+
+    // CTA on Pricing/Upgrade pages
+    pricingCta: 'Bạn có thắc mắc về cách tính giá?',
+    pricingCtaLink: 'Xem hướng dẫn chi tiết',
+  },
 };

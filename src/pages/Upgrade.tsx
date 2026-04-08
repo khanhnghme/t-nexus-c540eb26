@@ -42,7 +42,7 @@ function formatPrice(monthly: number | null, yearly: boolean): string {
 
 export default function Upgrade() {
   const [yearly, setYearly] = useState(false);
-  const { translations: { pricing: tp, common: tc } } = useLanguage();
+  const { translations: t, translations: { pricing: tp, common: tc } } = useLanguage();
   const { user, profile } = useAuth();
   const { activeWorkspace } = useWorkspace();
   const { ownerId, ownerName, ownerPlan } = useWorkspaceBilling();
@@ -244,6 +244,16 @@ export default function Upgrade() {
 
         {/* FAQ */}
         <UpgradeQuestionsAndAnswers faqData={FAQ_DATA} tp={tp} />
+
+        {/* Pricing docs CTA */}
+        <div className="text-center py-6 border-t border-border mt-8">
+          <p className="text-sm text-muted-foreground mb-2">
+            💡 {t.pricingDocs?.pricingCta}
+          </p>
+          <Link to="/docs/pricing" className="text-sm text-primary underline font-medium">
+            {t.pricingDocs?.pricingCtaLink} →
+          </Link>
+        </div>
       </div>
 
       {/* Responsive */}

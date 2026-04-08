@@ -44,6 +44,7 @@ import CalendarPage from "./pages/Calendar";
 import Tips from "./pages/Tips";
 import DownloadPage from "./pages/Download";
 import Pricing from "./pages/Pricing";
+import PricingDocs from "./pages/PricingDocs";
 import Terms from "./pages/Terms";
 import WorkspaceSettings from "./pages/WorkspaceSettings";
 import WorkspaceMembers from "./pages/WorkspaceMembers";
@@ -125,6 +126,7 @@ function AppRoutes() {
         <Route path="/pricing" element={<ForceLightMode><Pricing /></ForceLightMode>} />
         <Route path="/download" element={<ForceLightMode><DownloadPage /></ForceLightMode>} />
         <Route path="/terms" element={<ForceLightMode><Terms /></ForceLightMode>} />
+        <Route path="/docs/pricing" element={<ForceLightMode><PricingDocs /></ForceLightMode>} />
 
         {/* ═══ Localized public routes — Vietnamese (/vi) ═══ */}
         <Route path="/vi">
@@ -133,6 +135,7 @@ function AppRoutes() {
           <Route path="pricing" element={<ForceLightMode><Pricing /></ForceLightMode>} />
           <Route path="download" element={<ForceLightMode><DownloadPage /></ForceLightMode>} />
           <Route path="terms" element={<ForceLightMode><Terms /></ForceLightMode>} />
+          <Route path="docs/pricing" element={<ForceLightMode><PricingDocs /></ForceLightMode>} />
         </Route>
 
         {/* ═══ Non-localized public routes ═══ */}

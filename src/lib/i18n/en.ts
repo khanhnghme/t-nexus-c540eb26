@@ -1059,6 +1059,93 @@ export const en = {
       sidebarTagline: 'Team Project Management',
     },
   },
+
+  pricingDocs: {
+    backToPricing: 'Back to Pricing',
+    title: 'T-Nexus Pricing Guide',
+    subtitle: 'Understand our pricing model, resource allocation and member benefits when using T-Nexus.',
+
+    s1Title: 'Owner-based Billing',
+    s1Desc: 'T-Nexus uses an Owner-based billing model. Only the Workspace owner pays. All invited members enjoy the full premium features of that plan at no extra cost.',
+    s1Steps: [
+      { title: 'Owner purchases a plan', desc: 'Choose the plan that fits your needs (Plus, Pro, Business) and pay for your account.' },
+      { title: 'Create Workspaces', desc: 'Set up workspaces and projects as needed, allocating resources flexibly.' },
+      { title: 'Invite members', desc: 'Members join for free and enjoy all premium features from your plan.' },
+    ],
+    s1Callout: '💡 Members ride free: You only pay for the owner account. Everyone you invite uses premium features (Meetings, Journals, Data Export...) at zero cost.',
+
+    s2Title: 'Unique Seat Pool',
+    s2Desc: 'Each user (1 Email) occupies only 1 seat in your total pool, regardless of how many Workspaces they join. You never lose seats when inviting someone to multiple projects.',
+    s2TableHeaders: ['Scenario', 'Workspaces joined', 'Seats used'],
+    s2TableRows: [
+      ['user-a@email.com', '3 Workspaces', '1 seat'],
+      ['user-b@email.com', '1 Workspace', '1 seat'],
+      ['user-c@email.com', '5 Workspaces', '1 seat'],
+    ],
+    s2Callout: '💡 1 Email = 1 Seat. No matter how many Workspaces they join, each member counts as only 1 seat in your total limit.',
+
+    s3Title: 'Global Resource Pool',
+    s3Desc: 'All limits (Workspaces, Projects, Storage, Members) are account-wide totals. You can concentrate all resources in 1 Workspace or spread them across many — completely flexible.',
+    s3TableHeaders: ['Resource', 'Free', 'Plus', 'Pro', 'Business'],
+    s3TableRows: [
+      ['Workspaces', '1', '5', '20', '50'],
+      ['Total projects', '2', '20', '150', '1,500'],
+      ['Storage', '500 MB', '10 GB', '50 GB', '200 GB'],
+      ['Member seats', '5', '15', '50', '150'],
+      ['File size limit', '5 MB/file', '100 MB/file', '5 GB/file', '5 GB/file'],
+    ],
+    s3Callout: '💡 Flexible allocation: For example, with Plus (20 projects), you can create 15 projects in your main WS and 5 in a secondary one — or all 20 in a single WS.',
+
+    s4Title: 'Add-ons — Scale on demand',
+    s4Desc: 'Need more than your plan allows? Purchase add-ons to increase your account-wide pool. Add-ons apply to ALL Workspaces you own.',
+    s4Items: [
+      { name: '+50 Projects', price: '$2.49/mo', note: 'Add 50 projects to your total pool. Use them in any Workspace.' },
+      { name: '+20 GB Storage', price: '$2.49/mo', note: 'Expand total storage capacity across your entire account.' },
+      { name: '+10 Member seats', price: '$2.49/mo', note: 'Add 10 unique member seats to your total pool.' },
+    ],
+    s4Callout: '💡 Add-ons are available from Plus plan and above. Purchased quantities are added to your account-wide pool, not per-Workspace.',
+
+    s5Title: 'Real-world Examples',
+    s5Scenarios: [
+      {
+        title: '🎓 Scenario 1: Student on Free plan',
+        desc: 'Minh is working on a capstone project with 4 teammates.',
+        details: [
+          'Create 1 Workspace for the team',
+          'Invite 4 members (total 5/5 seats)',
+          'Create 2 projects: "Main Project" and "Reference Docs"',
+          'Use 500 MB for report files',
+          '→ Completely free, enough for a small project!',
+        ],
+      },
+      {
+        title: '👨‍💼 Scenario 2: Team lead on Plus plan',
+        desc: 'Hung manages 3 project teams with 15 members total.',
+        details: [
+          'Create 3 Workspaces: "Project A", "Project B", "Internal"',
+          'Invite 15 members — some join all 3 WS but only count as 1 seat each',
+          'Allocate 20 projects: WS-A (10), WS-B (7), Internal (3)',
+          '10 GB storage shared across all Workspaces',
+          '→ Only $4.80/month, members use it for free!',
+        ],
+      },
+    ],
+
+    s6Title: 'Frequently Asked Questions',
+    s6Items: [
+      { q: 'Do members have to pay?', a: 'No. Only the Owner pays. All invited members use the full features of the plan for free.' },
+      { q: 'If 1 person joins 5 Workspaces, how many seats?', a: 'Only 1 seat. Each Email = 1 unique Seat, regardless of Workspace count.' },
+      { q: 'Are project limits per-Workspace or per-account?', a: 'Per-account. The total project count is shared — you allocate them freely across Workspaces.' },
+      { q: 'Do add-ons apply to all Workspaces?', a: 'Yes. Add-ons are added to your account-wide pool and apply to every Workspace you own.' },
+      { q: 'Will I lose data if I downgrade?', a: 'Your data is preserved. However, if current usage exceeds the new plan limits, you will need to adjust before creating more.' },
+    ],
+
+    ctaText: 'Ready to pick the right plan?',
+    ctaButton: 'View pricing',
+
+    pricingCta: 'Have questions about how pricing works?',
+    pricingCtaLink: 'View detailed guide',
+  },
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
