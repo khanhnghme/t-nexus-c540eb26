@@ -569,7 +569,7 @@ export default function AdminSystem() {
                             <HardDrive className="w-4 h-4 text-primary" />
                           </div>
                           <div className="text-left">
-                            <CardTitle className="text-base">Di dời dữ liệu</CardTitle>
+                            <CardTitle className="text-base">{t.dataMigration}</CardTitle>
                             <CardDescription className="text-xs">Xuất/nhập toàn bộ dữ liệu hệ thống (42 bảng + 8 bucket storage)</CardDescription>
                           </div>
                         </div>
@@ -597,12 +597,12 @@ export default function AdminSystem() {
                     <div className="flex items-center gap-2.5">
                       <div className="p-2 rounded-lg bg-accent/10"><Mail className="w-4 h-4 text-accent" /></div>
                       <div>
-                        <CardTitle className="text-base">Thư thông báo bắt buộc</CardTitle>
+                        <CardTitle className="text-base">{t.notifLetters}</CardTitle>
                         <p className="text-[11px] text-muted-foreground mt-0.5">Hiển thị thông báo bắt buộc xem trước khi tắt</p>
                       </div>
                     </div>
                     <Button size="sm" className="gap-1.5" onClick={() => { setEditingNotif(null); setNotifTitle(''); setNotifContent(''); setNotifMode('post_login'); setNotifMinSeconds(15); setNotifExpiresAt(''); setNotifTargetUserIds([]); setUserSearchQuery(''); setNotifDialogOpen(true); }}>
-                      <Plus className="w-3.5 h-3.5" /> Tạo thư mới
+                      <Plus className="w-3.5 h-3.5" /> {t.createNotif}
                     </Button>
                   </div>
                 </CardHeader>
@@ -610,7 +610,7 @@ export default function AdminSystem() {
                   {notifications.length === 0 ? (
                     <div className="text-center py-6 space-y-2">
                       <Mail className="w-8 h-8 text-muted-foreground/30 mx-auto" />
-                      <p className="text-xs text-muted-foreground">Chưa có thư thông báo nào</p>
+                      <p className="text-xs text-muted-foreground">{t.noNotifs}</p>
                     </div>
                   ) : notifications.map((notif: any) => (
                     <div key={notif.id} className="group rounded-lg border bg-card hover:bg-muted/30 transition-colors px-4 py-3">
@@ -672,7 +672,7 @@ export default function AdminSystem() {
                       </div>
                       <div>
                         <CardTitle className="text-base flex items-center gap-2">
-                          Email Digest hàng ngày
+                          {t.emailDigest}
                           <Badge variant={emailDigestEnabled ? 'default' : 'outline'} className="text-[10px] px-1.5 py-0">
                             {emailDigestEnabled ? 'BẬT' : 'TẮT'}
                           </Badge>
@@ -769,12 +769,12 @@ export default function AdminSystem() {
                         } else {
                           await supabase.from('system_settings').insert({ key: 'email_daily_digest', value });
                         }
-                        toast({ title: 'Đã lưu cài đặt Email Digest' });
+                        toast({ title: '{t.savedEmailDigest}' });
                       } catch { toast({ title: 'Lỗi', variant: 'destructive' }); }
                       finally { setSavingEmailDigest(false); }
                     }}
                   >
-                    <Save className="w-4 h-4" /> Lưu cài đặt Email Digest
+                    <Save className="w-4 h-4" /> {t.saveEmailDigest}
                   </Button>
                 </CardContent>
               </Card>
@@ -794,7 +794,7 @@ export default function AdminSystem() {
                       </div>
                       <div>
                         <CardTitle className="text-base flex items-center gap-2">
-                          Video nền Dashboard
+                          {t.videoBg}
                           <Badge variant={videoBgEnabled ? 'default' : 'outline'} className="text-[10px] px-1.5 py-0">
                             {videoBgEnabled ? 'BẬT' : 'TẮT'}
                           </Badge>
@@ -925,7 +925,7 @@ export default function AdminSystem() {
                         } else {
                           await supabase.from('system_settings').insert({ key: 'dashboard_video_bg', value });
                         }
-                        toast({ title: 'Đã lưu cài đặt video nền' });
+                        toast({ title: '{t.savedVideoSettings}' });
                       } catch {
                         toast({ title: 'Lỗi', description: 'Không thể lưu', variant: 'destructive' });
                       } finally {
@@ -934,7 +934,7 @@ export default function AdminSystem() {
                     }}
                   >
                     {savingVideo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Lưu cài đặt video
+                    {t.saveVideoSettings}
                   </Button>
                 </CardContent>
               </Card>
@@ -953,7 +953,7 @@ export default function AdminSystem() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-warning" />
-              Xác nhận thay đổi trạng thái
+              {t.confirmStatusChange}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {maintenanceEnabled !== origMaintenanceEnabled ? (
