@@ -1,35 +1,26 @@
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { formatPlanName } from '@/hooks/useWorkspaceBilling';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Crown, Zap, Check, ArrowRight, Loader2 } from 'lucide-react';
-
-const PLAN_FEATURES_SHORT: Record<string, string[]> = {
-  plan_free: ['1 Workspace', 'Tổng 5 dự án', 'Tổng 5 suất thành viên (unique)', '500 MB tổng lưu trữ', 'Upload 5 MB/file'],
-  plan_plus: ['5 Workspaces', 'Tổng 15 dự án', 'Tổng 15 suất thành viên (unique)', '10 GB tổng lưu trữ', 'Upload 100 MB/file'],
-  plan_pro: ['20 Workspaces', 'Tổng 50 dự án', 'Tổng 50 suất thành viên (unique)', '50 GB tổng lưu trữ', 'Upload 5 GB/file'],
-  plan_business: ['50 Workspaces', 'Tổng 500 dự án', 'Tổng 200 suất thành viên (unique)', '200 GB tổng lưu trữ', 'Upload 5 GB/file'],
-  plan_custom: ['Không giới hạn', 'Không giới hạn dự án', 'Không giới hạn suất thành viên', 'Không giới hạn lưu trữ', 'Upload 5 GB/file'],
-};
+import { Crown, Zap, Check } from 'lucide-react';
 
 export default function ServicePlanSection() {
   const { profile } = useAuth();
   const navigate = useNavigate();
+  const { translations: { app: { servicePlanSection: t, servicePlanFeatures: featuresMap } } } = useLanguage();
 
   const plan = profile?.user_plan || 'plan_free';
   const planName = formatPlanName(plan);
   const isPremium = plan !== 'plan_free';
-  const features = PLAN_FEATURES_SHORT[plan] || PLAN_FEATURES_SHORT.plan_free;
+  const features = featuresMap[plan] || featuresMap.plan_free;
 
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-5 space-y-4">
-        {/* Plan header */}
         <div className="flex items-center gap-3">
           <div className={`p-2.5 rounded-xl ${isPremium ? 'bg-amber-500/10' : 'bg-muted'}`}>
             {isPremium ? (
@@ -40,7 +31,7 @@ export default function ServicePlanSection() {
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm">Gói dịch vụ</span>
+              <span className="font-semibold text-sm">{t.title}</span>
               <Badge
                 variant="secondary"
                 className={`text-xs ${isPremium
@@ -52,16 +43,15 @@ export default function ServicePlanSection() {
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {isPremium ? 'Gói cao cấp đang hoạt động' : 'Gói miễn phí cơ bản'}
+              {isPremium ? t.premiumActive : t.freeBasic}
             </p>
           </div>
         </div>
 
         <Separator />
 
-        {/* Features */}
         <div className="space-y-1.5">
-          {features.map((f, i) => (
+          {features.map((f: string, i: number) => (
             <div key={i} className="flex items-center gap-2 text-sm">
               <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
               <span className="text-muted-foreground">{f}</span>
@@ -76,7 +66,7 @@ export default function ServicePlanSection() {
             className="flex-1 text-xs"
             onClick={() => navigate('/service-plan')}
           >
-            Xem chi tiết
+            {t.viewDetails}
           </Button>
           <Button
             size="sm"
@@ -84,7 +74,7 @@ export default function ServicePlanSection() {
             onClick={() => navigate('/upgrade?from=personal')}
           >
             <Zap className="w-3.5 h-3.5 mr-1" />
-            Nâng cấp
+            {t.upgrade}
           </Button>
         </div>
       </CardContent>

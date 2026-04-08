@@ -27,20 +27,20 @@ const routeLabels: Record<string, { vi: string; en: string }> = {
 
 interface NavTab {
   id: string;
-  label: string;
+  labelKey: string;
   icon: React.ComponentType<{ className?: string }>;
   showAlways?: boolean;
 }
 
 const projectTabs: NavTab[] = [
-  { id: 'overview', label: 'Tổng quan', icon: LayoutDashboard, showAlways: true },
-  { id: 'tasks', label: 'Task', icon: Layers, showAlways: true },
-  { id: 'meetings', label: 'Họp nhóm', icon: Video, showAlways: true },
-  { id: 'resources', label: 'Tài nguyên', icon: FolderOpen, showAlways: true },
-  { id: 'members', label: 'Thành viên', icon: Users, showAlways: true },
-  { id: 'scores', label: 'Điểm', icon: Award, showAlways: true },
-  { id: 'logs', label: 'Nhật ký', icon: Activity, showAlways: false },
-  { id: 'settings', label: 'Cài đặt', icon: Settings, showAlways: false },
+  { id: 'overview', labelKey: 'overview', icon: LayoutDashboard, showAlways: true },
+  { id: 'tasks', labelKey: 'tasks', icon: Layers, showAlways: true },
+  { id: 'meetings', labelKey: 'meetings', icon: Video, showAlways: true },
+  { id: 'resources', labelKey: 'resources', icon: FolderOpen, showAlways: true },
+  { id: 'members', labelKey: 'members', icon: Users, showAlways: true },
+  { id: 'scores', labelKey: 'scores', icon: Award, showAlways: true },
+  { id: 'logs', labelKey: 'logs', icon: Activity, showAlways: false },
+  { id: 'settings', labelKey: 'settings', icon: Settings, showAlways: false },
 ];
 
 function getBreadcrumb(pathname: string, locale: string) {
@@ -63,14 +63,13 @@ function getBreadcrumb(pathname: string, locale: string) {
 export default function TopBar() {
   const location = useLocation();
   const { theme, setTheme } = useTheme();
-  const { locale } = useLanguage();
+  const { locale, translations: { app: { projectNav: navT } } } = useLanguage();
   const { projectNavProps } = useDashboardLayoutContext();
   const isDark = theme === 'dark';
   const pageTitle = getBreadcrumb(location.pathname, locale);
 
   const isProjectMode = !!projectNavProps;
 
-  // Filter visible tabs
   const visibleTabs = isProjectMode
     ? projectTabs.filter(tab => {
         if (tab.showAlways) return true;
@@ -84,7 +83,6 @@ export default function TopBar() {
 
   return (
     <div className="grid-cell-topbar">
-      {/* Left / Center: breadcrumb or project tabs */}
       <div className={cn(
         "flex items-center gap-1 min-w-0 overflow-x-auto scrollbar-none",
         isProjectMode && "flex-1 justify-center"
@@ -123,7 +121,7 @@ export default function TopBar() {
                       </span>
                     )}
                   </div>
-                  <span>{tab.label}</span>
+                  <span>{navT[tab.labelKey]}</span>
                   {tab.id === 'members' && (
                     <span className={cn(
                       "px-1 py-0 text-[10px] font-semibold rounded-full min-w-[16px] text-center leading-tight",
@@ -145,7 +143,6 @@ export default function TopBar() {
         )}
       </div>
 
-      {/* Right: actions + logo */}
       <div className="flex items-center gap-2 shrink-0">
         <Tooltip>
           <TooltipTrigger asChild>
