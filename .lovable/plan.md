@@ -1,76 +1,91 @@
 
 
-## Nâng cấp chức năng Dọn dẹp (Cleanup) trên trang Service Plan
+## Fix tiếng Anh cho các trang sau đăng nhập
 
-### Hiện trạng
-- Nút "Dọn dẹp" trên banner chỉ dẫn đến tab "Mức sử dụng" (`/service-plan?tab=usage`) — nơi hiển thị số liệu nhưng **không có bất kỳ hành động xóa nào**
-- Người dùng không thể xóa workspace hay project từ trang này
-- Không có giao diện cho biết "cần giảm bao nhiêu" để thoát read-only
+### Phân tích hiện trạng
 
-### Kế hoạch
+**Đã hỗ trợ i18n (12 pages + 10 components):** Dashboard, Auth, Landing, Pricing, PricingDocs, Download, Terms, AccountSettings, WorkspaceMembers, Notifications, PersonalInfo, Upgrade + SidebarTreeNav, ReadOnlyBanner, MemberAuthForm, TopBar, DashboardLayout, etc.
 
-#### 1. Tạo component `AccountCleanupPanel`
-**File mới:** `src/components/cleanup/AccountCleanupPanel.tsx`
+**Chưa hỗ trợ — hardcoded tiếng Việt (20+ pages + 60+ components):**
 
-Giao diện gồm 3 phần chính:
+| Nhóm | Trang / Component |
+|------|-------------------|
+| **Project** | `Groups.tsx`, `GroupDetail.tsx`, `TaskEditDialog`, `TaskNotes`, `TaskFilters`, `StageManagement`, `MemberManagementCard`, `GroupDashboard`, `ShareSettingsCard`, scores/* |
+| **Calendar** | `Calendar.tsx`, `CalendarHeader`, `CreateEventDialog`, `CalendarDayDetail`, `CalendarMonthView`, `CalendarWeekView`, `CalendarDayView`, `EventDetailDialog` |
+| **Communication** | `Communication.tsx`, chat components |
+| **Service Plan** | `ServicePlan.tsx`, `AccountCleanupPanel` |
+| **Workspace** | `WorkspaceSettings.tsx`, `CreateWorkspace.tsx` |
+| **Admin** | `AdminSystem.tsx`, `AdminUsers.tsx`, `AdminActivity.tsx`, `AdminBackup.tsx` |
+| **Misc** | `Feedback.tsx`, `Tips.tsx`, `Utilities.tsx`, `NotificationBell`, `PublicProfile`, `ResetPassword`, `ViewPasswordDialog`, `FilePreview` |
 
-**A. Tổng quan hạn mức (Summary Bar)**
-- 4 thanh progress: Workspace, Projects, Members, Storage
-- Mỗi thanh hiển thị: `hiện tại / hạn mức Free` + trạng thái (🔴 vượt, 🟢 đạt)
-- Badge tổng: "Cần giảm X workspace, Y project, Z MB để mở khóa"
+Tổng cộng: **~1000+ chuỗi hardcoded tiếng Việt** cần chuyển sang i18n keys.
 
-**B. Danh sách Workspace (có checkbox xóa)**
-- Liệt kê tất cả workspace người dùng sở hữu
-- Mỗi WS hiển thị: tên, số project, số member, dung lượng
-- Checkbox để chọn xóa cả workspace
-- Nút expand → hiển thị danh sách project bên trong
+### Kế hoạch — Chia thành 5 đợt (batches)
 
-**C. Danh sách Project (chọn xóa từng cái)**
-- Khi expand 1 WS → hiển thị các project trong WS đó
-- Checkbox từng project
-- Hiển thị: tên, số task, dung lượng file
+Do khối lượng rất lớn, cần chia nhỏ để đảm bảo chất lượng:
 
-**D. Preview kết quả (Live calculation)**
-- Khi user tick chọn WS/project, panel phía dưới cập nhật real-time:
-  - "Sau khi xóa: X workspace, Y project, Z MB"
-  - So sánh với hạn mức Free → hiển thị "Đủ điều kiện mở khóa ✅" hoặc "Chưa đủ, cần giảm thêm ❌"
+#### Batch 1: Trang chính người dùng thường xuyên sử dụng
+- `Groups.tsx` — "Dự án của tôi", "Quản lý các dự án", "Chưa có dự án nào", etc.
+- `GroupDetail.tsx` — tabs, confirm dialogs, loading states
+- `ServicePlan.tsx` — plan names, tab labels, usage descriptions
+- `WorkspaceSettings.tsx` — form labels, danger zone
+- `CreateWorkspace.tsx` — form labels
 
-**E. Nút "Xóa đã chọn"**
-- Confirm dialog: liệt kê những gì sẽ bị xóa
-- Nhập "XÁC NHẬN" để thực hiện
-- Gọi edge function `workspace-management` (action: delete_workspace) cho WS
-- Gọi delete trực tiếp cho project (như GroupDetail.handleDeleteGroup)
-- Sau khi xóa xong → refresh data → cập nhật lại summary
+**i18n keys mới:** Thêm sections `app.groups`, `app.groupDetail`, `app.servicePlan`, `app.createWorkspace` vào `en.ts` + `vi.ts`
 
-#### 2. Tích hợp vào trang ServicePlan
-**File:** `src/pages/ServicePlan.tsx`
+#### Batch 2: Task & Project detail components
+- `TaskEditDialog`, `TaskNotes`, `TaskFilters`
+- `StageManagement`, `MemberManagementCard`
+- `GroupDashboard`, `ShareSettingsCard`
+- scores/* components
 
-- Thêm `AccountCleanupPanel` vào cuối tab "usage"
-- Chỉ hiển thị khi `isReadOnly === true` hoặc `isOverLimits === true`
+**i18n keys mới:** `app.task`, `app.stage`, `app.scores`
 
-#### 3. Fetch dữ liệu chi tiết
-- Workspace list: đã có từ `fetchUsages()`
-- Project list per WS: query `groups` where `workspace_id = ws.id` → lấy tên, id
-- Storage per project: query `get_workspace_storage_usage` (đã có) + tính per-project bằng cách sum `project_resources.file_size` + `submission_history.file_size` + `task_note_attachments.file_size`
+#### Batch 3: Calendar + Communication
+- `Calendar.tsx` + tất cả calendar sub-components (8 files)
+- `Communication.tsx` + chat components
 
-#### 4. Logic xóa project
-Tái sử dụng pattern từ `GroupDetail.handleDeleteGroup`:
-- Xóa submission_history, tasks, stages, member_stage_scores, pending_approvals, group_members, activity_logs, groups
-- Gọi `deleteTaskFiles()` cho mỗi task (xóa R2 files)
+**i18n keys mới:** `app.calendar`, `app.communication`
 
-#### 5. Logic xóa workspace  
-- Gọi `supabase.functions.invoke('workspace-management', { body: { action: 'delete_workspace', workspace_id } })`
+#### Batch 4: Admin pages
+- `AdminSystem`, `AdminUsers`, `AdminActivity`, `AdminBackup`
 
-### Files cần tạo/sửa
+**i18n keys mới:** `app.admin`
+
+#### Batch 5: Misc pages + components
+- `Feedback`, `Tips`, `Utilities`, `NotificationBell`
+- `PublicProfile`, `ResetPassword`, `ViewPasswordDialog`, `FilePreview`
+- `AccountCleanupPanel`
+
+**i18n keys mới:** `app.feedback`, `app.tips`, `app.utilities`, `app.cleanup`
+
+### Cách triển khai mỗi batch
+
+1. **Thêm keys** vào `src/lib/i18n/en.ts` (English) và `src/lib/i18n/vi.ts` (Vietnamese — giữ nguyên text hiện tại)
+2. **Sửa component**: import `useLanguage`, thay hardcoded string → `t.keyName`
+3. **Pattern mẫu:**
+```typescript
+// Trước
+<h1>Dự án của tôi</h1>
+
+// Sau
+const { translations: { app: t } } = useLanguage();
+<h1>{t.groups.title}</h1>
+```
+
+### Đề xuất triển khai
+
+Do tổng khối lượng lớn (~80+ files, ~1000+ strings), đề xuất **bắt đầu Batch 1** trước (5 pages quan trọng nhất). Sau khi xong sẽ tiếp tục các batch tiếp theo.
+
+### Files thay đổi (Batch 1)
 
 | File | Hành động |
 |------|-----------|
-| `src/components/cleanup/AccountCleanupPanel.tsx` | Tạo mới — UI dọn dẹp với checkbox WS/project + live preview |
-| `src/pages/ServicePlan.tsx` | Thêm `AccountCleanupPanel` vào tab usage |
-
-### Không thay đổi
-- `useAccountReadOnly`, `useAccountLimitsCheck` — đã đúng
-- `ReadOnlyBanner` — chỉ dẫn link, không cần sửa
-- Edge function `workspace-management` — đã hỗ trợ delete_workspace
-- `storageCleanup.ts` — tái sử dụng `deleteTaskFiles()`
+| `src/lib/i18n/en.ts` | Thêm sections: `app.groups`, `app.groupDetail`, `app.servicePlan`, `app.createWorkspace` |
+| `src/lib/i18n/vi.ts` | Thêm sections tương ứng (giữ text tiếng Việt hiện tại) |
+| `src/pages/Groups.tsx` | Import useLanguage, thay ~30 strings |
+| `src/pages/GroupDetail.tsx` | Import useLanguage, thay ~40 strings |
+| `src/pages/ServicePlan.tsx` | Import useLanguage, thay ~50 strings |
+| `src/pages/WorkspaceSettings.tsx` | Đã có i18n keys `app.workspace` — chỉ check còn hardcoded không |
+| `src/pages/CreateWorkspace.tsx` | Import useLanguage, thay ~15 strings |
 
