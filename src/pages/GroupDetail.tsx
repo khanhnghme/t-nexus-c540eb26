@@ -1,5 +1,5 @@
 // GroupDetail page - Task management
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useDashboardLayoutContext } from '@/contexts/DashboardLayoutContext';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -96,9 +96,9 @@ export default function GroupDetail() {
   // Sync local tab state with navigation context
   const activeTab = currentTab && availableTabs.includes(currentTab) ? currentTab : 'overview';
   
-  const handleTabChange = (tabId: string) => {
+  const handleTabChange = useCallback((tabId: string) => {
     setCurrentTab(tabId);
-  };
+  }, [setCurrentTab]);
   
   // Initialize tab on mount - check URL params first
   useEffect(() => {
