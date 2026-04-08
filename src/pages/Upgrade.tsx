@@ -133,8 +133,8 @@ export default function Upgrade() {
         <Zap className="w-4 h-4" />
         <span>
           {tc?.language === 'vi' || document.documentElement.lang === 'vi'
-            ? `Gói hiện tại: ${formatPlanName(ownerPlan)}`
-            : `Current plan: ${formatPlanName(ownerPlan)}`}
+            ? `Gói hiện tại: ${formatPlanName(effectivePlan)}`
+            : `Current plan: ${formatPlanName(effectivePlan)}`}
         </span>
       </div>
 
