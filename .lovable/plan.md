@@ -1,81 +1,82 @@
 
 
-## Phân tích: Chế độ Read-only — Thiếu sót hiện tại
+## Triển khai hoàn thiện chế độ Read-only
 
-### Những gì ĐÃ CÓ
-1. **Hook `useAccountReadOnly`**: Phát hiện trạng thái read-only (Free + vượt hạn mức) + tính grace period từ `downgraded_at`
-2. **Banner `ReadOnlyBanner`**: Hiển thị cảnh báo trên dashboard, có nút "Dọn dẹp" và "Nâng cấp"
-3. **Cột `downgraded_at`** trên bảng `profiles`: Đã có trong DB
+### Hiện trạng
 
----
+**Đã có:**
+- Hook `useAccountReadOnly` + `useAccountLimitsCheck` — phát hiện trạng thái read-only
+- Banner `ReadOnlyBanner` — hiển thị trên DashboardLayout
+- Hook `useReadOnlyGuard` — guardAction() hiển thị toast + block
+- DB trigger `track_plan_downgrade` — tự động ghi `downgraded_at`
+- Edge function `check-grace-period` — hard delete ngày thứ 31
 
-### Những gì THIẾU (7 vấn đề)
+**Đã guard (4 chỗ):**
+- `Groups.tsx` — tạo project
+- `GroupDetail.tsx` — tạo stage, tạo task
+- `MemberManagementCard.tsx` — mời thành viên
+- `TaskNotes.tsx` — upload file đính kèm
 
-#### A. Không có enforcement thực tế — chỉ có banner
-`useAccountReadOnly` chỉ được dùng ở **1 chỗ duy nhất**: `ReadOnlyBanner.tsx`. Không có component/page nào thực sự **block** hành động khi `isReadOnly = true`.
+### Còn thiếu guard (12+ chỗ)
 
-Cụ thể, các hành động sau **KHÔNG bị chặn** khi read-only:
-- Tạo project mới (`Groups.tsx` — chỉ check limit, không check read-only)
-- Chỉnh sửa task, tạo task mới
-- Upload file / tài liệu
-- Chỉnh sửa thông tin project
-- Mời thành viên
-- Tạo cuộc họp, gửi tin nhắn
+| Component | Hành động cần guard |
+|-----------|-------------------|
+| `TaskEditDialog.tsx` | Chỉnh sửa task (save changes) |
+| `StageEditDialog.tsx` | Chỉnh sửa stage |
+| `CreateMeetingDialog.tsx` | Tạo cuộc họp |
+| `GroupInfoCard.tsx` | Chỉnh sửa thông tin project + upload ảnh |
+| `ResourceUploadDialog.tsx` | Upload tài liệu dự án |
+| `ProjectGuestInviteDialog.tsx` | Mời guest vào project |
+| `ShareSettingsCard.tsx` | Chỉnh sửa cài đặt chia sẻ |
+| `CreateWorkspace.tsx` | Tạo workspace mới |
+| `WorkspaceSettings.tsx` | Chỉnh sửa workspace |
+| `TaskComments.tsx` | Gửi comment |
+| `KanbanBoard.tsx` | Kéo thả task (thay đổi status) |
+| `MultiFileUploadSubmission.tsx` | Upload bài nộp |
+| `StageManagement.tsx` | Quản lý stage (xóa/sắp xếp) |
+| `scores/TaskScoringDialog.tsx` | Chấm điểm |
+| `MemberManagementCard.tsx` | Approve/reject request, change role, bulk actions (chưa guard hết) |
+| `ProjectActivityLog.tsx` | Xóa log (là hành động delete — cho phép theo chính sách) |
 
-#### B. `downgraded_at` không bao giờ được ghi
-Không có logic nào **tự động set `downgraded_at`** khi user downgrade từ gói trả phí về Free. Cột này luôn là `null`, nghĩa là grace period **luôn = null** và countdown 30 ngày không bao giờ hoạt động.
+### Kế hoạch
 
-#### C. Không có cron/edge function Hard Delete (ngày thứ 31)
-Tài liệu /guide/pricing Chương 2, mục 2.3 quy định: sau 30 ngày grace period, hệ thống tự động xóa dữ liệu dư thừa. Hiện tại **không có** edge function `check-grace-period` hay bất kỳ scheduled job nào.
+#### Bước 1: Thêm `guardReadOnly()` vào tất cả mutation handlers
+Với mỗi component ở trên:
+1. Import `useReadOnlyGuard` 
+2. Gọi `guardAction: guardReadOnly` 
+3. Thêm `if (guardReadOnly()) return;` ở đầu mỗi handler tạo/sửa
 
-#### D. `isOverLimits` so sánh với plan hiện tại, không phải plan Free
-Hook `useAccountLimitsCheck` fetch limits theo `profile.user_plan` (plan hiện tại). Nếu user đang trên gói Plus mà vượt hạn mức Plus, `isOverLimits = true` nhưng `isFree = false` → read-only sẽ không bật. Đúng.
+**Lưu ý chính sách**: Hành động **xóa** (delete) vẫn được phép khi read-only (để dọn dẹp). Chỉ block **tạo mới** và **chỉnh sửa**.
 
-Nhưng nếu user **vừa downgrade** về Free, logic hiện tại đã đúng vì plan = `plan_free` và limits = limits của Free. **Đây OK.**
+#### Bước 2: Guard thêm các hành động trong MemberManagementCard
+Các action approve request, change role, bulk role change hiện chưa có guard — cần thêm.
 
-#### E. Typo trong code
-`downgradadedAt` → nên là `downgradedAt` (typo nhỏ nhưng ảnh hưởng readability).
+#### Bước 3: Disable UI buttons khi read-only
+Ngoài toast block, nên disable visual các nút "Tạo", "Lưu", "Gửi" khi `isReadOnly = true` để UX rõ ràng hơn — sử dụng `isReadOnly` từ hook.
 
-#### F. `(profile as any)?.downgraded_at` — bypass type
-`downgraded_at` đã có trong types.ts nhưng hook vẫn dùng `as any`. Có thể truy cập trực tiếp `profile?.downgraded_at`.
-
-#### G. Banner chỉ hiển thị ở DashboardLayout
-`ReadOnlyBanner` chỉ render trong `DashboardLayout.tsx`. Các trang nằm ngoài layout này (nếu có) sẽ không thấy banner.
-
----
-
-### Kế hoạch triển khai hoàn thiện
-
-#### Bước 1: Enforcement thực tế
-- Tạo một guard component hoặc sử dụng `useAccountReadOnly` tại các điểm tạo/sửa:
-  - `Groups.tsx`: Block tạo project nếu `isReadOnly`
-  - Task creation/editing components
-  - File upload components
-  - Member invitation flows
-  - Meeting creation
-  - Project settings editing
-- Hoặc tạo wrapper component `<ReadOnlyGuard>` hiển thị toast + block action
-
-#### Bước 2: Tự động ghi `downgraded_at`
-- Tạo database trigger trên bảng `profiles`: khi `user_plan` thay đổi từ gói trả phí → `plan_free`, tự động set `downgraded_at = now()`
-- Khi `user_plan` thay đổi từ `plan_free` → gói trả phí, tự động clear `downgraded_at = null`
-
-#### Bước 3: Edge function `check-grace-period` (Hard Delete)
-- Tạo scheduled edge function chạy hàng ngày
-- Quét profiles có `downgraded_at` > 30 ngày + `user_plan = plan_free` + vượt hạn mức
-- Xóa dữ liệu dư thừa theo nguyên tắc "giữ cũ nhất"
-
-#### Bước 4: Fix code quality
-- Sửa typo `downgradadedAt` → `downgradedAt`
-- Bỏ `as any`, dùng `profile?.downgraded_at` trực tiếp
-
-### Files cần sửa/tạo
+### Files cần sửa
 
 | File | Hành động |
 |------|-----------|
-| `src/hooks/useAccountReadOnly.ts` | Fix typo, bỏ `as any` |
-| `src/pages/Groups.tsx` | Thêm check `isReadOnly` block tạo project |
-| Các component tạo/sửa task, upload, invite | Thêm check `isReadOnly` |
-| `supabase/migrations/` | Trigger tự động ghi `downgraded_at` |
-| `supabase/functions/check-grace-period/` | Tạo mới — cron hard delete |
+| `src/components/TaskEditDialog.tsx` | Guard handleSave |
+| `src/components/StageEditDialog.tsx` | Guard handleSave |
+| `src/components/CreateMeetingDialog.tsx` | Guard handleCreate |
+| `src/components/GroupInfoCard.tsx` | Guard handleSave + upload |
+| `src/components/ResourceUploadDialog.tsx` | Guard handleSubmitAll |
+| `src/components/ProjectGuestInviteDialog.tsx` | Guard handleInviteGuest |
+| `src/components/ShareSettingsCard.tsx` | Guard save actions |
+| `src/pages/CreateWorkspace.tsx` | Guard handleSubmit |
+| `src/pages/WorkspaceSettings.tsx` | Guard handleSave + handleDelete → cho phép delete |
+| `src/components/communication/TaskComments.tsx` | Guard handleSendComment |
+| `src/components/KanbanBoard.tsx` | Guard drag-drop status change |
+| `src/components/MultiFileUploadSubmission.tsx` | Guard upload |
+| `src/components/StageManagement.tsx` | Guard tạo/sửa (cho phép xóa) |
+| `src/components/scores/TaskScoringDialog.tsx` | Guard handleSaveScore |
+| `src/components/MemberManagementCard.tsx` | Guard thêm approve/reject/role change |
+
+### Không thay đổi
+- `useAccountReadOnly.ts`, `ReadOnlyGuard.tsx`, `ReadOnlyBanner.tsx` — đã đúng
+- DB trigger `track_plan_downgrade` — đã đúng
+- Edge function `check-grace-period` — đã đúng
+- Hành động **xóa** — vẫn cho phép (theo chính sách dọn dẹp)
 
