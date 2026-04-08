@@ -277,7 +277,7 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
 
   // Delete logic
   const handleDelete = async () => {
-    if (confirmText !== 'XÁC NHẬN') return;
+    if (confirmText !== 'TÔI HIỂU, XÓA NGAY') return;
     setDeleting(true);
     try {
       // 1. Delete individual projects (not part of deleted workspaces)
@@ -299,7 +299,7 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
       toast.success('Đã dọn dẹp thành công!');
       setSelectedWs(new Set());
       setSelectedProjects(new Set());
-      setConfirmOpen(false);
+      setConfirmStep(0);
       setConfirmText('');
 
       // Refresh
@@ -560,7 +560,7 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
           </div>
           <Button
             variant="destructive"
-            onClick={() => setConfirmOpen(true)}
+            onClick={() => { setConfirmStep(1); setConfirmText(''); }}
           >
             <Trash2 className="w-4 h-4 mr-2" />
             Xóa đã chọn
