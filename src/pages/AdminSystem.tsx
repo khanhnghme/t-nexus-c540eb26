@@ -49,7 +49,7 @@ export default function AdminSystem() {
   // Maintenance state
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
   const [showGuidePopover, setShowGuidePopover] = useState(false);
-  const [maintenanceMessage, setMaintenanceMessage] = useState('Hệ thống đang bảo trì, vui lòng quay lại sau.');
+  const [maintenanceMessage, setMaintenanceMessage] = useState(t.maintenanceDefault);
   const [maintenanceHours, setMaintenanceHours] = useState(0);
   const [customHours, setCustomHours] = useState('');
   const [maintenanceStart, setMaintenanceStart] = useState('');
@@ -134,7 +134,7 @@ export default function AdminSystem() {
         const val = maintenanceRes.data.value as { enabled?: boolean; message?: string; duration_hours?: number; duration_days?: number; start_at?: string; end_at?: string; scope?: string };
         setMaintenanceEnabled(val.enabled ?? false);
         setOrigMaintenanceEnabled(val.enabled ?? false);
-        setMaintenanceMessage(val.message ?? 'Hệ thống đang bảo trì, vui lòng quay lại sau.');
+        setMaintenanceMessage(val.message ?? t.maintenanceDefault);
         setMaintenanceScope((val.scope as 'post_login' | 'full') ?? 'post_login');
         // Support both legacy duration_days and new duration_hours
         const hours = val.duration_hours ?? (val.duration_days ? val.duration_days * 24 : 0);
@@ -249,13 +249,11 @@ export default function AdminSystem() {
       }
 
       toast({
-        title: 'Đã lưu cài đặt',
-        description: maintenanceEnabled
-          ? 'Chế độ bảo trì đã được BẬT.'
-          : 'Chế độ bảo trì đã TẮT.',
+        title: t.savedSettings,
+        description: maintenanceEnabled ? t.maintenanceOnToast : t.maintenanceOffToast,
       });
     } catch (err) {
-      toast({ title: 'Lỗi', description: 'Không thể lưu cài đặt', variant: 'destructive' });
+      toast({ title: t.error, description: t.cannotSave, variant: 'destructive' });
     } finally {
       setSaving(false);
       setShowMaintenanceConfirm(false);
@@ -268,7 +266,7 @@ export default function AdminSystem() {
     return (
       <>
         <div className="flex items-center justify-center py-20">
-          <p className="text-muted-foreground">Đang tải...</p>
+          <p className="text-muted-foreground">{t.loading}</p>
         </div>
       </>
     );
@@ -282,18 +280,18 @@ export default function AdminSystem() {
           <div className="flex items-center gap-3">
             <Shield className="w-7 h-7 text-foreground" />
             <div>
-              <h1 className="text-2xl font-heading font-bold tracking-tight">Quản trị hệ thống</h1>
-              <p className="text-muted-foreground text-sm">Các chức năng quản trị đặc biệt dành cho Admin chính</p>
+              <h1 className="text-2xl font-heading font-bold tracking-tight">{t.systemTitle}</h1>
+              <p className="text-muted-foreground text-sm">{t.systemDesc}</p>
             </div>
           </div>
 
           {/* Inline tabs */}
           <div className="flex flex-wrap gap-1.5">
             {([
-              { id: 'system', label: 'Hệ thống', icon: Wrench },
-              { id: 'notifications', label: 'Thông báo', icon: Mail },
-              { id: 'appearance', label: 'Giao diện', icon: Palette },
-              { id: 'analytics', label: 'Phân tích', icon: BarChart3 },
+              { id: 'system', label: t.tabSystem, icon: Wrench },
+              { id: 'notifications', label: t.tabNotifications, icon: Mail },
+              { id: 'appearance', label: t.tabAppearance, icon: Palette },
+              { id: 'analytics', label: t.tabAnalytics, icon: BarChart3 },
             ] as const).map((tab) => (
               <button
                 key={tab.id}
@@ -327,9 +325,9 @@ export default function AdminSystem() {
                       </div>
                       <div>
                         <CardTitle className="text-base flex items-center gap-2">
-                          Khóa hệ thống
+                          {t.lockSystem}
                           {maintenanceEnabled && (
-                            <Badge variant="destructive" className="text-[10px] px-1.5 py-0">BẬT</Badge>
+                            <Badge variant="destructive" className="text-[10px] px-1.5 py-0">{t.on}</Badge>
                           )}
                         </CardTitle>
                       </div>
@@ -345,18 +343,18 @@ export default function AdminSystem() {
                 </CardHeader>
                 <CardContent className="space-y-3 pt-0">
                   <p className="text-xs text-muted-foreground">
-                    Khi bật, toàn bộ thành viên (trừ Admin) sẽ không thể truy cập hệ thống.
+                    {t.maintenanceOnDesc}
                   </p>
 
                   <div className="space-y-1.5">
                     <Label className="text-xs flex items-center gap-1">
-                      <Shield className="w-3 h-3" /> Phạm vi khóa
+                      <Shield className="w-3 h-3" /> {t.lockScope}
                     </Label>
                     <Select value={maintenanceScope} onValueChange={(v: any) => setMaintenanceScope(v)}>
                       <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="post_login" className="text-xs">Sau đăng nhập</SelectItem>
-                        <SelectItem value="full" className="text-xs">Toàn bộ hệ thống</SelectItem>
+                        <SelectItem value="post_login" className="text-xs">{t.postLogin}</SelectItem>
+                        <SelectItem value="full" className="text-xs">{t.fullSystem}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -364,20 +362,20 @@ export default function AdminSystem() {
                   <div className="space-y-3">
                     <div className="space-y-1.5">
                       <Label className="text-xs flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> Thời gian bảo trì
+                        <Clock className="w-3 h-3" /> {t.maintenanceDuration}
                       </Label>
                       <div className="flex flex-wrap gap-1.5">
                         {[
-                          { value: 0, label: 'Vĩnh viễn' },
-                          { value: 1, label: '1 giờ' },
-                          { value: 2, label: '2 giờ' },
-                          { value: 3, label: '3 giờ' },
-                          { value: 6, label: '6 giờ' },
-                          { value: 12, label: '12 giờ' },
-                          { value: 24, label: '1 ngày' },
-                          { value: 48, label: '2 ngày' },
-                          { value: 72, label: '3 ngày' },
-                          { value: 168, label: '1 tuần' },
+                          { value: 0, label: t.forever },
+                          { value: 1, label: t.hours1 },
+                          { value: 2, label: t.hours2 },
+                          { value: 3, label: t.hours3 },
+                          { value: 6, label: t.hours6 },
+                          { value: 12, label: t.hours12 },
+                          { value: 24, label: t.days1 },
+                          { value: 48, label: t.days2 },
+                          { value: 72, label: t.days3 },
+                          { value: 168, label: t.weeks1 },
                         ].map((opt) => (
                           <Button
                             key={opt.value}
@@ -393,7 +391,7 @@ export default function AdminSystem() {
                         <Input
                           type="number"
                           min={1}
-                          placeholder="Tùy chỉnh (giờ)"
+                          placeholder={t.customHours}
                           value={customHours}
                           onChange={(e) => {
                             setCustomHours(e.target.value);
@@ -408,22 +406,22 @@ export default function AdminSystem() {
                     {maintenanceStart && maintenanceEnd ? (
                       <div className="rounded-lg border border-warning/30 bg-warning/5 p-2.5 space-y-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">Bắt đầu khóa:</span>
+                          <span className="text-xs text-muted-foreground">{t.lockStart}</span>
                           <span className="text-sm font-medium">{format(new Date(maintenanceStart), "HH:mm - dd/MM/yyyy", { locale: locale === "vi" ? viLocale : undefined })}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">Dự kiến mở lại:</span>
+                          <span className="text-xs text-muted-foreground">{t.expectedReopen}</span>
                           <span className="text-sm font-semibold text-primary">{format(new Date(maintenanceEnd), "HH:mm - dd/MM/yyyy", { locale: locale === "vi" ? viLocale : undefined })}</span>
                         </div>
                       </div>
                     ) : maintenanceHours > 0 ? (
                       <div className="rounded-lg border border-muted bg-muted/30 p-2.5 space-y-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">Bắt đầu khóa:</span>
-                          <span className="text-sm font-medium">Khi bấm xác nhận</span>
+                          <span className="text-xs text-muted-foreground">{t.lockStart}</span>
+                          <span className="text-sm font-medium">{t.whenConfirmed}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">Dự kiến mở lại:</span>
+                          <span className="text-xs text-muted-foreground">{t.expectedReopen}</span>
                           <span className="text-sm font-semibold text-primary">{format(new Date(Date.now() + maintenanceHours * 3600000), "HH:mm - dd/MM/yyyy", { locale: locale === "vi" ? viLocale : undefined })}</span>
                         </div>
                       </div>
@@ -432,11 +430,11 @@ export default function AdminSystem() {
 
                   {/* Maintenance message */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Thông báo bảo trì</Label>
+                    <Label className="text-xs">{t.maintenanceMsg}</Label>
                     <Textarea
                       value={maintenanceMessage}
                       onChange={(e) => setMaintenanceMessage(e.target.value)}
-                      placeholder="Nhập thông báo bảo trì..."
+                      placeholder={t.maintenanceMsgPlaceholder}
                       rows={2}
                       className="text-sm resize-none"
                     />
