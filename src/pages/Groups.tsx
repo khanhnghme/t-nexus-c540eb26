@@ -240,7 +240,7 @@ export default function Groups() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      toast({ title: 'Lỗi', description: 'Ảnh không được vượt quá 5MB', variant: 'destructive' });
+      toast({ title: g.errorTitle, description: g.imageTooBig, variant: 'destructive' });
       return;
     }
     setGroupImage(file);
@@ -266,8 +266,8 @@ export default function Groups() {
     if (guardReadOnly()) return;
     if (!newGroupName.trim()) {
       toast({
-        title: 'Lỗi',
-        description: 'Vui lòng nhập tên dự án',
+        title: g.errorTitle,
+        description: g.enterProjectName,
         variant: 'destructive',
       });
       return;
@@ -300,8 +300,8 @@ export default function Groups() {
 
         if (maxProjects !== null && totalProjects >= maxProjects) {
           toast({
-            title: 'Đã đạt giới hạn',
-            description: `Tài khoản đã đạt giới hạn ${maxProjects} dự án cho gói ${ownerPlan.replace('plan_', '').toUpperCase()}. Vui lòng nâng cấp hoặc xóa bớt dự án.`,
+            title: g.limitReached,
+            description: g.limitReachedDesc.replace('{n}', String(maxProjects)).replace('{plan}', ownerPlan.replace('plan_', '').toUpperCase()),
             variant: 'destructive',
           });
           return;
@@ -376,16 +376,18 @@ export default function Groups() {
           await supabase.from('notifications').insert({
             user_id: m.id,
             type: 'project_invited',
-            title: '📩 Lời mời tham gia project',
-            message: `${profile?.full_name || 'Leader'} đã mời bạn tham gia project "${newGroup.name}"`,
+            title: g.inviteTitle,
+            message: g.inviteMsg.replace('{leader}', profile?.full_name || 'Leader').replace('{project}', newGroup.name),
             group_id: newGroup.id,
           });
         }
       }
 
       toast({
-        title: 'Thành công',
-        description: `Đã tạo dự án "${newGroup.name}"${selectedMembers.length > 0 ? ` và gửi lời mời cho ${selectedMembers.length} thành viên` : ''}`,
+        title: g.successTitle,
+        description: selectedMembers.length > 0
+          ? g.createdWithInvites.replace('{name}', newGroup.name).replace('{n}', String(selectedMembers.length))
+          : g.createdProject.replace('{name}', newGroup.name),
       });
 
       setIsDialogOpen(false);
@@ -393,8 +395,8 @@ export default function Groups() {
       fetchGroups();
     } catch (error: any) {
       toast({
-        title: 'Lỗi',
-        description: error.message || 'Không thể tạo dự án',
+        title: g.errorTitle,
+        description: error.message || g.cannotCreate,
         variant: 'destructive',
       });
     } finally {
