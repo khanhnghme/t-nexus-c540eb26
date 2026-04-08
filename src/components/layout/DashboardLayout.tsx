@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardLayoutContext } from '@/contexts/DashboardLayoutContext';
 import UserAvatar from '@/components/UserAvatar';
+import ReadOnlyBanner from '@/components/ReadOnlyBanner';
 import {
   DropdownMenu,
   DropdownMenuContent,
