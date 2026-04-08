@@ -136,47 +136,6 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
   if (collapsed) {
     return (
       <div className="tree-nav">
-        {/* Workspace switcher - collapsed */}
-        {isAvailable && activeWorkspace && (
-          <DropdownMenu>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <DropdownMenuTrigger asChild>
-                  <button className="sidebar-nav-item ws-switcher-collapsed">
-                    <div className="ws-avatar-mini">
-                      {activeWorkspace.name.charAt(0).toUpperCase()}
-                    </div>
-                  </button>
-                </DropdownMenuTrigger>
-              </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={12}>
-                <p className="font-medium">{activeWorkspace.name}</p>
-                <p className="text-[10px] text-muted-foreground">{getRoleBadge(workspaceRole)} {getRoleLabel(workspaceRole)}</p>
-              </TooltipContent>
-            </Tooltip>
-            <DropdownMenuContent side="right" align="start" className="w-56">
-              {workspaces.map(ws => (
-                <DropdownMenuItem
-                  key={ws.id}
-                  onClick={() => switchWorkspace(ws.id)}
-                  className={cn(ws.id === activeWorkspace.id && 'bg-accent')}
-                >
-                  <div className="ws-avatar-mini mr-2 text-[10px]">
-                    {ws.name.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="truncate flex-1">{ws.name}</span>
-                  {ws.id === activeWorkspace.id && <Check className="w-3.5 h-3.5 ml-1 text-primary" />}
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/workspace/new')}>
-                <Plus className="w-3.5 h-3.5 mr-2" />
-                {t?.createWorkspace || 'Create new Workspace'}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-
         {/* Dashboard */}
         <TreeItemCollapsed icon={Home} label={t?.home || 'Home'} href="/dashboard" active={isPathActive('/dashboard')} />
 
