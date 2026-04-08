@@ -114,6 +114,7 @@ const MOCK_BILLING = [
 export default function ServicePlan() {
   const { user, profile } = useAuth();
   const { workspaces } = useWorkspace();
+  const accountLimits = useAccountLimitsCheck();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
