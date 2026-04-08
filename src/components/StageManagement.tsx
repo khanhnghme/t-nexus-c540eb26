@@ -33,6 +33,7 @@ import { logActivity } from '@/lib/activityLogger';
 import { MoreHorizontal, Pencil, Trash2, Loader2 } from 'lucide-react';
 import type { Stage } from '@/types/database';
 import { deleteWithUndo } from '@/lib/deleteWithUndo';
+import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 
 interface StageManagementProps {
   stage: Stage;
@@ -48,7 +49,10 @@ export default function StageManagement({ stage, taskCount, onUpdate }: StageMan
   const [isProcessing, setIsProcessing] = useState(false);
   const [newName, setNewName] = useState(stage.name);
 
+  const { guardAction: guardReadOnly } = useReadOnlyGuard();
+
   const handleRename = async () => {
+    if (guardReadOnly()) return;
     if (!newName.trim()) {
       toast({
         title: 'Lỗi',

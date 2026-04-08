@@ -12,6 +12,7 @@ import { logActivity } from '@/lib/activityLogger';
 import { Loader2, Video, Calendar, Clock, Layers, Link2 } from 'lucide-react';
 import { DeadlineHourPicker } from '@/components/DeadlineHourPicker';
 import type { Stage, GroupMember } from '@/types/database';
+import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 
 interface CreateMeetingDialogProps {
   open: boolean;
@@ -36,7 +37,10 @@ export default function CreateMeetingDialog({
   const [externalLink, setExternalLink] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
+  const { guardAction: guardReadOnly } = useReadOnlyGuard();
+
   const handleCreate = async () => {
+    if (guardReadOnly()) return;
     if (!title.trim() || !scheduledAt) return;
     setIsCreating(true);
 

@@ -29,6 +29,7 @@ import {
   CheckCircle2, X, Plus, Send
 } from 'lucide-react';
 import type { Task, Stage, GroupMember, TaskStatus, SubmissionMethod } from '@/types/database';
+import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 import { formatDeadlineVN, formatDeadlineShortVN, isDeadlineOverdue, parseLocalDateTime } from '@/lib/datetime';
 import { DeadlineHourPicker } from './DeadlineHourPicker';
 import FileSizeLimitSelector, { formatFileSizeMB } from './FileSizeLimitSelector';
@@ -133,7 +134,10 @@ export default function TaskEditDialog({
     return text;
   };
 
+  const { guardAction: guardReadOnly } = useReadOnlyGuard();
+
   const handleSave = async () => {
+    if (guardReadOnly()) return;
     if (!task || !canEditDetails) return;
     if (!title.trim()) {
       toast({

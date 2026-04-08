@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
+import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 
 function StatCard({ icon: Icon, label, value, sub, color = 'primary' }: {
   icon: React.ElementType; label: string; value: string | number; sub?: string; color?: string;
@@ -101,7 +102,10 @@ export default function WorkspaceSettings() {
   const storageCap = activeWorkspace.max_storage_mb;
   const storageLabel = storageCap >= 1024 ? `${(storageCap / 1024).toFixed(0)} GB` : `${storageCap} MB`;
 
+  const { guardAction: guardReadOnly } = useReadOnlyGuard();
+
   const handleSave = async () => {
+    if (guardReadOnly()) return;
     if (!canEdit) return;
     setIsSaving(true);
     try {
