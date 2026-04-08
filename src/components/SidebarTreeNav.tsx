@@ -173,62 +173,6 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
   /* ─── Expanded mode ─── */
   return (
     <div className="tree-nav">
-      {/* ══ Workspace Switcher ══ */}
-      {isAvailable && activeWorkspace && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="ws-switcher">
-              <div className="ws-avatar">
-                {activeWorkspace.name.charAt(0).toUpperCase()}
-              </div>
-              <div className="ws-switcher-info flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
-                  <span className="ws-switcher-name truncate flex-1 min-w-0">{activeWorkspace.name}</span>
-                  {ownerPlan && (
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold leading-none shrink-0 whitespace-nowrap ${
-                      ownerPlan !== 'plan_free' 
-                        ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' 
-                        : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {formatPlanName(ownerPlan)}
-                    </span>
-                  )}
-                </div>
-                <span className="ws-switcher-role truncate">
-                  {getRoleBadge(workspaceRole)} {getRoleLabel(workspaceRole)}
-                </span>
-              </div>
-              <ChevronsUpDown className="w-3.5 h-3.5 shrink-0 opacity-40" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width] min-w-56">
-            <div className="px-2 py-1.5">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Workspaces</p>
-            </div>
-            {workspaces.map(ws => (
-              <DropdownMenuItem
-                key={ws.id}
-                onClick={() => switchWorkspace(ws.id)}
-                className={cn('gap-2', ws.id === activeWorkspace.id && 'bg-accent')}
-              >
-                <div className="ws-avatar-mini">
-                  {ws.name.charAt(0).toUpperCase()}
-                </div>
-                <div className="flex flex-col flex-1 min-w-0">
-                  <span className="truncate text-sm font-medium">{ws.name}</span>
-                  <span className="text-[10px] text-muted-foreground">{getRoleBadge(ws.my_role)} {getRoleLabel(ws.my_role)}</span>
-                </div>
-                {ws.id === activeWorkspace.id && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
-              </DropdownMenuItem>
-            ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate('/workspace/new')} className="gap-2">
-              <Plus className="w-3.5 h-3.5" />
-              <span>{t?.createWorkspace || 'Create new Workspace'}</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
 
       {isGuest && (
         <div className="tree-guest-hint">
