@@ -246,6 +246,7 @@ export default function GroupDetail() {
   };
 
   const handleCreateStage = async () => {
+    if (guardReadOnly()) return;
     if (!newStageName.trim() || !group) return;
     setIsCreatingStage(true);
     try {
