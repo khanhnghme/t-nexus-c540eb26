@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardLayoutContext } from '@/contexts/DashboardLayoutContext';
 import UserAvatar from '@/components/UserAvatar';
-import ReadOnlyBanner from '@/components/ReadOnlyBanner';
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -438,8 +438,7 @@ export default function DashboardLayout({
 
           {/* Cell 4: Bottom-right — Main content */}
           <div className="grid-cell-content">
-            <div className="max-w-[1100px] mx-auto px-12 py-8 space-y-4">
-              <ReadOnlyBanner compact />
+            <div className="max-w-[1100px] mx-auto px-12 py-8">
               {useOutlet ? <Outlet /> : children}
             </div>
           </div>
