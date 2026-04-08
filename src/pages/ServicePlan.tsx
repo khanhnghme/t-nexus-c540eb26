@@ -117,6 +117,7 @@ export default function ServicePlan() {
   const [isLoading, setIsLoading] = useState(true);
   const [wsUsages, setWsUsages] = useState<WorkspaceUsage[]>([]);
   const [planLimits, setPlanLimits] = useState<PlanLimitsData | null>(null);
+  const [uniqueMemberCount, setUniqueMemberCount] = useState(0);
 
   const currentTab = searchParams.get('tab') || 'plan';
 
