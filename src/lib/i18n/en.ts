@@ -1888,7 +1888,6 @@ export const en = {
       emojiObjects: '🎉 Objects & Symbols',
       emojiFood: '🍕 Food',
     },
-  },
 
     pricingDocs: {
     backToPricing: 'Back to Pricing',
