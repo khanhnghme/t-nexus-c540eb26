@@ -64,6 +64,7 @@ function groupByDate(notifications: Notification[], labels: { today: string; yes
 
 export default function NotificationBell() {
   const { user } = useAuth();
+  const { locale, translations: { app: { notificationBell: t } } } = useLanguage();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [tab, setTab] = useState<TabFilter>('all');
