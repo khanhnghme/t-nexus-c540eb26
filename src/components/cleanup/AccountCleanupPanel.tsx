@@ -54,7 +54,7 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
   const [expandedWs, setExpandedWs] = useState<Set<string>>(new Set());
   const [selectedWs, setSelectedWs] = useState<Set<string>>(new Set());
   const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set());
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmStep, setConfirmStep] = useState<0 | 1 | 2>(0); // 0=closed, 1=step1, 2=step2
   const [confirmText, setConfirmText] = useState('');
 
   useEffect(() => {
@@ -277,7 +277,7 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
 
   // Delete logic
   const handleDelete = async () => {
-    if (confirmText !== 'XÁC NHẬN') return;
+    if (confirmText !== 'TÔI HIỂU, XÓA NGAY') return;
     setDeleting(true);
     try {
       // 1. Delete individual projects (not part of deleted workspaces)
@@ -299,7 +299,7 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
       toast.success('Đã dọn dẹp thành công!');
       setSelectedWs(new Set());
       setSelectedProjects(new Set());
-      setConfirmOpen(false);
+      setConfirmStep(0);
       setConfirmText('');
 
       // Refresh
@@ -560,7 +560,7 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
           </div>
           <Button
             variant="destructive"
-            onClick={() => setConfirmOpen(true)}
+            onClick={() => { setConfirmStep(1); setConfirmText(''); }}
           >
             <Trash2 className="w-4 h-4 mr-2" />
             Xóa đã chọn
@@ -568,17 +568,17 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
         </div>
       )}
 
-      {/* Confirm dialog */}
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      {/* Step 1: Review what will be deleted */}
+      <AlertDialog open={confirmStep === 1} onOpenChange={(open) => { if (!open) setConfirmStep(0); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-destructive">
               <AlertTriangle className="w-5 h-5" />
-              Xác nhận xóa vĩnh viễn
+              Bước 1/2 — Xem lại danh sách xóa
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3">
-                <p>Bạn sắp xóa vĩnh viễn các mục sau:</p>
+                <p>Bạn đã chọn xóa các mục sau:</p>
                 <ul className="list-disc pl-5 space-y-1 text-sm">
                   {Array.from(selectedWs).map(wsId => {
                     const ws = wsInfos.find(w => w.id === wsId);
@@ -599,24 +599,50 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
                       );
                     })}
                 </ul>
-                <p className="text-destructive font-medium">Hành động này không thể hoàn tác!</p>
-                <div>
-                  <label className="text-sm font-medium">Nhập <strong>XÁC NHẬN</strong> để tiếp tục:</label>
-                  <Input
-                    value={confirmText}
-                    onChange={e => setConfirmText(e.target.value)}
-                    placeholder="XÁC NHẬN"
-                    className="mt-1.5"
-                  />
-                </div>
+                <p className="text-destructive font-medium">⚠️ Hành động này không thể hoàn tác!</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Hủy</AlertDialogCancel>
+            <AlertDialogCancel>Quay lại</AlertDialogCancel>
+            <Button variant="destructive" onClick={() => setConfirmStep(2)}>
+              Tiếp tục xác nhận →
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Step 2: Type confirmation phrase */}
+      <AlertDialog open={confirmStep === 2} onOpenChange={(open) => { if (!open) setConfirmStep(0); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5" />
+              Bước 2/2 — Xác nhận lần cuối
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>Để xác nhận xóa vĩnh viễn, vui lòng nhập chính xác dòng chữ bên dưới:</p>
+                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 text-center">
+                  <code className="text-destructive font-bold text-sm select-all">TÔI HIỂU, XÓA NGAY</code>
+                </div>
+                <Input
+                  value={confirmText}
+                  onChange={e => setConfirmText(e.target.value)}
+                  placeholder="Nhập dòng chữ phía trên..."
+                  className="mt-1.5"
+                  autoFocus
+                />
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting} onClick={() => setConfirmStep(1)}>
+              ← Quay lại
+            </AlertDialogCancel>
             <Button
               variant="destructive"
-              disabled={confirmText !== 'XÁC NHẬN' || deleting}
+              disabled={confirmText !== 'TÔI HIỂU, XÓA NGAY' || deleting}
               onClick={handleDelete}
             >
               {deleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
