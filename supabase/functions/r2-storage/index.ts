@@ -120,6 +120,38 @@ Deno.serve(async (req) => {
 
       const contentType = req.headers.get('content-type') || 'application/octet-stream'
       const body = await req.arrayBuffer()
+      const fileSizeMb = body.byteLength / (1024 * 1024)
+
+      // Enforce per-file size limit based on owner's plan
+      try {
+        const supabaseService = createClient(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+        )
+        const { data: userProfile } = await supabaseService
+          .from('profiles')
+          .select('user_plan')
+          .eq('id', userId)
+          .single()
+        
+        const userPlan = userProfile?.user_plan || 'plan_free'
+        const { data: limits } = await supabaseService
+          .from('plan_limits')
+          .select('max_file_size_mb')
+          .eq('plan', userPlan)
+          .maybeSingle()
+        
+        const maxFileSizeMb = (limits as any)?.max_file_size_mb ?? 5
+        if (fileSizeMb > maxFileSizeMb) {
+          const label = maxFileSizeMb >= 1024 ? `${(maxFileSizeMb / 1024).toFixed(0)} GB` : `${maxFileSizeMb} MB`
+          return new Response(JSON.stringify({ error: `File quá lớn. Giới hạn ${label} cho gói ${userPlan.replace('plan_', '').toUpperCase()}.` }), {
+            status: 413,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
+        }
+      } catch (e) {
+        console.warn('File size check failed, allowing upload:', e)
+      }
 
       // bucket IS the R2 bucket name, path is the object key
       const r2Url = `${config.endpoint}/${bucket}/${path}`
