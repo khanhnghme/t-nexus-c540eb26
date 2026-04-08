@@ -672,7 +672,7 @@ export default function Communication() {
                 )}
               </div>
               <div>
-                <h1 className="text-2xl font-bold font-heading">Trao đổi</h1>
+                <h1 className="text-2xl font-heading font-bold tracking-tight">Trao đổi</h1>
                 <p className="text-muted-foreground text-sm">
                   {projects.length} dự án • {totalUnreadMentions > 0 ? `${totalUnreadMentions} thông báo mới` : 'Không có thông báo mới'}
                 </p>
@@ -688,7 +688,7 @@ export default function Communication() {
                   <FolderKanban className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{projects.length}</p>
+                  <p className="text-xl font-bold">{projects.length}</p>
                   <p className="text-xs text-muted-foreground">Dự án</p>
                 </div>
               </CardContent>
@@ -699,7 +699,7 @@ export default function Communication() {
                   <Bell className="w-5 h-5 text-accent" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{totalUnreadMentions}</p>
+                  <p className="text-xl font-bold">{totalUnreadMentions}</p>
                   <p className="text-xs text-muted-foreground">Chưa đọc</p>
                 </div>
               </CardContent>
@@ -710,7 +710,7 @@ export default function Communication() {
                   <Users className="w-5 h-5 text-success" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{projects.reduce((acc, p) => acc + (p.member_count || 0), 0)}</p>
+                  <p className="text-xl font-bold">{projects.reduce((acc, p) => acc + (p.member_count || 0), 0)}</p>
                   <p className="text-xs text-muted-foreground">Thành viên</p>
                 </div>
               </CardContent>

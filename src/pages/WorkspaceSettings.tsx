@@ -46,7 +46,7 @@ function StatCard({ icon: Icon, label, value, sub, color = 'primary' }: {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="text-2xl font-bold tracking-tight">{value}</p>
+          <p className="text-xl font-bold tracking-tight">{value}</p>
           {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
         </div>
       </CardContent>
@@ -150,7 +150,7 @@ export default function WorkspaceSettings() {
     <div className="space-y-6 max-w-4xl">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-3">
+        <h1 className="text-2xl font-heading font-bold tracking-tight flex items-center gap-3">
           <LayoutGrid className="w-6 h-6 text-primary" />
           {tw.title}
         </h1>
@@ -182,7 +182,7 @@ export default function WorkspaceSettings() {
         <TabsContent value="info" className="mt-4">
           <Card>
             <CardContent className="p-6 space-y-5">
-              <h2 className="text-lg font-semibold flex items-center gap-2"><Settings2 className="w-5 h-5 text-muted-foreground" />{tw.generalInfo}</h2>
+              <h2 className="text-lg font-heading font-semibold flex items-center gap-2"><Settings2 className="w-5 h-5 text-muted-foreground" />{tw.generalInfo}</h2>
 
               <div className="space-y-2">
                 <Label htmlFor="ws-name">{tw.workspaceName}</Label>

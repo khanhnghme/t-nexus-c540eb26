@@ -389,7 +389,7 @@ export default function Groups() {
         {/* Header */}
         <div className="space-y-4">
           <div>
-            <h1 className="text-3xl font-bold">Dự án của tôi</h1>
+            <h1 className="text-2xl font-heading font-bold tracking-tight">Dự án của tôi</h1>
             <p className="text-muted-foreground mt-1">
               Quản lý các dự án bạn tham gia
             </p>
