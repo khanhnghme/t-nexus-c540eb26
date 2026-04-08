@@ -76,6 +76,7 @@ export default function Groups() {
   // Permission: workspace_owner, workspace_admin, or system_admin can create projects
   const canCreateProject = isSystemAdmin || workspaceRole === 'workspace_owner' || workspaceRole === 'workspace_admin';
   const { toast } = useToast();
+  const { guardAction: guardReadOnly } = useReadOnlyGuard();
   const [groups, setGroups] = useState<GroupWithMembers[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
