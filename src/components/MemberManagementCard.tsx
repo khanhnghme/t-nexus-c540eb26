@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 import leaveGroupIllustration from '@/assets/leave-group-illustration.png';
 import { useNavigate } from 'react-router-dom';
 import { deleteWithUndo } from '@/lib/deleteWithUndo';
@@ -94,6 +95,7 @@ export default function MemberManagementCard({
 }: MemberManagementCardProps) {
   const { toast } = useToast();
   const { user, profile } = useAuth();
+  const { guardAction: guardReadOnly } = useReadOnlyGuard();
   const navigate = useNavigate();
   const { getPresenceStatus } = useUserPresence('system-global');
   const [memberToDelete, setMemberToDelete] = useState<GroupMember | null>(null);
@@ -484,6 +486,7 @@ export default function MemberManagementCard({
   const filteredProfiles = searchResults;
 
   const handleAddMember = async () => {
+    if (guardReadOnly()) return;
     if (selectedUserIds.size === 0) {
       toast({ title: 'Lỗi', description: 'Vui lòng chọn ít nhất một thành viên', variant: 'destructive' });
       return;

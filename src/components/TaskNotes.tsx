@@ -19,6 +19,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { r2Storage } from '@/lib/r2Storage';
 import { useToast } from '@/hooks/use-toast';
+import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 import { useAutosave } from '@/hooks/useAutosave';
 import { 
   FileText, 
@@ -73,6 +74,7 @@ const MAX_TOTAL_SIZE = 10 * 1024 * 1024; // 10MB per task
 
 export default function TaskNotes({ taskId, className = '', compact = false }: TaskNotesProps) {
   const { toast } = useToast();
+  const { guardAction: guardReadOnly } = useReadOnlyGuard();
   const { openFilePreview } = useFilePreview();
   const [notes, setNotes] = useState<TaskNote[]>([]);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
@@ -373,6 +375,7 @@ export default function TaskNotes({ taskId, className = '', compact = false }: T
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (guardReadOnly()) return;
     if (!selectedNoteId || !e.target.files?.length) return;
 
     const file = e.target.files[0];
