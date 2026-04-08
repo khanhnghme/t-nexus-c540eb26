@@ -183,6 +183,7 @@ function UpgradeBox({ collapsed }: { collapsed: boolean }) {
   const { user } = useAuth();
   const { activeWorkspace, workspaceRole, isAvailable } = useWorkspace();
   const { ownerPlan, ownerId } = useWorkspaceBilling();
+  const { locale } = useLanguage();
 
   const isOwner = user?.id === ownerId;
   if (!isAvailable || !activeWorkspace || workspaceRole !== 'workspace_owner') return null;
@@ -221,7 +222,7 @@ function UpgradeBox({ collapsed }: { collapsed: boolean }) {
             {planLabel} Plan
           </div>
           <div className="text-[10px] text-amber-600/70 dark:text-amber-400/70">
-            Nâng cấp để mở khóa thêm
+            {locale === 'vi' ? 'Nâng cấp để mở khóa thêm' : 'Upgrade to unlock more'}
           </div>
         </div>
         <Zap className="w-3.5 h-3.5 text-amber-500 shrink-0 opacity-60 group-hover:opacity-100 transition-opacity" />
@@ -302,8 +303,8 @@ export default function DashboardLayout({
 
   const getRoleText = () => {
     if (isAdmin) return 'OwnerSystem';
-    if (isLeader) return 'Thành viên NC';
-    return 'Thành viên';
+    if (isLeader) return locale === 'vi' ? 'Thành viên NC' : 'Advanced Member';
+    return locale === 'vi' ? 'Thành viên' : 'Member';
   };
 
   return (
@@ -393,7 +394,7 @@ export default function DashboardLayout({
                     />
                     <div className="user-info">
                       <div className="user-name">
-                        {profile?.full_name || 'Đang tải...'}
+                        {profile?.full_name || (locale === 'vi' ? 'Đang tải...' : 'Loading...')}
                       </div>
                       <div className="user-role">{getRoleText()}</div>
                     </div>
@@ -408,7 +409,7 @@ export default function DashboardLayout({
                     <div className="flex flex-col gap-1">
                       <p className="font-semibold">{profile?.full_name}</p>
                       <p className="text-xs text-muted-foreground">{profile?.email}</p>
-                      <p className="text-xs text-muted-foreground">MSSV: {profile?.student_id}</p>
+                      <p className="text-xs text-muted-foreground">{locale === 'vi' ? 'MSSV' : 'ID'}: {profile?.student_id}</p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -456,9 +457,9 @@ export default function DashboardLayout({
       <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Cập nhật ảnh đại diện</DialogTitle>
+            <DialogTitle>{locale === 'vi' ? 'Cập nhật ảnh đại diện' : 'Update avatar'}</DialogTitle>
             <DialogDescription>
-              Nhấn vào ảnh để tải lên ảnh mới (tối đa 5MB)
+              {locale === 'vi' ? 'Nhấn vào ảnh để tải lên ảnh mới (tối đa 5MB)' : 'Click to upload a new photo (max 5MB)'}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center gap-4 py-4">
