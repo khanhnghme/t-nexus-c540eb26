@@ -257,6 +257,11 @@ export default function ServicePlan() {
         <TabsList>
           <TabsTrigger value="plan">Gói hiện tại</TabsTrigger>
           <TabsTrigger value="usage">Mức sử dụng</TabsTrigger>
+          {accountLimits.isOverLimits && (
+            <TabsTrigger value="cleanup" className="text-destructive data-[state=active]:text-destructive">
+              🧹 Dọn dẹp
+            </TabsTrigger>
+          )}
           <TabsTrigger value="billing">Lịch sử thanh toán</TabsTrigger>
         </TabsList>
 
@@ -551,12 +556,13 @@ export default function ServicePlan() {
             )}
           </section>
 
-          {/* Cleanup Panel - show when over limits */}
+          {/* Cleanup tab link hint */}
           {accountLimits.isOverLimits && (
-            <section className="space-y-4">
-              <Separator />
-              <AccountCleanupPanel onCleanupComplete={fetchUsages} />
-            </section>
+            <div className="text-center">
+              <Button variant="outline" size="sm" onClick={() => handleTabChange('cleanup')} className="text-destructive border-destructive/30">
+                🧹 Mở công cụ Dọn dẹp tài khoản
+              </Button>
+            </div>
           )}
         </TabsContent>
 
