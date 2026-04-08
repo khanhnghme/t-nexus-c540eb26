@@ -147,7 +147,7 @@ function WorkspaceSwitcherCell({ collapsed }: { collapsed: boolean }) {
               {formatPlanName(ownerPlan)}
             </span>
           )}
-          <ChevronsUpDown className="w-3 h-3 shrink-0 opacity-30" />
+          <ChevronsUpDown className="w-3 h-3 shrink-0" style={{ color: 'var(--_sb-fg)' }} />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width] min-w-56">
