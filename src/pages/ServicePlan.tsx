@@ -38,7 +38,7 @@ interface PlanLimitsData {
 const PLAN_FEATURES: Record<string, string[]> = {
   plan_free: [
     '1 Workspace',
-    'Tổng 2 dự án trên toàn tài khoản',
+    'Tổng 5 dự án trên toàn tài khoản',
     'Tổng 5 suất thành viên (unique seat, dùng chung cho tất cả WS)',
     '500 MB tổng lưu trữ (gộp tất cả Workspace)',
     'Upload tối đa 5 MB / file',
@@ -49,7 +49,7 @@ const PLAN_FEATURES: Record<string, string[]> = {
   ],
   plan_plus: [
     '5 Workspaces',
-    'Tổng 20 dự án (phân bổ tùy ý cho các WS)',
+    'Tổng 15 dự án (phân bổ tùy ý cho các WS)',
     'Tổng 15 suất thành viên (unique seat, dùng chung cho tất cả WS)',
     '10 GB tổng lưu trữ (gộp tất cả Workspace)',
     'Upload tối đa 100 MB / file',
@@ -62,7 +62,7 @@ const PLAN_FEATURES: Record<string, string[]> = {
   ],
   plan_pro: [
     '20 Workspaces',
-    'Tổng 150 dự án (phân bổ tùy ý cho các WS)',
+    'Tổng 50 dự án (phân bổ tùy ý cho các WS)',
     'Tổng 50 suất thành viên (unique seat, dùng chung cho tất cả WS)',
     '50 GB tổng lưu trữ (gộp tất cả Workspace)',
     'Upload tối đa 5 GB / file',
@@ -77,8 +77,8 @@ const PLAN_FEATURES: Record<string, string[]> = {
   ],
   plan_business: [
     '50 Workspaces',
-    'Tổng 1.500 dự án (phân bổ tùy ý cho các WS)',
-    'Tổng 150 suất thành viên (unique seat, dùng chung cho tất cả WS)',
+    'Tổng 500 dự án (phân bổ tùy ý cho các WS)',
+    'Tổng 200 suất thành viên (unique seat, dùng chung cho tất cả WS)',
     '200 GB tổng lưu trữ (gộp tất cả Workspace)',
     'Upload tối đa 5 GB / file',
     'Mở khóa tính năng Business cho mọi thành viên',

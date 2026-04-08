@@ -277,7 +277,7 @@ export const en = {
         cta: 'Sign up',
         features: [
           '1 Workspace to create',
-          'Total 2 projects across entire account',
+          'Total 5 projects across entire account',
           '500 MB total storage (shared across Workspaces)',
           'Max upload 5 MB / file',
           'Total 5 unique seats (shared across all WSs, free)',
@@ -291,7 +291,7 @@ export const en = {
         cta: 'Get started',
         features: [
           '5 Workspaces to create',
-          'Total 20 projects (allocate freely across WSs)',
+          'Total 15 projects (allocate freely across WSs)',
           '10 GB total storage (shared across Workspaces)',
           'Max upload 100 MB / file',
           'Total 15 unique seats (shared across all WSs, free)',
@@ -309,7 +309,7 @@ export const en = {
         cta: 'Get started',
         features: [
           '20 Workspaces to create',
-          'Total 150 projects (allocate freely across WSs)',
+          'Total 50 projects (allocate freely across WSs)',
           '50 GB total storage (shared across Workspaces)',
           'Max upload 5 GB / file',
           'Total 50 unique seats (shared across all WSs, free)',
@@ -327,10 +327,10 @@ export const en = {
         cta: 'Get started',
         features: [
           '50 Workspaces to create',
-          'Total 1,500 projects (allocate freely across WSs)',
+          'Total 500 projects (allocate freely across WSs)',
           '200 GB total storage (shared across Workspaces)',
           'Max upload 5 GB / file',
-          'Total 150 unique seats (shared across all WSs, free)',
+          'Total 200 unique seats (shared across all WSs, free)',
           'Unlock Business features for all members',
           'Unlimited meeting time',
           'Unlimited activity logs',
@@ -363,9 +363,9 @@ export const en = {
     addOnDescription: 'Available from Plus and above. Add-ons increase the owner\'s total limits and apply to ALL workspaces you create.',
     addOnNote: 'Pro: 10% off · Business: 20% off on all add-ons',
     addOns: [
-      { emoji: '📋', name: 'Projects', price: '$2.49', unit: '/ +50 total projects / month', note: 'Additional projects are added to your total account limit. Use them in any Workspace you own.' },
-      { emoji: '📦', name: 'Storage', price: '$2.49', unit: '/ +20 GB total / month', note: 'Expands total storage (shared across all your Workspaces).' },
-      { emoji: '👥', name: 'Members', price: '$2.49', unit: '/ +10 unique seats total / month', note: 'Each person (1 email) joining multiple WSs counts as only 1 seat. Additional seats are added to your total account pool.' },
+      { emoji: '📋', name: 'Projects', price: '$2.49', unit: '/ +5 total projects / month', note: 'Additional projects are added to your total account limit. Use them in any Workspace you own.' },
+      { emoji: '📦', name: 'Storage', price: '$2.49', unit: '/ +5 GB total / month', note: 'Expands total storage (shared across all your Workspaces).' },
+      { emoji: '👥', name: 'Members', price: '$2.49', unit: '/ +5 unique seats total / month', note: 'Each person (1 email) joining multiple WSs counts as only 1 seat. Additional seats are added to your total account pool.' },
     ],
 
     // Comparison table
@@ -382,8 +382,8 @@ export const en = {
       {
         category: 'Projects & Members',
         rows: [
-          { label: 'Total projects across account', free: '2', plus: '20', pro: '150', business: '1,500', enterprise: 'Unlimited' },
-          { label: 'Total unique seats (free)', free: '5', plus: '15', pro: '50', business: '150', enterprise: 'Unlimited' },
+          { label: 'Total projects across account', free: '5', plus: '15', pro: '50', business: '500', enterprise: 'Unlimited' },
+          { label: 'Total unique seats (free)', free: '5', plus: '15', pro: '50', business: '200', enterprise: 'Unlimited' },
         ],
       },
       {
@@ -1089,19 +1089,19 @@ export const en = {
     s3TableHeaders: ['Resource', 'Free', 'Plus', 'Pro', 'Business'],
     s3TableRows: [
       ['Workspaces', '1', '5', '20', '50'],
-      ['Total projects', '2', '20', '150', '1,500'],
+      ['Total projects', '5', '15', '50', '500'],
       ['Storage', '500 MB', '10 GB', '50 GB', '200 GB'],
-      ['Member seats', '5', '15', '50', '150'],
+      ['Member seats', '5', '15', '50', '200'],
       ['File size limit', '5 MB/file', '100 MB/file', '5 GB/file', '5 GB/file'],
     ],
-    s3Callout: '💡 Flexible allocation: For example, with Plus (20 projects), you can create 15 projects in your main WS and 5 in a secondary one — or all 20 in a single WS.',
+    s3Callout: '💡 Flexible allocation: For example, with Plus (15 projects), you can create 10 projects in your main WS and 5 in a secondary one — or all 15 in a single WS.',
 
     s4Title: 'Add-ons — Scale on demand',
     s4Desc: 'Need more than your plan allows? Purchase add-ons to increase your account-wide pool. Add-ons apply to ALL Workspaces you own.',
     s4Items: [
-      { name: '+50 Projects', price: '$2.49/mo', note: 'Add 50 projects to your total pool. Use them in any Workspace.' },
-      { name: '+20 GB Storage', price: '$2.49/mo', note: 'Expand total storage capacity across your entire account.' },
-      { name: '+10 Member seats', price: '$2.49/mo', note: 'Add 10 unique member seats to your total pool.' },
+      { name: '+5 Projects', price: '$2.49/mo', note: 'Add 5 projects to your total pool. Use them in any Workspace.' },
+      { name: '+5 GB Storage', price: '$2.49/mo', note: 'Expand total storage capacity across your entire account.' },
+      { name: '+5 Member seats', price: '$2.49/mo', note: 'Add 5 unique member seats to your total pool.' },
     ],
     s4Callout: '💡 Add-ons are available from Plus plan and above. Purchased quantities are added to your account-wide pool, not per-Workspace.',
 
@@ -1113,7 +1113,7 @@ export const en = {
         details: [
           'Create 1 Workspace for the team',
           'Invite 4 members (total 5/5 seats)',
-          'Create 2 projects: "Main Project" and "Reference Docs"',
+          'Create 5 projects for different parts of the capstone',
           'Use 500 MB for report files',
           '→ Completely free, enough for a small project!',
         ],
@@ -1124,7 +1124,7 @@ export const en = {
         details: [
           'Create 3 Workspaces: "Project A", "Project B", "Internal"',
           'Invite 15 members — some join all 3 WS but only count as 1 seat each',
-          'Allocate 20 projects: WS-A (10), WS-B (7), Internal (3)',
+          'Allocate 15 projects: WS-A (7), WS-B (5), Internal (3)',
           '10 GB storage shared across all Workspaces',
           '→ Only $4.80/month, members use it for free!',
         ],
