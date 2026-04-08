@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { TNexusLogo } from '@/components/TNexusLogo';
 import { useState, useEffect, useCallback } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +29,7 @@ function getRoleBadgeStyle(role: SystemRole) {
 
 export default function RememberLoginScreen({ profile, roles, onLogout }: RememberLoginScreenProps) {
   const navigate = useNavigate();
+  const { locale } = useLanguage();
   const isAdvancedMember = roles.includes('system_admin') || roles.includes('system_owner');
   const [countdown, setCountdown] = useState(10);
 
@@ -74,11 +76,12 @@ export default function RememberLoginScreen({ profile, roles, onLogout }: Rememb
             <TNexusLogo variant="text" width={140} />
             <div className="mt-2 space-y-1">
               <h1 className="text-xl font-heading font-bold text-foreground">
-                Xác minh tài khoản
+                {locale === 'vi' ? 'Xác minh tài khoản' : 'Verify account'}
               </h1>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Phiên đăng nhập trước đó vẫn còn hiệu lực.<br />
-                Xác minh danh tính để tiếp tục sử dụng <span className="font-semibold text-foreground">T-Nexus</span>.
+                {locale === 'vi'
+                  ? <>Phiên đăng nhập trước đó vẫn còn hiệu lực.<br />Xác minh danh tính để tiếp tục sử dụng <span className="font-semibold text-foreground">T-Nexus</span>.</>
+                  : <>Your previous session is still active.<br />Verify your identity to continue using <span className="font-semibold text-foreground">T-Nexus</span>.</>}
               </p>
             </div>
           </div>
@@ -117,13 +120,13 @@ export default function RememberLoginScreen({ profile, roles, onLogout }: Rememb
             <div className="border-t border-border bg-muted/20 px-5 py-4 flex flex-col gap-2.5">
               {profile.institution && (
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-muted-foreground w-12 shrink-0 font-medium">ĐVĐT</span>
+                  <span className="text-xs text-muted-foreground w-12 shrink-0 font-medium">{locale === 'vi' ? 'ĐVĐT' : 'Inst.'}</span>
                   <span className="text-sm text-foreground font-medium truncate">{profile.institution}</span>
                 </div>
               )}
               {profile.student_id && (
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-muted-foreground w-12 shrink-0 font-medium">MSSV</span>
+                  <span className="text-xs text-muted-foreground w-12 shrink-0 font-medium">{locale === 'vi' ? 'MSSV' : 'ID'}</span>
                   <span className="text-sm text-foreground font-semibold tracking-wide">{profile.student_id}</span>
                 </div>
               )}
@@ -146,7 +149,7 @@ export default function RememberLoginScreen({ profile, roles, onLogout }: Rememb
                 style={{ transform: `scaleX(${countdown / 10})` }}
               />
               <span className="relative flex items-center gap-2">
-                Tiếp tục vào hệ thống ({countdown}s)
+                {locale === 'vi' ? `Tiếp tục vào hệ thống (${countdown}s)` : `Continue to system (${countdown}s)`}
                 <ArrowRight className="w-4 h-4" />
               </span>
             </Button>
@@ -156,7 +159,7 @@ export default function RememberLoginScreen({ profile, roles, onLogout }: Rememb
               className="w-full h-10 gap-2 rounded-lg text-muted-foreground"
             >
               <LogOut className="w-4 h-4" />
-              Đăng xuất
+              {locale === 'vi' ? 'Đăng xuất' : 'Sign out'}
             </Button>
           </div>
 
