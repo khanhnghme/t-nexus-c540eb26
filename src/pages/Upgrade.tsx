@@ -42,7 +42,7 @@ function formatPrice(monthly: number | null, yearly: boolean): string {
 
 export default function Upgrade() {
   const [yearly, setYearly] = useState(false);
-  const { translations: { pricing: tp, common: tc } } = useLanguage();
+  const { translations: t, translations: { pricing: tp, common: tc } } = useLanguage();
   const { user, profile } = useAuth();
   const { activeWorkspace } = useWorkspace();
   const { ownerId, ownerName, ownerPlan } = useWorkspaceBilling();
