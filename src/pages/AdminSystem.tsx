@@ -598,7 +598,7 @@ export default function AdminSystem() {
                       <div className="p-2 rounded-lg bg-accent/10"><Mail className="w-4 h-4 text-accent" /></div>
                       <div>
                         <CardTitle className="text-base">{t.notifLetters}</CardTitle>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">Hiển thị thông báo bắt buộc xem trước khi tắt</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{t.notifLettersDesc}</p>
                       </div>
                     </div>
                     <Button size="sm" className="gap-1.5" onClick={() => { setEditingNotif(null); setNotifTitle(''); setNotifContent(''); setNotifMode('post_login'); setNotifMinSeconds(15); setNotifExpiresAt(''); setNotifTargetUserIds([]); setUserSearchQuery(''); setNotifDialogOpen(true); }}>
@@ -811,10 +811,10 @@ export default function AdminSystem() {
                   <Tabs defaultValue="upload" className="w-full">
                     <TabsList className="w-full grid grid-cols-2">
                       <TabsTrigger value="upload" className="gap-1.5 text-xs">
-                        <Upload className="w-3 h-3" /> Tải video lên
+                        <Upload className="w-3 h-3" /> {t.uploadVideo}
                       </TabsTrigger>
                       <TabsTrigger value="link" className="gap-1.5 text-xs">
-                        <Link className="w-3 h-3" /> Dán link
+                        <Link className="w-3 h-3" /> {t.pasteLink}
                       </TabsTrigger>
                     </TabsList>
                     <TabsContent value="upload" className="space-y-2 mt-2">
@@ -834,9 +834,9 @@ export default function AdminSystem() {
                               .upload(fileName, file, { upsert: true });
                             if (uploadError) throw uploadError;
                             setVideoBgUrl(uploadData?.publicUrl || '');
-                            toast({ title: 'Đã tải video lên', description: file.name });
+                            toast({ title: '{t.videoUploaded}', description: file.name });
                           } catch (err: any) {
-                            toast({ title: 'Lỗi upload', description: err.message, variant: 'destructive' });
+                            toast({ title: '{t.uploadError}', description: err.message, variant: 'destructive' });
                           } finally {
                             setUploadingVideo(false);
                           }
@@ -844,7 +844,7 @@ export default function AdminSystem() {
                       />
                       {uploadingVideo && (
                         <p className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Loader2 className="w-3 h-3 animate-spin" /> Đang tải lên...
+                          <Loader2 className="w-3 h-3 animate-spin" /> {t.uploading}
                         </p>
                       )}
                     </TabsContent>
@@ -865,7 +865,7 @@ export default function AdminSystem() {
                   <Collapsible>
                     <CollapsibleTrigger asChild>
                       <Button variant="ghost" size="sm" className="w-full justify-between text-xs text-muted-foreground h-8 px-2">
-                        <span>Tùy chỉnh độ hiển thị từng trang</span>
+                        <span>{t.customizeVisibility}</span>
                         <ChevronDown className="w-3.5 h-3.5" />
                       </Button>
                     </CollapsibleTrigger>
@@ -927,7 +927,7 @@ export default function AdminSystem() {
                         }
                         toast({ title: '{t.savedVideoSettings}' });
                       } catch {
-                        toast({ title: 'Lỗi', description: 'Không thể lưu', variant: 'destructive' });
+                        toast({ title: 'Lỗi', description: '{t.cannotSaveVideo}', variant: 'destructive' });
                       } finally {
                         setSavingVideo(false);
                       }
@@ -978,8 +978,8 @@ export default function AdminSystem() {
       {/* Notification Letter Dialog */}
       <Dialog open={notifDialogOpen} onOpenChange={setNotifDialogOpen}>
         <DialogContent className="max-w-lg">
-          <DialogTitle>{editingNotif ? 'Chỉnh sửa thư' : 'Tạo thư thông báo mới'}</DialogTitle>
-          <DialogDescription className="sr-only">Quản lý thư thông báo bắt buộc</DialogDescription>
+          <DialogTitle>{editingNotif ? {t.editNotifDialog} : {t.createNotifDialog}}</DialogTitle>
+          <DialogDescription className="sr-only">{t.notifDialogDesc}</DialogDescription>
           <div className="space-y-3">
             <div className="space-y-1.5">
               <Label className="text-xs">Tiêu đề</Label>
@@ -1100,12 +1100,12 @@ export default function AdminSystem() {
                 const { data: notifs } = await supabase.from('system_notifications').select('*').order('created_at', { ascending: false });
                 setNotifications(notifs || []);
                 setNotifDialogOpen(false);
-                toast({ title: editingNotif ? 'Đã cập nhật thư' : 'Đã tạo thư thông báo' });
+                toast({ title: editingNotif ? {t.notifUpdated} : {t.notifCreated} });
               } catch (err: any) { toast({ title: 'Lỗi', description: err.message, variant: 'destructive' }); }
               finally { setSavingNotif(false); }
             }}>
               {savingNotif ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {editingNotif ? 'Cập nhật' : 'Tạo thư'}
+              {editingNotif ? {t.updateNotif} : {t.createNotifBtn}}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1115,14 +1115,14 @@ export default function AdminSystem() {
       <Dialog open={emailHistoryOpen} onOpenChange={setEmailHistoryOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><History className="w-4 h-4" /> Lịch sử gửi Email Digest</DialogTitle>
-            <DialogDescription>50 bản ghi gần nhất từ hệ thống email queue</DialogDescription>
+            <DialogTitle className="flex items-center gap-2"><History className="w-4 h-4" /> {t.emailHistoryTitle}</DialogTitle>
+            <DialogDescription>{t.emailHistoryDesc}</DialogDescription>
           </DialogHeader>
           <ScrollArea className="max-h-[55vh]">
             {loadingHistory ? (
               <div className="flex items-center justify-center py-8"><Loader2 className="w-5 h-5 animate-spin" /></div>
             ) : emailHistoryLogs.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">Chưa có bản ghi nào</p>
+              <p className="text-sm text-muted-foreground text-center py-8">{t.noRecords}</p>
             ) : (
               <Table>
                 <TableHeader>
