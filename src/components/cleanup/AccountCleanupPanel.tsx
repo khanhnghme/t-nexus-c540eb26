@@ -325,10 +325,13 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
     }
 
     // Delete related data in order
-    await supabase.from('submission_history').delete().in('task_id', (tasks || []).map(t => t.id));
-    await supabase.from('task_scores').delete().in('task_id', (tasks || []).map(t => t.id));
-    await supabase.from('task_assignments').delete().in('task_id', (tasks || []).map(t => t.id));
-    await supabase.from('task_comments').delete().in('task_id', (tasks || []).map(t => t.id));
+    const taskIds = (tasks || []).map(t => t.id);
+    if (taskIds.length > 0) {
+      await supabase.from('submission_history').delete().in('task_id', taskIds);
+      await supabase.from('task_scores').delete().in('task_id', taskIds);
+      await supabase.from('task_assignments').delete().in('task_id', taskIds);
+      await supabase.from('task_comments').delete().in('task_id', taskIds);
+    }
 
     const taskIds = (tasks || []).map(t => t.id);
     const { data: taskNotes } = taskIds.length > 0 
