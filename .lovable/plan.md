@@ -1,63 +1,65 @@
-## Đồng bộ hệ thống giới hạn gói với tài liệu hướng dẫn pricing
 
-### Vấn đề hiện tại
 
-**Database `plan_limits` sai hoàn toàn** so với tài liệu đã định nghĩa:
+## Đồng bộ toàn bộ hệ thống gói với tài liệu pricing
 
-| Gói | DB hiện tại (projects/members/storage/ws) | Đúng theo docs |
+### Vấn đề phát hiện
+
+**1. Database `plan_limits` sai hoàn toàn:**
+
+| Gói | DB hiện tại (ws/projects/members/storage) | Đúng theo docs |
 |-----|------------------------------------------|----------------|
-| Free | 2 / 5 / 250MB / 1 | **5** / 5 / **500MB** / 1 |
-| Plus | 5 / 15 / 1GB / 3 | **15** / 15 / **10GB** / **5** |
-| Pro | 20 / 50 / 5GB / 10 | **50** / 50 / **50GB** / **20** |
-| Business | 100 / 200 / 25GB / 50 | **500** / 200 / **200GB** / 50 |
+| Free | 1 / 2 / 5 / 250MB | 1 / **5** / 5 / **500MB** |
+| Plus | 3 / 5 / 15 / 1GB | **5** / **15** / 15 / **10GB** |
+| Pro | 10 / 20 / 50 / 5GB | **20** / **50** / 50 / **50GB** |
+| Business | 50 / 100 / 200 / 25GB | 50 / **500** / 200 / **200GB** |
 
-**Logic hiển thị sai**: ServicePlan.tsx nhân `max_projects_per_workspace × số WS` — nhưng theo mô hình Global Pool, đây là tổng cộng toàn tài khoản, không nhân.
+**2. Logic hiển thị sai trong ServicePlan.tsx:**
+- Dòng 393-394: Nhân `max_projects_per_workspace × số WS` — SAI vì đây là tổng cộng toàn tài khoản (Global Pool), không phải per-workspace.
 
-**Column naming mismatch**: Tên cột là `max_projects_per_workspace` và `max_members_per_workspace` nhưng ý nghĩa thực tế là **tổng toàn tài khoản** (account-wide).
+**3. Hook naming gây hiểu lầm:**
+- `maxProjectsPerWorkspace`, `maxMembersPerWorkspace` — tên gợi ý per-workspace nhưng thực tế là account-wide totals.
 
 ### Các bước thực hiện
 
-#### 1. Migration: Cập nhật giá trị trong bảng `plan_limits`
-Rename columns không khả thi (ảnh hưởng types.ts auto-gen), nên chỉ **cập nhật giá trị** cho đúng:
+#### Bước 1: Tạo edge function tạm để cập nhật plan_limits (rồi xóa sau)
+Cần edge function dùng service role key để UPDATE bảng `plan_limits` (RLS chỉ cho SELECT).
 
-```sql
-UPDATE plan_limits SET max_projects_per_workspace = 5, max_storage_mb = 500, max_workspaces = 1 WHERE plan = 'plan_free';
-UPDATE plan_limits SET max_projects_per_workspace = 15, max_storage_mb = 10000, max_workspaces = 5 WHERE plan = 'plan_plus';
-UPDATE plan_limits SET max_projects_per_workspace = 50, max_storage_mb = 50000, max_workspaces = 20 WHERE plan = 'plan_pro';
-UPDATE plan_limits SET max_projects_per_workspace = 500, max_storage_mb = 200000, max_workspaces = 50 WHERE plan = 'plan_business';
+```
+supabase/functions/update-plan-limits/index.ts
 ```
 
-#### 2. Sửa `ServicePlan.tsx` — Bỏ phép nhân sai
-- Line 393-394: Hiển thị `totalProjects / max_projects_per_workspace` (không nhân với số WS)
-- Line 399-400: Progress bar tương tự
-- Đây là giới hạn tổng toàn tài khoản, không cần nhân
+Sau khi chạy thành công → xóa edge function.
 
-#### 3. Sửa `usePlanLimits.ts` — Comment/rename interface cho rõ
-- Rename interface fields: `maxProjectsPerWorkspace` → `maxTotalProjects`, `maxMembersPerWorkspace` → `maxTotalMembers` (chỉ ở phía client, vẫn map từ cùng column DB)
-- Cập nhật tất cả nơi sử dụng hook này
+#### Bước 2: Sửa `src/hooks/usePlanLimits.ts`
+- Rename interface fields cho rõ ý nghĩa:
+  - `maxProjectsPerWorkspace` → `maxTotalProjects`
+  - `maxMembersPerWorkspace` → `maxTotalMembers`
+- Vẫn map từ cùng DB column (`max_projects_per_workspace`)
 
-#### 4. Sửa `useWorkspaceBilling.ts` — Dùng đúng field
-- `maxProjects` giờ là tổng toàn tài khoản, không phải per-workspace
-- `projectCount` nên đếm tổng projects trên tất cả WS của owner (thay vì chỉ WS hiện tại)
+#### Bước 3: Sửa `src/hooks/useWorkspaceBilling.ts`
+- `projectCount` đếm tổng projects trên **tất cả WS của owner** (không chỉ WS hiện tại)
+- `maxProjects` là tổng account-wide
 
-#### 5. Sửa `BillingWidget.tsx` — Hiển thị tổng projects toàn tài khoản
-- Thay vì chỉ đếm projects trong WS hiện tại, đếm tổng trên tất cả WS của owner
+#### Bước 4: Sửa `src/pages/ServicePlan.tsx`
+- **Bỏ phép nhân sai** (dòng 393-394): Hiển thị `totalProjects / max_projects_per_workspace` trực tiếp
+- Progress bar tương tự (dòng 399-400)
+- Cập nhật interface `PlanLimitsData` field names
 
-#### 6. Sửa trigger `auto_create_workspace_for_user` (nếu cần)
-- Hiện tại hard-code `max_projects: 2, max_members: 5, max_storage_mb: 250` — cần xác nhận các cột `max_projects`, `max_members`, `max_storage_mb` trên bảng `workspaces` có đang được dùng cho enforcement hay không. Nếu có, cần cập nhật trigger hoặc bỏ qua (vì enforcement nên dựa vào `plan_limits`).
+#### Bước 5: Sửa `src/components/dashboard/BillingWidget.tsx`
+- Cập nhật field names theo hook mới
 
 ### Files cần sửa
 
 | File | Hành động |
 |------|-----------|
-| DB migration | UPDATE plan_limits values |
-| `src/pages/ServicePlan.tsx` | Bỏ phép nhân projects × WS count |
-| `src/hooks/usePlanLimits.ts` | Rename interface fields cho rõ ý nghĩa |
-| `src/hooks/useWorkspaceBilling.ts` | Đếm tổng projects toàn account |
-| `src/components/dashboard/BillingWidget.tsx` | Hiển thị tổng account-wide |
+| `supabase/functions/update-plan-limits/` | Tạo tạm → chạy → xóa |
+| `src/hooks/usePlanLimits.ts` | Rename fields |
+| `src/hooks/useWorkspaceBilling.ts` | Đếm tổng account-wide |
+| `src/pages/ServicePlan.tsx` | Bỏ nhân sai, rename fields |
+| `src/components/dashboard/BillingWidget.tsx` | Sync field names |
 
 ### Không thay đổi
-- Nội dung i18n (đã đúng)
-- Nội dung trang PricingDocs (đã đúng)
-- Nội dung trang Pricing (đã đúng)
-- Nội dung ServicePlanSection (đã đúng)
+- Nội dung i18n (đã đúng hoàn toàn)
+- Trang PricingDocs, Pricing, Upgrade (đã đúng)
+- ServicePlanSection (đã đúng)
+
