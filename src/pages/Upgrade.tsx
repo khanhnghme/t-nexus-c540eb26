@@ -244,6 +244,16 @@ export default function Upgrade() {
 
         {/* FAQ */}
         <UpgradeQuestionsAndAnswers faqData={FAQ_DATA} tp={tp} />
+
+        {/* Pricing docs CTA */}
+        <div className="text-center py-6 border-t border-border mt-8">
+          <p className="text-sm text-muted-foreground mb-2">
+            💡 {t.pricingDocs?.pricingCta}
+          </p>
+          <Link to="/docs/pricing" className="text-sm text-primary underline font-medium">
+            {t.pricingDocs?.pricingCtaLink} →
+          </Link>
+        </div>
       </div>
 
       {/* Responsive */}

@@ -44,6 +44,7 @@ import CalendarPage from "./pages/Calendar";
 import Tips from "./pages/Tips";
 import DownloadPage from "./pages/Download";
 import Pricing from "./pages/Pricing";
+import PricingDocs from "./pages/PricingDocs";
 import Terms from "./pages/Terms";
 import WorkspaceSettings from "./pages/WorkspaceSettings";
 import WorkspaceMembers from "./pages/WorkspaceMembers";
