@@ -72,6 +72,9 @@ interface MemberToAdd {
 export default function Groups() {
   const { user, isSystemAdmin, profile } = useAuth();
   const { activeWorkspace, isAvailable: wsAvailable, workspaceRole } = useWorkspace();
+  const { translations: { app: t } } = useLanguage();
+  const g = t.groups;
+  const tc = t.common;
 
   // Permission: workspace_owner, workspace_admin, or system_admin can create projects
   const canCreateProject = isSystemAdmin || workspaceRole === 'workspace_owner' || workspaceRole === 'workspace_admin';
