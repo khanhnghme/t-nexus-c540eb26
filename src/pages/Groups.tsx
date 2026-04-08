@@ -46,6 +46,7 @@ import {
 import type { Group, GroupMember } from '@/types/database';
 import UserAvatar from '@/components/UserAvatar';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 
 interface MemberAvatar {
   avatar_url: string | null;
