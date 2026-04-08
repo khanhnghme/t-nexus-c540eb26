@@ -127,7 +127,7 @@ export default function ServicePlan() {
       const [groupsRes, limitsRes, membersRes] = await Promise.all([
         supabase.from('groups').select('id, workspace_id').in('workspace_id', wsIds),
         supabase.from('plan_limits').select('*').eq('plan', plan as any).maybeSingle(),
-        supabase.from('workspace_members').select('id, workspace_id').in('workspace_id', wsIds),
+        supabase.from('workspace_members').select('workspace_id, user_id').in('workspace_id', wsIds),
       ]);
 
       const projectCountMap: Record<string, number> = {};
