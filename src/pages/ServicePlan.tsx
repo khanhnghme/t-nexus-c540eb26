@@ -186,14 +186,14 @@ export default function ServicePlan() {
       {/* Tabs */}
       <Tabs value={currentTab} onValueChange={handleTabChange}>
         <TabsList>
-          <TabsTrigger value="plan">{t.tabPlan}</TabsTrigger>
-          <TabsTrigger value="usage">{t.tabUsage}</TabsTrigger>
+          <TabsTrigger value="plan">{t.currentPlanTab}</TabsTrigger>
+          <TabsTrigger value="usage">{t.usageTab}</TabsTrigger>
           {accountLimits.isOverLimits && (
             <TabsTrigger value="cleanup" className="text-destructive data-[state=active]:text-destructive">
-              {t.tabCleanup}
+              {t.cleanupTab}
             </TabsTrigger>
           )}
-          <TabsTrigger value="billing">{t.tabBilling}</TabsTrigger>
+          <TabsTrigger value="billing">{t.billingTab}</TabsTrigger>
         </TabsList>
 
         {/* TAB 1: Current plan */}
@@ -257,7 +257,7 @@ export default function ServicePlan() {
                 <div>
                   <h3 className="text-sm font-medium mb-3 flex items-center gap-1.5">
                     <Sparkles className="w-4 h-4 text-amber-500" />
-                    {t.planBenefits} {planName}
+                    {t.planBenefits.replace('{name}', planName)}
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                     {features.map((feature: string, i: number) => (
@@ -281,7 +281,7 @@ export default function ServicePlan() {
                   </div>
                   <div className="flex-1 text-center sm:text-left">
                     <h3 className="font-semibold">{t.unlockPremium}</h3>
-                    <p className="text-sm text-muted-foreground mt-0.5">{t.unlockDesc}</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">{t.unlockPremiumDesc}</p>
                   </div>
                   <Button
                     onClick={() => navigate('/upgrade?from=personal')}
@@ -351,7 +351,7 @@ export default function ServicePlan() {
                 <CardContent className="p-4 space-y-2">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Users className="w-4 h-4" />
-                    <span className="text-xs font-medium">{t.uniqueSeats}</span>
+                    <span className="text-xs font-medium">{t.memberSeats}</span>
                   </div>
                   <div className="flex items-baseline gap-1">
                     <span className="text-2xl font-bold tabular-nums">{totalMembers}</span>
@@ -367,7 +367,7 @@ export default function ServicePlan() {
                       className="h-1.5"
                     />
                   )}
-                  <p className="text-[10px] text-muted-foreground">{t.seatNote}</p>
+                  <p className="text-[10px] text-muted-foreground">{t.memberSeatsNote}</p>
                 </CardContent>
               </Card>
 
@@ -402,13 +402,13 @@ export default function ServicePlan() {
           <section className="space-y-4">
             <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
               <Building2 className="w-5 h-5 text-muted-foreground" />
-              {t.wsBreakdown}
+              {t.detailByWorkspace}
             </h2>
 
             {wsUsages.length === 0 ? (
               <Card>
                 <CardContent className="py-10 text-center text-muted-foreground text-sm">
-                  {t.noWorkspace}
+                  {t.noWorkspaceOwned}
                 </CardContent>
               </Card>
             ) : (
@@ -484,7 +484,7 @@ export default function ServicePlan() {
           {accountLimits.isOverLimits && (
             <div className="text-center">
               <Button variant="outline" size="sm" onClick={() => handleTabChange('cleanup')} className="text-destructive border-destructive/30">
-                {t.openCleanup}
+                {t.openCleanupTool}
               </Button>
             </div>
           )}
@@ -509,11 +509,11 @@ export default function ServicePlan() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.colDate}</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.colTxn}</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.colPlan}</th>
-                    <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.colAmount}</th>
-                    <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.colStatus}</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.dateCol}</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.txnCol}</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.planCol}</th>
+                    <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.amountCol}</th>
+                    <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.statusCol}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">

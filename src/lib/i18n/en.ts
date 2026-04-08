@@ -1888,9 +1888,8 @@ export const en = {
       emojiObjects: '🎉 Objects & Symbols',
       emojiFood: '🍕 Food',
     },
-  },
 
-  pricingDocs: {
+    pricingDocs: {
     backToPricing: 'Back to Pricing',
     title: 'T-Nexus Pricing Guide',
     subtitle: 'Understand our pricing model, resource allocation and member benefits when using T-Nexus.',
@@ -2570,7 +2569,7 @@ export const en = {
     noData: 'No password data. User needs to login or change password at least once for the system to record.',
   },
 
-  personal: {
+    personal: {
     invalidFormat: 'Invalid format',
     selectImage: 'Please select an image file',
     fileTooLarge: 'File too large',
@@ -2613,45 +2612,6 @@ export const en = {
     roleLeaderDesc: 'Can create & manage projects',
     roleMember: 'Member',
     roleMemberDesc: 'Join invited projects',
-  },
-
-  servicePlan: {
-    goBack: 'Go back',
-    title: 'Service Plan',
-    subtitle: 'Manage your plan, view usage and billing history',
-    upgradePlan: 'Upgrade plan',
-    tabPlan: 'Current plan',
-    tabUsage: 'Usage',
-    tabCleanup: '🧹 Cleanup',
-    tabBilling: 'Billing history',
-    currentPlan: 'Current plan',
-    active: 'Active',
-    free: 'Free',
-    premiumDesc: 'Enjoy full premium features',
-    freeDesc: 'Upgrade to unlock more features',
-    members: 'Members',
-    planBenefits: 'Benefits of',
-    unlockPremium: 'Unlock premium features',
-    unlockDesc: 'Upgrade your plan for more workspaces, projects and storage.',
-    upgradeNow: 'Upgrade now',
-    usageOverview: 'Usage overview',
-    workspace: 'Workspace',
-    projects: 'Projects',
-    uniqueSeats: 'Unique seats',
-    seatNote: '1 person in multiple WS = 1 seat',
-    storage: 'Storage',
-    wsBreakdown: 'Breakdown by Workspace',
-    noWorkspace: 'You don\'t own any workspaces',
-    projectsLabel: 'projects',
-    membersLabel: 'members',
-    openCleanup: '🧹 Open Account Cleanup tool',
-    billingHistory: 'Billing history',
-    colDate: 'Date',
-    colTxn: 'Transaction ID',
-    colPlan: 'Plan',
-    colAmount: 'Amount',
-    colStatus: 'Status',
-    showingRecent: 'Showing 5 most recent transactions • Mock data',
   },
 
   servicePlanSection: {
@@ -2745,6 +2705,7 @@ export const en = {
     scores: 'Scores',
     logs: 'Logs',
     settings: 'Settings',
+    },
   },
 };
 
