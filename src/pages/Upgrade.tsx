@@ -43,12 +43,17 @@ function formatPrice(monthly: number | null, yearly: boolean): string {
 export default function Upgrade() {
   const [yearly, setYearly] = useState(false);
   const { translations: { pricing: tp, common: tc } } = useLanguage();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { activeWorkspace } = useWorkspace();
   const { ownerId, ownerName, ownerPlan } = useWorkspaceBilling();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  const isOwner = user?.id === ownerId;
+  const isFromPersonal = searchParams.get('from') === 'personal';
+
+  // When from personal, always use user's own plan & treat them as owner
+  const effectivePlan = isFromPersonal ? (profile?.user_plan || 'plan_free') : ownerPlan;
+  const isOwner = isFromPersonal ? true : (user?.id === ownerId);
 
   const handleSelectPlan = () => {
     if (!isOwner) return;
