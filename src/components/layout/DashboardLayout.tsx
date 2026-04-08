@@ -53,6 +53,131 @@ import { useWorkspaceBilling, formatPlanName } from '@/hooks/useWorkspaceBilling
 import TopBar from '@/components/layout/TopBar';
 
 /* ------------------------------------------------------------------ */
+/*  Workspace Switcher Cell (top-left)                                 */
+/* ------------------------------------------------------------------ */
+function WorkspaceSwitcherCell({ collapsed }: { collapsed: boolean }) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { activeWorkspace, workspaces, switchWorkspace, isAvailable, workspaceRole } = useWorkspace();
+  const { ownerPlan } = useWorkspaceBilling();
+  const { locale } = useLanguage();
+
+  const getRoleBadge = (role?: string | null) => {
+    switch (role) {
+      case 'workspace_owner': return '👑';
+      case 'workspace_admin': return '🛡️';
+      case 'workspace_member': return '🎫';
+      default: return '🎫';
+    }
+  };
+  const getRoleLabel = (role?: string | null) => {
+    switch (role) {
+      case 'workspace_owner': return 'Owner';
+      case 'workspace_admin': return 'Admin';
+      case 'workspace_member': return 'Member';
+      default: return '';
+    }
+  };
+
+  if (!isAvailable || !activeWorkspace) {
+    return (
+      <Link to="/dashboard" className="flex items-center gap-2 min-w-0">
+        <img src={tNexusLogo} alt="T-Nexus" className="h-7 w-7 shrink-0" />
+        <span className="sidebar-logo-text whitespace-nowrap overflow-hidden">
+          <img src={tNexusTextWhite} alt="T-Nexus" className="h-[15px] w-auto max-w-full" />
+        </span>
+      </Link>
+    );
+  }
+
+  if (collapsed) {
+    return (
+      <DropdownMenu>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger asChild>
+              <button className="sidebar-nav-item ws-switcher-collapsed">
+                <div className="ws-avatar-mini">
+                  {activeWorkspace.name.charAt(0).toUpperCase()}
+                </div>
+              </button>
+            </DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={12}>
+            <p className="font-medium">{activeWorkspace.name}</p>
+            <p className="text-[10px] text-muted-foreground">{getRoleBadge(workspaceRole)} {getRoleLabel(workspaceRole)}</p>
+          </TooltipContent>
+        </Tooltip>
+        <DropdownMenuContent side="right" align="start" className="w-56">
+          {workspaces.map(ws => (
+            <DropdownMenuItem key={ws.id} onClick={() => switchWorkspace(ws.id)} className={cn(ws.id === activeWorkspace.id && 'bg-accent')}>
+              <div className="ws-avatar-mini mr-2 text-[10px]">{ws.name.charAt(0).toUpperCase()}</div>
+              <span className="truncate flex-1">{ws.name}</span>
+              {ws.id === activeWorkspace.id && <Check className="w-3.5 h-3.5 ml-1 text-primary" />}
+            </DropdownMenuItem>
+          ))}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => navigate('/workspace/new')}>
+            <Plus className="w-3.5 h-3.5 mr-2" />
+            {locale === 'vi' ? 'Tạo Workspace mới' : 'Create new Workspace'}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="ws-switcher">
+          <div className="ws-avatar">
+            {activeWorkspace.name.charAt(0).toUpperCase()}
+          </div>
+          <div className="ws-switcher-info flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
+              <span className="ws-switcher-name truncate flex-1 min-w-0">{activeWorkspace.name}</span>
+              {ownerPlan && (
+                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold leading-none shrink-0 whitespace-nowrap ${
+                  ownerPlan !== 'plan_free'
+                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                    : 'bg-muted text-muted-foreground'
+                }`}>
+                  {formatPlanName(ownerPlan)}
+                </span>
+              )}
+            </div>
+            <span className="ws-switcher-role truncate">
+              {getRoleBadge(workspaceRole)} {getRoleLabel(workspaceRole)}
+            </span>
+          </div>
+          <ChevronsUpDown className="w-3.5 h-3.5 shrink-0 opacity-40" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width] min-w-56">
+        <div className="px-2 py-1.5">
+          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Workspaces</p>
+        </div>
+        {workspaces.map(ws => (
+          <DropdownMenuItem key={ws.id} onClick={() => switchWorkspace(ws.id)} className={cn('gap-2', ws.id === activeWorkspace.id && 'bg-accent')}>
+            <div className="ws-avatar-mini">{ws.name.charAt(0).toUpperCase()}</div>
+            <div className="flex flex-col flex-1 min-w-0">
+              <span className="truncate text-sm font-medium">{ws.name}</span>
+              <span className="text-[10px] text-muted-foreground">{getRoleBadge(ws.my_role)} {getRoleLabel(ws.my_role)}</span>
+            </div>
+            {ws.id === activeWorkspace.id && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+          </DropdownMenuItem>
+        ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => navigate('/workspace/new')} className="gap-2">
+          <Plus className="w-3.5 h-3.5" />
+          <span>{locale === 'vi' ? 'Tạo Workspace mới' : 'Create new Workspace'}</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Upgrade Box                                                        */
 /* ------------------------------------------------------------------ */
 function UpgradeBox({ collapsed }: { collapsed: boolean }) {
