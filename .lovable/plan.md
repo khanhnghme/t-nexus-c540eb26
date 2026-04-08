@@ -1,66 +1,52 @@
 
 
-## Tạo trang tài liệu hướng dẫn giá `/docs/pricing` + CTA liên kết từ Pricing & Upgrade
+## Thêm Chương 2: Chính sách khi hết hạn gói + Mục lục cho trang /docs/pricing
 
 ### Tổng quan
+Tái cấu trúc trang PricingDocs thành dạng có **Mục lục (Table of Contents)** chia 2 chương, và thêm toàn bộ nội dung **Chương 2: Khi hết hạn gói** với 3 mục con.
 
-Tạo một trang public mới tại `/docs/pricing` (và `/vi/docs/pricing`) chứa nội dung giải thích chi tiết mô hình tính giá. Đồng thời thêm một CTA dạng "Bạn có thắc mắc về bảng giá?" trên trang Pricing và Upgrade, dẫn đến trang này.
+### Cấu trúc mới
+
+```text
+📑 Mục lục
+├── Chương 1: Hướng dẫn Bảng giá
+│   ├── 1.1 Mô hình Chủ sở hữu trả tiền
+│   ├── 1.2 Suất thành viên duy nhất
+│   ├── 1.3 Tổng kho tài nguyên
+│   ├── 1.4 Add-ons
+│   ├── 1.5 Ví dụ thực tế
+│   └── 1.6 Câu hỏi thường gặp
+└── Chương 2: Chính sách khi hết hạn
+    ├── 2.1 Khóa quyền chỉnh sửa (Read-only)
+    ├── 2.2 Thời hạn 30 ngày — Cơ hội cuối
+    └── 2.3 Sau 30 ngày — Xóa vĩnh viễn
+```
 
 ### Các bước thực hiện
 
-#### 1. Tạo trang `src/pages/PricingDocs.tsx`
-Trang public (ForceLightMode), thiết kế clean theo style hiện tại của Pricing page. Nội dung chia thành các section:
+#### 1. Cập nhật i18n (`vi.ts` và `en.ts`)
+- Thêm key `toc` (Table of Contents) với labels cho 2 chương và các mục con
+- Thêm keys `ch2Title`, `ch2Subtitle` cho chương 2
+- Thêm `ch2s1Title`, `ch2s1Desc`, `ch2s1Allowed`, `ch2s1Blocked` — nội dung Read-only
+- Thêm `ch2s2Title`, `ch2s2Desc`, `ch2s2Options` — 2 lựa chọn (Nâng cấp / Dọn dẹp)
+- Thêm `ch2s3Title`, `ch2s3Desc`, `ch2s3Rule` — nguyên tắc xóa (giữ cũ nhất, xóa mới nhất)
 
-**Header:** "Hướng dẫn chi tiết về Bảng giá T-Nexus"
+#### 2. Cập nhật `PricingDocs.tsx`
+- Thêm **Mục lục** (sticky sidebar hoặc inline TOC) ở đầu trang với anchor links
+- Wrap sections hiện tại dưới heading "Chương 1"
+- Thêm **Chương 2** với 3 section mới:
+  - Section 2.1: Icon `Lock`, mô tả trạng thái read-only, bảng 2 cột (Được phép / Bị cấm)
+  - Section 2.2: Icon `Clock`, timeline 30 ngày, 2 card cho Lựa chọn A và B
+  - Section 2.3: Icon `AlertTriangle`, cảnh báo xóa vĩnh viễn, callout nguyên tắc xóa
 
-**Section 1 — Mô hình Chủ sở hữu trả tiền (Owner-based Billing)**
-- Chỉ Owner trả tiền, member dùng miễn phí
-- Bảng minh họa: Owner mua gói → tạo Workspace → mời thành viên → thành viên hưởng tính năng 0đ
-
-**Section 2 — Suất thành viên duy nhất (Unique Seat Pool)**
-- 1 Email = 1 Suất, dù tham gia bao nhiêu Workspace
-- Ví dụ minh họa với icon/bảng
-
-**Section 3 — Tổng kho tài nguyên (Global Resource Pool)**
-- Giới hạn là con số tổng cộng, phân bổ linh hoạt
-- Bảng so sánh giới hạn các gói (Free/Plus/Pro/Business)
-
-**Section 4 — Add-ons**
-- Giải thích add-on cộng vào tổng kho, áp dụng mọi Workspace
-
-**Section 5 — Ví dụ thực tế**
-- Kịch bản 1: Sinh viên dùng gói Free (1 WS, 5 người, 2 dự án)
-- Kịch bản 2: Nhóm trưởng dùng gói Plus (3 WS, 15 người, phân bổ 30 dự án linh hoạt)
-
-**Section 6 — FAQ nhanh**
-
-#### 2. Thêm i18n translations
-- Thêm key `pricingDocs` vào `vi.ts` và `en.ts` chứa toàn bộ nội dung trang (headings, paragraphs, bảng data, FAQ)
-
-#### 3. Đăng ký route trong `App.tsx`
-- Thêm route `/docs/pricing` và `/vi/docs/pricing` vào public routes (ForceLightMode)
-- Cập nhật `PUBLIC_CANONICAL_PATHS` trong `LanguageContext.tsx`
-
-#### 4. Thêm CTA link trên Pricing.tsx và Upgrade.tsx
-- Thêm một banner/link nhỏ dạng:
-  ```
-  💡 Bạn có thắc mắc về cách tính giá? → Xem hướng dẫn chi tiết
-  ```
-- Đặt ngay trên hoặc dưới bảng FAQ hiện tại
-- Link dẫn tới `/docs/pricing`
-
-### Files cần tạo/sửa
+### Files cần sửa
 | File | Hành động |
 |------|-----------|
-| `src/pages/PricingDocs.tsx` | Tạo mới |
-| `src/App.tsx` | Thêm 2 routes |
-| `src/contexts/LanguageContext.tsx` | Thêm path vào PUBLIC_CANONICAL_PATHS |
-| `src/lib/i18n/vi.ts` | Thêm key `pricingDocs` |
-| `src/lib/i18n/en.ts` | Thêm key `pricingDocs` |
-| `src/pages/Pricing.tsx` | Thêm CTA link |
-| `src/pages/Upgrade.tsx` | Thêm CTA link |
+| `src/pages/PricingDocs.tsx` | Thêm TOC + Chương 2 |
+| `src/lib/i18n/vi.ts` | Thêm keys chương 2 |
+| `src/lib/i18n/en.ts` | Thêm keys chương 2 |
 
 ### Không thay đổi
-- Logic thanh toán, plan limits, routing hiện tại
-- Nội dung bảng giá trên Pricing/Upgrade (chỉ thêm link)
+- Nội dung Chương 1 giữ nguyên 100%
+- Routing, layout, các trang khác không bị ảnh hưởng
 
