@@ -4,6 +4,7 @@ import { useDashboardLayoutContext } from '@/contexts/DashboardLayoutContext';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigation } from '@/contexts/NavigationContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import TaskListView from '@/components/TaskListView';
 import GroupDashboard from '@/components/GroupDashboard';
 import GroupInfoCard from '@/components/GroupInfoCard';
@@ -69,6 +70,9 @@ export default function GroupDetail() {
   const { user, isAdmin, profile } = useAuth();
   const { toast } = useToast();
   const { guardAction: guardReadOnly } = useReadOnlyGuard();
+  const { translations: { app: t } } = useLanguage();
+  const gd = t.groupDetail;
+  const tc = t.common;
   const { currentTab, setCurrentTab, goBack, goNext, canGoBack, canGoNext, isFirstTab, isLastTab } = useNavigation();
 
   const { setProjectInfo, setProjectNavProps } = useDashboardLayoutContext();
@@ -192,7 +196,7 @@ export default function GroupDetail() {
       }
       
       if (!groupData) {
-        toast({ title: 'Lỗi', description: 'Không tìm thấy project', variant: 'destructive' });
+        toast({ title: tc.error, description: gd.notFound, variant: 'destructive' });
         navigate('/groups');
         return;
       }
@@ -239,7 +243,7 @@ export default function GroupDetail() {
         .limit(1);
       setHasActiveMeeting((activeMeetings?.length ?? 0) > 0);
     } catch (error: any) {
-      toast({ title: 'Lỗi', description: 'Không thể tải thông tin', variant: 'destructive' });
+      toast({ title: tc.error, description: gd.cannotLoadInfo, variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -251,7 +255,7 @@ export default function GroupDetail() {
     setIsCreatingStage(true);
     try {
       await supabase.from('stages').insert({ group_id: group.id, name: newStageName.trim(), description: newStageDescription.trim() || null, order_index: stages.length });
-      toast({ title: 'Thành công', description: 'Đã tạo giai đoạn mới' });
+      toast({ title: tc.success, description: gd.stageCreated });
       await logActivity({
         userId: user!.id,
         userName: profile?.full_name || user?.email || 'Unknown',
@@ -264,7 +268,7 @@ export default function GroupDetail() {
       setNewStageDescription('');
       fetchGroupData();
     } catch (error: any) {
-      toast({ title: 'Lỗi', description: error.message, variant: 'destructive' });
+      toast({ title: tc.error, description: error.message, variant: 'destructive' });
     } finally {
       setIsCreatingStage(false);
     }
@@ -309,7 +313,7 @@ export default function GroupDetail() {
         }
       }
       
-      toast({ title: 'Thành công', description: 'Đã tạo task mới' });
+      toast({ title: tc.success, description: gd.taskCreated });
       
       const assigneeNames = newTaskAssignees.length > 0 
         ? members.filter(m => newTaskAssignees.includes(m.user_id)).map(m => m.profiles?.full_name).filter(Boolean).join(', ')
@@ -331,7 +335,7 @@ export default function GroupDetail() {
       setNewTaskStageId('');
       fetchGroupData();
     } catch (error: any) {
-      toast({ title: 'Lỗi', description: error.message, variant: 'destructive' });
+      toast({ title: tc.error, description: error.message, variant: 'destructive' });
     } finally {
       setIsCreatingTask(false);
     }
@@ -348,8 +352,8 @@ export default function GroupDetail() {
       if (error) throw error;
       
       toast({
-        title: newHiddenStatus ? 'Đã ẩn giai đoạn' : 'Đã hiện giai đoạn',
-        description: `Giai đoạn "${stage.name}" ${newHiddenStatus ? 'đã được ẩn' : 'đã được hiện'}`,
+        title: newHiddenStatus ? gd.stageHidden : gd.stageShown,
+        description: newHiddenStatus ? gd.stageHiddenDesc.replace('{name}', stage.name) : gd.stageShownDesc.replace('{name}', stage.name),
       });
       await logActivity({
         userId: user!.id,
@@ -361,8 +365,8 @@ export default function GroupDetail() {
       fetchGroupData();
     } catch (error: any) {
       toast({
-        title: 'Lỗi',
-        description: error.message || 'Không thể thay đổi trạng thái giai đoạn',
+        title: tc.error,
+        description: error.message || gd.cannotChangeStage,
         variant: 'destructive',
       });
     }
@@ -373,7 +377,7 @@ export default function GroupDetail() {
     setIsDeleteGroupDialogOpen(false);
     
     deleteWithUndo({
-      description: `Đã xóa project "${group.name}"`,
+      description: gd.projectDeleted.replace('{name}', group.name),
       onDelete: async () => {
         const taskIds = tasks.map(t => t.id);
         if (taskIds.length > 0) {
@@ -400,7 +404,7 @@ export default function GroupDetail() {
     setStageToDelete(null);
 
     deleteWithUndo({
-      description: `Đã xóa giai đoạn "${stageRef.name}"`,
+      description: gd.stageDeleted.replace('{name}', stageRef.name),
       onDelete: async () => {
         await supabase.from('tasks').update({ stage_id: null }).eq('stage_id', stageRef.id);
         await supabase.from('member_stage_scores').delete().eq('stage_id', stageRef.id);
@@ -422,8 +426,8 @@ export default function GroupDetail() {
 
   
 
-  if (isLoading) return <><LoadingScreen message={`Đang tải project...`} /></>;
-  if (!group) return <><div className="text-center py-16"><h1 className="text-2xl font-bold mb-2">Không tìm thấy project</h1><Link to="/groups"><Button>Quay lại</Button></Link></div></>;
+  if (isLoading) return <><LoadingScreen message={gd.loading} /></>;
+  if (!group) return <><div className="text-center py-16"><h1 className="text-2xl font-bold mb-2">{gd.notFound}</h1><Link to="/groups"><Button>{gd.goBack}</Button></Link></div></>;
 
 
   return (
@@ -434,14 +438,14 @@ export default function GroupDetail() {
           {/* Hidden TabsList - using ProjectNavigation instead */}
           <div className="sr-only">
             <TabsList>
-              <TabsTrigger value="overview">Tổng quan</TabsTrigger>
-              <TabsTrigger value="tasks">Task</TabsTrigger>
-              <TabsTrigger value="meetings">Họp nhóm</TabsTrigger>
-              <TabsTrigger value="members">Thành viên</TabsTrigger>
-              <TabsTrigger value="resources">Tài nguyên</TabsTrigger>
-              <TabsTrigger value="scores">Điểm quá trình</TabsTrigger>
-              <TabsTrigger value="logs">Nhật ký</TabsTrigger>
-              <TabsTrigger value="settings">Cài đặt</TabsTrigger>
+              <TabsTrigger value="overview">{gd.tabOverview}</TabsTrigger>
+              <TabsTrigger value="tasks">{gd.tabTasks}</TabsTrigger>
+              <TabsTrigger value="meetings">{gd.tabMeetings}</TabsTrigger>
+              <TabsTrigger value="members">{gd.tabMembers}</TabsTrigger>
+              <TabsTrigger value="resources">{gd.tabResources}</TabsTrigger>
+              <TabsTrigger value="scores">{gd.tabScores}</TabsTrigger>
+              <TabsTrigger value="logs">{gd.tabLogs}</TabsTrigger>
+              <TabsTrigger value="settings">{gd.tabSettings}</TabsTrigger>
             </TabsList>
           </div>
 
@@ -453,14 +457,14 @@ export default function GroupDetail() {
                 {activeTab === 'tasks' && (
                   <>
                     <Dialog open={isStageDialogOpen} onOpenChange={setIsStageDialogOpen}>
-                      <DialogTrigger asChild><Button variant="outline" size="sm"><Layers className="w-4 h-4 mr-2" />Tạo giai đoạn</Button></DialogTrigger>
+                      <DialogTrigger asChild><Button variant="outline" size="sm"><Layers className="w-4 h-4 mr-2" />{gd.createStage}</Button></DialogTrigger>
                       <DialogContent>
-                        <DialogHeader><DialogTitle>Tạo giai đoạn mới</DialogTitle></DialogHeader>
+                        <DialogHeader><DialogTitle>{gd.createStageTitle}</DialogTitle></DialogHeader>
                         <div className="space-y-4 py-4">
-                          <div className="space-y-2"><Label>Tên giai đoạn</Label><Input value={newStageName} onChange={e => setNewStageName(e.target.value)} placeholder="VD: Giai đoạn 1" /></div>
-                          <div className="space-y-2"><Label>Mô tả</Label><Textarea value={newStageDescription} onChange={e => setNewStageDescription(e.target.value)} /></div>
+                          <div className="space-y-2"><Label>{gd.stageName}</Label><Input value={newStageName} onChange={e => setNewStageName(e.target.value)} placeholder={gd.stageNamePlaceholder} /></div>
+                          <div className="space-y-2"><Label>{gd.stageDescription}</Label><Textarea value={newStageDescription} onChange={e => setNewStageDescription(e.target.value)} /></div>
                         </div>
-                        <DialogFooter><Button variant="outline" onClick={() => setIsStageDialogOpen(false)}>Hủy</Button><Button onClick={handleCreateStage} disabled={isCreatingStage}>{isCreatingStage ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Tạo'}</Button></DialogFooter>
+                        <DialogFooter><Button variant="outline" onClick={() => setIsStageDialogOpen(false)}>{tc.cancel}</Button><Button onClick={handleCreateStage} disabled={isCreatingStage}>{isCreatingStage ? <Loader2 className="w-4 h-4 animate-spin" /> : tc.confirm}</Button></DialogFooter>
                       </DialogContent>
                     </Dialog>
                     <Dialog open={isTaskDialogOpen} onOpenChange={(open) => { 
@@ -473,17 +477,16 @@ export default function GroupDetail() {
                         setNewTaskStageId(latestStage.id);
                       }
                     }}>
-                      <DialogTrigger asChild><Button size="sm"><Plus className="w-4 h-4 mr-2" />Tạo task</Button></DialogTrigger>
+                      <DialogTrigger asChild><Button size="sm"><Plus className="w-4 h-4 mr-2" />{gd.createTask}</Button></DialogTrigger>
                         <DialogContent className="max-w-[95vw] w-[1280px] h-[720px] max-h-[90vh] p-0 overflow-hidden flex flex-col">
-                        {/* Header */}
                         <DialogHeader className="px-5 py-3 border-b bg-muted/30 shrink-0">
                           <div className="flex items-center gap-3">
                             <div className="p-2 rounded-xl bg-primary/10">
                               <Plus className="w-5 h-5 text-primary" />
                             </div>
                             <div>
-                              <DialogTitle className="text-lg font-bold">Tạo Task mới</DialogTitle>
-                              <DialogDescription className="text-xs">Điền thông tin và chọn người phụ trách</DialogDescription>
+                              <DialogTitle className="text-lg font-bold">{gd.createTaskTitle}</DialogTitle>
+                              <DialogDescription className="text-xs">{gd.createTaskDesc}</DialogDescription>
                             </div>
                           </div>
                         </DialogHeader>
@@ -493,15 +496,14 @@ export default function GroupDetail() {
                           <div className="grid grid-cols-12 h-full">
                             {/* Left: Form (9 cols) */}
                             <div className="col-span-9 p-4 border-r flex flex-col gap-3 overflow-y-auto">
-                              {/* Title */}
                               <div>
                                 <Label className="text-xs font-semibold mb-1.5 block">
-                                  Tên task <span className="text-destructive">*</span>
+                                  {gd.taskNameRequired} <span className="text-destructive">*</span>
                                 </Label>
                                 <Input 
                                   value={newTaskTitle} 
                                   onChange={e => setNewTaskTitle(e.target.value)} 
-                                  placeholder="Nhập tên task..." 
+                                  placeholder={gd.taskNamePlaceholder}
                                   className="h-10 text-base font-medium" 
                                 />
                               </div>
@@ -511,10 +513,10 @@ export default function GroupDetail() {
                                 {stages.length > 0 && (
                                   <div>
                                     <Label className="text-[11px] font-medium mb-1 block flex items-center gap-1 text-warning">
-                                      <Layers className="w-3 h-3" /> Giai đoạn <span className="text-destructive">*</span>
+                                      <Layers className="w-3 h-3" /> {gd.stageLabel} <span className="text-destructive">*</span>
                                     </Label>
                                     <Select value={newTaskStageId} onValueChange={setNewTaskStageId}>
-                                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Chọn..." /></SelectTrigger>
+                                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder={gd.selectStage} /></SelectTrigger>
                                       <SelectContent>
                                         {stages.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                                       </SelectContent>
@@ -525,18 +527,17 @@ export default function GroupDetail() {
                                   <Label className="text-[11px] font-medium mb-1 block flex items-center gap-1 text-accent">
                                     <Calendar className="w-3 h-3" /> Deadline
                                   </Label>
-                                  <DeadlineHourPicker value={newTaskDeadline} onChange={setNewTaskDeadline} placeholder="Chọn..." />
+                                  <DeadlineHourPicker value={newTaskDeadline} onChange={setNewTaskDeadline} placeholder={gd.selectStage} />
                                 </div>
                               </div>
 
-                              {/* Description - fills remaining space */}
                               <div className="flex-1 flex flex-col min-h-0">
-                                <Label className="text-xs font-semibold mb-1.5 block">Mô tả công việc</Label>
+                                <Label className="text-xs font-semibold mb-1.5 block">{gd.taskDescription}</Label>
                                 <ResourceTagTextarea 
                                   value={newTaskDescription} 
                                   onChange={setNewTaskDescription}
                                   groupId={group.id}
-                                  placeholder="Mô tả chi tiết yêu cầu... (gõ # để chèn tài nguyên)" 
+                                  placeholder={gd.taskDescPlaceholder}
                                   fillHeight={true}
                                 />
                               </div>
@@ -547,7 +548,7 @@ export default function GroupDetail() {
                               <div className="px-4 py-2.5 border-b bg-success/5">
                                 <div className="flex items-center gap-2">
                                   <Users className="w-4 h-4 text-success" />
-                                  <span className="text-xs font-semibold uppercase text-success">Người phụ trách</span>
+                                  <span className="text-xs font-semibold uppercase text-success">{gd.assignees}</span>
                                   {newTaskAssignees.length > 0 && (
                                     <Badge variant="secondary" className="ml-auto text-[10px] px-1.5">{newTaskAssignees.length}</Badge>
                                   )}
@@ -558,7 +559,7 @@ export default function GroupDetail() {
                                   {members.length === 0 ? (
                                     <div className="text-center py-8 text-muted-foreground">
                                       <Users className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                                      <p className="text-xs">Chưa có thành viên</p>
+                                      <p className="text-xs">{gd.noMembers}</p>
                                     </div>
                                   ) : (
                                     members.map(m => (
@@ -605,9 +606,9 @@ export default function GroupDetail() {
                         
                         {/* Footer */}
                         <DialogFooter className="px-5 py-3 border-t bg-muted/30 gap-2 shrink-0">
-                          <Button variant="outline" onClick={() => setIsTaskDialogOpen(false)} className="h-9 min-w-20">Hủy</Button>
+                          <Button variant="outline" onClick={() => setIsTaskDialogOpen(false)} className="h-9 min-w-20">{tc.cancel}</Button>
                           <Button onClick={handleCreateTask} disabled={isCreatingTask} className="h-9 min-w-28 gap-2">
-                            {isCreatingTask ? <><Loader2 className="w-4 h-4 animate-spin" />Đang tạo...</> : <><Plus className="w-4 h-4" />Tạo task</>}
+                            {isCreatingTask ? <><Loader2 className="w-4 h-4 animate-spin" />{tc.saving}</> : <><Plus className="w-4 h-4" />{gd.createTask}</>}
                           </Button>
                         </DialogFooter>
                       </DialogContent>
@@ -717,14 +718,14 @@ export default function GroupDetail() {
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base text-destructive flex items-center gap-2">
                         <Trash2 className="w-4 h-4" />
-                        Vùng nguy hiểm
+                        {gd.dangerZone}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3 pt-0">
-                      <p className="text-sm text-muted-foreground">Xóa project và toàn bộ dữ liệu. Hành động này không thể hoàn tác.</p>
+                      <p className="text-sm text-muted-foreground">{gd.dangerDesc}</p>
                       <Button variant="destructive" size="sm" onClick={() => setIsDeleteGroupDialogOpen(true)}>
                         <Trash2 className="w-4 h-4 mr-2" />
-                        Xóa project này
+                        {gd.deleteProject}
                       </Button>
                     </CardContent>
                   </Card>
@@ -740,11 +741,11 @@ export default function GroupDetail() {
       <StageEditDialog stage={editingStage} isOpen={!!editingStage} onClose={() => setEditingStage(null)} onSave={fetchGroupData} groupId={group.id} />
       
       <AlertDialog open={!!stageToDelete} onOpenChange={() => setStageToDelete(null)}>
-        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Xác nhận xóa giai đoạn</AlertDialogTitle><AlertDialogDescription>Task trong giai đoạn này sẽ trở thành "Chưa phân giai đoạn".</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Hủy</AlertDialogCancel><AlertDialogAction onClick={handleDeleteStage} className="bg-destructive text-destructive-foreground">Xóa</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{gd.confirmDeleteStage}</AlertDialogTitle><AlertDialogDescription>{gd.stageDeleteWarning}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>{tc.cancel}</AlertDialogCancel><AlertDialogAction onClick={handleDeleteStage} className="bg-destructive text-destructive-foreground">{tc.delete}</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
       </AlertDialog>
 
       <AlertDialog open={isDeleteGroupDialogOpen} onOpenChange={setIsDeleteGroupDialogOpen}>
-        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Xác nhận xóa project</AlertDialogTitle><AlertDialogDescription>Nhập tên project <span className="font-bold">"{group.name}"</span> để xác nhận:<Input className="mt-2" value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)} /></AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel onClick={() => setDeleteConfirmText('')}>Hủy</AlertDialogCancel><AlertDialogAction onClick={handleDeleteGroup} className="bg-destructive text-destructive-foreground" disabled={isDeletingGroup || deleteConfirmText !== group.name}>{isDeletingGroup ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Xóa vĩnh viễn'}</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{gd.confirmDeleteProject}</AlertDialogTitle><AlertDialogDescription>{gd.confirmDeleteProjectDesc} <span className="font-bold">"{group.name}"</span> {gd.confirmDeleteProjectLabel}<Input className="mt-2" value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)} /></AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel onClick={() => setDeleteConfirmText('')}>{tc.cancel}</AlertDialogCancel><AlertDialogAction onClick={handleDeleteGroup} className="bg-destructive text-destructive-foreground" disabled={isDeletingGroup || deleteConfirmText !== group.name}>{isDeletingGroup ? <Loader2 className="w-4 h-4 animate-spin" /> : gd.deletePermanently}</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
       </AlertDialog>
     </div>
   );
