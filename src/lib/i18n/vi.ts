@@ -1076,20 +1076,20 @@ export const vi: Translations = {
     s3TableHeaders: ['Tài nguyên', 'Free', 'Plus', 'Pro', 'Business'],
     s3TableRows: [
       ['Workspace', '1', '5', '20', '50'],
-      ['Tổng dự án', '2', '20', '150', '1.500'],
+      ['Tổng dự án', '5', '15', '50', '500'],
       ['Lưu trữ', '500 MB', '10 GB', '50 GB', '200 GB'],
-      ['Suất thành viên', '5', '15', '50', '150'],
+      ['Suất thành viên', '5', '15', '50', '200'],
       ['Giới hạn file', '5 MB/file', '100 MB/file', '5 GB/file', '5 GB/file'],
     ],
-    s3Callout: '💡 Phân bổ linh hoạt: Ví dụ với gói Plus (20 dự án), bạn có thể tạo 15 dự án trong WS chính và 5 dự án trong WS phụ — hoặc 20 dự án trong 1 WS duy nhất.',
+    s3Callout: '💡 Phân bổ linh hoạt: Ví dụ với gói Plus (15 dự án), bạn có thể tạo 10 dự án trong WS chính và 5 dự án trong WS phụ — hoặc 15 dự án trong 1 WS duy nhất.',
 
     // Section 4
     s4Title: 'Add-ons — Mở rộng theo nhu cầu',
     s4Desc: 'Cần nhiều hơn giới hạn gói hiện tại? Mua thêm Add-on để cộng trực tiếp vào tổng kho tài khoản. Add-on áp dụng hiệu lực cho TẤT CẢ Workspace bạn sở hữu.',
     s4Items: [
-      { name: '+50 Dự án', price: '$2.49/tháng', note: 'Cộng thêm 50 dự án vào tổng kho. Sử dụng trong bất kỳ Workspace nào.' },
-      { name: '+20 GB Lưu trữ', price: '$2.49/tháng', note: 'Mở rộng dung lượng lưu trữ tổng cộng trên toàn tài khoản.' },
-      { name: '+10 Suất thành viên', price: '$2.49/tháng', note: 'Thêm 10 suất thành viên unique vào tổng kho của bạn.' },
+      { name: '+5 Dự án', price: '$2.49/tháng', note: 'Cộng thêm 5 dự án vào tổng kho. Sử dụng trong bất kỳ Workspace nào.' },
+      { name: '+5 GB Lưu trữ', price: '$2.49/tháng', note: 'Mở rộng dung lượng lưu trữ tổng cộng trên toàn tài khoản.' },
+      { name: '+5 Suất thành viên', price: '$2.49/tháng', note: 'Thêm 5 suất thành viên unique vào tổng kho của bạn.' },
     ],
     s4Callout: '💡 Add-on chỉ khả dụng từ gói Plus trở lên. Số lượng mua thêm được cộng vào tổng kho tài khoản, không giới hạn theo từng Workspace.',
 
@@ -1102,7 +1102,7 @@ export const vi: Translations = {
         details: [
           'Tạo 1 Workspace cho nhóm đồ án',
           'Mời 4 thành viên (tổng 5/5 suất)',
-          'Tạo 2 dự án: "Đồ án chính" và "Tài liệu tham khảo"',
+          'Tạo 5 dự án cho các phần khác nhau của đồ án',
           'Sử dụng 500 MB để lưu trữ file báo cáo',
           '→ Hoàn toàn miễn phí, đủ dùng cho dự án nhỏ!',
         ],
@@ -1113,7 +1113,7 @@ export const vi: Translations = {
         details: [
           'Tạo 3 Workspace: "Dự án A", "Dự án B", "Nội bộ"',
           'Mời 15 thành viên — một số người tham gia cả 3 WS nhưng chỉ tính 1 suất/người',
-          'Phân bổ 20 dự án: WS-A (10), WS-B (7), Nội bộ (3)',
+          'Phân bổ 15 dự án: WS-A (7), WS-B (5), Nội bộ (3)',
           'Dung lượng 10 GB chia sẻ giữa tất cả Workspace',
           '→ Chỉ $4.80/tháng, thành viên dùng miễn phí!',
         ],
