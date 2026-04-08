@@ -480,9 +480,13 @@ export default function ServicePlan() {
             ) : (
               <div className="grid gap-4 md:grid-cols-2">
                 {wsUsages.map(ws => {
-                  const projectPct = ws.maxProjects ? Math.min(100, (ws.projectCount / ws.maxProjects) * 100) : 0;
-                  const storagePct = Math.min(100, (ws.storageMb / ws.maxStorageMb) * 100);
-                  const memberPct = ws.maxMembers ? Math.min(100, (ws.memberCount / ws.maxMembers) * 100) : 0;
+                  // Show contribution to account-wide total (not per-WS limit)
+                  const totalProjectsAll = wsUsages.reduce((s, w) => s + w.projectCount, 0);
+                  const totalStorageAll = wsUsages.reduce((s, w) => s + w.storageMb, 0);
+                  const projectContribPct = totalProjectsAll > 0 ? Math.round((ws.projectCount / totalProjectsAll) * 100) : 0;
+                  const storageContribPct = totalStorageAll > 0 ? Math.round((ws.storageMb / totalStorageAll) * 100) : 0;
+
+                  const formatStorage = (mb: number) => mb >= 1000 ? `${(mb / 1000).toFixed(1)} GB` : `${mb} MB`;
 
                   return (
                     <Card key={ws.id}>
@@ -493,9 +497,7 @@ export default function ServicePlan() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <h3 className="font-semibold text-sm truncate">{ws.name}</h3>
-                            <span className="text-xs text-muted-foreground">Gói {ws.plan}</span>
                           </div>
-                          <Badge variant="outline" className="text-[10px] shrink-0">{ws.plan}</Badge>
                         </div>
 
                         <Separator />
@@ -507,10 +509,11 @@ export default function ServicePlan() {
                                 <FolderKanban className="w-3 h-3" /> Projects
                               </span>
                               <span className="font-medium tabular-nums">
-                                {ws.projectCount} / {ws.maxProjects ?? '∞'}
+                                {ws.projectCount} dự án
+                                <span className="text-muted-foreground ml-1">({projectContribPct}%)</span>
                               </span>
                             </div>
-                            <Progress value={ws.maxProjects ? projectPct : 10} className="h-1.5" />
+                            <Progress value={ws.maxProjects ? Math.min(100, (ws.projectCount / ws.maxProjects) * 100) : projectContribPct} className="h-1.5" />
                           </div>
 
                           <div className="space-y-1.5">
@@ -519,10 +522,9 @@ export default function ServicePlan() {
                                 <Users className="w-3 h-3" /> Thành viên
                               </span>
                               <span className="font-medium tabular-nums">
-                                {ws.memberCount} / {ws.maxMembers ?? '∞'}
+                                {ws.memberCount} thành viên
                               </span>
                             </div>
-                            <Progress value={ws.maxMembers ? memberPct : 10} className="h-1.5" />
                           </div>
 
                           <div className="space-y-1.5">
@@ -531,10 +533,11 @@ export default function ServicePlan() {
                                 <HardDrive className="w-3 h-3" /> Dung lượng
                               </span>
                               <span className="font-medium tabular-nums">
-                                {ws.storageMb} MB / {ws.maxStorageMb >= 1000 ? `${(ws.maxStorageMb / 1000).toFixed(0)} GB` : `${ws.maxStorageMb} MB`}
+                                {formatStorage(ws.storageMb)}
+                                <span className="text-muted-foreground ml-1">({storageContribPct}%)</span>
                               </span>
                             </div>
-                            <Progress value={storagePct} className="h-1.5" />
+                            <Progress value={ws.maxStorageMb > 0 ? Math.min(100, (ws.storageMb / ws.maxStorageMb) * 100) : 0} className="h-1.5" />
                           </div>
                         </div>
                       </CardContent>
