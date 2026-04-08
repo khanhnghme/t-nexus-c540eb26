@@ -12,7 +12,7 @@ import TaskEditDialog from '@/components/TaskEditDialog';
 import StageEditDialog from '@/components/StageEditDialog';
 import ProjectActivityLog from '@/components/ProjectActivityLog';
 import ShareSettingsCard from '@/components/ShareSettingsCard';
-import FileSizeLimitSelector, { formatFileSizeMB } from '@/components/FileSizeLimitSelector';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,7 +27,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Users, Loader2, ArrowLeft, Layers, Trash2, FileText, Calendar, Send, Clock } from 'lucide-react';
+import { Plus, Users, Loader2, ArrowLeft, Layers, Trash2, Calendar, Clock } from 'lucide-react';
 import LoadingScreen from '@/components/LoadingScreen';
 
 import ProcessScores from '@/components/scores/ProcessScores';
