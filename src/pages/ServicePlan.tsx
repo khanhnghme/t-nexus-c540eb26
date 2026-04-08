@@ -40,7 +40,7 @@ const PLAN_FEATURES: Record<string, string[]> = {
     '1 Workspace',
     'Tổng 2 dự án trên toàn tài khoản',
     'Tổng 5 suất thành viên (unique seat, dùng chung cho tất cả WS)',
-    '250 MB tổng lưu trữ (gộp tất cả Workspace)',
+    '500 MB tổng lưu trữ (gộp tất cả Workspace)',
     'Upload tối đa 5 MB / file',
     'Quản lý task cơ bản',
     'Chat nhóm',
@@ -48,10 +48,10 @@ const PLAN_FEATURES: Record<string, string[]> = {
     'Standard Email Support',
   ],
   plan_plus: [
-    '3 Workspaces',
+    '5 Workspaces',
     'Tổng 20 dự án (phân bổ tùy ý cho các WS)',
     'Tổng 15 suất thành viên (unique seat, dùng chung cho tất cả WS)',
-    '5 GB tổng lưu trữ (gộp tất cả Workspace)',
+    '10 GB tổng lưu trữ (gộp tất cả Workspace)',
     'Upload tối đa 100 MB / file',
     'Mở khóa tính năng Plus cho mọi thành viên',
     'Chat nhóm & cuộc họp 60 phút',
@@ -61,10 +61,10 @@ const PLAN_FEATURES: Record<string, string[]> = {
     'Có thể mua thêm add-on',
   ],
   plan_pro: [
-    '10 Workspaces',
+    '20 Workspaces',
     'Tổng 150 dự án (phân bổ tùy ý cho các WS)',
     'Tổng 50 suất thành viên (unique seat, dùng chung cho tất cả WS)',
-    '25 GB tổng lưu trữ (gộp tất cả Workspace)',
+    '50 GB tổng lưu trữ (gộp tất cả Workspace)',
     'Upload tối đa 5 GB / file',
     'Mở khóa tính năng Pro cho mọi thành viên',
     'Tất cả tính năng Plus',
@@ -76,10 +76,10 @@ const PLAN_FEATURES: Record<string, string[]> = {
     'Add-on đi kèm, giảm 10%',
   ],
   plan_business: [
-    '30 Workspaces',
+    '50 Workspaces',
     'Tổng 1.500 dự án (phân bổ tùy ý cho các WS)',
     'Tổng 150 suất thành viên (unique seat, dùng chung cho tất cả WS)',
-    '100 GB tổng lưu trữ (gộp tất cả Workspace)',
+    '200 GB tổng lưu trữ (gộp tất cả Workspace)',
     'Upload tối đa 5 GB / file',
     'Mở khóa tính năng Business cho mọi thành viên',
     'Tất cả tính năng Pro',
@@ -164,7 +164,7 @@ export default function ServicePlan() {
 
       const limits = limitsRes.data;
       const maxProjects = limits?.max_projects_per_workspace ?? null;
-      const maxStorage = limits?.max_storage_mb ?? 250;
+      const maxStorage = limits?.max_storage_mb ?? 500;
       const maxMembers = limits?.max_members_per_workspace ?? null;
 
       if (limits) {

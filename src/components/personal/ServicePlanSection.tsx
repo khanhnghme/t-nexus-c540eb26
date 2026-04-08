@@ -10,10 +10,10 @@ import { Separator } from '@/components/ui/separator';
 import { Crown, Zap, Check, ArrowRight, Loader2 } from 'lucide-react';
 
 const PLAN_FEATURES_SHORT: Record<string, string[]> = {
-  plan_free: ['1 Workspace', 'Tổng 2 dự án', 'Tổng 5 suất thành viên (unique)', '250 MB tổng lưu trữ', 'Upload 5 MB/file'],
-  plan_plus: ['3 Workspaces', 'Tổng 20 dự án', 'Tổng 15 suất thành viên (unique)', '5 GB tổng lưu trữ', 'Upload 100 MB/file'],
-  plan_pro: ['10 Workspaces', 'Tổng 150 dự án', 'Tổng 50 suất thành viên (unique)', '25 GB tổng lưu trữ', 'Upload 5 GB/file'],
-  plan_business: ['30 Workspaces', 'Tổng 1.500 dự án', 'Tổng 150 suất thành viên (unique)', '100 GB tổng lưu trữ', 'Upload 5 GB/file'],
+  plan_free: ['1 Workspace', 'Tổng 2 dự án', 'Tổng 5 suất thành viên (unique)', '500 MB tổng lưu trữ', 'Upload 5 MB/file'],
+  plan_plus: ['5 Workspaces', 'Tổng 20 dự án', 'Tổng 15 suất thành viên (unique)', '10 GB tổng lưu trữ', 'Upload 100 MB/file'],
+  plan_pro: ['20 Workspaces', 'Tổng 150 dự án', 'Tổng 50 suất thành viên (unique)', '50 GB tổng lưu trữ', 'Upload 5 GB/file'],
+  plan_business: ['50 Workspaces', 'Tổng 1.500 dự án', 'Tổng 150 suất thành viên (unique)', '200 GB tổng lưu trữ', 'Upload 5 GB/file'],
   plan_custom: ['Không giới hạn', 'Không giới hạn dự án', 'Không giới hạn suất thành viên', 'Không giới hạn lưu trữ', 'Upload 5 GB/file'],
 };
 

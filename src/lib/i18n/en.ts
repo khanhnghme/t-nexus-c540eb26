@@ -278,7 +278,7 @@ export const en = {
         features: [
           '1 Workspace to create',
           'Total 2 projects across entire account',
-          '250 MB total storage (shared across Workspaces)',
+          '500 MB total storage (shared across Workspaces)',
           'Max upload 5 MB / file',
           'Total 5 unique seats (shared across all WSs, free)',
           'Meetings up to 15 min',
@@ -290,9 +290,9 @@ export const en = {
         description: 'For small teams and professionals to work together.',
         cta: 'Get started',
         features: [
-          '3 Workspaces to create',
+          '5 Workspaces to create',
           'Total 20 projects (allocate freely across WSs)',
-          '5 GB total storage (shared across Workspaces)',
+          '10 GB total storage (shared across Workspaces)',
           'Max upload 100 MB / file',
           'Total 15 unique seats (shared across all WSs, free)',
           'Unlock Plus features for all members',
@@ -308,9 +308,9 @@ export const en = {
         description: 'For fast-growing teams to maximize productivity.',
         cta: 'Get started',
         features: [
-          '10 Workspaces to create',
+          '20 Workspaces to create',
           'Total 150 projects (allocate freely across WSs)',
-          '25 GB total storage (shared across Workspaces)',
+          '50 GB total storage (shared across Workspaces)',
           'Max upload 5 GB / file',
           'Total 50 unique seats (shared across all WSs, free)',
           'Unlock Pro features for all members',
@@ -326,9 +326,9 @@ export const en = {
         description: 'For mid-to-large organizations to operate at scale.',
         cta: 'Get started',
         features: [
-          '30 Workspaces to create',
+          '50 Workspaces to create',
           'Total 1,500 projects (allocate freely across WSs)',
-          '100 GB total storage (shared across Workspaces)',
+          '200 GB total storage (shared across Workspaces)',
           'Max upload 5 GB / file',
           'Total 150 unique seats (shared across all WSs, free)',
           'Unlock Business features for all members',
@@ -364,7 +364,7 @@ export const en = {
     addOnNote: 'Pro: 10% off · Business: 20% off on all add-ons',
     addOns: [
       { emoji: '📋', name: 'Projects', price: '$2.49', unit: '/ +50 total projects / month', note: 'Additional projects are added to your total account limit. Use them in any Workspace you own.' },
-      { emoji: '📦', name: 'Storage', price: '$2.49', unit: '/ +5 GB total / month', note: 'Expands total storage (shared across all your Workspaces).' },
+      { emoji: '📦', name: 'Storage', price: '$2.49', unit: '/ +20 GB total / month', note: 'Expands total storage (shared across all your Workspaces).' },
       { emoji: '👥', name: 'Members', price: '$2.49', unit: '/ +10 unique seats total / month', note: 'Each person (1 email) joining multiple WSs counts as only 1 seat. Additional seats are added to your total account pool.' },
     ],
 
@@ -374,8 +374,8 @@ export const en = {
       {
         category: 'Account & Workspaces',
         rows: [
-          { label: 'Workspaces you can create', free: '1', plus: '3', pro: '10', business: '30', enterprise: 'Unlimited' },
-          { label: 'Total storage (shared across Workspaces)', free: '250 MB', plus: '5 GB', pro: '25 GB', business: '100 GB', enterprise: 'Unlimited' },
+          { label: 'Workspaces you can create', free: '1', plus: '5', pro: '20', business: '50', enterprise: 'Unlimited' },
+          { label: 'Total storage (shared across Workspaces)', free: '500 MB', plus: '10 GB', pro: '50 GB', business: '200 GB', enterprise: 'Unlimited' },
           { label: 'Max upload per file', free: '5 MB', plus: '100 MB', pro: '5 GB', business: '5 GB', enterprise: '5 GB' },
         ],
       },
