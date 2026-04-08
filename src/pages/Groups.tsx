@@ -720,10 +720,10 @@ export default function Groups() {
                           <div className="mt-3 flex-shrink-0">
                             <div className="flex items-center justify-between mb-1.5">
                               <span className="text-xs font-medium">
-                                Đã chọn ({selectedMembers.length})
+                                {g.selectedCount.replace('{n}', String(selectedMembers.length))}
                               </span>
                               <Button variant="ghost" size="sm" className="text-xs h-6 px-2" onClick={() => setSelectedMembers([])}>
-                                Xóa tất cả
+                                {g.clearAll}
                               </Button>
                             </div>
                             <div className="flex flex-wrap gap-1.5">
@@ -745,22 +745,22 @@ export default function Groups() {
                   {/* Footer */}
                   <div className="flex items-center justify-between px-6 py-4 border-t bg-muted/30 flex-shrink-0">
                     <p className="text-xs text-muted-foreground">
-                      <span className="text-destructive">*</span> Chỉ tên dự án là bắt buộc, các trường còn lại có thể bổ sung sau.
+                      <span className="text-destructive">*</span> {g.requiredNote}
                     </p>
                     <div className="flex items-center gap-2">
                       <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                        Hủy
+                        {g.cancelBtn}
                       </Button>
                       <Button onClick={handleCreateGroup} disabled={isCreating || !newGroupName.trim()}>
                         {isCreating ? (
                           <>
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Đang tạo...
+                            {g.creating}
                           </>
                         ) : (
                           <>
                             <Plus className="w-4 h-4 mr-2" />
-                            Tạo dự án
+                            {g.createBtn}
                           </>
                         )}
                       </Button>
@@ -776,11 +776,9 @@ export default function Groups() {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-16">
               <FolderKanban className="w-16 h-16 text-muted-foreground/50 mb-4" />
-              <h3 className="text-lg font-medium mb-2">Chưa có dự án nào</h3>
+              <h3 className="text-lg font-medium mb-2">{g.noProjects}</h3>
               <p className="text-muted-foreground text-center max-w-md">
-                {canCreateProject
-                  ? 'Bạn chưa tham gia hoặc tạo dự án nào. Hãy tạo dự án mới để bắt đầu!'
-                  : 'Bạn chưa được thêm vào dự án nào. Hãy chờ được mời tham gia.'}
+                {canCreateProject ? g.noProjectsDescCanCreate : g.noProjectsDescNoCreate}
               </p>
             </CardContent>
           </Card>
@@ -844,7 +842,7 @@ export default function Groups() {
                       <div className="absolute top-3 right-3 drop-shadow-md">
                         {!group.myRole ? (
                           <Badge className="bg-muted text-muted-foreground shadow-lg font-medium text-[10px]">
-                            Chưa tham gia
+                            {g.notJoined}
                           </Badge>
                         ) : group.myRole === 'workspace_admin' ? (
                           <Badge className="bg-destructive text-destructive-foreground shadow-lg font-semibold">
@@ -854,16 +852,16 @@ export default function Groups() {
                         ) : user?.id === group.created_by ? (
                           <Badge className="bg-accent text-accent-foreground shadow-lg font-semibold">
                             <Crown className="w-3 h-3 mr-1" />
-                            Trưởng dự án
+                            {g.projectLeader}
                           </Badge>
                         ) : group.myRole === 'project_admin' ? (
                           <Badge className="bg-warning text-warning-foreground shadow-lg font-semibold">
                             <Crown className="w-3 h-3 mr-1" />
-                            Phó dự án
+                            {g.viceLeader}
                           </Badge>
                         ) : (
                           <Badge className="bg-foreground text-background shadow-lg font-medium">
-                            Thành viên
+                            {g.memberRole}
                           </Badge>
                         )}
                       </div>
@@ -880,7 +878,7 @@ export default function Groups() {
                             ))}
                           </div>
                           <span className="text-xs text-white/80 font-medium ml-1">
-                            {group.memberCount} thành viên
+                            {g.membersCount.replace('{n}', String(group.memberCount))}
                           </span>
                         </div>
                       </div>
@@ -894,7 +892,7 @@ export default function Groups() {
                           {group.description}
                         </p>
                       ) : (
-                        <p className="text-sm text-muted-foreground/50 italic">Chưa có mô tả</p>
+                        <p className="text-sm text-muted-foreground/50 italic">{g.noDescription}</p>
                       )}
 
                       {/* Info chips with color */}
@@ -924,7 +922,7 @@ export default function Groups() {
                           })}
                         </div>
                         <div className="flex items-center gap-1 text-xs text-primary font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          Mở dự án
+                          {g.openProject}
                           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                         </div>
                       </div>
