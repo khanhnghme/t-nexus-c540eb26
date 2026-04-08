@@ -69,7 +69,7 @@ export default function GroupDetail() {
   const { toast } = useToast();
   const { currentTab, setCurrentTab, goBack, goNext, canGoBack, canGoNext, isFirstTab, isLastTab } = useNavigation();
 
-  const { setProjectInfo } = useDashboardLayoutContext();
+  const { setProjectInfo, setProjectNavProps } = useDashboardLayoutContext();
   
   const [group, setGroup] = useState<ExtendedGroup | null>(null);
   const [members, setMembers] = useState<GroupMember[]>([]);
@@ -413,18 +413,7 @@ export default function GroupDetail() {
 
 
   return (
-    <>
-      <div className="w-full pt-2">
-        <ProjectNavigation
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-          isLeaderInGroup={isLeaderInGroup}
-          isGroupCreator={group.created_by === user?.id || isAdmin}
-          membersCount={members.length}
-          hasActiveMeeting={hasActiveMeeting}
-          isScoreFinalized={!!(group as any).score_finalized_at}
-        />
-      </div>
+      <div>
 
       <div>
         <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-0">
