@@ -260,6 +260,7 @@ export default function Groups() {
   };
 
   const handleCreateGroup = async () => {
+    if (guardReadOnly()) return;
     if (!newGroupName.trim()) {
       toast({
         title: 'Lỗi',
