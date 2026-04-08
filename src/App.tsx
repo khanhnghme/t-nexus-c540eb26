@@ -135,6 +135,7 @@ function AppRoutes() {
           <Route path="pricing" element={<ForceLightMode><Pricing /></ForceLightMode>} />
           <Route path="download" element={<ForceLightMode><DownloadPage /></ForceLightMode>} />
           <Route path="terms" element={<ForceLightMode><Terms /></ForceLightMode>} />
+          <Route path="docs/pricing" element={<ForceLightMode><PricingDocs /></ForceLightMode>} />
         </Route>
 
         {/* ═══ Non-localized public routes ═══ */}
