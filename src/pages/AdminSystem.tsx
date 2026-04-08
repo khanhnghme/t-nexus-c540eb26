@@ -33,13 +33,15 @@ import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import uehLogoWhite from '@/assets/t-nexus-text-white.png';
 import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { vi as viLocale } from 'date-fns/locale';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function AdminSystem() {
   const { isAdmin, isLoading, user } = useAuth();
+  const { locale, translations: { app: { admin: t } } } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
   
