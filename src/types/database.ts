@@ -49,6 +49,7 @@ export interface Profile {
   nav_hidden_pages: any;
   user_plan: UserPlan;
   preferred_locale: string;
+  downgraded_at: string | null;
 }
 
 export interface UserRole {
