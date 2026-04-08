@@ -409,11 +409,11 @@ export default function AdminSystem() {
                       <div className="rounded-lg border border-warning/30 bg-warning/5 p-2.5 space-y-1">
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">Bắt đầu khóa:</span>
-                          <span className="text-sm font-medium">{format(new Date(maintenanceStart), "HH:mm - dd/MM/yyyy", { locale: vi })}</span>
+                          <span className="text-sm font-medium">{format(new Date(maintenanceStart), "HH:mm - dd/MM/yyyy", { locale: locale === "vi" ? viLocale : undefined })}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">Dự kiến mở lại:</span>
-                          <span className="text-sm font-semibold text-primary">{format(new Date(maintenanceEnd), "HH:mm - dd/MM/yyyy", { locale: vi })}</span>
+                          <span className="text-sm font-semibold text-primary">{format(new Date(maintenanceEnd), "HH:mm - dd/MM/yyyy", { locale: locale === "vi" ? viLocale : undefined })}</span>
                         </div>
                       </div>
                     ) : maintenanceHours > 0 ? (
@@ -424,7 +424,7 @@ export default function AdminSystem() {
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">Dự kiến mở lại:</span>
-                          <span className="text-sm font-semibold text-primary">{format(new Date(Date.now() + maintenanceHours * 3600000), "HH:mm - dd/MM/yyyy", { locale: vi })}</span>
+                          <span className="text-sm font-semibold text-primary">{format(new Date(Date.now() + maintenanceHours * 3600000), "HH:mm - dd/MM/yyyy", { locale: locale === "vi" ? viLocale : undefined })}</span>
                         </div>
                       </div>
                     ) : null}
@@ -624,8 +624,8 @@ export default function AdminSystem() {
                             <div className="flex items-center flex-wrap gap-2 text-[11px] text-muted-foreground mt-0.5">
                               <span>{notif.display_mode === 'pre_login' ? '🔓 Trước ĐN' : '🔒 Sau ĐN'}</span>
                               <span className="inline-flex items-center gap-0.5"><Clock className="w-3 h-3" />{notif.min_view_seconds}s</span>
-                              {notif.expires_at && <span>⏳ {format(new Date(notif.expires_at), "dd/MM/yy", { locale: vi })}</span>}
-                              <span>📅 {format(new Date(notif.created_at), "dd/MM/yy HH:mm", { locale: vi })}</span>
+                              {notif.expires_at && <span>⏳ {format(new Date(notif.expires_at), "dd/MM/yy", { locale: locale === "vi" ? viLocale : undefined })}</span>}
+                              <span>📅 {format(new Date(notif.created_at), "dd/MM/yy HH:mm", { locale: locale === "vi" ? viLocale : undefined })}</span>
                               {Array.isArray(notif.target_user_ids) && notif.target_user_ids.length > 0 && (
                                 <span className="inline-flex items-center gap-0.5 text-accent font-medium">
                                   👤 {notif.target_user_ids.length} người
@@ -751,7 +751,7 @@ export default function AdminSystem() {
                           {recentEmailLogs.map((log: any) => (
                             <div key={log.id} className="flex items-center justify-between text-[11px] bg-muted/20 rounded px-2 py-1">
                               <span className="truncate max-w-[180px]">{log.recipient_email}</span>
-                              <span className="text-muted-foreground">{format(new Date(log.sent_at), "HH:mm dd/MM", { locale: vi })}</span>
+                              <span className="text-muted-foreground">{format(new Date(log.sent_at), "HH:mm dd/MM", { locale: locale === "vi" ? viLocale : undefined })}</span>
                             </div>
                           ))}
                         </div>
@@ -1144,7 +1144,7 @@ export default function AdminSystem() {
                           {log.status === 'sent' ? '✅ Đã gửi' : log.status === 'pending' ? '⏳ Chờ' : log.status === 'failed' ? '❌ Lỗi' : log.status === 'dlq' ? '💀 DLQ' : log.status === 'rate_limited' ? '🚫 Rate limit' : log.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{format(new Date(log.created_at), "HH:mm dd/MM/yyyy", { locale: vi })}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{format(new Date(log.created_at), "HH:mm dd/MM/yyyy", { locale: locale === "vi" ? viLocale : undefined })}</TableCell>
                       <TableCell className="text-xs text-destructive max-w-[200px] truncate" title={log.error_message || ''}>{log.error_message || '—'}</TableCell>
                     </TableRow>
                   ))}
