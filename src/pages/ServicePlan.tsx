@@ -391,13 +391,13 @@ export default function ServicePlan() {
                     <span className="text-2xl font-bold tabular-nums">{totalProjects}</span>
                     <span className="text-sm text-muted-foreground">
                       / {planLimits?.max_projects_per_workspace
-                        ? planLimits.max_projects_per_workspace * (wsUsages.length || 1)
+                        ? planLimits.max_projects_per_workspace
                         : <Infinity className="w-3.5 h-3.5 inline" />}
                     </span>
                   </div>
                   {planLimits?.max_projects_per_workspace && (
                     <Progress
-                      value={Math.min(100, (totalProjects / (planLimits.max_projects_per_workspace * (wsUsages.length || 1))) * 100)}
+                      value={Math.min(100, (totalProjects / planLimits.max_projects_per_workspace) * 100)}
                       className="h-1.5"
                     />
                   )}
