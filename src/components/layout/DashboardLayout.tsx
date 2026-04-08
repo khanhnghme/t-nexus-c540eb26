@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect, useCallback } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardLayoutContext } from '@/contexts/DashboardLayoutContext';
@@ -25,26 +25,18 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import {
-  LayoutDashboard,
-  FolderKanban,
-  CalendarDays,
-  LogOut,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   Key,
   Menu,
   X,
-  Users,
-  BookOpen,
-  Lightbulb,
-  FolderArchive,
-  MessageSquare,
   UserCircle,
-  Shield,
   Moon,
   Sun,
-  Wrench,
+  LogOut,
+  Zap,
+  Crown,
 } from 'lucide-react';
 import SidebarTreeNav from '@/components/SidebarTreeNav';
 import { useTheme } from 'next-themes';
@@ -58,11 +50,10 @@ import { useActivityTracker } from '@/hooks/useActivityTracker';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useWorkspaceBilling, formatPlanName } from '@/hooks/useWorkspaceBilling';
-import { Zap, Crown } from 'lucide-react';
-import { Tooltip as TooltipUI, TooltipTrigger as TooltipTriggerUI, TooltipContent as TooltipContentUI } from '@/components/ui/tooltip';
+import TopBar from '@/components/layout/TopBar';
 
 /* ------------------------------------------------------------------ */
-/*  Upgrade Box (sidebar bottom)                                       */
+/*  Upgrade Box                                                        */
 /* ------------------------------------------------------------------ */
 function UpgradeBox({ collapsed }: { collapsed: boolean }) {
   const { user } = useAuth();
@@ -73,7 +64,6 @@ function UpgradeBox({ collapsed }: { collapsed: boolean }) {
   if (!isAvailable || !activeWorkspace || workspaceRole !== 'workspace_owner') return null;
 
   const planLabel = formatPlanName(ownerPlan);
-  const isPremium = ownerPlan && ownerPlan !== 'plan_free';
 
   if (collapsed) {
     return (
@@ -115,34 +105,6 @@ function UpgradeBox({ collapsed }: { collapsed: boolean }) {
     </Link>
   );
 }
-/* ------------------------------------------------------------------ */
-/*  Theme toggle (sidebar-friendly)                                    */
-/* ------------------------------------------------------------------ */
-function SidebarThemeToggle() {
-  const { theme, setTheme } = useTheme();
-  const isDark = theme === 'dark';
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors"
-          onClick={() => setTheme(isDark ? 'light' : 'dark')}
-        >
-          {isDark
-            ? <Moon className="w-[1.05rem] h-[1.05rem]" />
-            : <Sun className="w-[1.05rem] h-[1.05rem]" />}
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="top" sideOffset={8}>
-        <p>{isDark ? 'Light mode' : 'Dark mode'}</p>
-      </TooltipContent>
-    </Tooltip>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Keyboard shortcut map                                              */
-/* ------------------------------------------------------------------ */
 
 /* ------------------------------------------------------------------ */
 /*  Keyboard shortcut map                                              */
@@ -176,18 +138,13 @@ export default function DashboardLayout({
   const navigate = useNavigate();
   const { user, profile, isAdmin, isLeader, signOut, refreshProfile } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { locale, translations } = useLanguage();
+  const { locale } = useLanguage();
   const isDark = theme === 'dark';
   const { sidebarCollapsed, toggleSidebar } = useDashboardLayoutContext();
 
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  
-
-  const hiddenNav = Array.isArray(profile?.nav_hidden_pages)
-    ? (profile.nav_hidden_pages as string[])
-    : [];
 
   // Activity tracking
   useActivityTracker(user?.id);
@@ -198,23 +155,17 @@ export default function DashboardLayout({
     return () => window.removeEventListener('nav-visibility-changed', handler);
   }, []);
 
-  // Close mobile sidebar on route change
   useEffect(() => {
     setIsMobileOpen(false);
   }, [location.pathname]);
 
-  // Keyboard shortcuts (⌘/Ctrl + key)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (!(e.metaKey || e.ctrlKey)) return;
-
       const key = e.key.toLowerCase();
       const dest = shortcutMap[key];
-      if (dest) {
-        e.preventDefault();
-        navigate(dest);
-      }
+      if (dest) { e.preventDefault(); navigate(dest); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -231,16 +182,15 @@ export default function DashboardLayout({
     return 'Thành viên';
   };
 
-  /* ---------------------------------------------------------------- */
   return (
     <>
-      {/* -------- Mobile overlay backdrop -------- */}
+      {/* Mobile backdrop */}
       <div
         className={`sidebar-mobile-backdrop ${isMobileOpen ? 'visible' : ''}`}
         onClick={() => setIsMobileOpen(false)}
       />
 
-      {/* -------- Mobile top bar -------- */}
+      {/* Mobile top bar */}
       <div className="dashboard-mobile-topbar">
         <button
           onClick={() => setIsMobileOpen(true)}
@@ -255,22 +205,17 @@ export default function DashboardLayout({
         <div className="flex items-center gap-1" />
       </div>
 
-      {/* -------- Sidebar -------- */}
+      {/* ===== GRID LAYOUT ===== */}
       <TooltipProvider delayDuration={0}>
-        <aside
-          className={`dashboard-sidebar ${sidebarCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}
-        >
-          {/* Logo */}
-          <div className="sidebar-logo">
-            <Link
-              to="/dashboard"
-              className="flex items-center gap-2 min-w-0"
-            >
-              <img
-                src={tNexusLogo}
-                alt="T-Nexus"
-                className="h-7 w-7 shrink-0"
-              />
+        <div className={cn(
+          'dashboard-grid',
+          sidebarCollapsed && 'sidebar-collapsed',
+          isMobileOpen && 'mobile-sidebar-open'
+        )}>
+          {/* Cell 1: Top-left — Logo */}
+          <div className="grid-cell-logo">
+            <Link to="/dashboard" className="flex items-center gap-2 min-w-0">
+              <img src={tNexusLogo} alt="T-Nexus" className="h-7 w-7 shrink-0" />
               <span className="sidebar-logo-text whitespace-nowrap overflow-hidden">
                 <img
                   src={tNexusTextWhite}
@@ -280,14 +225,12 @@ export default function DashboardLayout({
               </span>
             </Link>
 
-            <div className={`ml-auto flex items-center gap-1 transition-opacity ${sidebarCollapsed ? 'hidden' : 'opacity-100'}`} />
-
             {/* Desktop toggle */}
             <button
               className={cn(
                 "hidden md:flex items-center justify-center transition-all bg-background border border-border shadow-sm text-muted-foreground hover:text-foreground hover:bg-muted z-50",
                 sidebarCollapsed
-                  ? "absolute -right-3.5 top-6 w-7 h-7 rounded-full"
+                  ? "absolute -right-3.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full"
                   : "sidebar-toggle-btn ml-auto relative"
               )}
               onClick={toggleSidebar}
@@ -309,97 +252,86 @@ export default function DashboardLayout({
             </button>
           </div>
 
-          {/* Navigation — Tree Nav (workspace switcher is inside) */}
+          {/* Cell 2: Top-right — Top Bar */}
+          <TopBar />
 
-          {/* Scrollable navigation — Tree Nav */}
-          <div className="sidebar-nav-scroll">
-            <SidebarTreeNav collapsed={sidebarCollapsed} />
-          </div>
+          {/* Cell 3: Bottom-left — Sidebar */}
+          <div className="grid-cell-sidebar">
+            {/* Scrollable nav */}
+            <div className="sidebar-nav-scroll">
+              <SidebarTreeNav collapsed={sidebarCollapsed} />
+            </div>
 
-          {/* Bottom section */}
-          <div className="sidebar-bottom">
-            {/* Upgrade box — only for workspace_owner */}
-            <UpgradeBox collapsed={sidebarCollapsed} />
-            {/* User profile */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <div className="sidebar-user-profile">
-                  <UserAvatar
-                    src={profile?.avatar_url}
-                    name={profile?.full_name}
-                    size="sm"
-                    className="border border-white/20 shrink-0"
-                  />
-                  <div className="user-info">
-                    <div className="user-name">
-                      {profile?.full_name || 'Đang tải...'}
+            {/* Bottom section */}
+            <div className="sidebar-bottom">
+              <UpgradeBox collapsed={sidebarCollapsed} />
+
+              {/* User profile */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <div className="sidebar-user-profile">
+                    <UserAvatar
+                      src={profile?.avatar_url}
+                      name={profile?.full_name}
+                      size="sm"
+                      className="border border-white/20 shrink-0"
+                    />
+                    <div className="user-info">
+                      <div className="user-name">
+                        {profile?.full_name || 'Đang tải...'}
+                      </div>
+                      <div className="user-role">{getRoleText()}</div>
                     </div>
-                    <div className="user-role">{getRoleText()}</div>
+                    <ChevronDown
+                      className="user-chevron w-3.5 h-3.5 ml-auto shrink-0"
+                      style={{ color: 'var(--_sb-muted)' }}
+                    />
                   </div>
-                  <ChevronDown
-                    className="user-chevron w-3.5 h-3.5 ml-auto shrink-0"
-                    style={{ color: 'var(--_sb-muted)' }}
-                  />
-                </div>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                side="top"
-                align="start"
-                className="w-56 mb-1"
-              >
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col gap-1">
-                    <p className="font-semibold">{profile?.full_name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {profile?.email}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      MSSV: {profile?.student_id}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setIsProfileOpen(true)}>
-                  <UserCircle className="w-4 h-4 mr-2" />
-                  {locale === 'vi' ? 'Cập nhật ảnh đại diện' : 'Update avatar'}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setIsChangePasswordOpen(true)}
-                >
-                  <Key className="w-4 h-4 mr-2" />
-                  {locale === 'vi' ? 'Đổi mật khẩu' : 'Change password'}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setTheme(isDark ? 'light' : 'dark')}>
-                  {isDark ? <Sun className="w-4 h-4 mr-2" /> : <Moon className="w-4 h-4 mr-2" />}
-                  {isDark
-                    ? (locale === 'vi' ? 'Chế độ sáng' : 'Light mode')
-                    : (locale === 'vi' ? 'Chế độ tối' : 'Dark mode')}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleSignOut}
-                  className="text-destructive"
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  {locale === 'vi' ? 'Đăng xuất' : 'Sign out'}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="top" align="start" className="w-56 mb-1">
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col gap-1">
+                      <p className="font-semibold">{profile?.full_name}</p>
+                      <p className="text-xs text-muted-foreground">{profile?.email}</p>
+                      <p className="text-xs text-muted-foreground">MSSV: {profile?.student_id}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setIsProfileOpen(true)}>
+                    <UserCircle className="w-4 h-4 mr-2" />
+                    {locale === 'vi' ? 'Cập nhật ảnh đại diện' : 'Update avatar'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsChangePasswordOpen(true)}>
+                    <Key className="w-4 h-4 mr-2" />
+                    {locale === 'vi' ? 'Đổi mật khẩu' : 'Change password'}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setTheme(isDark ? 'light' : 'dark')}>
+                    {isDark ? <Sun className="w-4 h-4 mr-2" /> : <Moon className="w-4 h-4 mr-2" />}
+                    {isDark
+                      ? (locale === 'vi' ? 'Chế độ sáng' : 'Light mode')
+                      : (locale === 'vi' ? 'Chế độ tối' : 'Dark mode')}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    {locale === 'vi' ? 'Đăng xuất' : 'Sign out'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-        </aside>
+
+          {/* Cell 4: Bottom-right — Main content */}
+          <div className="grid-cell-content">
+            <div className="max-w-[1100px] mx-auto px-12 py-8">
+              {useOutlet ? <Outlet /> : children}
+            </div>
+          </div>
+        </div>
       </TooltipProvider>
 
-      {/* -------- Content area -------- */}
-      <div
-        className={`dashboard-content-area ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}
-      >
-        <div className="max-w-[1100px] mx-auto px-12 py-8">
-          {useOutlet ? <Outlet /> : children}
-        </div>
-      </div>
-
-      {/* -------- Dialogs -------- */}
+      {/* Dialogs */}
       <UserChangePasswordDialog
         open={isChangePasswordOpen}
         onOpenChange={setIsChangePasswordOpen}
@@ -422,7 +354,6 @@ export default function DashboardLayout({
           </div>
         </DialogContent>
       </Dialog>
-
 
       {/* AI Assistant */}
       <AIAssistantButton
