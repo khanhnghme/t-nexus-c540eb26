@@ -142,6 +142,7 @@ export default function DashboardLayout({
   const { locale } = useLanguage();
   const isDark = theme === 'dark';
   const { sidebarCollapsed, toggleSidebar } = useDashboardLayoutContext();
+  const { activeWorkspace, workspaces, switchWorkspace, isAvailable } = useWorkspace();
 
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
