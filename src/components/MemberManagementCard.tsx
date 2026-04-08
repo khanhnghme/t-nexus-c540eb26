@@ -240,6 +240,7 @@ export default function MemberManagementCard({
   }, [groupId, members]);
 
   const handleApproveJoinRequest = async (request: JoinRequest) => {
+    if (guardReadOnly()) return;
     setProcessingJoinRequest(request.id);
     try {
       // Update pending_approvals status
@@ -277,6 +278,7 @@ export default function MemberManagementCard({
   };
 
   const handleRejectJoinRequest = async (request: JoinRequest) => {
+    if (guardReadOnly()) return;
     setProcessingJoinRequest(request.id);
     try {
       const { error } = await supabase
@@ -315,6 +317,7 @@ export default function MemberManagementCard({
 
   // Bulk approve join requests
   const handleBulkApproveJoinRequests = async () => {
+    if (guardReadOnly()) return;
     if (selectedJoinRequestIds.size === 0) return;
     setIsBulkJoinProcessing(true);
     try {
@@ -339,6 +342,7 @@ export default function MemberManagementCard({
 
   // Bulk reject join requests
   const handleBulkRejectJoinRequests = async () => {
+    if (guardReadOnly()) return;
     if (selectedJoinRequestIds.size === 0) return;
     setIsBulkJoinProcessing(true);
     try {
@@ -557,6 +561,7 @@ export default function MemberManagementCard({
 
 
   const handleChangeRole = async () => {
+    if (guardReadOnly()) return;
     if (!memberToChangeRole) return;
     setIsChangingRole(true);
 
@@ -689,6 +694,7 @@ export default function MemberManagementCard({
 
   // Bulk change role
   const handleBulkChangeRole = async () => {
+    if (guardReadOnly()) return;
     if (selectedMemberIds.size === 0) return;
     setIsBulkProcessing(true);
     try {
