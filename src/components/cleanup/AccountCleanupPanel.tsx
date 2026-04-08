@@ -333,7 +333,6 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
       await supabase.from('task_comments').delete().in('task_id', taskIds);
     }
 
-    const taskIds = (tasks || []).map(t => t.id);
     const { data: taskNotes } = taskIds.length > 0 
       ? await supabase.from('task_notes').select('id').in('task_id', taskIds)
       : { data: [] as { id: string }[] };
