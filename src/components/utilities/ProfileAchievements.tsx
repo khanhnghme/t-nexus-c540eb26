@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { r2Storage, getR2FilePublicUrl } from '@/lib/r2Storage';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,15 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Trash2, Upload, ExternalLink, Image, Loader2, GripVertical, Pencil } from 'lucide-react';
-
-const CATEGORIES = [
-  { value: 'academic', label: 'Học tập' },
-  { value: 'activity', label: 'Hoạt động' },
-  { value: 'skill', label: 'Kỹ năng & Chứng chỉ' },
-  { value: 'award', label: 'Giải thưởng' },
-  { value: 'general', label: 'Khác' },
-];
+import { Plus, Trash2, Upload, ExternalLink, Image, Loader2, Pencil } from 'lucide-react';
 
 interface Achievement {
   id: string;
@@ -34,6 +27,16 @@ interface Achievement {
 
 export default function ProfileAchievements() {
   const { user } = useAuth();
+  const { translations: { app: { utilities: t } } } = useLanguage();
+
+  const CATEGORIES = [
+    { value: 'academic', label: t.categoryAcademic },
+    { value: 'activity', label: t.categoryActivity },
+    { value: 'skill', label: t.categorySkill },
+    { value: 'award', label: t.categoryAward },
+    { value: 'general', label: t.categoryGeneral },
+  ];
+
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -42,7 +45,6 @@ export default function ProfileAchievements() {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
@@ -64,44 +66,27 @@ export default function ProfileAchievements() {
   useEffect(() => { loadAchievements(); }, [user]);
 
   const resetForm = () => {
-    setTitle('');
-    setDescription('');
-    setLinkUrl('');
-    setCategory('general');
-    setImagePreview(null);
-    setImageFile(null);
-    setEditing(null);
+    setTitle(''); setDescription(''); setLinkUrl(''); setCategory('general');
+    setImagePreview(null); setImageFile(null); setEditing(null);
   };
 
-  const openAdd = () => {
-    resetForm();
-    setDialogOpen(true);
-  };
+  const openAdd = () => { resetForm(); setDialogOpen(true); };
 
   const openEdit = (a: Achievement) => {
-    setEditing(a);
-    setTitle(a.title);
-    setDescription(a.description || '');
-    setLinkUrl(a.link_url || '');
-    setCategory(a.category);
-    if (a.image_path) {
-      setImagePreview(getR2FilePublicUrl('profile-achievements', a.image_path));
-    } else {
-      setImagePreview(null);
-    }
-    setImageFile(null);
-    setDialogOpen(true);
+    setEditing(a); setTitle(a.title); setDescription(a.description || '');
+    setLinkUrl(a.link_url || ''); setCategory(a.category);
+    setImagePreview(a.image_path ? getR2FilePublicUrl('profile-achievements', a.image_path) : null);
+    setImageFile(null); setDialogOpen(true);
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      toast({ title: 'File quá lớn', description: 'Tối đa 5MB', variant: 'destructive' });
+      toast({ title: t.fileTooLarge, description: t.fileTooLargeDesc, variant: 'destructive' });
       return;
     }
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+    setImageFile(file); setImagePreview(URL.createObjectURL(file));
   };
 
   const uploadImage = async (): Promise<{ path: string; storageName: string } | null> => {
@@ -109,109 +94,67 @@ export default function ProfileAchievements() {
     setUploading(true);
     const ext = imageFile.name.split('.').pop();
     const storageName = `${user.id}/${Date.now()}.${ext}`;
-    const { error } = await r2Storage
-      .from('profile-achievements')
-      .upload(storageName, imageFile, { upsert: true });
+    const { error } = await r2Storage.from('profile-achievements').upload(storageName, imageFile, { upsert: true });
     setUploading(false);
-    if (error) {
-      toast({ title: 'Lỗi upload', description: error.message, variant: 'destructive' });
-      return null;
-    }
+    if (error) { toast({ title: t.uploadError, description: error.message, variant: 'destructive' }); return null; }
     return { path: storageName, storageName };
   };
 
   const handleSave = async () => {
     if (!user || !title.trim()) {
-      toast({ title: 'Vui lòng nhập tiêu đề', variant: 'destructive' });
-      return;
+      toast({ title: t.achievementTitleRequired, variant: 'destructive' }); return;
     }
     setSaving(true);
-
     let imagePath = editing?.image_path || null;
     let storageName = editing?.storage_name || null;
-
     if (imageFile) {
-      // Delete old image if replacing
-      if (editing?.image_path) {
-        await r2Storage.from('profile-achievements').remove([editing.image_path]);
-      }
+      if (editing?.image_path) await r2Storage.from('profile-achievements').remove([editing.image_path]);
       const result = await uploadImage();
-      if (result) {
-        imagePath = result.path;
-        storageName = result.storageName;
-      }
+      if (result) { imagePath = result.path; storageName = result.storageName; }
     }
-
-    const payload = {
-      title: title.trim(),
-      description: description.trim() || null,
-      image_path: imagePath,
-      storage_name: storageName,
-      link_url: linkUrl.trim() || null,
-      category,
-    };
-
+    const payload = { title: title.trim(), description: description.trim() || null, image_path: imagePath, storage_name: storageName, link_url: linkUrl.trim() || null, category };
     if (editing) {
-      const { error } = await supabase
-        .from('profile_achievements')
-        .update(payload)
-        .eq('id', editing.id);
-      if (error) toast({ title: 'Lỗi', description: error.message, variant: 'destructive' });
-      else toast({ title: 'Đã cập nhật!' });
+      const { error } = await supabase.from('profile_achievements').update(payload).eq('id', editing.id);
+      if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      else toast({ title: t.updated });
     } else {
-      const { error } = await supabase
-        .from('profile_achievements')
-        .insert({ ...payload, user_id: user.id, display_order: achievements.length });
-      if (error) toast({ title: 'Lỗi', description: error.message, variant: 'destructive' });
-      else toast({ title: 'Đã thêm thành tích!' });
+      const { error } = await supabase.from('profile_achievements').insert({ ...payload, user_id: user.id, display_order: achievements.length });
+      if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      else toast({ title: t.added });
     }
-
-    setSaving(false);
-    setDialogOpen(false);
-    resetForm();
-    loadAchievements();
+    setSaving(false); setDialogOpen(false); resetForm(); loadAchievements();
   };
 
   const handleDelete = async (a: Achievement) => {
-    if (!confirm(`Xóa thành tích "${a.title}"?`)) return;
-    if (a.image_path) {
-      await r2Storage.from('profile-achievements').remove([a.image_path]);
-    }
+    if (!confirm(t.deleteConfirm.replace('{title}', a.title))) return;
+    if (a.image_path) await r2Storage.from('profile-achievements').remove([a.image_path]);
     await supabase.from('profile_achievements').delete().eq('id', a.id);
-    toast({ title: 'Đã xóa' });
-    loadAchievements();
+    toast({ title: t.deleted }); loadAchievements();
   };
 
   const getImageUrl = (path: string) => getR2FilePublicUrl('profile-achievements', path);
 
-  if (loading) {
-    return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
-  }
+  if (loading) return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
 
-  const grouped = CATEGORIES.map(cat => ({
-    ...cat,
-    items: achievements.filter(a => a.category === cat.value),
-  })).filter(g => g.items.length > 0);
+  const grouped = CATEGORIES.map(cat => ({ ...cat, items: achievements.filter(a => a.category === cat.value) })).filter(g => g.items.length > 0);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Thành tích & Chứng chỉ</h2>
-          <p className="text-sm text-muted-foreground">Quản lý thành tích hiển thị trên trang cá nhân công khai</p>
+          <h2 className="text-lg font-semibold">{t.achievementsTitle}</h2>
+          <p className="text-sm text-muted-foreground">{t.achievementsDesc}</p>
         </div>
-        <Button onClick={openAdd} size="sm">
-          <Plus className="w-4 h-4 mr-1.5" />Thêm
-        </Button>
+        <Button onClick={openAdd} size="sm"><Plus className="w-4 h-4 mr-1.5" />{t.add}</Button>
       </div>
 
       {achievements.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
             <Image className="w-12 h-12 mx-auto text-muted-foreground/40 mb-3" />
-            <p className="text-muted-foreground">Chưa có thành tích nào</p>
+            <p className="text-muted-foreground">{t.noAchievements}</p>
             <Button variant="outline" size="sm" className="mt-3" onClick={openAdd}>
-              <Plus className="w-4 h-4 mr-1.5" />Thêm thành tích đầu tiên
+              <Plus className="w-4 h-4 mr-1.5" />{t.addFirst}
             </Button>
           </CardContent>
         </Card>
@@ -236,18 +179,13 @@ export default function ProfileAchievements() {
                             {a.description && <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">{a.description}</p>}
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(a)}>
-                              <Pencil className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(a)}>
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(a)}><Pencil className="w-3.5 h-3.5" /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(a)}><Trash2 className="w-3.5 h-3.5" /></Button>
                           </div>
                         </div>
                         {a.link_url && (
-                          <a href={a.link_url} target="_blank" rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1">
-                            <ExternalLink className="w-3 h-3" />Xem liên kết
+                          <a href={a.link_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1">
+                            <ExternalLink className="w-3 h-3" />{t.viewLink}
                           </a>
                         )}
                       </div>
@@ -260,23 +198,22 @@ export default function ProfileAchievements() {
         </div>
       )}
 
-      {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={v => { if (!v) { resetForm(); } setDialogOpen(v); }}>
+      <Dialog open={dialogOpen} onOpenChange={v => { if (!v) resetForm(); setDialogOpen(v); }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Chỉnh sửa thành tích' : 'Thêm thành tích mới'}</DialogTitle>
+            <DialogTitle>{editing ? t.editAchievement : t.addAchievement}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Tiêu đề *</Label>
-              <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="VD: Giải nhất cuộc thi..." maxLength={200} />
+              <Label>{t.achievementTitleLabel}</Label>
+              <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t.achievementTitlePlaceholder} maxLength={200} />
             </div>
             <div className="space-y-2">
-              <Label>Mô tả</Label>
-              <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Mô tả ngắn về thành tích..." rows={2} maxLength={500} />
+              <Label>{t.descriptionLabel}</Label>
+              <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder={t.descriptionPlaceholder} rows={2} maxLength={500} />
             </div>
             <div className="space-y-2">
-              <Label>Danh mục</Label>
+              <Label>{t.categoryLabel}</Label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -285,37 +222,33 @@ export default function ProfileAchievements() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Ảnh minh họa</Label>
+              <Label>{t.imageLabel}</Label>
               <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={handleImageSelect} />
               {imagePreview ? (
                 <div className="relative w-full h-40 rounded-lg overflow-hidden bg-muted">
                   <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                   <div className="absolute top-2 right-2 flex gap-1">
-                    <Button size="icon" variant="secondary" className="h-7 w-7" onClick={() => fileInputRef.current?.click()}>
-                      <Pencil className="w-3 h-3" />
-                    </Button>
-                    <Button size="icon" variant="destructive" className="h-7 w-7" onClick={() => { setImagePreview(null); setImageFile(null); }}>
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
+                    <Button size="icon" variant="secondary" className="h-7 w-7" onClick={() => fileInputRef.current?.click()}><Pencil className="w-3 h-3" /></Button>
+                    <Button size="icon" variant="destructive" className="h-7 w-7" onClick={() => { setImagePreview(null); setImageFile(null); }}><Trash2 className="w-3 h-3" /></Button>
                   </div>
                 </div>
               ) : (
                 <Button variant="outline" className="w-full h-24 border-dashed" onClick={() => fileInputRef.current?.click()}>
                   <Upload className="w-5 h-5 mr-2 text-muted-foreground" />
-                  <span className="text-muted-foreground">Tải ảnh lên (tối đa 5MB)</span>
+                  <span className="text-muted-foreground">{t.uploadImage}</span>
                 </Button>
               )}
             </div>
             <div className="space-y-2">
-              <Label>Liên kết</Label>
+              <Label>{t.linkLabel}</Label>
               <Input value={linkUrl} onChange={e => setLinkUrl(e.target.value)} placeholder="https://..." />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Hủy</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t.cancel || 'Cancel'}</Button>
             <Button onClick={handleSave} disabled={saving || uploading}>
               {(saving || uploading) && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {editing ? 'Cập nhật' : 'Thêm'}
+              {editing ? t.update : t.add}
             </Button>
           </DialogFooter>
         </DialogContent>

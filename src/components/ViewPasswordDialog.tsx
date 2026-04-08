@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Copy, KeyRound, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -15,6 +16,7 @@ interface ViewPasswordDialogProps {
 
 export default function ViewPasswordDialog({ open, onOpenChange, userId, userName }: ViewPasswordDialogProps) {
   const { isAdmin } = useAuth();
+  const { translations: { app: { viewPassword: t } } } = useLanguage();
   const { toast } = useToast();
   const [password, setPassword] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +41,7 @@ export default function ViewPasswordDialog({ open, onOpenChange, userId, userNam
   const handleCopy = () => {
     if (password) {
       navigator.clipboard.writeText(password);
-      toast({ title: 'Đã sao chép mật khẩu' });
+      toast({ title: t.copied });
     }
   };
 
@@ -51,7 +53,7 @@ export default function ViewPasswordDialog({ open, onOpenChange, userId, userNam
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <KeyRound className="w-5 h-5 text-primary" />
-            Mật khẩu người dùng
+            {t.title}
           </DialogTitle>
         </DialogHeader>
 
@@ -60,7 +62,7 @@ export default function ViewPasswordDialog({ open, onOpenChange, userId, userNam
           <div className="flex items-start gap-2 p-3 rounded-md border border-destructive/30 bg-destructive/5">
             <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
             <p className="text-xs text-muted-foreground">
-              <span className="font-semibold text-destructive">PROTOTYPE ONLY</span> — Chỉ dành cho demo nội bộ.
+              <span className="font-semibold text-destructive">{t.warning}</span> {t.warningDesc}
             </p>
           </div>
 
@@ -72,13 +74,13 @@ export default function ViewPasswordDialog({ open, onOpenChange, userId, userNam
           {/* Password display */}
           <div className="rounded-md border bg-muted/30 p-3">
             {isLoading ? (
-              <p className="text-sm text-muted-foreground animate-pulse">Đang tải...</p>
+              <p className="text-sm text-muted-foreground animate-pulse">{t.loading}</p>
             ) : password ? (
               <div className="space-y-2">
                 {!revealed ? (
                   <Button size="sm" variant="outline" className="w-full" onClick={() => setRevealed(true)}>
                     <KeyRound className="w-4 h-4 mr-2" />
-                    Bấm để xem mật khẩu
+                    {t.reveal}
                   </Button>
                 ) : (
                   <div className="flex items-center justify-between gap-2">
@@ -91,7 +93,7 @@ export default function ViewPasswordDialog({ open, onOpenChange, userId, userNam
               </div>
             ) : (
               <p className="text-sm text-muted-foreground italic">
-                Chưa có dữ liệu mật khẩu. Người dùng cần đăng nhập hoặc đổi mật khẩu ít nhất một lần để hệ thống ghi nhận.
+                {t.noData}
               </p>
             )}
           </div>

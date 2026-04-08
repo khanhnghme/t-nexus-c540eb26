@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Navigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { User, Trophy, Wrench } from 'lucide-react';
@@ -13,16 +14,17 @@ interface SidebarItem {
   description: string;
 }
 
-const sidebarItems: SidebarItem[] = [
-  { id: 'profile', label: 'Trang cá nhân', icon: User, description: 'Thông tin & URL công khai' },
-  { id: 'achievements', label: 'Thành tích', icon: Trophy, description: 'Chứng chỉ & bằng khen' },
-];
-
 export default function Utilities() {
   const { isAdmin } = useAuth();
+  const { translations: { app: { utilities: t } } } = useLanguage();
   const [activeTab, setActiveTab] = useState('profile');
 
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
+
+  const sidebarItems: SidebarItem[] = [
+    { id: 'profile', label: t.tabProfile, icon: User, description: t.tabProfileDesc },
+    { id: 'achievements', label: t.tabAchievements, icon: Trophy, description: t.tabAchievementsDesc },
+  ];
 
   const renderContent = () => {
     switch (activeTab) {
@@ -38,9 +40,9 @@ export default function Utilities() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Wrench className="w-6 h-6" />
-            Tiện ích
+            {t.title}
           </h1>
-          <p className="text-muted-foreground">Công cụ và tiện ích dành cho quản trị viên</p>
+          <p className="text-muted-foreground">{t.description}</p>
         </div>
 
         <div className="flex flex-col md:flex-row gap-6">
