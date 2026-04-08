@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +21,7 @@ interface SocialLinks {
 
 export default function ProfileEditor() {
   const { profile, user } = useAuth();
+  const { translations: { app: { utilities: t } } } = useLanguage();
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [skills, setSkills] = useState('');
@@ -50,7 +51,7 @@ export default function ProfileEditor() {
   const handleSave = async () => {
     if (!user) return;
     if (username && !/^[a-z0-9\-]{3,30}$/.test(username)) {
-      toast({ title: 'Username không hợp lệ', description: 'Chỉ chấp nhận chữ thường, số, dấu gạch ngang (3-30 ký tự)', variant: 'destructive' });
+      toast({ title: t.usernameInvalid, description: t.usernameInvalidDesc, variant: 'destructive' });
       return;
     }
     setSaving(true);
@@ -60,12 +61,12 @@ export default function ProfileEditor() {
       .eq('id', user.id);
     if (error) {
       if (error.message.includes('duplicate') || error.message.includes('unique')) {
-        toast({ title: 'Username đã tồn tại', variant: 'destructive' });
+        toast({ title: t.usernameTaken, variant: 'destructive' });
       } else {
-        toast({ title: 'Lỗi', description: error.message, variant: 'destructive' });
+        toast({ title: t.error || 'Error', description: error.message, variant: 'destructive' });
       }
     } else {
-      toast({ title: 'Đã lưu thành công!' });
+      toast({ title: t.savedSuccess });
     }
     setSaving(false);
   };
@@ -80,13 +81,13 @@ export default function ProfileEditor() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Thông tin trang cá nhân</h2>
-          <p className="text-sm text-muted-foreground">Thiết lập URL và nội dung hiển thị công khai</p>
+          <h2 className="text-lg font-semibold">{t.profileTitle}</h2>
+          <p className="text-sm text-muted-foreground">{t.profileDesc}</p>
         </div>
         {username && (
           <Button variant="outline" size="sm" asChild>
             <Link to={`/u/${username}`} target="_blank">
-              <Eye className="w-4 h-4 mr-1.5" />Xem trang
+              <Eye className="w-4 h-4 mr-1.5" />{t.viewPage}
             </Link>
           </Button>
         )}
@@ -94,7 +95,7 @@ export default function ProfileEditor() {
 
       {/* Username */}
       <div className="space-y-2">
-        <Label htmlFor="username">Username (URL cá nhân)</Label>
+        <Label htmlFor="username">{t.usernameLabel}</Label>
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground whitespace-nowrap">/u/</span>
           <Input
@@ -114,15 +115,15 @@ export default function ProfileEditor() {
 
       {/* Bio */}
       <div className="space-y-2">
-        <Label htmlFor="bio">Giới thiệu bản thân</Label>
-        <Textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} placeholder="Viết vài dòng giới thiệu..." rows={3} maxLength={500} />
+        <Label htmlFor="bio">{t.bioLabel}</Label>
+        <Textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} placeholder={t.bioPlaceholder} rows={3} maxLength={500} />
       </div>
 
       {/* Skills */}
       <div className="space-y-2">
-        <Label htmlFor="skills">Kỹ năng</Label>
-        <Input id="skills" value={skills} onChange={e => setSkills(e.target.value)} placeholder="React, TypeScript, UI/UX..." />
-        <p className="text-xs text-muted-foreground">Phân tách bằng dấu phẩy</p>
+        <Label htmlFor="skills">{t.skillsLabel}</Label>
+        <Input id="skills" value={skills} onChange={e => setSkills(e.target.value)} placeholder={t.skillsPlaceholder} />
+        <p className="text-xs text-muted-foreground">{t.skillsSeparator}</p>
         {skills && (
           <div className="flex flex-wrap gap-1.5">
             {skills.split(',').map((s, i) => s.trim() && (
@@ -134,7 +135,7 @@ export default function ProfileEditor() {
 
       {/* Social Links */}
       <div className="space-y-3">
-        <Label>Liên kết mạng xã hội</Label>
+        <Label>{t.socialLinksLabel}</Label>
         <div className="grid gap-3">
           {[
             { key: 'github', icon: Github, placeholder: 'https://github.com/username' },
@@ -156,7 +157,7 @@ export default function ProfileEditor() {
 
       <Button onClick={handleSave} disabled={saving} className="w-full">
         {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-        Lưu thay đổi
+        {t.saveChanges}
       </Button>
     </div>
   );
