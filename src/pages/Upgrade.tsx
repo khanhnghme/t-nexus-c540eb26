@@ -96,8 +96,7 @@ export default function Upgrade() {
   const essentialsLines = (tp.essentialsLabel as string).split('\n');
   const teamLines = (tp.teamLabel as string).split('\n');
 
-  // Derive current plan key from ownerPlan string (e.g. 'plan_pro' → 'pro')
-  const currentPlanKey: string = ownerPlan ? ownerPlan.replace(/^plan_/, '') : 'free';
+  const currentPlanKey: string = effectivePlan ? effectivePlan.replace(/^plan_/, '') : 'free';
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
