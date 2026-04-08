@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useAccountLimitsCheck } from '@/hooks/useAccountLimitsCheck';
 import { AccountCleanupPanel } from '@/components/cleanup/AccountCleanupPanel';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,72 +38,6 @@ interface PlanLimitsData {
   max_storage_mb: number;
 }
 
-const PLAN_FEATURES: Record<string, string[]> = {
-  plan_free: [
-    '1 Workspace',
-    'Tổng 5 dự án trên toàn tài khoản',
-    'Tổng 5 suất thành viên (unique seat, dùng chung cho tất cả WS)',
-    '500 MB tổng lưu trữ (gộp tất cả Workspace)',
-    'Upload tối đa 5 MB / file',
-    'Quản lý task cơ bản',
-    'Chat nhóm',
-    'Họp tối đa 15 phút',
-    'Standard Email Support',
-  ],
-  plan_plus: [
-    '5 Workspaces',
-    'Tổng 15 dự án (phân bổ tùy ý cho các WS)',
-    'Tổng 15 suất thành viên (unique seat, dùng chung cho tất cả WS)',
-    '10 GB tổng lưu trữ (gộp tất cả Workspace)',
-    'Upload tối đa 100 MB / file',
-    'Mở khóa tính năng Plus cho mọi thành viên',
-    'Chat nhóm & cuộc họp 60 phút',
-    'Nhật ký hoạt động (30 ngày)',
-    'Chấm điểm thành viên',
-    'Xuất dữ liệu đầy đủ',
-    'Có thể mua thêm add-on',
-  ],
-  plan_pro: [
-    '20 Workspaces',
-    'Tổng 50 dự án (phân bổ tùy ý cho các WS)',
-    'Tổng 50 suất thành viên (unique seat, dùng chung cho tất cả WS)',
-    '50 GB tổng lưu trữ (gộp tất cả Workspace)',
-    'Upload tối đa 5 GB / file',
-    'Mở khóa tính năng Pro cho mọi thành viên',
-    'Tất cả tính năng Plus',
-    'Họp không giới hạn',
-    'Nhật ký hoạt động không giới hạn',
-    'Quản lý giai đoạn (Stage)',
-    'Hệ thống điểm nâng cao',
-    'Priority Support (24h-48h)',
-    'Add-on đi kèm, giảm 10%',
-  ],
-  plan_business: [
-    '50 Workspaces',
-    'Tổng 500 dự án (phân bổ tùy ý cho các WS)',
-    'Tổng 200 suất thành viên (unique seat, dùng chung cho tất cả WS)',
-    '200 GB tổng lưu trữ (gộp tất cả Workspace)',
-    'Upload tối đa 5 GB / file',
-    'Mở khóa tính năng Business cho mọi thành viên',
-    'Tất cả tính năng Pro',
-    'Họp không giới hạn',
-    'Quản trị hệ thống',
-    'Express Support (cùng ngày)',
-    'Add-on đi kèm, giảm 20%',
-  ],
-  plan_custom: [
-    'Không giới hạn Workspaces',
-    'Không giới hạn dự án',
-    'Không giới hạn suất thành viên',
-    'Không giới hạn lưu trữ',
-    'Upload tối đa 5 GB / file',
-    'Mở khóa tất cả tính năng cho mọi thành viên',
-    'Hỗ trợ 24/7 chuyên dụng',
-    'Triển khai riêng',
-    'SLA cam kết',
-  ],
-};
-
 const MOCK_BILLING = [
   { id: 'TXN-20260301-001', date: '01/03/2026', plan: 'Pro', amount: '$12.00', status: 'Paid' },
   { id: 'TXN-20260201-001', date: '01/02/2026', plan: 'Pro', amount: '$12.00', status: 'Paid' },
@@ -114,6 +49,7 @@ const MOCK_BILLING = [
 export default function ServicePlan() {
   const { user, profile } = useAuth();
   const { workspaces } = useWorkspace();
+  const { translations: { app: { servicePlan: t, servicePlanFullFeatures: featuresMap } } } = useLanguage();
   const accountLimits = useAccountLimitsCheck();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -127,7 +63,7 @@ export default function ServicePlan() {
   const plan = profile?.user_plan || 'plan_free';
   const planName = formatPlanName(plan);
   const isPremium = plan !== 'plan_free';
-  const features = PLAN_FEATURES[plan] || PLAN_FEATURES.plan_free;
+  const features = featuresMap[plan] || featuresMap.plan_free;
 
   useEffect(() => {
     if (!user) return;
@@ -179,7 +115,6 @@ export default function ServicePlan() {
         });
       }
 
-      // Fetch real storage usage per workspace using RPC
       const storagePromises = ownedWs.map(async (ws) => {
         const { data } = await supabase.rpc('get_workspace_storage_usage', { _workspace_id: ws.id });
         return { wsId: ws.id, storageMb: Math.round(Number(data) || 0) };
@@ -234,43 +169,39 @@ export default function ServicePlan() {
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
           >
             <ArrowLeft size={14} />
-            <span>Quay lại</span>
+            <span>{t.goBack}</span>
           </button>
-          <h1 className="text-2xl font-heading font-bold tracking-tight">
-            Gói dịch vụ
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Quản lý gói cước, xem mức sử dụng và lịch sử thanh toán
-          </p>
+          <h1 className="text-2xl font-heading font-bold tracking-tight">{t.title}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t.subtitle}</p>
         </div>
         <Button
           onClick={() => navigate('/upgrade?from=personal')}
           className="bg-amber-500 hover:bg-amber-600 text-white"
         >
           <Zap className="w-4 h-4 mr-2" />
-          Nâng cấp gói
+          {t.upgradePlan}
         </Button>
       </div>
 
       {/* Tabs */}
       <Tabs value={currentTab} onValueChange={handleTabChange}>
         <TabsList>
-          <TabsTrigger value="plan">Gói hiện tại</TabsTrigger>
-          <TabsTrigger value="usage">Mức sử dụng</TabsTrigger>
+          <TabsTrigger value="plan">{t.tabPlan}</TabsTrigger>
+          <TabsTrigger value="usage">{t.tabUsage}</TabsTrigger>
           {accountLimits.isOverLimits && (
             <TabsTrigger value="cleanup" className="text-destructive data-[state=active]:text-destructive">
-              🧹 Dọn dẹp
+              {t.tabCleanup}
             </TabsTrigger>
           )}
-          <TabsTrigger value="billing">Lịch sử thanh toán</TabsTrigger>
+          <TabsTrigger value="billing">{t.tabBilling}</TabsTrigger>
         </TabsList>
 
-        {/* ──────── TAB 1: Gói hiện tại ──────── */}
+        {/* TAB 1: Current plan */}
         <TabsContent value="plan" className="space-y-6">
           <section className="space-y-4">
             <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
               <Crown className="w-5 h-5 text-amber-500" />
-              Gói hiện tại
+              {t.currentPlan}
             </h2>
 
             <Card>
@@ -294,13 +225,11 @@ export default function ServicePlan() {
                             : ''
                           }`}
                         >
-                          {isPremium ? 'Đang hoạt động' : 'Miễn phí'}
+                          {isPremium ? t.active : t.free}
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground mt-0.5">
-                        {isPremium
-                          ? 'Trải nghiệm đầy đủ tính năng cao cấp'
-                          : 'Nâng cấp để mở khóa thêm tính năng'}
+                        {isPremium ? t.premiumDesc : t.freeDesc}
                       </p>
                     </div>
                   </div>
@@ -308,17 +237,17 @@ export default function ServicePlan() {
                   <div className="flex gap-6 md:gap-8">
                     <div className="text-center">
                       <div className="text-xl font-bold tabular-nums">{wsUsages.length}</div>
-                      <div className="text-xs text-muted-foreground">Workspace</div>
+                      <div className="text-xs text-muted-foreground">{t.workspace}</div>
                     </div>
                     <Separator orientation="vertical" className="h-10" />
                     <div className="text-center">
                       <div className="text-xl font-bold tabular-nums">{totalProjects}</div>
-                      <div className="text-xs text-muted-foreground">Projects</div>
+                      <div className="text-xs text-muted-foreground">{t.projects}</div>
                     </div>
                     <Separator orientation="vertical" className="h-10" />
                     <div className="text-center">
                       <div className="text-xl font-bold tabular-nums">{totalMembers}</div>
-                      <div className="text-xs text-muted-foreground">Thành viên</div>
+                      <div className="text-xs text-muted-foreground">{t.members}</div>
                     </div>
                   </div>
                 </div>
@@ -328,10 +257,10 @@ export default function ServicePlan() {
                 <div>
                   <h3 className="text-sm font-medium mb-3 flex items-center gap-1.5">
                     <Sparkles className="w-4 h-4 text-amber-500" />
-                    Quyền lợi gói {planName}
+                    {t.planBenefits} {planName}
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                    {features.map((feature, i) => (
+                    {features.map((feature: string, i: number) => (
                       <div key={i} className="flex items-center gap-2 text-sm py-1">
                         <Check className="w-4 h-4 text-emerald-500 shrink-0" />
                         <span>{feature}</span>
@@ -343,7 +272,6 @@ export default function ServicePlan() {
             </Card>
           </section>
 
-          {/* Upgrade CTA */}
           {!isPremium && (
             <section>
               <Card className="border-amber-500/20 bg-amber-500/5">
@@ -352,17 +280,15 @@ export default function ServicePlan() {
                     <Sparkles className="w-7 h-7 text-amber-500" />
                   </div>
                   <div className="flex-1 text-center sm:text-left">
-                    <h3 className="font-semibold">Mở khóa tính năng cao cấp</h3>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      Nâng cấp gói để có thêm workspace, dự án và dung lượng lưu trữ lớn hơn.
-                    </p>
+                    <h3 className="font-semibold">{t.unlockPremium}</h3>
+                    <p className="text-sm text-muted-foreground mt-0.5">{t.unlockDesc}</p>
                   </div>
                   <Button
                     onClick={() => navigate('/upgrade?from=personal')}
                     className="bg-amber-500 hover:bg-amber-600 text-white shrink-0"
                   >
                     <Zap className="w-4 h-4 mr-2" />
-                    Nâng cấp ngay
+                    {t.upgradeNow}
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </CardContent>
@@ -371,12 +297,12 @@ export default function ServicePlan() {
           )}
         </TabsContent>
 
-        {/* ──────── TAB 2: Mức sử dụng ──────── */}
+        {/* TAB 2: Usage */}
         <TabsContent value="usage" className="space-y-6">
           <section className="space-y-4">
             <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-muted-foreground" />
-              Tổng quan sử dụng
+              {t.usageOverview}
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -384,7 +310,7 @@ export default function ServicePlan() {
                 <CardContent className="p-4 space-y-2">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Building2 className="w-4 h-4" />
-                    <span className="text-xs font-medium">Workspace</span>
+                    <span className="text-xs font-medium">{t.workspace}</span>
                   </div>
                   <div className="flex items-baseline gap-1">
                     <span className="text-2xl font-bold tabular-nums">{wsUsages.length}</span>
@@ -402,7 +328,7 @@ export default function ServicePlan() {
                 <CardContent className="p-4 space-y-2">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <FolderKanban className="w-4 h-4" />
-                    <span className="text-xs font-medium">Projects</span>
+                    <span className="text-xs font-medium">{t.projects}</span>
                   </div>
                   <div className="flex items-baseline gap-1">
                     <span className="text-2xl font-bold tabular-nums">{totalProjects}</span>
@@ -425,7 +351,7 @@ export default function ServicePlan() {
                 <CardContent className="p-4 space-y-2">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Users className="w-4 h-4" />
-                    <span className="text-xs font-medium">Suất thành viên (unique)</span>
+                    <span className="text-xs font-medium">{t.uniqueSeats}</span>
                   </div>
                   <div className="flex items-baseline gap-1">
                     <span className="text-2xl font-bold tabular-nums">{totalMembers}</span>
@@ -441,7 +367,7 @@ export default function ServicePlan() {
                       className="h-1.5"
                     />
                   )}
-                  <p className="text-[10px] text-muted-foreground">1 người tham gia nhiều WS = 1 suất</p>
+                  <p className="text-[10px] text-muted-foreground">{t.seatNote}</p>
                 </CardContent>
               </Card>
 
@@ -449,7 +375,7 @@ export default function ServicePlan() {
                 <CardContent className="p-4 space-y-2">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <HardDrive className="w-4 h-4" />
-                    <span className="text-xs font-medium">Dung lượng</span>
+                    <span className="text-xs font-medium">{t.storage}</span>
                   </div>
                   <div className="flex items-baseline gap-1">
                     <span className="text-2xl font-bold tabular-nums">
@@ -476,19 +402,18 @@ export default function ServicePlan() {
           <section className="space-y-4">
             <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
               <Building2 className="w-5 h-5 text-muted-foreground" />
-              Chi tiết theo Workspace
+              {t.wsBreakdown}
             </h2>
 
             {wsUsages.length === 0 ? (
               <Card>
                 <CardContent className="py-10 text-center text-muted-foreground text-sm">
-                  Bạn chưa sở hữu workspace nào
+                  {t.noWorkspace}
                 </CardContent>
               </Card>
             ) : (
               <div className="grid gap-4 md:grid-cols-2">
                 {wsUsages.map(ws => {
-                  // Show contribution to account-wide total (not per-WS limit)
                   const totalProjectsAll = wsUsages.reduce((s, w) => s + w.projectCount, 0);
                   const totalStorageAll = wsUsages.reduce((s, w) => s + w.storageMb, 0);
                   const projectContribPct = totalProjectsAll > 0 ? Math.round((ws.projectCount / totalProjectsAll) * 100) : 0;
@@ -514,10 +439,10 @@ export default function ServicePlan() {
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-muted-foreground flex items-center gap-1.5">
-                                <FolderKanban className="w-3 h-3" /> Projects
+                                <FolderKanban className="w-3 h-3" /> {t.projects}
                               </span>
                               <span className="font-medium tabular-nums">
-                                {ws.projectCount} dự án
+                                {ws.projectCount} {t.projectsLabel}
                                 <span className="text-muted-foreground ml-1">({projectContribPct}%)</span>
                               </span>
                             </div>
@@ -527,10 +452,10 @@ export default function ServicePlan() {
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-muted-foreground flex items-center gap-1.5">
-                                <Users className="w-3 h-3" /> Thành viên
+                                <Users className="w-3 h-3" /> {t.members}
                               </span>
                               <span className="font-medium tabular-nums">
-                                {ws.memberCount} thành viên
+                                {ws.memberCount} {t.membersLabel}
                               </span>
                             </div>
                           </div>
@@ -538,7 +463,7 @@ export default function ServicePlan() {
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-muted-foreground flex items-center gap-1.5">
-                                <HardDrive className="w-3 h-3" /> Dung lượng
+                                <HardDrive className="w-3 h-3" /> {t.storage}
                               </span>
                               <span className="font-medium tabular-nums">
                                 {formatStorage(ws.storageMb)}
@@ -556,28 +481,27 @@ export default function ServicePlan() {
             )}
           </section>
 
-          {/* Cleanup tab link hint */}
           {accountLimits.isOverLimits && (
             <div className="text-center">
               <Button variant="outline" size="sm" onClick={() => handleTabChange('cleanup')} className="text-destructive border-destructive/30">
-                🧹 Mở công cụ Dọn dẹp tài khoản
+                {t.openCleanup}
               </Button>
             </div>
           )}
         </TabsContent>
 
-        {/* ──────── TAB: Dọn dẹp ──────── */}
+        {/* TAB: Cleanup */}
         {accountLimits.isOverLimits && (
           <TabsContent value="cleanup" className="space-y-6">
             <AccountCleanupPanel onCleanupComplete={fetchUsages} />
           </TabsContent>
         )}
 
-        {/* ──────── TAB 3: Lịch sử thanh toán ──────── */}
+        {/* TAB 3: Billing history */}
         <TabsContent value="billing" className="space-y-4">
           <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
             <Receipt className="w-5 h-5 text-muted-foreground" />
-            Lịch sử thanh toán
+            {t.billingHistory}
           </h2>
 
           <Card>
@@ -585,11 +509,11 @@ export default function ServicePlan() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">Ngày</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">Mã giao dịch</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">Gói</th>
-                    <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">Số tiền</th>
-                    <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">Trạng thái</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.colDate}</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.colTxn}</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.colPlan}</th>
+                    <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.colAmount}</th>
+                    <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.colStatus}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -617,9 +541,7 @@ export default function ServicePlan() {
               </table>
             </div>
             <div className="px-5 py-3 border-t border-border">
-              <p className="text-xs text-muted-foreground text-center">
-                Hiển thị 5 giao dịch gần nhất • Dữ liệu mô phỏng
-              </p>
+              <p className="text-xs text-muted-foreground text-center">{t.showingRecent}</p>
             </div>
           </Card>
         </TabsContent>

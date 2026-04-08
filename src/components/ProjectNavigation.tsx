@@ -1,6 +1,6 @@
 import { LayoutDashboard, Layers, Users, Activity, Settings, Award, FolderOpen, Video } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ProjectNavigationProps {
   activeTab: string;
@@ -14,20 +14,20 @@ interface ProjectNavigationProps {
 
 interface NavTab {
   id: string;
-  label: string;
+  labelKey: string;
   icon: React.ComponentType<{ className?: string }>;
   showAlways?: boolean;
 }
 
 const tabs: NavTab[] = [
-  { id: 'overview', label: 'Tổng quan', icon: LayoutDashboard, showAlways: true },
-  { id: 'tasks', label: 'Task', icon: Layers, showAlways: true },
-  { id: 'meetings', label: 'Họp nhóm', icon: Video, showAlways: true },
-  { id: 'resources', label: 'Tài nguyên', icon: FolderOpen, showAlways: true },
-  { id: 'members', label: 'Thành viên', icon: Users, showAlways: true },
-  { id: 'scores', label: 'Điểm', icon: Award, showAlways: true },
-  { id: 'logs', label: 'Nhật ký', icon: Activity, showAlways: false },
-  { id: 'settings', label: 'Cài đặt', icon: Settings, showAlways: false },
+  { id: 'overview', labelKey: 'overview', icon: LayoutDashboard, showAlways: true },
+  { id: 'tasks', labelKey: 'tasks', icon: Layers, showAlways: true },
+  { id: 'meetings', labelKey: 'meetings', icon: Video, showAlways: true },
+  { id: 'resources', labelKey: 'resources', icon: FolderOpen, showAlways: true },
+  { id: 'members', labelKey: 'members', icon: Users, showAlways: true },
+  { id: 'scores', labelKey: 'scores', icon: Award, showAlways: true },
+  { id: 'logs', labelKey: 'logs', icon: Activity, showAlways: false },
+  { id: 'settings', labelKey: 'settings', icon: Settings, showAlways: false },
 ];
 
 export default function ProjectNavigation({
@@ -39,6 +39,7 @@ export default function ProjectNavigation({
   hasActiveMeeting,
   isScoreFinalized,
 }: ProjectNavigationProps) {
+  const { translations: { app: { projectNav: t } } } = useLanguage();
   const showSettings = isLeaderInGroup && isGroupCreator;
   const showLogs = isLeaderInGroup && isGroupCreator;
   const visibleTabs = tabs.filter(tab =>
@@ -69,14 +70,12 @@ export default function ProjectNavigation({
             >
               <div className="relative">
                 <Icon className="w-4 h-4 shrink-0" />
-                {/* Active meeting indicator */}
                 {tab.id === 'meetings' && hasActiveMeeting && (
                   <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-destructive" />
                   </span>
                 )}
-                {/* Score finalized indicator */}
                 {tab.id === 'scores' && isScoreFinalized && !isActive && (
                   <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75" />
@@ -85,9 +84,8 @@ export default function ProjectNavigation({
                 )}
               </div>
 
-              <span>{tab.label}</span>
+              <span>{t[tab.labelKey]}</span>
 
-              {/* Member count badge */}
               {tab.id === 'members' && (
                 <span className={cn(
                   "px-1.5 py-0 text-[11px] font-semibold rounded-full min-w-[20px] text-center",

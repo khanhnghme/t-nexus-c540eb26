@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,10 +22,9 @@ import {
   Lock, Unlock, Zap, ArrowRight, Plus, Bell,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { vi as viLocale } from 'date-fns/locale';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-// Removed hard-coded DEFAULT_PROJECT_LIMIT — limits come from plan_limits table
 
 export function getHiddenNav(profile: any): string[] {
   if (!profile?.nav_hidden_pages) return [];
@@ -35,6 +35,7 @@ export function getHiddenNav(profile: any): string[] {
 
 export default function PersonalInfo() {
   const { user, profile, isAdmin, isLeader, refreshProfile, roles } = useAuth();
+  const { locale, translations: { app: { personal: t } } } = useLanguage();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -46,8 +47,6 @@ export default function PersonalInfo() {
   const [ownedProjectCount, setOwnedProjectCount] = useState(0);
   const [joinedProjectCount, setJoinedProjectCount] = useState(0);
   
-  
-  // Form state
   const [yearBatch, setYearBatch] = useState('');
   const [major, setMajor] = useState('');
   const [phone, setPhone] = useState('');
@@ -62,7 +61,6 @@ export default function PersonalInfo() {
       setSkills(profile.skills || '');
       setBio(profile.bio || '');
     }
-    // Fetch email notification preference
     if (user) {
       supabase.from('profiles').select('email_notifications').eq('id', user.id).single().then(({ data }) => {
         if (data) setEmailNotifications(data.email_notifications ?? true);
@@ -71,59 +69,37 @@ export default function PersonalInfo() {
   }, [profile, user]);
 
   useEffect(() => {
-    if (user) {
-      fetchProjectStats();
-      
-    }
+    if (user) fetchProjectStats();
   }, [user]);
 
   const fetchProjectStats = async () => {
     if (!user) return;
     const { count: owned } = await supabase
-      .from('groups')
-      .select('id', { count: 'exact', head: true })
-      .eq('created_by', user.id);
+      .from('groups').select('id', { count: 'exact', head: true }).eq('created_by', user.id);
     setOwnedProjectCount(owned || 0);
-
     const { count: joined } = await supabase
-      .from('group_members')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id);
+      .from('group_members').select('id', { count: 'exact', head: true }).eq('user_id', user.id);
     setJoinedProjectCount(joined || 0);
   };
 
-
-  const getInitials = (name: string) => {
-    return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
-  };
+  const getInitials = (name: string) => name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 
   const canCreateProject = isAdmin || isLeader;
-  // projectLimit removed — use plan_limits table dynamically instead
-  
 
   const getRoleInfo = () => {
     if (isAdmin) return {
-      label: 'OwnerSystem',
-      description: 'Toàn quyền hệ thống',
-      icon: Shield,
-      gradient: 'from-red-500 to-rose-600',
-      bgGradient: 'from-red-500/10 to-rose-600/10',
+      label: t.roleAdmin, description: t.roleAdminDesc, icon: Shield,
+      gradient: 'from-red-500 to-rose-600', bgGradient: 'from-red-500/10 to-rose-600/10',
       borderColor: 'border-red-200 dark:border-red-800',
     };
     if (isLeader) return {
-      label: 'Thành viên Nâng cao',
-      description: 'Được tạo & quản lý dự án',
-      icon: Star,
-      gradient: 'from-amber-500 to-orange-600',
-      bgGradient: 'from-amber-500/10 to-orange-600/10',
+      label: t.roleLeader, description: t.roleLeaderDesc, icon: Star,
+      gradient: 'from-amber-500 to-orange-600', bgGradient: 'from-amber-500/10 to-orange-600/10',
       borderColor: 'border-amber-200 dark:border-amber-800',
     };
     return {
-      label: 'Thành viên',
-      description: 'Tham gia dự án được mời',
-      icon: UserCheck,
-      gradient: 'from-blue-500 to-cyan-600',
-      bgGradient: 'from-blue-500/10 to-cyan-600/10',
+      label: t.roleMember, description: t.roleMemberDesc, icon: UserCheck,
+      gradient: 'from-blue-500 to-cyan-600', bgGradient: 'from-blue-500/10 to-cyan-600/10',
       borderColor: 'border-blue-200 dark:border-blue-800',
     };
   };
@@ -147,11 +123,11 @@ export default function PersonalInfo() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
     if (!file.type.startsWith('image/')) {
-      toast({ title: 'Định dạng không hợp lệ', description: 'Vui lòng chọn file ảnh', variant: 'destructive' });
+      toast({ title: t.invalidFormat, description: t.selectImage, variant: 'destructive' });
       return;
     }
     if (file.size > MAX_FILE_SIZE) {
-      toast({ title: 'File quá lớn', description: 'Kích thước ảnh tối đa là 5MB', variant: 'destructive' });
+      toast({ title: t.fileTooLarge, description: t.maxSize, variant: 'destructive' });
       return;
     }
     setIsUploadingAvatar(true);
@@ -163,10 +139,10 @@ export default function PersonalInfo() {
       const avatarPublicUrl = uploadData?.publicUrl;
       const { error: updateError } = await supabase.from('profiles').update({ avatar_url: avatarPublicUrl }).eq('id', user.id);
       if (updateError) throw updateError;
-      toast({ title: 'Thành công', description: 'Đã cập nhật ảnh đại diện' });
+      toast({ title: t.success, description: t.avatarUpdated });
       await refreshProfile();
     } catch (error: any) {
-      toast({ title: 'Lỗi', description: error.message || 'Có lỗi xảy ra', variant: 'destructive' });
+      toast({ title: t.error, description: error.message || t.genericError, variant: 'destructive' });
     } finally {
       setIsUploadingAvatar(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -182,11 +158,11 @@ export default function PersonalInfo() {
         phone: phone || null, skills: skills || null, bio: bio || null,
       }).eq('id', user.id);
       if (error) throw error;
-      toast({ title: 'Thành công', description: 'Đã cập nhật thông tin cá nhân' });
+      toast({ title: t.success, description: t.profileUpdated });
       setIsEditing(false);
       await refreshProfile();
     } catch (error: any) {
-      toast({ title: 'Lỗi', description: error.message || 'Có lỗi xảy ra', variant: 'destructive' });
+      toast({ title: t.error, description: error.message || t.genericError, variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }
@@ -204,7 +180,7 @@ export default function PersonalInfo() {
           {hasValue ? (
             <p className={`text-sm font-medium truncate ${readOnly ? 'text-muted-foreground' : 'text-foreground'}`}>{value}</p>
           ) : (
-            <p className="text-xs text-muted-foreground/50 italic">Chưa cập nhật</p>
+            <p className="text-xs text-muted-foreground/50 italic">{t.notUpdated}</p>
           )}
         </div>
         {hasValue && !readOnly && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />}
@@ -217,7 +193,7 @@ export default function PersonalInfo() {
   return (
     <>
       <div className="max-w-5xl mx-auto space-y-6">
-        {/* Profile Header — hero banner */}
+        {/* Profile Header */}
         <Card className="overflow-hidden border-0 shadow-xl">
           <div className="h-28 bg-gradient-to-br from-primary/80 via-primary/60 to-accent/50 relative">
             <div className="absolute inset-0 opacity-10" style={{
@@ -259,7 +235,7 @@ export default function PersonalInfo() {
                   <div className="flex items-center gap-3 mt-1 flex-wrap justify-center sm:justify-start">
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      Tham gia từ {format(new Date(profile.created_at), 'dd/MM/yyyy', { locale: vi })}
+                      {t.joinedDate} {format(new Date(profile.created_at), 'dd/MM/yyyy', { locale: locale === 'vi' ? viLocale : undefined })}
                     </p>
                     <div className="flex items-center gap-1.5">
                       <Progress value={profileCompletion} className="h-1.5 w-16" />
@@ -268,7 +244,7 @@ export default function PersonalInfo() {
                       </span>
                       {profileCompletion < 100 && (
                         <button onClick={() => setIsEditing(true)} className="text-xs text-primary hover:underline">
-                          Hoàn thiện
+                          {t.complete}
                         </button>
                       )}
                     </div>
@@ -276,36 +252,34 @@ export default function PersonalInfo() {
                 )}
               </div>
 
-              {/* Email notification inline */}
-               <div className="hidden sm:flex items-center gap-2 pb-1 opacity-60 whitespace-nowrap shrink-0">
+              <div className="hidden sm:flex items-center gap-2 pb-1 opacity-60 whitespace-nowrap shrink-0">
                 <Bell className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                <span className="text-xs text-muted-foreground shrink-0">Email thông báo</span>
+                <span className="text-xs text-muted-foreground shrink-0">{t.emailNotif}</span>
                 <Switch checked={false} disabled={true} className="scale-75 shrink-0" />
                 <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-amber-500/50 text-amber-600 dark:text-amber-400 shrink-0 whitespace-nowrap">
-                  🚧 Đang phát triển
+                  {t.inDev}
                 </Badge>
               </div>
             </div>
-
           </CardContent>
         </Card>
 
         {/* Personal Info Card */}
-          <Card>
+        <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <User className="w-4 h-4 text-primary" />
-                Thông tin cá nhân
+                {t.personalInfo}
               </CardTitle>
               {!isEditing && (
                 <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
                   <Edit3 className="w-4 h-4 mr-1.5" />
-                  Chỉnh sửa
+                  {t.edit}
                 </Button>
               )}
             </div>
-            <CardDescription>Thông tin học vấn, liên hệ và giới thiệu bản thân</CardDescription>
+            <CardDescription>{t.infoDesc}</CardDescription>
           </CardHeader>
           <CardContent>
             {isEditing ? (
@@ -314,61 +288,61 @@ export default function PersonalInfo() {
                   <div className="space-y-2">
                     <Label htmlFor="yearBatch" className="flex items-center gap-2 text-sm font-medium">
                       <GraduationCap className="w-4 h-4 text-muted-foreground" />
-                      Khóa
+                      {t.yearBatch}
                     </Label>
-                    <Input id="yearBatch" placeholder="VD: K47, K48..." value={yearBatch} onChange={(e) => setYearBatch(e.target.value)} className="h-10" />
+                    <Input id="yearBatch" placeholder={t.yearBatchPlaceholder} value={yearBatch} onChange={(e) => setYearBatch(e.target.value)} className="h-10" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="major" className="flex items-center gap-2 text-sm font-medium">
                       <BookOpen className="w-4 h-4 text-muted-foreground" />
-                      Ngành học
+                      {t.major}
                     </Label>
-                    <Input id="major" placeholder="VD: Quản trị kinh doanh..." value={major} onChange={(e) => setMajor(e.target.value)} className="h-10" />
+                    <Input id="major" placeholder={t.majorPlaceholder} value={major} onChange={(e) => setMajor(e.target.value)} className="h-10" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone" className="flex items-center gap-2 text-sm font-medium">
                     <Phone className="w-4 h-4 text-muted-foreground" />
-                    Số điện thoại
+                    {t.phone}
                   </Label>
-                  <Input id="phone" placeholder="VD: 0901234567" value={phone} onChange={(e) => setPhone(e.target.value)} className="h-10" />
+                  <Input id="phone" placeholder={t.phonePlaceholder} value={phone} onChange={(e) => setPhone(e.target.value)} className="h-10" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="skills" className="flex items-center gap-2 text-sm font-medium">
                     <Sparkles className="w-4 h-4 text-muted-foreground" />
-                    Kỹ năng / Thế mạnh
+                    {t.skills}
                   </Label>
-                  <Textarea id="skills" placeholder="VD: Thiết kế đồ họa, PowerPoint, Excel... (phân tách bằng dấu phẩy)" value={skills} onChange={(e) => setSkills(e.target.value)} rows={3} className="resize-none" />
-                  <p className="text-xs text-muted-foreground">Nhập các kỹ năng, phân tách bằng dấu phẩy</p>
+                  <Textarea id="skills" placeholder={t.skillsPlaceholder} value={skills} onChange={(e) => setSkills(e.target.value)} rows={3} className="resize-none" />
+                  <p className="text-xs text-muted-foreground">{t.skillsHint}</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="bio" className="flex items-center gap-2 text-sm font-medium">
                     <FileText className="w-4 h-4 text-muted-foreground" />
-                    Giới thiệu bản thân
+                    {t.bio}
                   </Label>
-                  <Textarea id="bio" placeholder="Viết vài dòng giới thiệu về bản thân..." value={bio} onChange={(e) => setBio(e.target.value)} rows={4} className="resize-none" />
+                  <Textarea id="bio" placeholder={t.bioPlaceholder} value={bio} onChange={(e) => setBio(e.target.value)} rows={4} className="resize-none" />
                 </div>
                 <Separator />
                 <div className="flex gap-3">
                   <Button onClick={handleSave} disabled={isSaving} className="flex-1 sm:flex-none">
                     {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                    Lưu thay đổi
+                    {t.save}
                   </Button>
                   <Button variant="ghost" onClick={() => setIsEditing(false)} disabled={isSaving}>
                     <X className="w-4 h-4 mr-2" />
-                    Hủy
+                    {t.cancel}
                   </Button>
                 </div>
               </div>
             ) : (
               <div className="space-y-1">
                 <div className="grid sm:grid-cols-2 gap-x-6">
-                  <InfoItem icon={GraduationCap} label="Đơn vị đào tạo" value={profile?.institution} highlight readOnly />
-                  <InfoItem icon={User} label="Mã số sinh viên" value={profile?.student_id} readOnly />
-                  <InfoItem icon={Mail} label="Email" value={profile?.email} readOnly />
-                  <InfoItem icon={GraduationCap} label="Khóa" value={profile?.year_batch} />
-                  <InfoItem icon={BookOpen} label="Ngành học" value={profile?.major} />
-                  <InfoItem icon={Phone} label="Số điện thoại" value={profile?.phone} />
+                  <InfoItem icon={GraduationCap} label={t.institution} value={profile?.institution} highlight readOnly />
+                  <InfoItem icon={User} label={t.studentId} value={profile?.student_id} readOnly />
+                  <InfoItem icon={Mail} label={t.email} value={profile?.email} readOnly />
+                  <InfoItem icon={GraduationCap} label={t.yearBatch} value={profile?.year_batch} />
+                  <InfoItem icon={BookOpen} label={t.major} value={profile?.major} />
+                  <InfoItem icon={Phone} label={t.phone} value={profile?.phone} />
                 </div>
 
                 <Separator className="my-2" />
@@ -376,7 +350,7 @@ export default function PersonalInfo() {
                 <div className="px-4 py-3">
                   <h4 className="text-sm font-medium text-muted-foreground mb-2.5 flex items-center gap-2">
                     <Sparkles className="w-4 h-4" />
-                    Kỹ năng & Thế mạnh
+                    {t.skillsTitle}
                   </h4>
                   {skillsList.length > 0 ? (
                     <div className="flex flex-wrap gap-1.5">
@@ -387,7 +361,7 @@ export default function PersonalInfo() {
                   ) : (
                     <p className="text-muted-foreground/60 italic text-sm flex items-center gap-1.5">
                       <AlertCircle className="w-3.5 h-3.5" />
-                      Chưa cập nhật
+                      {t.notUpdated}
                     </p>
                   )}
                 </div>
@@ -395,7 +369,7 @@ export default function PersonalInfo() {
                 <div className="px-4 py-3">
                   <h4 className="text-sm font-medium text-muted-foreground mb-2.5 flex items-center gap-2">
                     <FileText className="w-4 h-4" />
-                    Giới thiệu bản thân
+                    {t.bioTitle}
                   </h4>
                   {profile?.bio ? (
                     <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap bg-muted/30 rounded-lg p-3">
@@ -404,7 +378,7 @@ export default function PersonalInfo() {
                   ) : (
                     <p className="text-muted-foreground/60 italic text-sm flex items-center gap-1.5">
                       <AlertCircle className="w-3.5 h-3.5" />
-                      Chưa có thông tin giới thiệu
+                      {t.noBio}
                     </p>
                   )}
                 </div>
@@ -412,9 +386,7 @@ export default function PersonalInfo() {
             )}
           </CardContent>
         </Card>
-
       </div>
     </>
   );
 }
-
