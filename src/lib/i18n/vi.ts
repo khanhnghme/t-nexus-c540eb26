@@ -2673,4 +2673,3 @@ export const vi: Translations = {
     settings: 'Cài đặt',
     },
   },
-};
