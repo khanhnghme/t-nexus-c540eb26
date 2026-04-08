@@ -584,10 +584,10 @@ export default function Groups() {
                           <div className="space-y-2">
                             <Label className="flex items-center gap-1">
                               <BookOpen className="w-3.5 h-3.5" />
-                              Mã lớp
+                              {g.classCode}
                             </Label>
                             <Input
-                              placeholder="VD: 24C1INF50900301"
+                              placeholder={g.classCodePlaceholder}
                               value={newGroupClassCode}
                               onChange={(e) => setNewGroupClassCode(e.target.value)}
                             />
@@ -595,10 +595,10 @@ export default function Groups() {
                           <div className="space-y-2">
                             <Label className="flex items-center gap-1">
                               <GraduationCap className="w-3.5 h-3.5" />
-                              Giảng viên
+                              {g.instructor}
                             </Label>
                             <Input
-                              placeholder="VD: Nguyễn Văn A"
+                              placeholder={g.instructorPlaceholder}
                               value={newGroupInstructorName}
                               onChange={(e) => setNewGroupInstructorName(e.target.value)}
                             />
@@ -609,7 +609,7 @@ export default function Groups() {
                           <div className="space-y-2">
                             <Label className="flex items-center gap-1">
                               <Mail className="w-3.5 h-3.5" />
-                              Email giảng viên
+                              {g.instructorEmail}
                             </Label>
                             <Input
                               type="email"
@@ -621,7 +621,7 @@ export default function Groups() {
                           <div className="space-y-2">
                             <Label className="flex items-center gap-1">
                               <MessageSquare className="w-3.5 h-3.5" />
-                              Link Zalo nhóm
+                              {g.zaloLink}
                             </Label>
                             <Input
                               placeholder="https://zalo.me/..."
@@ -634,10 +634,10 @@ export default function Groups() {
                         <div className="space-y-2">
                           <Label className="flex items-center gap-1">
                             <Info className="w-3.5 h-3.5" />
-                            Ghi chú thêm
+                            {g.additionalNotes}
                           </Label>
                           <Textarea
-                            placeholder="Thông tin bổ sung, lưu ý đặc biệt..."
+                            placeholder={g.additionalNotesPlaceholder}
                             value={newGroupAdditionalInfo}
                             onChange={(e) => setNewGroupAdditionalInfo(e.target.value)}
                             rows={2}
@@ -649,21 +649,21 @@ export default function Groups() {
                       <div className="lg:col-span-2 p-6 flex flex-col min-h-0" style={{ maxHeight: 'calc(720px - 140px)' }}>
                         <div className="flex items-center gap-2 text-sm font-semibold text-primary uppercase tracking-wide flex-shrink-0">
                           <UserPlus className="w-4 h-4" />
-                          Thêm thành viên
+                          {g.addMembers}
                           <Badge variant="secondary" className="ml-auto text-xs">
-                            Tùy chọn
+                            {g.optional}
                           </Badge>
                         </div>
 
                         <p className="text-xs text-muted-foreground mt-2 flex-shrink-0">
-                          Chọn thành viên để thêm vào dự án. Có thể thêm sau khi tạo.
+                          {g.addMembersDesc}
                         </p>
 
                         {/* Search */}
                         <div className="relative mt-3 flex-shrink-0">
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
                           <Input
-                            placeholder="Nhập tên hoặc MSSV để tìm kiếm..."
+                            placeholder={g.searchPlaceholder}
                             value={memberSearch}
                             onChange={(e) => handleSearchMembers(e.target.value)}
                             className="pl-9 h-11 border-2 border-primary/30 focus-visible:border-primary focus-visible:ring-primary/20 bg-primary/5 placeholder:text-muted-foreground/70 font-medium"
@@ -699,7 +699,7 @@ export default function Groups() {
                                     <div className="text-xs text-muted-foreground/70 truncate">{p.email}</div>
                                   </div>
                                   {isSelected ? (
-                                    <Badge variant="secondary" className="text-xs flex-shrink-0">Đã chọn</Badge>
+                                    <Badge variant="secondary" className="text-xs flex-shrink-0">{g.selected}</Badge>
                                   ) : (
                                     <Plus className="w-4 h-4 text-primary flex-shrink-0" />
                                   )}
@@ -709,8 +709,8 @@ export default function Groups() {
                           ) : (
                             <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
                               <Search className="w-10 h-10 mb-2 opacity-30" />
-                              <p className="text-sm">{memberSearch && memberSearch.length >= 2 ? 'Không tìm thấy' : 'Nhập tên hoặc MSSV để tìm kiếm'}</p>
-                              {!memberSearch && <p className="text-xs mt-1">Nhập ít nhất 2 ký tự</p>}
+                              <p className="text-sm">{memberSearch && memberSearch.length >= 2 ? g.notFound : g.searchHint}</p>
+                              {!memberSearch && <p className="text-xs mt-1">{g.minChars}</p>}
                             </div>
                           )}
                         </div>
