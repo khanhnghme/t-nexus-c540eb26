@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { useLanguage } from '@/contexts/LanguageContext';
 import MentionInput from '@/components/communication/MentionInput';
 import MessageItem from '@/components/communication/MessageItem';
 import { parseMessageContent, type ParsedMention } from '@/lib/messageParser';
