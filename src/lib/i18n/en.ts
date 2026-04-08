@@ -277,7 +277,7 @@ export const en = {
         cta: 'Sign up',
         features: [
           '1 Workspace to create',
-          '2 projects / workspace',
+          'Total 2 projects across entire account',
           '250 MB total storage (shared across Workspaces)',
           'Max upload 5 MB / file',
           '5 members / workspace (free)',
@@ -291,7 +291,7 @@ export const en = {
         cta: 'Get started',
         features: [
           '3 Workspaces to create',
-          '6 projects / workspace',
+          'Total 20 projects (allocate freely across WSs)',
           '5 GB total storage (shared across Workspaces)',
           'Max upload 100 MB / file',
           '12 members / workspace (free)',
@@ -309,7 +309,7 @@ export const en = {
         cta: 'Get started',
         features: [
           '10 Workspaces to create',
-          '15 projects / workspace',
+          'Total 150 projects (allocate freely across WSs)',
           '25 GB total storage (shared across Workspaces)',
           'Max upload 5 GB / file',
           '50 members / workspace (free)',
@@ -327,7 +327,7 @@ export const en = {
         cta: 'Get started',
         features: [
           '30 Workspaces to create',
-          '50 projects / workspace',
+          'Total 1,500 projects (allocate freely across WSs)',
           '100 GB total storage (shared across Workspaces)',
           'Max upload 5 GB / file',
           '200 members / workspace (free)',
@@ -345,7 +345,7 @@ export const en = {
         cta: 'Contact Sales',
         features: [
           'Unlimited Workspaces',
-          'Unlimited projects / workspace',
+          'Unlimited projects',
           'Unlimited storage',
           'Max upload 5 GB / file',
           'Unlimited members / workspace',
@@ -363,7 +363,7 @@ export const en = {
     addOnDescription: 'Available from Plus and above. Add-ons increase the owner\'s total limits and apply to ALL workspaces you create.',
     addOnNote: 'Pro: 10% off · Business: 20% off on all add-ons',
     addOns: [
-      { emoji: '📋', name: 'Projects', price: '$2.49', unit: '/ +5 projects / workspace / month', note: 'Increases the combined project limit across your entire system.' },
+      { emoji: '📋', name: 'Projects', price: '$2.49', unit: '/ +50 total projects / month', note: 'Additional projects are added to your total account limit. Use them in any Workspace you own.' },
       { emoji: '📦', name: 'Storage', price: '$2.49', unit: '/ +5 GB total / month', note: 'Expands total storage (shared across all your Workspaces).' },
       { emoji: '👥', name: 'Members', price: '$2.49', unit: '/ +5 members / workspace / month', note: 'Increases the combined member limit across your entire system.' },
     ],
@@ -380,9 +380,9 @@ export const en = {
         ],
       },
       {
-        category: 'Per-Workspace limits',
+        category: 'Projects & Members',
         rows: [
-          { label: 'Projects / workspace', free: '2', plus: '6', pro: '15', business: '50', enterprise: 'Unlimited' },
+          { label: 'Total projects across account', free: '2', plus: '20', pro: '150', business: '1,500', enterprise: 'Unlimited' },
           { label: 'Members / workspace (free)', free: '5', plus: '12', pro: '50', business: '200', enterprise: 'Unlimited' },
         ],
       },

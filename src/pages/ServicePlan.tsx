@@ -38,7 +38,7 @@ interface PlanLimitsData {
 const PLAN_FEATURES: Record<string, string[]> = {
   plan_free: [
     '1 Workspace',
-    '2 Projects / Workspace',
+    'Tổng 2 dự án trên toàn tài khoản',
     '5 thành viên / Workspace (miễn phí)',
     '250 MB tổng lưu trữ (gộp tất cả Workspace)',
     'Upload tối đa 5 MB / file',
@@ -49,7 +49,7 @@ const PLAN_FEATURES: Record<string, string[]> = {
   ],
   plan_plus: [
     '3 Workspaces',
-    '6 Projects / Workspace',
+    'Tổng 20 dự án (phân bổ tùy ý cho các WS)',
     '12 thành viên / Workspace (miễn phí)',
     '5 GB tổng lưu trữ (gộp tất cả Workspace)',
     'Upload tối đa 100 MB / file',
@@ -62,7 +62,7 @@ const PLAN_FEATURES: Record<string, string[]> = {
   ],
   plan_pro: [
     '10 Workspaces',
-    '15 Projects / Workspace',
+    'Tổng 150 dự án (phân bổ tùy ý cho các WS)',
     '50 thành viên / Workspace (miễn phí)',
     '25 GB tổng lưu trữ (gộp tất cả Workspace)',
     'Upload tối đa 5 GB / file',
@@ -77,7 +77,7 @@ const PLAN_FEATURES: Record<string, string[]> = {
   ],
   plan_business: [
     '30 Workspaces',
-    '50 Projects / Workspace',
+    'Tổng 1.500 dự án (phân bổ tùy ý cho các WS)',
     '200 thành viên / Workspace (miễn phí)',
     '100 GB tổng lưu trữ (gộp tất cả Workspace)',
     'Upload tối đa 5 GB / file',
@@ -90,7 +90,7 @@ const PLAN_FEATURES: Record<string, string[]> = {
   ],
   plan_custom: [
     'Không giới hạn Workspaces',
-    'Không giới hạn Projects',
+    'Không giới hạn dự án',
     'Không giới hạn thành viên',
     'Không giới hạn lưu trữ',
     'Upload tối đa 5 GB / file',

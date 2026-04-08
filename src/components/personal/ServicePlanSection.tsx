@@ -10,11 +10,11 @@ import { Separator } from '@/components/ui/separator';
 import { Crown, Zap, Check, ArrowRight, Loader2 } from 'lucide-react';
 
 const PLAN_FEATURES_SHORT: Record<string, string[]> = {
-  plan_free: ['1 Workspace', '2 Projects / WS', '5 thành viên (miễn phí)', '250 MB tổng lưu trữ', 'Upload 5 MB/file'],
-  plan_plus: ['3 Workspaces', '6 Projects / WS', '12 thành viên (miễn phí)', '5 GB tổng lưu trữ', 'Upload 100 MB/file'],
-  plan_pro: ['10 Workspaces', '15 Projects / WS', '50 thành viên (miễn phí)', '25 GB tổng lưu trữ', 'Upload 5 GB/file'],
-  plan_business: ['30 Workspaces', '50 Projects / WS', '200 thành viên (miễn phí)', '100 GB tổng lưu trữ', 'Upload 5 GB/file'],
-  plan_custom: ['Không giới hạn', 'Không giới hạn', 'Không giới hạn', 'Không giới hạn', 'Upload 5 GB/file'],
+  plan_free: ['1 Workspace', 'Tổng 2 dự án', '5 thành viên / WS (miễn phí)', '250 MB tổng lưu trữ', 'Upload 5 MB/file'],
+  plan_plus: ['3 Workspaces', 'Tổng 20 dự án', '12 thành viên / WS (miễn phí)', '5 GB tổng lưu trữ', 'Upload 100 MB/file'],
+  plan_pro: ['10 Workspaces', 'Tổng 150 dự án', '50 thành viên / WS (miễn phí)', '25 GB tổng lưu trữ', 'Upload 5 GB/file'],
+  plan_business: ['30 Workspaces', 'Tổng 1.500 dự án', '200 thành viên / WS (miễn phí)', '100 GB tổng lưu trữ', 'Upload 5 GB/file'],
+  plan_custom: ['Không giới hạn', 'Không giới hạn dự án', 'Không giới hạn thành viên', 'Không giới hạn lưu trữ', 'Upload 5 GB/file'],
 };
 
 export default function ServicePlanSection() {
