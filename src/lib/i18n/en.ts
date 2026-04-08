@@ -1229,14 +1229,7 @@ export const en = {
       successToast: 'Workspace created successfully!',
       errorToast: 'Cannot create Workspace',
     },
-    calendar: {
-      today: 'Today',
-      createEvent: 'Create event',
-      month: 'Month',
-      week: 'Week',
-      day: 'Day',
-      allWorkspaces: 'All Workspaces',
-    },
+    // calendar keys moved to Batch 3 section below
     // Batch 2: Task, Stage, Scores, Members, Dashboard, Share
     task: {
       editTask: 'Edit Task',

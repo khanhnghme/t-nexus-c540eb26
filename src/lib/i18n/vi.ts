@@ -1204,14 +1204,7 @@ export const vi: Translations = {
       successToast: 'Tạo Workspace thành công!',
       errorToast: 'Không thể tạo Workspace',
     },
-    calendar: {
-      today: 'Hôm nay',
-      createEvent: 'Tạo sự kiện',
-      month: 'Tháng',
-      week: 'Tuần',
-      day: 'Ngày',
-      allWorkspaces: 'Tất cả Workspace',
-    },
+    // calendar keys moved to Batch 3 section below
     // Batch 2: Task, Stage, Scores, Members, Dashboard, Share
     task: {
       editTask: 'Chỉnh sửa Task',
