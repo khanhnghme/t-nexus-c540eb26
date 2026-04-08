@@ -650,7 +650,7 @@ html.google-mode ::-webkit-scrollbar-thumb:hover {
   padding: 6px;
 }
 
-.dashboard-sidebar.collapsed .ws-switcher {
+.dashboard-grid.sidebar-collapsed .ws-switcher {
   display: none;
 }
 
@@ -763,20 +763,20 @@ html.google-mode ::-webkit-scrollbar-thumb:hover {
 }
 
 /* Collapsed sidebar: hide tree indentation */
-.dashboard-sidebar.collapsed .tree-children,
-.dashboard-sidebar.collapsed .tree-guest-hint,
-.dashboard-sidebar.collapsed .tree-level-1,
-.dashboard-sidebar.collapsed .tree-level-2 {
+.dashboard-grid.sidebar-collapsed .tree-children,
+.dashboard-grid.sidebar-collapsed .tree-guest-hint,
+.dashboard-grid.sidebar-collapsed .tree-level-1,
+.dashboard-grid.sidebar-collapsed .tree-level-2 {
   display: contents;
 }
 
-.dashboard-sidebar.collapsed .tree-level-1::before,
-.dashboard-sidebar.collapsed .tree-level-2::before {
+.dashboard-grid.sidebar-collapsed .tree-level-1::before,
+.dashboard-grid.sidebar-collapsed .tree-level-2::before {
   display: none;
 }
 
-.dashboard-sidebar.collapsed .tree-level-1 > .sidebar-nav-item,
-.dashboard-sidebar.collapsed .tree-level-2 > .sidebar-nav-item {
+.dashboard-grid.sidebar-collapsed .tree-level-1 > .sidebar-nav-item,
+.dashboard-grid.sidebar-collapsed .tree-level-2 > .sidebar-nav-item {
   padding-left: 8px;
 }
 
