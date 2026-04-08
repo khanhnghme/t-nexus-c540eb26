@@ -39,7 +39,7 @@ const PLAN_FEATURES: Record<string, string[]> = {
   plan_free: [
     '1 Workspace',
     'Tổng 2 dự án trên toàn tài khoản',
-    '5 thành viên / Workspace (miễn phí)',
+    'Tổng 5 suất thành viên (unique seat, dùng chung cho tất cả WS)',
     '250 MB tổng lưu trữ (gộp tất cả Workspace)',
     'Upload tối đa 5 MB / file',
     'Quản lý task cơ bản',
@@ -50,7 +50,7 @@ const PLAN_FEATURES: Record<string, string[]> = {
   plan_plus: [
     '3 Workspaces',
     'Tổng 20 dự án (phân bổ tùy ý cho các WS)',
-    '12 thành viên / Workspace (miễn phí)',
+    'Tổng 15 suất thành viên (unique seat, dùng chung cho tất cả WS)',
     '5 GB tổng lưu trữ (gộp tất cả Workspace)',
     'Upload tối đa 100 MB / file',
     'Mở khóa tính năng Plus cho mọi thành viên',
@@ -63,7 +63,7 @@ const PLAN_FEATURES: Record<string, string[]> = {
   plan_pro: [
     '10 Workspaces',
     'Tổng 150 dự án (phân bổ tùy ý cho các WS)',
-    '50 thành viên / Workspace (miễn phí)',
+    'Tổng 50 suất thành viên (unique seat, dùng chung cho tất cả WS)',
     '25 GB tổng lưu trữ (gộp tất cả Workspace)',
     'Upload tối đa 5 GB / file',
     'Mở khóa tính năng Pro cho mọi thành viên',
@@ -78,7 +78,7 @@ const PLAN_FEATURES: Record<string, string[]> = {
   plan_business: [
     '30 Workspaces',
     'Tổng 1.500 dự án (phân bổ tùy ý cho các WS)',
-    '200 thành viên / Workspace (miễn phí)',
+    'Tổng 150 suất thành viên (unique seat, dùng chung cho tất cả WS)',
     '100 GB tổng lưu trữ (gộp tất cả Workspace)',
     'Upload tối đa 5 GB / file',
     'Mở khóa tính năng Business cho mọi thành viên',
@@ -91,7 +91,7 @@ const PLAN_FEATURES: Record<string, string[]> = {
   plan_custom: [
     'Không giới hạn Workspaces',
     'Không giới hạn dự án',
-    'Không giới hạn thành viên',
+    'Không giới hạn suất thành viên',
     'Không giới hạn lưu trữ',
     'Upload tối đa 5 GB / file',
     'Mở khóa tất cả tính năng cho mọi thành viên',
@@ -117,6 +117,7 @@ export default function ServicePlan() {
   const [isLoading, setIsLoading] = useState(true);
   const [wsUsages, setWsUsages] = useState<WorkspaceUsage[]>([]);
   const [planLimits, setPlanLimits] = useState<PlanLimitsData | null>(null);
+  const [uniqueMemberCount, setUniqueMemberCount] = useState(0);
 
   const currentTab = searchParams.get('tab') || 'plan';
 
@@ -155,8 +156,10 @@ export default function ServicePlan() {
       });
 
       const memberCountMap: Record<string, number> = {};
+      const uniqueMemberIds = new Set<string>();
       (membersRes.data || []).forEach(m => {
         if (m.workspace_id) memberCountMap[m.workspace_id] = (memberCountMap[m.workspace_id] || 0) + 1;
+        if (m.user_id) uniqueMemberIds.add(m.user_id);
       });
 
       const limits = limitsRes.data;
@@ -186,6 +189,7 @@ export default function ServicePlan() {
       }));
 
       setWsUsages(usages);
+      setUniqueMemberCount(uniqueMemberIds.size);
     } catch (err) {
       console.warn('Error fetching service plan data:', err);
     } finally {
@@ -194,7 +198,7 @@ export default function ServicePlan() {
   };
 
   const totalProjects = wsUsages.reduce((s, w) => s + w.projectCount, 0);
-  const totalMembers = wsUsages.reduce((s, w) => s + w.memberCount, 0);
+  const totalMembers = uniqueMemberCount;
 
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value }, { replace: true });
@@ -404,22 +408,23 @@ export default function ServicePlan() {
                 <CardContent className="p-4 space-y-2">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Users className="w-4 h-4" />
-                    <span className="text-xs font-medium">Thành viên</span>
+                    <span className="text-xs font-medium">Suất thành viên (unique)</span>
                   </div>
                   <div className="flex items-baseline gap-1">
                     <span className="text-2xl font-bold tabular-nums">{totalMembers}</span>
                     <span className="text-sm text-muted-foreground">
                       / {planLimits?.max_members_per_workspace
-                        ? planLimits.max_members_per_workspace * (wsUsages.length || 1)
+                        ? planLimits.max_members_per_workspace
                         : <Infinity className="w-3.5 h-3.5 inline" />}
                     </span>
                   </div>
                   {planLimits?.max_members_per_workspace && (
                     <Progress
-                      value={Math.min(100, (totalMembers / (planLimits.max_members_per_workspace * (wsUsages.length || 1))) * 100)}
+                      value={Math.min(100, (totalMembers / planLimits.max_members_per_workspace) * 100)}
                       className="h-1.5"
                     />
                   )}
+                  <p className="text-[10px] text-muted-foreground">1 người tham gia nhiều WS = 1 suất</p>
                 </CardContent>
               </Card>
 

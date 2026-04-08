@@ -280,7 +280,7 @@ export const en = {
           'Total 2 projects across entire account',
           '250 MB total storage (shared across Workspaces)',
           'Max upload 5 MB / file',
-          '5 members / workspace (free)',
+          'Total 5 unique seats (shared across all WSs, free)',
           'Meetings up to 15 min',
           'Standard Email Support',
         ],
@@ -294,7 +294,7 @@ export const en = {
           'Total 20 projects (allocate freely across WSs)',
           '5 GB total storage (shared across Workspaces)',
           'Max upload 100 MB / file',
-          '12 members / workspace (free)',
+          'Total 15 unique seats (shared across all WSs, free)',
           'Unlock Plus features for all members',
           'Meetings up to 60 min',
           'Activity logs (30 days)',
@@ -312,7 +312,7 @@ export const en = {
           'Total 150 projects (allocate freely across WSs)',
           '25 GB total storage (shared across Workspaces)',
           'Max upload 5 GB / file',
-          '50 members / workspace (free)',
+          'Total 50 unique seats (shared across all WSs, free)',
           'Unlock Pro features for all members',
           'Unlimited meeting time',
           'Unlimited activity logs',
@@ -330,7 +330,7 @@ export const en = {
           'Total 1,500 projects (allocate freely across WSs)',
           '100 GB total storage (shared across Workspaces)',
           'Max upload 5 GB / file',
-          '200 members / workspace (free)',
+          'Total 150 unique seats (shared across all WSs, free)',
           'Unlock Business features for all members',
           'Unlimited meeting time',
           'Unlimited activity logs',
@@ -348,7 +348,7 @@ export const en = {
           'Unlimited projects',
           'Unlimited storage',
           'Max upload 5 GB / file',
-          'Unlimited members / workspace',
+          'Unlimited unique seats',
           'Unlimited meeting time',
           'Enterprise-grade security',
           'Full data export',
@@ -365,7 +365,7 @@ export const en = {
     addOns: [
       { emoji: '📋', name: 'Projects', price: '$2.49', unit: '/ +50 total projects / month', note: 'Additional projects are added to your total account limit. Use them in any Workspace you own.' },
       { emoji: '📦', name: 'Storage', price: '$2.49', unit: '/ +5 GB total / month', note: 'Expands total storage (shared across all your Workspaces).' },
-      { emoji: '👥', name: 'Members', price: '$2.49', unit: '/ +5 members / workspace / month', note: 'Increases the combined member limit across your entire system.' },
+      { emoji: '👥', name: 'Members', price: '$2.49', unit: '/ +10 unique seats total / month', note: 'Each person (1 email) joining multiple WSs counts as only 1 seat. Additional seats are added to your total account pool.' },
     ],
 
     // Comparison table
@@ -383,7 +383,7 @@ export const en = {
         category: 'Projects & Members',
         rows: [
           { label: 'Total projects across account', free: '2', plus: '20', pro: '150', business: '1,500', enterprise: 'Unlimited' },
-          { label: 'Members / workspace (free)', free: '5', plus: '12', pro: '50', business: '200', enterprise: 'Unlimited' },
+          { label: 'Total unique seats (free)', free: '5', plus: '15', pro: '50', business: '150', enterprise: 'Unlimited' },
         ],
       },
       {
