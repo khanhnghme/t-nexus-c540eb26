@@ -2121,21 +2121,22 @@ html.no-animations [data-state="active"][role="tabpanel"] {
   text-overflow: ellipsis;
 }
 
-.dashboard-sidebar.collapsed .workspace-switcher {
+.dashboard-grid.sidebar-collapsed .workspace-switcher {
   padding: 0 2px 6px;
 }
 
-.dashboard-sidebar.collapsed .workspace-switcher-btn {
+.dashboard-grid.sidebar-collapsed .workspace-switcher-btn {
   justify-content: center;
   padding: 7px;
   border: none;
 }
 
-.dashboard-sidebar.collapsed .workspace-switcher-info {
+.dashboard-grid.sidebar-collapsed .workspace-switcher-info {
   display: none;
 }
 
-.dashboard-sidebar.collapsed .workspace-switcher-icon {
+.dashboard-grid.sidebar-collapsed .workspace-switcher-icon {
   width: 32px;
   height: 32px;
+}
 }
