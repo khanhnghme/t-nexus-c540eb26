@@ -1549,8 +1549,8 @@ html.no-animations [data-state="active"][role="tabpanel"] {
   grid-column: 1;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 16px;
+  gap: 4px;
+  padding: 0 8px;
   position: relative;
   background: var(--_sb-bg);
   backdrop-filter: blur(16px) saturate(1.6);
