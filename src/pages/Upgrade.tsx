@@ -60,28 +60,33 @@ export default function Upgrade() {
     );
   };
 
+  const isVi = tc?.language === 'vi' || document.documentElement.lang === 'vi';
+  const upgradeCta = isVi ? 'Nâng cấp' : 'Upgrade';
+  const currentPlanCta = isVi ? 'Gói hiện tại' : 'Current plan';
+  const contactCta = isVi ? 'Liên hệ Sales' : 'Contact Sales';
+
   const LEFT_PLANS: Plan[] = useMemo(() => [
-    { name: tp.plans.free.name, monthlyPrice: 0, description: tp.plans.free.description, cta: tp.plans.free.cta, ctaStyle: 'outline', features: tp.plans.free.features },
-    { name: tp.plans.plus.name, monthlyPrice: 4.8, description: tp.plans.plus.description, cta: tp.plans.plus.cta, ctaStyle: 'outline', features: tp.plans.plus.features },
-    { name: tp.plans.pro.name, monthlyPrice: 12.0, description: tp.plans.pro.description, cta: tp.plans.pro.cta, ctaStyle: 'primary', recommended: true, features: tp.plans.pro.features },
-  ], [tp]);
+    { name: tp.plans.free.name, monthlyPrice: 0, description: tp.plans.free.description, cta: currentPlanCta, ctaStyle: 'outline', features: tp.plans.free.features },
+    { name: tp.plans.plus.name, monthlyPrice: 4.8, description: tp.plans.plus.description, cta: upgradeCta, ctaStyle: 'outline', features: tp.plans.plus.features },
+    { name: tp.plans.pro.name, monthlyPrice: 12.0, description: tp.plans.pro.description, cta: upgradeCta, ctaStyle: 'primary', recommended: true, features: tp.plans.pro.features },
+  ], [tp, upgradeCta, currentPlanCta]);
 
   const RIGHT_PLANS: Plan[] = useMemo(() => [
-    { name: tp.plans.business.name, monthlyPrice: 24.0, description: tp.plans.business.description, cta: tp.plans.business.cta, ctaStyle: 'outline', features: tp.plans.business.features },
-    { name: tp.plans.enterprise.name, monthlyPrice: null, description: tp.plans.enterprise.description, cta: tp.plans.enterprise.cta, ctaStyle: 'outline', features: tp.plans.enterprise.features },
-  ], [tp]);
+    { name: tp.plans.business.name, monthlyPrice: 24.0, description: tp.plans.business.description, cta: upgradeCta, ctaStyle: 'outline', features: tp.plans.business.features },
+    { name: tp.plans.enterprise.name, monthlyPrice: null, description: tp.plans.enterprise.description, cta: contactCta, ctaStyle: 'outline', features: tp.plans.enterprise.features },
+  ], [tp, upgradeCta, contactCta]);
 
   const ADDONS: AddOn[] = useMemo(() => tp.addOns, [tp]);
   const COMPARISON: FeatureCategory[] = useMemo(() => tp.comparisonCategories, [tp]);
   const FAQ_DATA: FAQItem[] = useMemo(() => tp.faqItems, [tp]);
 
   const PLAN_COLS = useMemo(() => [
-    { key: 'free' as const, name: tp.plans.free.name, monthlyPrice: 0, cta: tp.plans.free.cta },
-    { key: 'plus' as const, name: tp.plans.plus.name, monthlyPrice: 4.8, cta: tp.plans.plus.cta },
-    { key: 'pro' as const, name: tp.plans.pro.name, monthlyPrice: 12.0, cta: tp.plans.pro.cta, primary: true },
-    { key: 'business' as const, name: tp.plans.business.name, monthlyPrice: 24.0, cta: tp.plans.business.cta },
-    { key: 'enterprise' as const, name: tp.plans.enterprise.name, monthlyPrice: null as number | null, cta: tp.plans.enterprise.cta },
-  ], [tp]);
+    { key: 'free' as const, name: tp.plans.free.name, monthlyPrice: 0, cta: currentPlanCta },
+    { key: 'plus' as const, name: tp.plans.plus.name, monthlyPrice: 4.8, cta: upgradeCta },
+    { key: 'pro' as const, name: tp.plans.pro.name, monthlyPrice: 12.0, cta: upgradeCta, primary: true },
+    { key: 'business' as const, name: tp.plans.business.name, monthlyPrice: 24.0, cta: upgradeCta },
+    { key: 'enterprise' as const, name: tp.plans.enterprise.name, monthlyPrice: null as number | null, cta: contactCta },
+  ], [tp, upgradeCta, currentPlanCta, contactCta]);
 
   const essentialsLines = (tp.essentialsLabel as string).split('\n');
   const teamLines = (tp.teamLabel as string).split('\n');
