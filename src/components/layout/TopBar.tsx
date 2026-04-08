@@ -82,10 +82,13 @@ export default function TopBar() {
 
   return (
     <div className="grid-cell-topbar">
-      {/* Left: breadcrumb or project tabs */}
-      <div className="flex items-center gap-1 min-w-0 overflow-x-auto scrollbar-none">
+      {/* Left / Center: breadcrumb or project tabs */}
+      <div className={cn(
+        "flex items-center gap-1 min-w-0 overflow-x-auto scrollbar-none",
+        isProjectMode && "flex-1 justify-center"
+      )}>
         {isProjectMode ? (
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-0.5 mx-auto">
             {visibleTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = projectNavProps.activeTab === tab.id;
