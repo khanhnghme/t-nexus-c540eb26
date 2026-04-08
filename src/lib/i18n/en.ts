@@ -254,9 +254,9 @@ export const en = {
     yearlySaveHint: 'Save 2 months with yearly',
     priceInUsd: 'Price in USD',
     recommended: 'Recommended',
-    perWorkspace: 'per account',
-    cascadingNote: '💡 When you upgrade your account, ALL Workspaces you own and ALL members inside instantly get access to premium features.',
-    perAccount: 'per account / month',
+    perWorkspace: '/ Owner',
+    cascadingNote: '💡 Only the owner pays — members join for free. When you upgrade, ALL Workspaces you own and every member inside get access to premium features.',
+    perAccount: '/ owner / month',
     month: 'month',
     mo: 'mo',
     customPricing: 'pricing',
@@ -278,9 +278,9 @@ export const en = {
         features: [
           '1 Workspace to create',
           '2 projects / workspace',
-          '250 MB storage (account-wide)',
+          '250 MB total storage (shared across Workspaces)',
           'Max upload 5 MB / file',
-          '5 members / workspace',
+          '5 members / workspace (free)',
           'Meetings up to 15 min',
           'Standard Email Support',
         ],
@@ -292,9 +292,10 @@ export const en = {
         features: [
           '3 Workspaces to create',
           '6 projects / workspace',
-          '5 GB storage (account-wide)',
+          '5 GB total storage (shared across Workspaces)',
           'Max upload 100 MB / file',
-          '12 members / workspace',
+          '12 members / workspace (free)',
+          'Unlock Plus features for all members',
           'Meetings up to 60 min',
           'Activity logs (30 days)',
           'Full data export',
@@ -309,9 +310,10 @@ export const en = {
         features: [
           '10 Workspaces to create',
           '15 projects / workspace',
-          '25 GB storage (account-wide)',
+          '25 GB total storage (shared across Workspaces)',
           'Max upload 5 GB / file',
-          '50 members / workspace',
+          '50 members / workspace (free)',
+          'Unlock Pro features for all members',
           'Unlimited meeting time',
           'Unlimited activity logs',
           'Full data export',
@@ -326,9 +328,10 @@ export const en = {
         features: [
           '30 Workspaces to create',
           '50 projects / workspace',
-          '100 GB storage (account-wide)',
+          '100 GB total storage (shared across Workspaces)',
           'Max upload 5 GB / file',
-          '200 members / workspace',
+          '200 members / workspace (free)',
+          'Unlock Business features for all members',
           'Unlimited meeting time',
           'Unlimited activity logs',
           'Full data export',
@@ -357,12 +360,12 @@ export const en = {
 
     // Add-ons
     addOnTitle: 'Add-on pricing',
-    addOnDescription: 'Available from Plus and above. Add-ons expand limits account-wide — applied to ALL workspaces you own.',
+    addOnDescription: 'Available from Plus and above. Add-ons increase the owner\'s total limits and apply to ALL workspaces you create.',
     addOnNote: 'Pro: 10% off · Business: 20% off on all add-ons',
     addOns: [
-      { emoji: '📋', name: 'Projects', price: '$2.49', unit: '/ +5 projects / workspace / month', note: 'Increases project limit across all your workspaces.' },
-      { emoji: '📦', name: 'Storage', price: '$2.49', unit: '/ +5 GB / account / month', note: 'Expands total storage capacity for your entire account.' },
-      { emoji: '👥', name: 'Members', price: '$2.49', unit: '/ +5 members / workspace / month', note: 'Increases member limit across all your workspaces.' },
+      { emoji: '📋', name: 'Projects', price: '$2.49', unit: '/ +5 projects / workspace / month', note: 'Increases the combined project limit across your entire system.' },
+      { emoji: '📦', name: 'Storage', price: '$2.49', unit: '/ +5 GB total / month', note: 'Expands total storage (shared across all your Workspaces).' },
+      { emoji: '👥', name: 'Members', price: '$2.49', unit: '/ +5 members / workspace / month', note: 'Increases the combined member limit across your entire system.' },
     ],
 
     // Comparison table
@@ -372,7 +375,7 @@ export const en = {
         category: 'Account & Workspaces',
         rows: [
           { label: 'Workspaces you can create', free: '1', plus: '3', pro: '10', business: '30', enterprise: 'Unlimited' },
-          { label: 'Account-wide storage', free: '250 MB', plus: '5 GB', pro: '25 GB', business: '100 GB', enterprise: 'Unlimited' },
+          { label: 'Total storage (shared across Workspaces)', free: '250 MB', plus: '5 GB', pro: '25 GB', business: '100 GB', enterprise: 'Unlimited' },
           { label: 'Max upload per file', free: '5 MB', plus: '100 MB', pro: '5 GB', business: '5 GB', enterprise: '5 GB' },
         ],
       },
@@ -380,7 +383,7 @@ export const en = {
         category: 'Per-Workspace limits',
         rows: [
           { label: 'Projects / workspace', free: '2', plus: '6', pro: '15', business: '50', enterprise: 'Unlimited' },
-          { label: 'Members / workspace', free: '5', plus: '12', pro: '50', business: '200', enterprise: 'Unlimited' },
+          { label: 'Members / workspace (free)', free: '5', plus: '12', pro: '50', business: '200', enterprise: 'Unlimited' },
         ],
       },
       {
