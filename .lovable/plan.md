@@ -1,75 +1,76 @@
 
 
-## Fix Read-only Banner + Redesign trang Tổng quan Workspace
+## Nâng cấp chức năng Dọn dẹp (Cleanup) trên trang Service Plan
 
-### Vấn đề hiện tại
-
-**1. ReadOnlyBanner trên trang chủ quá to:**
-- Banner chiếm nhiều dòng, có tiêu đề + mô tả dài + 2 nút bấm
-- Yêu cầu: chỉ hiển thị 1 dòng nhỏ gọn trên trang chủ (dashboard), các vị trí khác giữ nguyên
-
-**2. WorkspaceSettings hiển thị sai/gây nhầm lẫn:**
-- Stats cards đọc từ `activeWorkspace.max_members`, `activeWorkspace.max_projects`, `activeWorkspace.max_storage_mb` — đây là giá trị **per-workspace** cũ (legacy), không phải account-wide limits thật
-- `storageUsed = 0` — hardcode placeholder, không query dữ liệu thật
-- Plan tab hiển thị `activeWorkspace.plan` (plan từ bảng workspaces) thay vì owner's plan từ profiles
-- BillingWidget hiển thị thông tin account-wide ngay trên workspace page → trùng lặp với Stats cards nhưng số liệu khác nhau → nhầm lẫn
-
----
+### Hiện trạng
+- Nút "Dọn dẹp" trên banner chỉ dẫn đến tab "Mức sử dụng" (`/service-plan?tab=usage`) — nơi hiển thị số liệu nhưng **không có bất kỳ hành động xóa nào**
+- Người dùng không thể xóa workspace hay project từ trang này
+- Không có giao diện cho biết "cần giảm bao nhiêu" để thoát read-only
 
 ### Kế hoạch
 
-#### Bước 1: Compact ReadOnlyBanner cho Dashboard
-**File:** `src/components/ReadOnlyBanner.tsx`
+#### 1. Tạo component `AccountCleanupPanel`
+**File mới:** `src/components/cleanup/AccountCleanupPanel.tsx`
 
-- Thêm prop `compact?: boolean`
-- Khi `compact=true`: render 1 dòng duy nhất, inline, nhỏ gọn:
-  - `⚠️ Tài khoản chỉ đọc — Nâng cấp | Dọn dẹp` (link inline, không nút)
-  - Chiều cao ~32px, font-size text-xs
-- Khi `compact=false` (mặc định): giữ nguyên banner đầy đủ hiện tại
+Giao diện gồm 3 phần chính:
 
-**File:** `src/components/layout/DashboardLayout.tsx`
-- Truyền `<ReadOnlyBanner compact />` ở vị trí hiện tại
+**A. Tổng quan hạn mức (Summary Bar)**
+- 4 thanh progress: Workspace, Projects, Members, Storage
+- Mỗi thanh hiển thị: `hiện tại / hạn mức Free` + trạng thái (🔴 vượt, 🟢 đạt)
+- Badge tổng: "Cần giảm X workspace, Y project, Z MB để mở khóa"
 
-#### Bước 2: Redesign WorkspaceSettings — hiển thị đúng mô hình Global Pool
-**File:** `src/pages/WorkspaceSettings.tsx`
+**B. Danh sách Workspace (có checkbox xóa)**
+- Liệt kê tất cả workspace người dùng sở hữu
+- Mỗi WS hiển thị: tên, số project, số member, dung lượng
+- Checkbox để chọn xóa cả workspace
+- Nút expand → hiển thị danh sách project bên trong
 
-Thay đổi chính:
+**C. Danh sách Project (chọn xóa từng cái)**
+- Khi expand 1 WS → hiển thị các project trong WS đó
+- Checkbox từng project
+- Hiển thị: tên, số task, dung lượng file
 
-**Stats Cards (4 thẻ):**
-- **Thành viên**: hiển thị `memberCount` thực tế của WS này (không kèm limit — vì limit là account-wide)
-- **Dự án**: hiển thị `projectCount` thực tế của WS này
-- **Dung lượng**: query `get_workspace_storage_usage` RPC để lấy storage thật, thay `storageUsed = 0`
-- **Gói dịch vụ**: lấy owner's plan từ `useWorkspaceBilling()` thay vì `activeWorkspace.plan`
+**D. Preview kết quả (Live calculation)**
+- Khi user tick chọn WS/project, panel phía dưới cập nhật real-time:
+  - "Sau khi xóa: X workspace, Y project, Z MB"
+  - So sánh với hạn mức Free → hiển thị "Đủ điều kiện mở khóa ✅" hoặc "Chưa đủ, cần giảm thêm ❌"
 
-Subtitle của mỗi stat card → hiển thị "đóng góp vào tổng" thay vì "Tối đa {n}" sai:
-- VD: "3 / 15 tổng tài khoản" thay vì "Tối đa 5"
+**E. Nút "Xóa đã chọn"**
+- Confirm dialog: liệt kê những gì sẽ bị xóa
+- Nhập "XÁC NHẬN" để thực hiện
+- Gọi edge function `workspace-management` (action: delete_workspace) cho WS
+- Gọi delete trực tiếp cho project (như GroupDetail.handleDeleteGroup)
+- Sau khi xóa xong → refresh data → cập nhật lại summary
 
-**Plan Tab:**
-- Hiển thị owner's plan (từ `useWorkspaceBilling`) thay vì `activeWorkspace.plan`
-- Plan details sử dụng account-wide limits từ `plan_limits` (thông qua `useWorkspaceBilling` hoặc fetch trực tiếp)
+#### 2. Tích hợp vào trang ServicePlan
+**File:** `src/pages/ServicePlan.tsx`
 
-**Bỏ BillingWidget** khỏi trang này — thông tin đã được tích hợp vào Stats cards và Plan tab, tránh trùng lặp gây nhầm lẫn.
+- Thêm `AccountCleanupPanel` vào cuối tab "usage"
+- Chỉ hiển thị khi `isReadOnly === true` hoặc `isOverLimits === true`
 
-#### Bước 3: Cập nhật i18n
-**Files:** `src/lib/i18n/vi.ts`, `src/lib/i18n/en.ts`
+#### 3. Fetch dữ liệu chi tiết
+- Workspace list: đã có từ `fetchUsages()`
+- Project list per WS: query `groups` where `workspace_id = ws.id` → lấy tên, id
+- Storage per project: query `get_workspace_storage_usage` (đã có) + tính per-project bằng cách sum `project_resources.file_size` + `submission_history.file_size` + `task_note_attachments.file_size`
 
-- Thêm keys mới cho workspace stats: `ofAccountTotal`, `wsContribution`
-- Sửa `maxMembers`, `maxProjects` subtitle thành "of {total} account-wide"
+#### 4. Logic xóa project
+Tái sử dụng pattern từ `GroupDetail.handleDeleteGroup`:
+- Xóa submission_history, tasks, stages, member_stage_scores, pending_approvals, group_members, activity_logs, groups
+- Gọi `deleteTaskFiles()` cho mỗi task (xóa R2 files)
 
----
+#### 5. Logic xóa workspace  
+- Gọi `supabase.functions.invoke('workspace-management', { body: { action: 'delete_workspace', workspace_id } })`
 
-### Files cần sửa
+### Files cần tạo/sửa
 
 | File | Hành động |
 |------|-----------|
-| `src/components/ReadOnlyBanner.tsx` | Thêm mode compact |
-| `src/components/layout/DashboardLayout.tsx` | Truyền `compact` prop |
-| `src/pages/WorkspaceSettings.tsx` | Redesign stats, plan tab, bỏ BillingWidget, dùng dữ liệu thật |
-| `src/lib/i18n/vi.ts` | Cập nhật keys workspace |
-| `src/lib/i18n/en.ts` | Cập nhật keys workspace |
+| `src/components/cleanup/AccountCleanupPanel.tsx` | Tạo mới — UI dọn dẹp với checkbox WS/project + live preview |
+| `src/pages/ServicePlan.tsx` | Thêm `AccountCleanupPanel` vào tab usage |
 
 ### Không thay đổi
-- `useAccountReadOnly`, `useAccountLimitsCheck`, `useWorkspaceBilling` — logic đã đúng
-- ReadOnlyBanner ở các vị trí khác (nếu mở rộng sau) — giữ nguyên dạng đầy đủ
-- Enforcement guards — đã hoàn thiện
+- `useAccountReadOnly`, `useAccountLimitsCheck` — đã đúng
+- `ReadOnlyBanner` — chỉ dẫn link, không cần sửa
+- Edge function `workspace-management` — đã hỗ trợ delete_workspace
+- `storageCleanup.ts` — tái sử dụng `deleteTaskFiles()`
 
