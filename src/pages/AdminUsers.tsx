@@ -130,7 +130,7 @@ export default function AdminUsers() {
       .order('created_at', { ascending: false });
 
     if (error) {
-      toast({ title: 'Lỗi tải danh sách tài khoản', description: error.message, variant: 'destructive' });
+      toast({ title: t.errorLoadAccounts, description: error.message, variant: 'destructive' });
     } else if (data) {
       setProfiles(data as Profile[]);
     }
@@ -150,7 +150,7 @@ export default function AdminUsers() {
       .select('id, group_id, user_id, role, joined_at');
 
     if (gmError) {
-      toast({ title: 'Lỗi tải danh sách thành viên nhóm', description: gmError.message, variant: 'destructive' });
+      toast({ title: t.errorLoadMembers, description: gmError.message, variant: 'destructive' });
       setIsLoadingMembers(false);
       return;
     }
@@ -186,7 +186,7 @@ export default function AdminUsers() {
         fullName: p?.fullName,
         studentId: p?.studentId,
         email: p?.email,
-        groupName: groupsMap.get(m.group_id) || 'Không rõ nhóm',
+        groupName: groupsMap.get(m.group_id) || 't.unknownGroup',
         avatarUrl: p?.avatarUrl,
       };
     });
@@ -203,7 +203,7 @@ export default function AdminUsers() {
       .select('id, user_id, group_id, status, created_at');
 
     if (paError) {
-      toast({ title: 'Lỗi tải yêu cầu tham gia', description: paError.message, variant: 'destructive' });
+      toast({ title: t.errorLoadJoinRequests, description: paError.message, variant: 'destructive' });
       setIsLoadingApprovals(false);
       return;
     }
@@ -238,7 +238,7 @@ export default function AdminUsers() {
         userName: p?.fullName,
         studentId: p?.studentId,
         email: p?.email,
-        groupName: groupsMap.get(a.group_id) || 'Không rõ nhóm',
+        groupName: groupsMap.get(a.group_id) || 't.unknownGroup',
       };
     });
 
@@ -253,7 +253,7 @@ export default function AdminUsers() {
       toast({ title: 'Lỗi', description: error.message, variant: 'destructive' });
       return;
     }
-    toast({ title: 'Đã duyệt', description: 'Tài khoản đã được kích hoạt' });
+    toast({ title: t.approved, description: t.accountActivated });
     fetchProfiles();
   };
 
@@ -263,7 +263,7 @@ export default function AdminUsers() {
       toast({ title: 'Lỗi', description: error.message, variant: 'destructive' });
       return;
     }
-    toast({ title: 'Đã vô hiệu hóa', description: 'Tài khoản đã bị khoá' });
+    toast({ title: t.disabled, description: t.accountLocked });
     fetchProfiles();
   };
 
@@ -282,7 +282,7 @@ export default function AdminUsers() {
       return;
     }
 
-    toast({ title: 'Đã xóa', description: `Đã xóa tài khoản ${fullName} khỏi hệ thống` });
+    toast({ title: t.deletedAccount, description: `Đã xóa tài khoản ${fullName} khỏi hệ thống` });
     fetchProfiles();
   };
 
@@ -292,12 +292,12 @@ export default function AdminUsers() {
       toast({ title: 'Lỗi', description: error.message, variant: 'destructive' });
       return;
     }
-    toast({ title: 'Thành công', description: 'Đã cấp quyền Leader' });
+    toast({ title: t.grantedLeader, description: t.grantedLeaderDesc });
   };
 
   const handleRemoveMember = async (memberId: string) => {
     deleteWithUndo({
-      description: 'Đã xoá thành viên khỏi nhóm',
+      description: t.removedMember,
       onDelete: async () => {
         const { error } = await supabase.from('group_members').delete().eq('id', memberId);
         if (error) throw error;
@@ -341,7 +341,7 @@ export default function AdminUsers() {
       toast({ title: 'Thêm vào nhóm thành công nhưng lỗi khi cập nhật trạng thái tài khoản', description: profileError.message, variant: 'destructive' });
     }
 
-    toast({ title: 'Đã duyệt yêu cầu tham gia', description: 'Thành viên đã được thêm vào nhóm và có thể sử dụng hệ thống' });
+    toast({ title: t.addedToGroup, description: 'Thành viên đã được thêm vào nhóm và có thể sử dụng hệ thống' });
     fetchApprovals();
     fetchMembers();
   };
@@ -357,7 +357,7 @@ export default function AdminUsers() {
       return;
     }
 
-    toast({ title: 'Đã từ chối yêu cầu tham gia' });
+    toast({ title: t.rejectedJoin });
     fetchApprovals();
   };
 
