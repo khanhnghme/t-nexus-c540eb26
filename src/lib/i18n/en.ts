@@ -1137,7 +1137,7 @@ export const en = {
       { q: 'If 1 person joins 5 Workspaces, how many seats?', a: 'Only 1 seat. Each Email = 1 unique Seat, regardless of Workspace count.' },
       { q: 'Are project limits per-Workspace or per-account?', a: 'Per-account. The total project count is shared — you allocate them freely across Workspaces.' },
       { q: 'Do add-ons apply to all Workspaces?', a: 'Yes. Add-ons are added to your account-wide pool and apply to every Workspace you own.' },
-      { q: 'Will I lose data if I downgrade?', a: 'Your data is preserved. However, if current usage exceeds the new plan limits, you'll need to adjust before creating more.' },
+      { q: 'Will I lose data if I downgrade?', a: 'Your data is preserved. However, if current usage exceeds the new plan limits, you will need to adjust before creating more.' },
     ],
 
     ctaText: 'Ready to pick the right plan?',
