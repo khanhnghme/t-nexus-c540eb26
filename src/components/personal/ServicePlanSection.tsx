@@ -200,7 +200,7 @@ export default function ServicePlanSection() {
         <Button
           variant="outline"
           className="w-full border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
-          onClick={() => navigate('/upgrade')}
+          onClick={() => navigate('/upgrade?from=personal')}
         >
           <Zap className="w-4 h-4 mr-2" />
           Nâng cấp gói

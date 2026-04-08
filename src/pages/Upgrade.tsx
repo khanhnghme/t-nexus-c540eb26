@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Check, ArrowLeft, Plus, Minus, AlertTriangle, Zap } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -43,12 +43,17 @@ function formatPrice(monthly: number | null, yearly: boolean): string {
 export default function Upgrade() {
   const [yearly, setYearly] = useState(false);
   const { translations: { pricing: tp, common: tc } } = useLanguage();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { activeWorkspace } = useWorkspace();
   const { ownerId, ownerName, ownerPlan } = useWorkspaceBilling();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  const isOwner = user?.id === ownerId;
+  const isFromPersonal = searchParams.get('from') === 'personal';
+
+  // When from personal, always use user's own plan & treat them as owner
+  const effectivePlan = isFromPersonal ? (profile?.user_plan || 'plan_free') : ownerPlan;
+  const isOwner = isFromPersonal ? true : (user?.id === ownerId);
 
   const handleSelectPlan = () => {
     if (!isOwner) return;
@@ -91,8 +96,7 @@ export default function Upgrade() {
   const essentialsLines = (tp.essentialsLabel as string).split('\n');
   const teamLines = (tp.teamLabel as string).split('\n');
 
-  // Derive current plan key from ownerPlan string (e.g. 'plan_pro' → 'pro')
-  const currentPlanKey: string = ownerPlan ? ownerPlan.replace(/^plan_/, '') : 'free';
+  const currentPlanKey: string = effectivePlan ? effectivePlan.replace(/^plan_/, '') : 'free';
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
@@ -129,8 +133,8 @@ export default function Upgrade() {
         <Zap className="w-4 h-4" />
         <span>
           {tc?.language === 'vi' || document.documentElement.lang === 'vi'
-            ? `Gói hiện tại: ${formatPlanName(ownerPlan)}`
-            : `Current plan: ${formatPlanName(ownerPlan)}`}
+            ? `Gói hiện tại: ${formatPlanName(effectivePlan)}`
+            : `Current plan: ${formatPlanName(effectivePlan)}`}
         </span>
       </div>
 
