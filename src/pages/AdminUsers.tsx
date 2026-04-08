@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { deleteWithUndo } from '@/lib/deleteWithUndo';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -66,6 +67,7 @@ interface PendingApprovalRow {
 
 export default function AdminUsers() {
   const { user, isAdmin, isLeader } = useAuth();
+  const { translations: { app: { admin: t } } } = useLanguage();
   const { toast } = useToast();
 
   const [profiles, setProfiles] = useState<Profile[]>([]);
