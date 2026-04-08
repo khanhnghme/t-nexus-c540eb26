@@ -2570,7 +2570,7 @@ export const en = {
     noData: 'No password data. User needs to login or change password at least once for the system to record.',
   },
 
-  personal: {
+    personal: {
     invalidFormat: 'Invalid format',
     selectImage: 'Please select an image file',
     fileTooLarge: 'File too large',
