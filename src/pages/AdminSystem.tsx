@@ -978,7 +978,7 @@ export default function AdminSystem() {
       {/* Notification Letter Dialog */}
       <Dialog open={notifDialogOpen} onOpenChange={setNotifDialogOpen}>
         <DialogContent className="max-w-lg">
-          <DialogTitle>{editingNotif ? {t.editNotifDialog} : {t.createNotifDialog}}</DialogTitle>
+          <DialogTitle>{editingNotif ? t.editNotifDialog : t.createNotifDialog}</DialogTitle>
           <DialogDescription className="sr-only">{t.notifDialogDesc}</DialogDescription>
           <div className="space-y-3">
             <div className="space-y-1.5">
@@ -1100,12 +1100,12 @@ export default function AdminSystem() {
                 const { data: notifs } = await supabase.from('system_notifications').select('*').order('created_at', { ascending: false });
                 setNotifications(notifs || []);
                 setNotifDialogOpen(false);
-                toast({ title: editingNotif ? {t.notifUpdated} : {t.notifCreated} });
+                toast({ title: editingNotif ? t.notifUpdated : t.notifCreated });
               } catch (err: any) { toast({ title: 'Lỗi', description: err.message, variant: 'destructive' }); }
               finally { setSavingNotif(false); }
             }}>
               {savingNotif ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {editingNotif ? {t.updateNotif} : {t.createNotifBtn}}
+              {editingNotif ? t.updateNotif : t.createNotifBtn}
             </Button>
           </DialogFooter>
         </DialogContent>
