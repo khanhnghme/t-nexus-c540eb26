@@ -277,7 +277,7 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
 
   // Delete logic
   const handleDelete = async () => {
-    if (confirmText !== 'TÔI HIỂU, XÓA NGAY') return;
+    if (confirmText !== 'pricing') return;
     setDeleting(true);
     try {
       // 1. Delete individual projects (not part of deleted workspaces)
@@ -570,22 +570,22 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
 
       {/* Step 1: Review what will be deleted */}
       <AlertDialog open={confirmStep === 1} onOpenChange={(open) => { if (!open) setConfirmStep(0); }}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-background border shadow-lg max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="w-5 h-5" />
-              Bước 1/2 — Xem lại danh sách xóa
+            <AlertDialogTitle className="text-base font-semibold">
+              Xem lại danh sách xóa
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="space-y-3">
-                <p>Bạn đã chọn xóa các mục sau:</p>
-                <ul className="list-disc pl-5 space-y-1 text-sm">
+              <div className="space-y-3 text-sm text-foreground">
+                <p className="text-muted-foreground">Các mục sau sẽ bị xóa vĩnh viễn:</p>
+                <div className="rounded-lg border bg-muted/30 p-3 space-y-1.5 max-h-[200px] overflow-y-auto">
                   {Array.from(selectedWs).map(wsId => {
                     const ws = wsInfos.find(w => w.id === wsId);
                     return ws && (
-                      <li key={wsId}>
-                        <strong>Workspace "{ws.name}"</strong> ({ws.projectCount} project, {formatStorage(ws.storageMb)})
-                      </li>
+                      <div key={wsId} className="flex items-center gap-2">
+                        <Building2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                        <span><strong>{ws.name}</strong> — {ws.projectCount} project, {formatStorage(ws.storageMb)}</span>
+                      </div>
                     );
                   })}
                   {Array.from(selectedProjects)
@@ -593,56 +593,65 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
                     .map(pId => {
                       const project = wsInfos.flatMap(w => w.projects).find(p => p.id === pId);
                       return project && (
-                        <li key={pId}>
-                          Project "{project.name}" ({project.taskCount} task, {formatStorage(project.storageMb)})
-                        </li>
+                        <div key={pId} className="flex items-center gap-2">
+                          <FolderKanban className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          <span>{project.name} — {project.taskCount} task, {formatStorage(project.storageMb)}</span>
+                        </div>
                       );
                     })}
-                </ul>
-                <p className="text-destructive font-medium">⚠️ Hành động này không thể hoàn tác!</p>
+                </div>
+                <p className="text-destructive text-xs">Không thể hoàn tác sau khi xóa.</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Quay lại</AlertDialogCancel>
-            <Button variant="destructive" onClick={() => setConfirmStep(2)}>
-              Tiếp tục xác nhận →
+            <AlertDialogCancel className="text-sm">Hủy</AlertDialogCancel>
+            <Button
+              variant="outline"
+              className="border-destructive/30 text-destructive hover:bg-destructive/10"
+              onClick={() => setConfirmStep(2)}
+            >
+              Tiếp tục →
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Step 2: Type confirmation phrase */}
+      {/* Step 2: Confirm pricing policy */}
       <AlertDialog open={confirmStep === 2} onOpenChange={(open) => { if (!open) setConfirmStep(0); }}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-background border shadow-lg max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
-              <Trash2 className="w-5 h-5" />
-              Bước 2/2 — Xác nhận lần cuối
+            <AlertDialogTitle className="text-base font-semibold">
+              Xác nhận lần cuối
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="space-y-3">
-                <p>Để xác nhận xóa vĩnh viễn, vui lòng nhập chính xác dòng chữ bên dưới:</p>
-                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 text-center">
-                  <code className="text-destructive font-bold text-sm select-all">TÔI HIỂU, XÓA NGAY</code>
+              <div className="space-y-4 text-sm text-foreground">
+                <p className="text-muted-foreground">
+                  Tôi đã đọc và hiểu <a href="/pricing" target="_blank" className="text-primary underline underline-offset-2 hover:text-primary/80">chính sách giá</a> của T-Nexus. Dữ liệu bị xóa sẽ không thể khôi phục.
+                </p>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1.5 block">
+                    Nhập <span className="text-destructive font-semibold">pricing</span> để xác nhận:
+                  </label>
+                  <Input
+                    value={confirmText}
+                    onChange={e => setConfirmText(e.target.value)}
+                    placeholder="pricing"
+                    className="font-mono text-sm"
+                    autoFocus
+                  />
                 </div>
-                <Input
-                  value={confirmText}
-                  onChange={e => setConfirmText(e.target.value)}
-                  placeholder="Nhập dòng chữ phía trên..."
-                  className="mt-1.5"
-                  autoFocus
-                />
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting} onClick={() => setConfirmStep(1)}>
+            <AlertDialogCancel disabled={deleting} onClick={() => setConfirmStep(1)} className="text-sm">
               ← Quay lại
             </AlertDialogCancel>
             <Button
-              variant="destructive"
-              disabled={confirmText !== 'TÔI HIỂU, XÓA NGAY' || deleting}
+              variant="outline"
+              className="border-destructive/30 text-destructive hover:bg-destructive/10 disabled:opacity-40"
+              disabled={confirmText !== 'pricing' || deleting}
               onClick={handleDelete}
             >
               {deleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
