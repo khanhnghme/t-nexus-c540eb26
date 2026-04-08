@@ -2747,6 +2747,7 @@ export const en = {
     settings: 'Settings',
     },
   },
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Translations = Record<string, any>;
