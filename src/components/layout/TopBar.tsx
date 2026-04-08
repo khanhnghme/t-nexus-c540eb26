@@ -1,9 +1,11 @@
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useDashboardLayoutContext } from '@/contexts/DashboardLayoutContext';
 import { Moon, Sun, LayoutDashboard, Layers, Users, Award, FolderOpen, Video, Activity, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import tNexusLogo from '@/assets/t-nexus-logo.png';
+import tNexusTextWhite from '@/assets/t-nexus-text-white.png';
 import {
   Tooltip,
   TooltipContent,
