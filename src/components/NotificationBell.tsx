@@ -7,8 +7,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { formatDistanceToNow, isToday, isYesterday, isThisWeek, format } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { vi as viLocale } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { deleteWithUndo } from '@/lib/deleteWithUndo';
@@ -44,15 +45,15 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   invitation_declined: <XIcon className="w-4 h-4 text-destructive" />,
 };
 
-function groupByDate(notifications: Notification[]) {
+function groupByDate(notifications: Notification[], labels: { today: string; yesterday: string; thisWeek: string }) {
   const groups: { label: string; items: Notification[] }[] = [];
   const map = new Map<string, Notification[]>();
   for (const n of notifications) {
     const d = new Date(n.created_at);
     let label: string;
-    if (isToday(d)) label = 'Hôm nay';
-    else if (isYesterday(d)) label = 'Hôm qua';
-    else if (isThisWeek(d)) label = 'Tuần này';
+    if (isToday(d)) label = labels.today;
+    else if (isYesterday(d)) label = labels.yesterday;
+    else if (isThisWeek(d)) label = labels.thisWeek;
     else label = format(d, 'dd/MM/yyyy');
     if (!map.has(label)) map.set(label, []);
     map.get(label)!.push(n);
@@ -146,7 +147,7 @@ export default function NotificationBell() {
     return notifications;
   }, [notifications, tab]);
 
-  const grouped = useMemo(() => groupByDate(filtered), [filtered]);
+  const grouped = useMemo(() => groupByDate(filtered, { today: t.today, yesterday: t.yesterday, thisWeek: t.thisWeek }), [filtered, t]);
 
   const markAsRead = async (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
@@ -157,14 +158,14 @@ export default function NotificationBell() {
     if (!user) return;
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
     await supabase.from('notifications').update({ is_read: true }).eq('user_id', user.id).eq('is_read', false);
-    toast.success('Đã đánh dấu tất cả đã đọc');
+    toast.success(t.markedAllRead);
   };
 
   const deleteNotification = (id: string) => {
     const deleted = notifications.find(n => n.id === id);
     setNotifications(prev => prev.filter(n => n.id !== id));
     deleteWithUndo({
-      description: 'Đã xóa thông báo',
+      description: t.deletedNotif,
       onDelete: async () => { await supabase.from('notifications').delete().eq('id', id); },
       onUndo: () => { if (deleted) setNotifications(prev => [deleted, ...prev].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())); },
     });
@@ -175,7 +176,7 @@ export default function NotificationBell() {
     const saved = [...notifications];
     setNotifications([]);
     deleteWithUndo({
-      description: 'Đã xóa tất cả thông báo',
+      description: t.deletedAll,
       onDelete: async () => { await supabase.from('notifications').delete().eq('user_id', user.id); },
       onUndo: () => setNotifications(saved),
     });
@@ -190,8 +191,8 @@ export default function NotificationBell() {
     // Don't show "Quá hạn" if task is already completed
     if (taskStatus === 'DONE' || taskStatus === 'VERIFIED') return null;
     const diff = new Date(deadline).getTime() - Date.now();
-    if (diff < 0) return <Badge variant="destructive" className="text-[10px] h-4">Quá hạn</Badge>;
-    if (diff < 24 * 60 * 60 * 1000) return <Badge className="text-[10px] h-4 bg-warning text-warning-foreground">Sắp hết hạn</Badge>;
+    if (diff < 0) return <Badge variant="destructive" className="text-[10px] h-4">{t.overdue}</Badge>;
+    if (diff < 24 * 60 * 60 * 1000) return <Badge className="text-[10px] h-4 bg-warning text-warning-foreground">{t.nearDeadline}</Badge>;
     return null;
   };
 
@@ -247,9 +248,9 @@ export default function NotificationBell() {
               <Bell className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-foreground">Thông báo</h3>
+              <h3 className="text-sm font-semibold text-foreground">{t.title}</h3>
               <p className="text-[11px] text-muted-foreground">
-                {unreadCount > 0 ? `${unreadCount} chưa đọc` : 'Tất cả đã đọc'}
+                {unreadCount > 0 ? t.unreadCount.replace('{count}', String(unreadCount)) : t.allRead}
               </p>
             </div>
           </div>
@@ -257,13 +258,13 @@ export default function NotificationBell() {
             {unreadCount > 0 && (
               <Button variant="ghost" size="sm" onClick={markAllAsRead} className="h-7 px-2 text-[11px] gap-1 text-muted-foreground hover:text-foreground">
                 <Check className="w-3 h-3" />
-                Đọc hết
+                {t.markAllRead}
               </Button>
             )}
             {notifications.length > 0 && (
               <Button variant="ghost" size="sm" onClick={deleteAll} className="h-7 px-2 text-[11px] gap-1 text-destructive/70 hover:text-destructive">
                 <Trash2 className="w-3 h-3" />
-                Xóa hết
+                {t.deleteAll}
               </Button>
             )}
           </div>
@@ -275,18 +276,18 @@ export default function NotificationBell() {
             <TabsList className="w-full h-8 bg-muted/50 border border-border/40 p-0.5">
               <TabsTrigger value="all" className="flex-1 text-[11px] h-6 gap-1 data-[state=active]:bg-background data-[state=active]:shadow-sm">
                 <Inbox className="w-3 h-3" />
-                Tất cả
+                {t.tabAll}
               </TabsTrigger>
               <TabsTrigger value="unread" className="flex-1 text-[11px] h-6 gap-1 data-[state=active]:bg-background data-[state=active]:shadow-sm">
                 <Filter className="w-3 h-3" />
-                Chưa đọc
+                {t.tabUnread}
                 {unreadCount > 0 && (
                   <span className="ml-0.5 text-[10px] bg-primary text-primary-foreground rounded-full px-1 min-w-[16px] text-center leading-4">{unreadCount}</span>
                 )}
               </TabsTrigger>
               <TabsTrigger value="read" className="flex-1 text-[11px] h-6 gap-1 data-[state=active]:bg-background data-[state=active]:shadow-sm">
                 <CheckCircle2 className="w-3 h-3" />
-                Đã đọc
+                {t.tabRead}
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -297,7 +298,7 @@ export default function NotificationBell() {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Loader2 className="w-6 h-6 animate-spin mb-2" />
-              <p className="text-xs">Đang tải...</p>
+              <p className="text-xs">{t.loading}</p>
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
@@ -305,10 +306,10 @@ export default function NotificationBell() {
                 <Bell className="w-6 h-6 opacity-30" />
               </div>
               <p className="text-sm font-medium text-foreground">
-                {tab === 'unread' ? 'Không có thông báo chưa đọc' : 'Không có thông báo'}
+                {tab === 'unread' ? t.noUnread : t.noNotifications}
               </p>
               <p className="text-[11px] mt-0.5">
-                {tab === 'unread' ? 'Bạn đã đọc hết rồi 🎉' : 'Sẽ có thông báo khi có hoạt động mới'}
+                {tab === 'unread' ? t.allReadMsg : t.willNotify}
               </p>
             </div>
           ) : (
@@ -362,7 +363,7 @@ export default function NotificationBell() {
                         )}
 
                         <p className="text-[10px] text-muted-foreground mt-1">
-                          {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: vi })}
+                          {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: locale === 'vi' ? viLocale : undefined })}
                         </p>
                       </div>
 
@@ -385,12 +386,12 @@ export default function NotificationBell() {
                 <div className="flex justify-center py-3">
                   <Button variant="ghost" size="sm" onClick={() => fetchNotifications(true)} disabled={loadingMore} className="gap-1.5 text-[11px] h-7 text-muted-foreground">
                     {loadingMore ? <Loader2 className="w-3 h-3 animate-spin" /> : <Clock className="w-3 h-3" />}
-                    Tải thêm
+                    {t.loadMore}
                   </Button>
                 </div>
               )}
               {!hasMore && filtered.length > 0 && (
-                <p className="text-center text-[10px] text-muted-foreground py-2">Đã hiển thị tất cả</p>
+                <p className="text-center text-[10px] text-muted-foreground py-2">{t.showedAll}</p>
               )}
             </div>
           )}
