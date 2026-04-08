@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Crown, Zap, Building2, FolderKanban, HardDrive,
   ArrowRight, Loader2, Infinity, Receipt, ArrowLeft,
@@ -97,9 +98,12 @@ export default function ServicePlan() {
   const { user, profile } = useAuth();
   const { workspaces } = useWorkspace();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [wsUsages, setWsUsages] = useState<WorkspaceUsage[]>([]);
   const [planLimits, setPlanLimits] = useState<PlanLimitsData | null>(null);
+
+  const currentTab = searchParams.get('tab') || 'plan';
 
   const plan = profile?.user_plan || 'plan_free';
   const planName = formatPlanName(plan);
@@ -177,6 +181,10 @@ export default function ServicePlan() {
   const totalProjects = wsUsages.reduce((s, w) => s + w.projectCount, 0);
   const totalMembers = wsUsages.reduce((s, w) => s + w.memberCount, 0);
 
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value }, { replace: true });
+  };
+
   if (isLoading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-8 flex items-center justify-center min-h-[400px]">
@@ -186,7 +194,7 @@ export default function ServicePlan() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
+    <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -213,352 +221,353 @@ export default function ServicePlan() {
         </Button>
       </div>
 
-      {/* ──────── SECTION 1: Current Plan ──────── */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
-          <Crown className="w-5 h-5 text-amber-500" />
-          Gói hiện tại
-        </h2>
+      {/* Tabs */}
+      <Tabs value={currentTab} onValueChange={handleTabChange}>
+        <TabsList>
+          <TabsTrigger value="plan">Gói hiện tại</TabsTrigger>
+          <TabsTrigger value="usage">Mức sử dụng</TabsTrigger>
+          <TabsTrigger value="billing">Lịch sử thanh toán</TabsTrigger>
+        </TabsList>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row md:items-center gap-6">
-              {/* Plan info */}
-              <div className="flex items-center gap-4 flex-1">
-                <div className={`p-3.5 rounded-2xl ${isPremium ? 'bg-amber-500/10' : 'bg-muted'}`}>
-                  {isPremium ? (
-                    <Crown className="w-8 h-8 text-amber-500" />
-                  ) : (
-                    <Zap className="w-8 h-8 text-muted-foreground" />
-                  )}
+        {/* ──────── TAB 1: Gói hiện tại ──────── */}
+        <TabsContent value="plan" className="space-y-6">
+          <section className="space-y-4">
+            <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
+              <Crown className="w-5 h-5 text-amber-500" />
+              Gói hiện tại
+            </h2>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex flex-col md:flex-row md:items-center gap-6">
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className={`p-3.5 rounded-2xl ${isPremium ? 'bg-amber-500/10' : 'bg-muted'}`}>
+                      {isPremium ? (
+                        <Crown className="w-8 h-8 text-amber-500" />
+                      ) : (
+                        <Zap className="w-8 h-8 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-xl font-bold">{planName}</span>
+                        <Badge
+                          variant="secondary"
+                          className={`text-xs ${isPremium
+                            ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                            : ''
+                          }`}
+                        >
+                          {isPremium ? 'Đang hoạt động' : 'Miễn phí'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {isPremium
+                          ? 'Trải nghiệm đầy đủ tính năng cao cấp'
+                          : 'Nâng cấp để mở khóa thêm tính năng'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-6 md:gap-8">
+                    <div className="text-center">
+                      <div className="text-xl font-bold tabular-nums">{wsUsages.length}</div>
+                      <div className="text-xs text-muted-foreground">Workspace</div>
+                    </div>
+                    <Separator orientation="vertical" className="h-10" />
+                    <div className="text-center">
+                      <div className="text-xl font-bold tabular-nums">{totalProjects}</div>
+                      <div className="text-xs text-muted-foreground">Projects</div>
+                    </div>
+                    <Separator orientation="vertical" className="h-10" />
+                    <div className="text-center">
+                      <div className="text-xl font-bold tabular-nums">{totalMembers}</div>
+                      <div className="text-xs text-muted-foreground">Thành viên</div>
+                    </div>
+                  </div>
                 </div>
+
+                <Separator className="my-5" />
+
                 <div>
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xl font-bold">{planName}</span>
-                    <Badge
-                      variant="secondary"
-                      className={`text-xs ${isPremium
-                        ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20'
-                        : ''
-                      }`}
-                    >
-                      {isPremium ? 'Đang hoạt động' : 'Miễn phí'}
-                    </Badge>
+                  <h3 className="text-sm font-medium mb-3 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    Quyền lợi gói {planName}
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {features.map((feature, i) => (
+                      <div key={i} className="flex items-center gap-2 text-sm py-1">
+                        <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                        <span>{feature}</span>
+                      </div>
+                    ))}
                   </div>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {isPremium
-                      ? 'Trải nghiệm đầy đủ tính năng cao cấp'
-                      : 'Nâng cấp để mở khóa thêm tính năng'}
-                  </p>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
+          </section>
 
-              {/* Quick stats */}
-              <div className="flex gap-6 md:gap-8">
-                <div className="text-center">
-                  <div className="text-xl font-bold tabular-nums">{wsUsages.length}</div>
-                  <div className="text-xs text-muted-foreground">Workspace</div>
-                </div>
-                <Separator orientation="vertical" className="h-10" />
-                <div className="text-center">
-                  <div className="text-xl font-bold tabular-nums">{totalProjects}</div>
-                  <div className="text-xs text-muted-foreground">Projects</div>
-                </div>
-                <Separator orientation="vertical" className="h-10" />
-                <div className="text-center">
-                  <div className="text-xl font-bold tabular-nums">{totalMembers}</div>
-                  <div className="text-xs text-muted-foreground">Thành viên</div>
-                </div>
-              </div>
-            </div>
-
-            <Separator className="my-5" />
-
-            {/* Features included */}
-            <div>
-              <h3 className="text-sm font-medium mb-3 flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-amber-500" />
-                Quyền lợi gói {planName}
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                {features.map((feature, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm py-1">
-                    <Check className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>{feature}</span>
+          {/* Upgrade CTA */}
+          {!isPremium && (
+            <section>
+              <Card className="border-amber-500/20 bg-amber-500/5">
+                <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-4">
+                  <div className="p-3 rounded-2xl bg-amber-500/10">
+                    <Sparkles className="w-7 h-7 text-amber-500" />
                   </div>
-                ))}
-              </div>
+                  <div className="flex-1 text-center sm:text-left">
+                    <h3 className="font-semibold">Mở khóa tính năng cao cấp</h3>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      Nâng cấp gói để có thêm workspace, dự án và dung lượng lưu trữ lớn hơn.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => navigate('/upgrade?from=personal')}
+                    className="bg-amber-500 hover:bg-amber-600 text-white shrink-0"
+                  >
+                    <Zap className="w-4 h-4 mr-2" />
+                    Nâng cấp ngay
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </section>
+          )}
+        </TabsContent>
+
+        {/* ──────── TAB 2: Mức sử dụng ──────── */}
+        <TabsContent value="usage" className="space-y-6">
+          <section className="space-y-4">
+            <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-muted-foreground" />
+              Tổng quan sử dụng
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Building2 className="w-4 h-4" />
+                    <span className="text-xs font-medium">Workspace</span>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-bold tabular-nums">{wsUsages.length}</span>
+                    <span className="text-sm text-muted-foreground">
+                      / {planLimits?.max_workspaces ?? <Infinity className="w-3.5 h-3.5 inline" />}
+                    </span>
+                  </div>
+                  {planLimits?.max_workspaces && (
+                    <Progress value={Math.min(100, (wsUsages.length / planLimits.max_workspaces) * 100)} className="h-1.5" />
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <FolderKanban className="w-4 h-4" />
+                    <span className="text-xs font-medium">Projects</span>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-bold tabular-nums">{totalProjects}</span>
+                    <span className="text-sm text-muted-foreground">
+                      / {planLimits?.max_projects_per_workspace
+                        ? planLimits.max_projects_per_workspace * (wsUsages.length || 1)
+                        : <Infinity className="w-3.5 h-3.5 inline" />}
+                    </span>
+                  </div>
+                  {planLimits?.max_projects_per_workspace && (
+                    <Progress
+                      value={Math.min(100, (totalProjects / (planLimits.max_projects_per_workspace * (wsUsages.length || 1))) * 100)}
+                      className="h-1.5"
+                    />
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Users className="w-4 h-4" />
+                    <span className="text-xs font-medium">Thành viên</span>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-bold tabular-nums">{totalMembers}</span>
+                    <span className="text-sm text-muted-foreground">
+                      / {planLimits?.max_members_per_workspace
+                        ? planLimits.max_members_per_workspace * (wsUsages.length || 1)
+                        : <Infinity className="w-3.5 h-3.5 inline" />}
+                    </span>
+                  </div>
+                  {planLimits?.max_members_per_workspace && (
+                    <Progress
+                      value={Math.min(100, (totalMembers / (planLimits.max_members_per_workspace * (wsUsages.length || 1))) * 100)}
+                      className="h-1.5"
+                    />
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <HardDrive className="w-4 h-4" />
+                    <span className="text-xs font-medium">Dung lượng</span>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-bold tabular-nums">
+                      {wsUsages.reduce((s, w) => s + w.storageMb, 0)}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      MB / {planLimits?.max_storage_mb
+                        ? `${planLimits.max_storage_mb >= 1000 ? `${(planLimits.max_storage_mb / 1000).toFixed(0)} GB` : `${planLimits.max_storage_mb} MB`}`
+                        : <Infinity className="w-3.5 h-3.5 inline" />}
+                    </span>
+                  </div>
+                  {planLimits?.max_storage_mb && (
+                    <Progress
+                      value={Math.min(100, (wsUsages.reduce((s, w) => s + w.storageMb, 0) / planLimits.max_storage_mb) * 100)}
+                      className="h-1.5"
+                    />
+                  )}
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
-      </section>
+          </section>
 
-      {/* ──────── SECTION 2: Usage Overview ──────── */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-muted-foreground" />
-          Tổng quan sử dụng
-        </h2>
+          {/* Per-Workspace Breakdown */}
+          <section className="space-y-4">
+            <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-muted-foreground" />
+              Chi tiết theo Workspace
+            </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Workspaces */}
-          <Card>
-            <CardContent className="p-4 space-y-2">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Building2 className="w-4 h-4" />
-                <span className="text-xs font-medium">Workspace</span>
-              </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold tabular-nums">{wsUsages.length}</span>
-                <span className="text-sm text-muted-foreground">
-                  / {planLimits?.max_workspaces ?? <Infinity className="w-3.5 h-3.5 inline" />}
-                </span>
-              </div>
-              {planLimits?.max_workspaces && (
-                <Progress value={Math.min(100, (wsUsages.length / planLimits.max_workspaces) * 100)} className="h-1.5" />
-              )}
-            </CardContent>
-          </Card>
+            {wsUsages.length === 0 ? (
+              <Card>
+                <CardContent className="py-10 text-center text-muted-foreground text-sm">
+                  Bạn chưa sở hữu workspace nào
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {wsUsages.map(ws => {
+                  const projectPct = ws.maxProjects ? Math.min(100, (ws.projectCount / ws.maxProjects) * 100) : 0;
+                  const storagePct = Math.min(100, (ws.storageMb / ws.maxStorageMb) * 100);
+                  const memberPct = ws.maxMembers ? Math.min(100, (ws.memberCount / ws.maxMembers) * 100) : 0;
 
-          {/* Projects */}
-          <Card>
-            <CardContent className="p-4 space-y-2">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <FolderKanban className="w-4 h-4" />
-                <span className="text-xs font-medium">Projects</span>
-              </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold tabular-nums">{totalProjects}</span>
-                <span className="text-sm text-muted-foreground">
-                  / {planLimits?.max_projects_per_workspace
-                    ? planLimits.max_projects_per_workspace * (wsUsages.length || 1)
-                    : <Infinity className="w-3.5 h-3.5 inline" />}
-                </span>
-              </div>
-              {planLimits?.max_projects_per_workspace && (
-                <Progress
-                  value={Math.min(100, (totalProjects / (planLimits.max_projects_per_workspace * (wsUsages.length || 1))) * 100)}
-                  className="h-1.5"
-                />
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Members */}
-          <Card>
-            <CardContent className="p-4 space-y-2">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Users className="w-4 h-4" />
-                <span className="text-xs font-medium">Thành viên</span>
-              </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold tabular-nums">{totalMembers}</span>
-                <span className="text-sm text-muted-foreground">
-                  / {planLimits?.max_members_per_workspace
-                    ? planLimits.max_members_per_workspace * (wsUsages.length || 1)
-                    : <Infinity className="w-3.5 h-3.5 inline" />}
-                </span>
-              </div>
-              {planLimits?.max_members_per_workspace && (
-                <Progress
-                  value={Math.min(100, (totalMembers / (planLimits.max_members_per_workspace * (wsUsages.length || 1))) * 100)}
-                  className="h-1.5"
-                />
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Storage */}
-          <Card>
-            <CardContent className="p-4 space-y-2">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <HardDrive className="w-4 h-4" />
-                <span className="text-xs font-medium">Dung lượng</span>
-              </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold tabular-nums">
-                  {wsUsages.reduce((s, w) => s + w.storageMb, 0)}
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  MB / {planLimits?.max_storage_mb
-                    ? `${planLimits.max_storage_mb >= 1000 ? `${(planLimits.max_storage_mb / 1000).toFixed(0)} GB` : `${planLimits.max_storage_mb} MB`}`
-                    : <Infinity className="w-3.5 h-3.5 inline" />}
-                </span>
-              </div>
-              {planLimits?.max_storage_mb && (
-                <Progress
-                  value={Math.min(100, (wsUsages.reduce((s, w) => s + w.storageMb, 0) / planLimits.max_storage_mb) * 100)}
-                  className="h-1.5"
-                />
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* ──────── SECTION 3: Per-Workspace Breakdown ──────── */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
-          <Building2 className="w-5 h-5 text-muted-foreground" />
-          Chi tiết theo Workspace
-        </h2>
-
-        {wsUsages.length === 0 ? (
-          <Card>
-            <CardContent className="py-10 text-center text-muted-foreground text-sm">
-              Bạn chưa sở hữu workspace nào
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {wsUsages.map(ws => {
-              const projectPct = ws.maxProjects ? Math.min(100, (ws.projectCount / ws.maxProjects) * 100) : 0;
-              const storagePct = Math.min(100, (ws.storageMb / ws.maxStorageMb) * 100);
-              const memberPct = ws.maxMembers ? Math.min(100, (ws.memberCount / ws.maxMembers) * 100) : 0;
-
-              return (
-                <Card key={ws.id}>
-                  <CardContent className="p-5 space-y-4">
-                    {/* WS Header */}
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-                        {ws.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-sm truncate">{ws.name}</h3>
-                        <span className="text-xs text-muted-foreground">Gói {ws.plan}</span>
-                      </div>
-                      <Badge variant="outline" className="text-[10px] shrink-0">{ws.plan}</Badge>
-                    </div>
-
-                    <Separator />
-
-                    {/* Metrics */}
-                    <div className="space-y-3">
-                      {/* Projects */}
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground flex items-center gap-1.5">
-                            <FolderKanban className="w-3 h-3" /> Projects
-                          </span>
-                          <span className="font-medium tabular-nums">
-                            {ws.projectCount} / {ws.maxProjects ?? '∞'}
-                          </span>
+                  return (
+                    <Card key={ws.id}>
+                      <CardContent className="p-5 space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
+                            {ws.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-sm truncate">{ws.name}</h3>
+                            <span className="text-xs text-muted-foreground">Gói {ws.plan}</span>
+                          </div>
+                          <Badge variant="outline" className="text-[10px] shrink-0">{ws.plan}</Badge>
                         </div>
-                        <Progress value={ws.maxProjects ? projectPct : 10} className="h-1.5" />
-                      </div>
 
-                      {/* Members */}
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground flex items-center gap-1.5">
-                            <Users className="w-3 h-3" /> Thành viên
-                          </span>
-                          <span className="font-medium tabular-nums">
-                            {ws.memberCount} / {ws.maxMembers ?? '∞'}
-                          </span>
+                        <Separator />
+
+                        <div className="space-y-3">
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-muted-foreground flex items-center gap-1.5">
+                                <FolderKanban className="w-3 h-3" /> Projects
+                              </span>
+                              <span className="font-medium tabular-nums">
+                                {ws.projectCount} / {ws.maxProjects ?? '∞'}
+                              </span>
+                            </div>
+                            <Progress value={ws.maxProjects ? projectPct : 10} className="h-1.5" />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-muted-foreground flex items-center gap-1.5">
+                                <Users className="w-3 h-3" /> Thành viên
+                              </span>
+                              <span className="font-medium tabular-nums">
+                                {ws.memberCount} / {ws.maxMembers ?? '∞'}
+                              </span>
+                            </div>
+                            <Progress value={ws.maxMembers ? memberPct : 10} className="h-1.5" />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-muted-foreground flex items-center gap-1.5">
+                                <HardDrive className="w-3 h-3" /> Dung lượng
+                              </span>
+                              <span className="font-medium tabular-nums">
+                                {ws.storageMb} MB / {ws.maxStorageMb >= 1000 ? `${(ws.maxStorageMb / 1000).toFixed(0)} GB` : `${ws.maxStorageMb} MB`}
+                              </span>
+                            </div>
+                            <Progress value={storagePct} className="h-1.5" />
+                          </div>
                         </div>
-                        <Progress value={ws.maxMembers ? memberPct : 10} className="h-1.5" />
-                      </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </TabsContent>
 
-                      {/* Storage */}
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground flex items-center gap-1.5">
-                            <HardDrive className="w-3 h-3" /> Dung lượng
-                          </span>
-                          <span className="font-medium tabular-nums">
-                            {ws.storageMb} MB / {ws.maxStorageMb >= 1000 ? `${(ws.maxStorageMb / 1000).toFixed(0)} GB` : `${ws.maxStorageMb} MB`}
-                          </span>
-                        </div>
-                        <Progress value={storagePct} className="h-1.5" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-      </section>
+        {/* ──────── TAB 3: Lịch sử thanh toán ──────── */}
+        <TabsContent value="billing" className="space-y-4">
+          <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
+            <Receipt className="w-5 h-5 text-muted-foreground" />
+            Lịch sử thanh toán
+          </h2>
 
-      {/* ──────── SECTION 4: Billing History ──────── */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
-          <Receipt className="w-5 h-5 text-muted-foreground" />
-          Lịch sử thanh toán
-        </h2>
-
-        <Card>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">Ngày</th>
-                  <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">Mã giao dịch</th>
-                  <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">Gói</th>
-                  <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">Số tiền</th>
-                  <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">Trạng thái</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {MOCK_BILLING.map(row => (
-                  <tr key={row.id} className="hover:bg-muted/50 transition-colors">
-                    <td className="px-5 py-3 text-sm">{row.date}</td>
-                    <td className="px-5 py-3 text-sm font-mono text-xs text-muted-foreground">{row.id}</td>
-                    <td className="px-5 py-3 text-sm font-medium">{row.plan}</td>
-                    <td className="px-5 py-3 text-sm text-right tabular-nums">{row.amount}</td>
-                    <td className="px-5 py-3 text-right">
-                      <Badge
-                        variant={row.status === 'Paid' ? 'default' : 'secondary'}
-                        className={`text-[10px] ${
-                          row.status === 'Paid' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-none' :
-                          row.status === 'Free' ? 'bg-muted text-muted-foreground border-none' :
-                          'bg-amber-500/15 text-amber-600'
-                        }`}
-                      >
-                        {row.status}
-                      </Badge>
-                    </td>
+          <Card>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">Ngày</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">Mã giao dịch</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">Gói</th>
+                    <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">Số tiền</th>
+                    <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">Trạng thái</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="px-5 py-3 border-t border-border">
-            <p className="text-xs text-muted-foreground text-center">
-              Hiển thị 5 giao dịch gần nhất • Dữ liệu mô phỏng
-            </p>
-          </div>
-        </Card>
-      </section>
-
-      {/* ──────── SECTION 5: Upgrade CTA ──────── */}
-      {!isPremium && (
-        <section>
-          <Card className="border-amber-500/20 bg-amber-500/5">
-            <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-4">
-              <div className="p-3 rounded-2xl bg-amber-500/10">
-                <Sparkles className="w-7 h-7 text-amber-500" />
-              </div>
-              <div className="flex-1 text-center sm:text-left">
-                <h3 className="font-semibold">Mở khóa tính năng cao cấp</h3>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  Nâng cấp gói để có thêm workspace, dự án và dung lượng lưu trữ lớn hơn.
-                </p>
-              </div>
-              <Button
-                onClick={() => navigate('/upgrade?from=personal')}
-                className="bg-amber-500 hover:bg-amber-600 text-white shrink-0"
-              >
-                <Zap className="w-4 h-4 mr-2" />
-                Nâng cấp ngay
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </CardContent>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {MOCK_BILLING.map(row => (
+                    <tr key={row.id} className="hover:bg-muted/50 transition-colors">
+                      <td className="px-5 py-3 text-sm">{row.date}</td>
+                      <td className="px-5 py-3 text-sm font-mono text-xs text-muted-foreground">{row.id}</td>
+                      <td className="px-5 py-3 text-sm font-medium">{row.plan}</td>
+                      <td className="px-5 py-3 text-sm text-right tabular-nums">{row.amount}</td>
+                      <td className="px-5 py-3 text-right">
+                        <Badge
+                          variant={row.status === 'Paid' ? 'default' : 'secondary'}
+                          className={`text-[10px] ${
+                            row.status === 'Paid' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-none' :
+                            row.status === 'Free' ? 'bg-muted text-muted-foreground border-none' :
+                            'bg-amber-500/15 text-amber-600'
+                          }`}
+                        >
+                          {row.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="px-5 py-3 border-t border-border">
+              <p className="text-xs text-muted-foreground text-center">
+                Hiển thị 5 giao dịch gần nhất • Dữ liệu mô phỏng
+              </p>
+            </div>
           </Card>
-        </section>
-      )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
