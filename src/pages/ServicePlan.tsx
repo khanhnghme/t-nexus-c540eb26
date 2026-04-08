@@ -123,7 +123,7 @@ export default function ServicePlan() {
           </p>
         </div>
         <Button
-          onClick={() => navigate('/upgrade')}
+          onClick={() => navigate('/upgrade?from=personal')}
           className="bg-amber-500 hover:bg-amber-600 text-white"
         >
           <Zap className="w-4 h-4 mr-2" />
