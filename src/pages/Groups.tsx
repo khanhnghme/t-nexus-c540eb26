@@ -433,9 +433,9 @@ export default function Groups() {
         {/* Header */}
         <div className="space-y-4">
           <div>
-            <h1 className="text-2xl font-heading font-bold tracking-tight">Dự án của tôi</h1>
+            <h1 className="text-2xl font-heading font-bold tracking-tight">{g.title}</h1>
             <p className="text-muted-foreground mt-1">
-              Quản lý các dự án bạn tham gia
+              {g.subtitle}
             </p>
           </div>
 
@@ -461,13 +461,13 @@ export default function Groups() {
                     <Plus className="w-7 h-7" />
                   </div>
                   <div className="flex-1">
-                    <p className={`font-bold text-lg ${canCreateProject ? 'text-foreground' : 'text-muted-foreground'}`}>
-                      {canCreateProject ? 'Tạo dự án mới' : 'Tạo dự án mới — Bạn không có quyền tạo'}
+                  <p className={`font-bold text-lg ${canCreateProject ? 'text-foreground' : 'text-muted-foreground'}`}>
+                      {canCreateProject ? g.createNew : g.createNewNoPermission}
                     </p>
                     <p className="text-sm text-muted-foreground mt-0.5">
                       {canCreateProject
-                        ? 'Thiết lập project, thêm thành viên và bắt đầu quản lý công việc'
-                        : 'Chỉ Workspace Owner hoặc Admin mới được tạo dự án'}
+                        ? g.createDesc
+                        : g.noPermissionDesc}
                     </p>
                   </div>
                   {canCreateProject && (
@@ -489,7 +489,7 @@ export default function Groups() {
                     <div>
                       <h2 className="text-xl font-bold flex items-center gap-2">
                         <FolderKanban className="w-5 h-5 text-primary" />
-                        Tạo dự án mới
+                        {g.createDialogTitle}
                       </h2>
                       {wsAvailable && activeWorkspace ? (
                         <div className="flex items-center gap-1.5 mt-1">
@@ -497,12 +497,12 @@ export default function Groups() {
                             {activeWorkspace.name.charAt(0).toUpperCase()}
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            Dự án sẽ được tạo trong workspace <span className="font-semibold text-foreground">{activeWorkspace.name}</span>
+                            {g.willCreateIn} <span className="font-semibold text-foreground">{activeWorkspace.name}</span>
                           </p>
                         </div>
                       ) : (
                         <p className="text-sm text-muted-foreground mt-0.5">
-                          Điền thông tin dự án và thêm thành viên (tùy chọn)
+                          {g.fillInfo}
                         </p>
                       )}
                     </div>
@@ -518,17 +518,17 @@ export default function Groups() {
                       <div className="lg:col-span-3 p-6 space-y-5">
                         <div className="flex items-center gap-2 text-sm font-semibold text-primary uppercase tracking-wide">
                           <FileText className="w-4 h-4" />
-                          Thông tin dự án
+                          {g.projectInfo}
                         </div>
 
                         <div className="flex gap-3 items-end">
                           <div className="flex-1 space-y-2">
                             <Label htmlFor="group-name" className="flex items-center gap-1">
-                              Tên dự án <span className="text-destructive">*</span>
+                              {g.projectName} <span className="text-destructive">*</span>
                             </Label>
                             <Input
                               id="group-name"
-                              placeholder="VD: Đồ án môn học CNTT"
+                              placeholder={g.projectNamePlaceholder}
                               value={newGroupName}
                               onChange={(e) => setNewGroupName(e.target.value)}
                               className="text-base"
@@ -559,7 +559,7 @@ export default function Groups() {
                                 </button>
                               </div>
                             ) : (
-                              <div className="w-9 h-9 rounded-md border border-dashed border-muted-foreground/40 hover:border-primary/60 transition-colors flex items-center justify-center text-muted-foreground hover:text-primary" title="Tải ảnh bìa">
+                              <div className="w-9 h-9 rounded-md border border-dashed border-muted-foreground/40 hover:border-primary/60 transition-colors flex items-center justify-center text-muted-foreground hover:text-primary" title={g.coverImage}>
                                 <ImagePlus className="w-4 h-4" />
                               </div>
                             )}
@@ -569,11 +569,11 @@ export default function Groups() {
                         <div className="space-y-2">
                           <Label htmlFor="group-description" className="flex items-center gap-1">
                             <Target className="w-3.5 h-3.5" />
-                            Mô tả / Mục tiêu
+                            {g.descriptionGoal}
                           </Label>
                           <Textarea
                             id="group-description"
-                            placeholder="Mô tả chi tiết về dự án, mục tiêu cần đạt..."
+                            placeholder={g.descriptionPlaceholder}
                             value={newGroupDescription}
                             onChange={(e) => setNewGroupDescription(e.target.value)}
                             rows={3}
