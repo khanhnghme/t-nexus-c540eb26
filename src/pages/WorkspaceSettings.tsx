@@ -2,29 +2,22 @@ import { useState, useEffect } from 'react';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspaceMembers } from '@/hooks/useWorkspaceMembers';
+import { useWorkspaceBilling, formatPlanName } from '@/hooks/useWorkspaceBilling';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
   Building2, Save, Trash2, AlertTriangle, Crown, Copy, Check,
-  Users, FolderKanban, HardDrive, Activity, LayoutGrid, Settings2, Zap
+  Users, FolderKanban, HardDrive, LayoutGrid, Settings2, Zap
 } from 'lucide-react';
-import BillingWidget from '@/components/dashboard/BillingWidget';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
@@ -55,10 +48,16 @@ function StatCard({ icon: Icon, label, value, sub, color = 'primary' }: {
   );
 }
 
+function formatStorageSize(mb: number): string {
+  if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
+  return `${Math.round(mb)} MB`;
+}
+
 export default function WorkspaceSettings() {
   const { activeWorkspace, workspaceRole, refreshWorkspaces, isAvailable } = useWorkspace();
   const { user } = useAuth();
   const { members } = useWorkspaceMembers();
+  const { ownerPlan, ownerName, ownerId, projectCount: accountProjectCount, maxProjects, isLoading: billingLoading } = useWorkspaceBilling();
   const { toast } = useToast();
   const { translations: { app: t } } = useLanguage();
   const tw = t.workspace;
@@ -71,7 +70,9 @@ export default function WorkspaceSettings() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [copiedSlug, setCopiedSlug] = useState(false);
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
-  const [projectCount, setProjectCount] = useState(0);
+  const [wsProjectCount, setWsProjectCount] = useState(0);
+  const [wsStorageMb, setWsStorageMb] = useState(0);
+  const [planLimits, setPlanLimits] = useState<{ maxMembers: number | null; maxStorage: number | null }>({ maxMembers: null, maxStorage: null });
 
   const isOwner = workspaceRole === 'workspace_owner';
   const canEdit = isOwner || workspaceRole === 'workspace_admin';
@@ -80,12 +81,35 @@ export default function WorkspaceSettings() {
     if (activeWorkspace) {
       setName(activeWorkspace.name);
       setDescription(activeWorkspace.description || '');
-      // Fetch project count
+
+      // Fetch WS-specific project count
       supabase.from('groups').select('id', { count: 'exact', head: true })
         .eq('workspace_id', activeWorkspace.id)
-        .then(({ count }) => setProjectCount(count || 0));
+        .then(({ count }) => setWsProjectCount(count || 0));
+
+      // Fetch real storage usage for this WS
+      supabase.rpc('get_workspace_storage_usage', { _workspace_id: activeWorkspace.id })
+        .then(({ data }) => setWsStorageMb(typeof data === 'number' ? data : 0));
     }
   }, [activeWorkspace]);
+
+  // Fetch account-wide limits from plan_limits
+  useEffect(() => {
+    if (ownerPlan) {
+      supabase.from('plan_limits')
+        .select('max_members_per_workspace, max_storage_mb')
+        .eq('plan', ownerPlan as any)
+        .maybeSingle()
+        .then(({ data }) => {
+          setPlanLimits({
+            maxMembers: data?.max_members_per_workspace ?? null,
+            maxStorage: data?.max_storage_mb ?? null,
+          });
+        });
+    }
+  }, [ownerPlan]);
+
+  const { guardAction: guardReadOnly } = useReadOnlyGuard();
 
   if (!isAvailable || !activeWorkspace) {
     return (
@@ -97,12 +121,10 @@ export default function WorkspaceSettings() {
     );
   }
 
-  const memberCount = (members?.length || 0) + 1; // +1 for owner
-  const storageUsed = 0; // placeholder
-  const storageCap = activeWorkspace.max_storage_mb;
-  const storageLabel = storageCap >= 1024 ? `${(storageCap / 1024).toFixed(0)} GB` : `${storageCap} MB`;
-
-  const { guardAction: guardReadOnly } = useReadOnlyGuard();
+  const memberCount = (members?.length || 0) + 1;
+  const planLabel = formatPlanName(ownerPlan);
+  const isPremium = ownerPlan && ownerPlan !== 'plan_free';
+  const isWsOwner = user?.id === ownerId;
 
   const handleSave = async () => {
     if (guardReadOnly()) return;
@@ -150,6 +172,25 @@ export default function WorkspaceSettings() {
 
   const deleteNameMatches = deleteConfirmName.trim() === activeWorkspace.name.trim();
 
+  // Build subtitle strings
+  const locale = t === (t as any) ? 'en' : 'en'; // fallback
+  const isVi = tw.title === 'Tổng quan Workspace';
+  const memberSub = planLimits.maxMembers
+    ? (isVi ? `Tổng tài khoản: ${planLimits.maxMembers} suất` : `Account pool: ${planLimits.maxMembers} seats`)
+    : undefined;
+  const projectSub = maxProjects
+    ? (isVi ? `${accountProjectCount} / ${maxProjects} tổng tài khoản` : `${accountProjectCount} / ${maxProjects} account-wide`)
+    : undefined;
+  const storageSub = planLimits.maxStorage
+    ? (isVi ? `Tổng tài khoản: ${formatStorageSize(planLimits.maxStorage)}` : `Account pool: ${formatStorageSize(planLimits.maxStorage)}`)
+    : undefined;
+
+  const planDetails = maxProjects && planLimits.maxMembers && planLimits.maxStorage
+    ? (isVi
+      ? `${maxProjects} dự án · ${planLimits.maxMembers} suất thành viên · ${formatStorageSize(planLimits.maxStorage)}`
+      : `${maxProjects} projects · ${planLimits.maxMembers} seats · ${formatStorageSize(planLimits.maxStorage)}`)
+    : '';
+
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Header */}
@@ -158,23 +199,18 @@ export default function WorkspaceSettings() {
           <LayoutGrid className="w-6 h-6 text-primary" />
           {tw.title}
         </h1>
-        <p className="text-muted-foreground mt-1">
-          {tw.subtitle}
-        </p>
+        <p className="text-muted-foreground mt-1">{tw.subtitle}</p>
       </div>
 
-      {/* Billing Widget */}
-      <BillingWidget />
-
-      {/* Stats Overview */}
+      {/* Stats Overview — real data */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Users} label={tw.members} value={memberCount} sub={tw.maxMembers.replace('{n}', String(activeWorkspace.max_members))} color="blue" />
-        <StatCard icon={FolderKanban} label={tw.projects} value={projectCount} sub={tw.maxProjects.replace('{n}', String(activeWorkspace.max_projects))} color="green" />
-        <StatCard icon={HardDrive} label={tw.storage} value={storageLabel} sub={tw.usedStorage.replace('{n}', String(storageUsed))} color="amber" />
-        <StatCard icon={Crown} label={tw.plan} value={activeWorkspace?.plan ? activeWorkspace.plan.charAt(0).toUpperCase() + activeWorkspace.plan.slice(1) : 'Free'} color="primary" />
+        <StatCard icon={Users} label={tw.members} value={memberCount} sub={memberSub} color="blue" />
+        <StatCard icon={FolderKanban} label={tw.projects} value={wsProjectCount} sub={projectSub} color="green" />
+        <StatCard icon={HardDrive} label={tw.storage} value={formatStorageSize(wsStorageMb)} sub={storageSub} color="amber" />
+        <StatCard icon={Crown} label={tw.plan} value={planLabel} sub={isPremium ? '✨ Premium' : undefined} color="primary" />
       </div>
 
-      {/* Tabs: Info & Settings */}
+      {/* Tabs */}
       <Tabs defaultValue="info" className="w-full">
         <TabsList className="w-full justify-start">
           <TabsTrigger value="info" className="gap-1.5"><Building2 className="w-4 h-4" />{tw.infoTab}</TabsTrigger>
@@ -218,25 +254,32 @@ export default function WorkspaceSettings() {
           </Card>
         </TabsContent>
 
-        {/* Plan Tab */}
+        {/* Plan Tab — owner's real plan */}
         <TabsContent value="plan" className="mt-4">
           <Card>
             <CardContent className="p-6 space-y-4">
               <h2 className="text-lg font-semibold">{tw.planSection}</h2>
               <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
-                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary">
+                <div className={`flex items-center justify-center w-10 h-10 rounded-lg ${isPremium ? 'bg-amber-500/10 text-amber-500' : 'bg-primary/10 text-primary'}`}>
                   <Crown className="w-5 h-5" />
                 </div>
                 <div className="flex-1">
-                  <div className="font-semibold capitalize">{activeWorkspace.plan} Plan</div>
-                  <div className="text-sm text-muted-foreground">
-                    {tw.planDetails.replace('{projects}', String(activeWorkspace.max_projects)).replace('{members}', String(activeWorkspace.max_members)).replace('{storage}', storageLabel)}
-                  </div>
+                  <div className="font-semibold">{planLabel} Plan</div>
+                  {planDetails && (
+                    <div className="text-sm text-muted-foreground">{planDetails}</div>
+                  )}
+                  {!isWsOwner && ownerName && (
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {isVi ? `Tài trợ bởi: ${ownerName}` : `Sponsored by: ${ownerName}`}
+                    </div>
+                  )}
                 </div>
-                <Button variant="outline" size="sm" onClick={() => navigate('/upgrade')}>
-                  <Zap className="w-3 h-3 mr-1" />
-                  {tc.upgrade}
-                </Button>
+                {isWsOwner && !isPremium && (
+                  <Button variant="outline" size="sm" onClick={() => navigate('/upgrade')}>
+                    <Zap className="w-3 h-3 mr-1" />
+                    {tc.upgrade}
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -251,9 +294,7 @@ export default function WorkspaceSettings() {
                   <AlertTriangle className="w-5 h-5" />
                   {tw.dangerZone}
                 </h2>
-                <p className="text-sm text-muted-foreground">
-                  {tw.dangerDesc}
-                </p>
+                <p className="text-sm text-muted-foreground">{tw.dangerDesc}</p>
                 <AlertDialog onOpenChange={(open) => { if (!open) setDeleteConfirmName(''); }}>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" disabled={isDeleting}>
