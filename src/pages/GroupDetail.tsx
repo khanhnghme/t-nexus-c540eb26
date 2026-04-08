@@ -117,6 +117,22 @@ export default function GroupDetail() {
     }
     return () => setProjectInfo({});
   }, [group?.id, group?.name, group?.zalo_link, setProjectInfo]);
+
+  // Sync project navigation to TopBar
+  useEffect(() => {
+    if (group) {
+      setProjectNavProps({
+        activeTab,
+        onTabChange: handleTabChange,
+        isLeaderInGroup,
+        isGroupCreator: group.created_by === user?.id || isAdmin,
+        membersCount: members.length,
+        hasActiveMeeting,
+        isScoreFinalized: !!(group as any).score_finalized_at,
+      });
+    }
+    return () => setProjectNavProps(null);
+  }, [group, activeTab, handleTabChange, isLeaderInGroup, isAdmin, members.length, hasActiveMeeting, user?.id, setProjectNavProps]);
   
   const handleGoBack = () => {
     goBack(availableTabs);
