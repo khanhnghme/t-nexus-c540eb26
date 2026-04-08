@@ -1890,7 +1890,7 @@ export const en = {
     },
   },
 
-  pricingDocs: {
+    pricingDocs: {
     backToPricing: 'Back to Pricing',
     title: 'T-Nexus Pricing Guide',
     subtitle: 'Understand our pricing model, resource allocation and member benefits when using T-Nexus.',

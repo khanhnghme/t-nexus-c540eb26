@@ -1820,7 +1820,7 @@ export const vi: Translations = {
     },
   },
 
-  pricingDocs: {
+    pricingDocs: {
     backToPricing: 'Quay lại Bảng giá',
     title: 'Hướng dẫn chi tiết về Bảng giá T-Nexus',
     subtitle: 'Hiểu rõ mô hình tính giá, cách phân bổ tài nguyên và quyền lợi của thành viên khi sử dụng T-Nexus.',
