@@ -10,10 +10,10 @@ import { Separator } from '@/components/ui/separator';
 import { Crown, Zap, Check, ArrowRight, Loader2 } from 'lucide-react';
 
 const PLAN_FEATURES_SHORT: Record<string, string[]> = {
-  plan_free: ['1 Workspace', '2 Projects / WS', '5 thành viên', '250 MB', 'Upload 5 MB/file'],
-  plan_plus: ['3 Workspaces', '6 Projects / WS', '12 thành viên', '5 GB', 'Upload 100 MB/file'],
-  plan_pro: ['10 Workspaces', '15 Projects / WS', '50 thành viên', '25 GB', 'Upload 5 GB/file'],
-  plan_business: ['30 Workspaces', '50 Projects / WS', '200 thành viên', '100 GB', 'Upload 5 GB/file'],
+  plan_free: ['1 Workspace', '2 Projects / WS', '5 thành viên (miễn phí)', '250 MB tổng lưu trữ', 'Upload 5 MB/file'],
+  plan_plus: ['3 Workspaces', '6 Projects / WS', '12 thành viên (miễn phí)', '5 GB tổng lưu trữ', 'Upload 100 MB/file'],
+  plan_pro: ['10 Workspaces', '15 Projects / WS', '50 thành viên (miễn phí)', '25 GB tổng lưu trữ', 'Upload 5 GB/file'],
+  plan_business: ['30 Workspaces', '50 Projects / WS', '200 thành viên (miễn phí)', '100 GB tổng lưu trữ', 'Upload 5 GB/file'],
   plan_custom: ['Không giới hạn', 'Không giới hạn', 'Không giới hạn', 'Không giới hạn', 'Upload 5 GB/file'],
 };
 

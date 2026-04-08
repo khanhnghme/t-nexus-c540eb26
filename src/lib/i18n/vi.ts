@@ -256,8 +256,8 @@ export const vi: Translations = {
     yearlySaveHint: 'Tiết kiệm 2 tháng với gói năm',
     priceInUsd: 'Giá tính bằng USD',
     recommended: 'Đề xuất',
-    perWorkspace: 'mỗi tài khoản',
-    cascadingNote: '💡 Khi bạn nâng cấp tài khoản, TẤT CẢ Workspace bạn sở hữu và TẤT CẢ thành viên bên trong đều được hưởng tính năng cao cấp.',
+    perWorkspace: '/ Chủ sở hữu',
+    cascadingNote: '💡 Chỉ chủ sở hữu trả tiền — thành viên tham gia hoàn toàn miễn phí. Khi bạn nâng cấp, TẤT CẢ Workspace bạn sở hữu và mọi thành viên bên trong đều được mở khóa tính năng cao cấp.',
     month: 'tháng',
     mo: 'tháng',
     customPricing: 'theo yêu cầu',
@@ -279,9 +279,9 @@ export const vi: Translations = {
         features: [
           '1 Workspace được tạo',
           '2 dự án / workspace',
-          '250 MB lưu trữ toàn tài khoản',
+          '250 MB tổng lưu trữ (gộp tất cả Workspace)',
           'Upload tối đa 5 MB / file',
-          '5 thành viên / workspace',
+          '5 thành viên / workspace (miễn phí)',
           'Họp tối đa 15 phút',
           'Standard Email Support',
         ],
@@ -293,9 +293,10 @@ export const vi: Translations = {
         features: [
           '3 Workspace được tạo',
           '6 dự án / workspace',
-          '5 GB lưu trữ toàn tài khoản',
+          '5 GB tổng lưu trữ (gộp tất cả Workspace)',
           'Upload tối đa 100 MB / file',
-          '12 thành viên / workspace',
+          '12 thành viên / workspace (miễn phí)',
+          'Mở khóa tính năng Plus cho mọi thành viên',
           'Họp tối đa 60 phút',
           'Nhật ký hoạt động (30 ngày)',
           'Xuất dữ liệu đầy đủ',
@@ -310,9 +311,10 @@ export const vi: Translations = {
         features: [
           '10 Workspace được tạo',
           '15 dự án / workspace',
-          '25 GB lưu trữ toàn tài khoản',
+          '25 GB tổng lưu trữ (gộp tất cả Workspace)',
           'Upload tối đa 5 GB / file',
-          '50 thành viên / workspace',
+          '50 thành viên / workspace (miễn phí)',
+          'Mở khóa tính năng Pro cho mọi thành viên',
           'Họp không giới hạn',
           'Nhật ký hoạt động không giới hạn',
           'Xuất dữ liệu đầy đủ',
@@ -327,9 +329,10 @@ export const vi: Translations = {
         features: [
           '30 Workspace được tạo',
           '50 dự án / workspace',
-          '100 GB lưu trữ toàn tài khoản',
+          '100 GB tổng lưu trữ (gộp tất cả Workspace)',
           'Upload tối đa 5 GB / file',
-          '200 thành viên / workspace',
+          '200 thành viên / workspace (miễn phí)',
+          'Mở khóa tính năng Business cho mọi thành viên',
           'Họp không giới hạn',
           'Nhật ký hoạt động không giới hạn',
           'Xuất dữ liệu đầy đủ',
@@ -358,13 +361,13 @@ export const vi: Translations = {
 
     // Add-ons
     addOnTitle: 'Bảng giá add-on',
-    addOnDescription: 'Có từ gói Plus trở lên. Add-on mở rộng giới hạn toàn tài khoản — áp dụng cho TẤT CẢ workspace bạn sở hữu.',
+    addOnDescription: 'Có từ gói Plus trở lên. Add-on được cộng trực tiếp vào giới hạn tổng của tài khoản chủ sở hữu và áp dụng hiệu lực cho TẤT CẢ workspace mà bạn tạo ra.',
     addOnNote: 'Pro: giảm 10% · Business: giảm 20% cho tất cả add-on',
-    perAccount: 'mỗi tài khoản / tháng',
+    perAccount: '/ chủ sở hữu / tháng',
     addOns: [
-      { emoji: '📋', name: 'Dự án', price: '$2.49', unit: '/ +5 dự án / workspace / tháng', note: 'Tăng giới hạn dự án cho tất cả workspace của bạn.' },
-      { emoji: '📦', name: 'Lưu trữ', price: '$2.49', unit: '/ +5 GB / tài khoản / tháng', note: 'Mở rộng dung lượng lưu trữ toàn tài khoản của bạn.' },
-      { emoji: '👥', name: 'Thành viên', price: '$2.49', unit: '/ +5 người / workspace / tháng', note: 'Tăng giới hạn thành viên cho tất cả workspace của bạn.' },
+      { emoji: '📋', name: 'Dự án', price: '$2.49', unit: '/ +5 dự án / workspace / tháng', note: 'Tăng giới hạn dự án gộp cho toàn bộ hệ thống của bạn.' },
+      { emoji: '📦', name: 'Lưu trữ', price: '$2.49', unit: '/ +5 GB tổng / tháng', note: 'Mở rộng dung lượng tổng lưu trữ (dùng chung cho tất cả Workspace).' },
+      { emoji: '👥', name: 'Thành viên', price: '$2.49', unit: '/ +5 người / workspace / tháng', note: 'Tăng giới hạn thành viên gộp cho toàn bộ hệ thống của bạn.' },
     ],
 
     // Comparison table
@@ -374,7 +377,7 @@ export const vi: Translations = {
         category: 'Tài khoản & Workspace',
         rows: [
           { label: 'Workspace được tạo / tài khoản', free: '1', plus: '3', pro: '10', business: '30', enterprise: 'Không giới hạn' },
-          { label: 'Lưu trữ toàn tài khoản', free: '250 MB', plus: '5 GB', pro: '25 GB', business: '100 GB', enterprise: 'Không giới hạn' },
+          { label: 'Tổng lưu trữ (gộp tất cả Workspace)', free: '250 MB', plus: '5 GB', pro: '25 GB', business: '100 GB', enterprise: 'Không giới hạn' },
           { label: 'Giới hạn upload / file', free: '5 MB', plus: '100 MB', pro: '5 GB', business: '5 GB', enterprise: '5 GB' },
         ],
       },
@@ -382,7 +385,7 @@ export const vi: Translations = {
         category: 'Giới hạn mỗi Workspace',
         rows: [
           { label: 'Dự án / workspace', free: '2', plus: '6', pro: '15', business: '50', enterprise: 'Không giới hạn' },
-          { label: 'Thành viên / workspace', free: '5', plus: '12', pro: '50', business: '200', enterprise: 'Không giới hạn' },
+          { label: 'Thành viên / workspace (miễn phí)', free: '5', plus: '12', pro: '50', business: '200', enterprise: 'Không giới hạn' },
         ],
       },
       {
