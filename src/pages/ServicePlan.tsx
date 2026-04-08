@@ -164,7 +164,7 @@ export default function ServicePlan() {
 
       const limits = limitsRes.data;
       const maxProjects = limits?.max_projects_per_workspace ?? null;
-      const maxStorage = limits?.max_storage_mb ?? 250;
+      const maxStorage = limits?.max_storage_mb ?? 500;
       const maxMembers = limits?.max_members_per_workspace ?? null;
 
       if (limits) {
