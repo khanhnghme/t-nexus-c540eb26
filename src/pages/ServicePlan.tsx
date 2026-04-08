@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { useAccountLimitsCheck } from '@/hooks/useAccountLimitsCheck';
+import { AccountCleanupPanel } from '@/components/cleanup/AccountCleanupPanel';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPlanName } from '@/hooks/useWorkspaceBilling';
 import { Card, CardContent } from '@/components/ui/card';
