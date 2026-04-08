@@ -37,6 +37,9 @@ import {
   LogOut,
   Zap,
   Crown,
+  Check,
+  Plus,
+  ChevronsUpDown,
 } from 'lucide-react';
 import SidebarTreeNav from '@/components/SidebarTreeNav';
 import { useTheme } from 'next-themes';
