@@ -41,7 +41,7 @@ const TOC_ENTRIES: TocEntry[] = [
 export default function PricingDocs() {
   const { translations: t, localizedPath: lp } = useLanguage();
   const navigate = useNavigate();
-  const d = t.pricingDocs;
+  const d = t.pricingDocs || t.app?.pricingDocs;
 
   const [activeId, setActiveId] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
