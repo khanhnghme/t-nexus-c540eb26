@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { useAccountLimitsCheck } from '@/hooks/useAccountLimitsCheck';
+import { AccountCleanupPanel } from '@/components/cleanup/AccountCleanupPanel';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPlanName } from '@/hooks/useWorkspaceBilling';
 import { Card, CardContent } from '@/components/ui/card';
@@ -112,6 +114,7 @@ const MOCK_BILLING = [
 export default function ServicePlan() {
   const { user, profile } = useAuth();
   const { workspaces } = useWorkspace();
+  const accountLimits = useAccountLimitsCheck();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
@@ -547,6 +550,14 @@ export default function ServicePlan() {
               </div>
             )}
           </section>
+
+          {/* Cleanup Panel - show when over limits */}
+          {accountLimits.isOverLimits && (
+            <section className="space-y-4">
+              <Separator />
+              <AccountCleanupPanel onCleanupComplete={fetchUsages} />
+            </section>
+          )}
         </TabsContent>
 
         {/* ──────── TAB 3: Lịch sử thanh toán ──────── */}
