@@ -438,7 +438,8 @@ export default function DashboardLayout({
 
           {/* Cell 4: Bottom-right — Main content */}
           <div className="grid-cell-content">
-            <div className="max-w-[1100px] mx-auto px-12 py-8">
+            <div className="max-w-[1100px] mx-auto px-12 py-8 space-y-4">
+              {location.pathname !== '/dashboard' && <ReadOnlyBanner compact />}
               {useOutlet ? <Outlet /> : children}
             </div>
           </div>
