@@ -250,7 +250,7 @@ export default function Upgrade() {
           <p className="text-sm text-muted-foreground mb-2">
             💡 {t.pricingDocs?.pricingCta}
           </p>
-          <Link to="/docs/pricing" className="text-sm text-primary underline font-medium">
+          <Link to="/guide/pricing" className="text-sm text-primary underline font-medium">
             {t.pricingDocs?.pricingCtaLink} →
           </Link>
         </div>
