@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { startOfWeek, addDays, isSameDay, isToday, format } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { startOfWeek, addDays, isToday, format } from 'date-fns';
 import { CalendarEvent } from '@/types/calendar';
 import CalendarEventPill from './CalendarEventPill';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface CalendarWeekViewProps {
   currentDate: Date;
@@ -13,9 +13,11 @@ interface CalendarWeekViewProps {
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
-const WEEKDAY_LABELS = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'];
 
 export default function CalendarWeekView({ currentDate, events, onDayClick, onEventClick }: CalendarWeekViewProps) {
+  const { translations: { app: t } } = useLanguage();
+  const WEEKDAY_LABELS = t.calendar.weekdayLabels as string[];
+
   const weekDays = useMemo(() => {
     const start = startOfWeek(currentDate, { weekStartsOn: 1 });
     return Array.from({ length: 7 }, (_, i) => addDays(start, i));
@@ -35,7 +37,6 @@ export default function CalendarWeekView({ currentDate, events, onDayClick, onEv
 
   return (
     <div className="flex-1 flex flex-col border border-muted rounded-lg overflow-hidden">
-      {/* Weekday header — ETT primary */}
       <div className="grid grid-cols-[60px_repeat(7,1fr)] bg-primary">
         <div className="p-2" />
         {weekDays.map((day, i) => (

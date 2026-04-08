@@ -8,6 +8,7 @@ import { EVENT_COLORS } from '@/types/calendar';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Trash2 } from 'lucide-react';
@@ -29,6 +30,8 @@ interface CreateEventDialogProps {
 
 export default function CreateEventDialog({ open, onOpenChange, onSuccess, initialDate, editEvent }: CreateEventDialogProps) {
   const { user } = useAuth();
+  const { translations: { app: t } } = useLanguage();
+  const cal = t.calendar;
   const isEdit = !!editEvent;
 
   const [title, setTitle] = useState('');
@@ -40,7 +43,6 @@ export default function CreateEventDialog({ open, onOpenChange, onSuccess, initi
   const [color, setColor] = useState(EVENT_COLORS[0].value);
   const [loading, setLoading] = useState(false);
 
-  // Reset form state when dialog opens or editEvent changes
   useEffect(() => {
     if (!open) return;
     if (editEvent) {
@@ -65,7 +67,6 @@ export default function CreateEventDialog({ open, onOpenChange, onSuccess, initi
 
   const startTime = startDate ? `${startDate}T${startHour}:00` : '';
   const endTime = endDate && endHour ? `${endDate}T${endHour}:00` : '';
-
   const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 
   const handleSubmit = async () => {
@@ -84,7 +85,7 @@ export default function CreateEventDialog({ open, onOpenChange, onSuccess, initi
           })
           .eq('id', editEvent!.id);
         if (error) throw error;
-        toast.success('Đã cập nhật sự kiện');
+        toast.success(cal.eventUpdated);
       } else {
         const { error } = await supabase
           .from('personal_events')
@@ -97,12 +98,12 @@ export default function CreateEventDialog({ open, onOpenChange, onSuccess, initi
             color,
           });
         if (error) throw error;
-        toast.success('Đã tạo sự kiện');
+        toast.success(cal.eventCreated);
       }
       onSuccess();
       onOpenChange(false);
     } catch (err: any) {
-      toast.error(err.message || 'Có lỗi xảy ra');
+      toast.error(err.message || cal.errorOccurred);
     } finally {
       setLoading(false);
     }
@@ -114,11 +115,11 @@ export default function CreateEventDialog({ open, onOpenChange, onSuccess, initi
     try {
       const { error } = await supabase.from('personal_events').delete().eq('id', editEvent.id);
       if (error) throw error;
-      toast.success('Đã xóa sự kiện');
+      toast.success(cal.eventDeleted);
       onSuccess();
       onOpenChange(false);
     } catch (err: any) {
-      toast.error(err.message || 'Có lỗi xảy ra');
+      toast.error(err.message || cal.errorOccurred);
     } finally {
       setLoading(false);
     }
@@ -128,23 +129,23 @@ export default function CreateEventDialog({ open, onOpenChange, onSuccess, initi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Chỉnh sửa sự kiện' : 'Tạo sự kiện cá nhân'}</DialogTitle>
+          <DialogTitle>{isEdit ? cal.editEvent : cal.createPersonalEvent}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           <div className="space-y-2">
-            <Label>Tiêu đề *</Label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Tên sự kiện..." />
+            <Label>{cal.titleLabel}</Label>
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={cal.titlePlaceholder} />
           </div>
 
           <div className="space-y-2">
-            <Label>Mô tả</Label>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ghi chú thêm..." rows={2} />
+            <Label>{cal.descriptionLabel}</Label>
+            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={cal.descPlaceholder} rows={2} />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Bắt đầu *</Label>
+              <Label>{cal.startLabel}</Label>
               <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
               <select value={startHour} onChange={(e) => setStartHour(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                 {HOURS.map((h) => (
@@ -153,7 +154,7 @@ export default function CreateEventDialog({ open, onOpenChange, onSuccess, initi
               </select>
             </div>
             <div className="space-y-2">
-              <Label>Kết thúc <span className="text-muted-foreground text-xs">(tùy chọn)</span></Label>
+              <Label>{cal.endLabel} <span className="text-muted-foreground text-xs">{cal.endOptional}</span></Label>
               <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
               <select value={endHour} onChange={(e) => setEndHour(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                 <option value="">--</option>
@@ -165,7 +166,7 @@ export default function CreateEventDialog({ open, onOpenChange, onSuccess, initi
           </div>
 
           <div className="space-y-2">
-            <Label>Màu sắc</Label>
+            <Label>{cal.colorLabel}</Label>
             <div className="flex gap-2 flex-wrap">
               {EVENT_COLORS.map((c) => (
                 <button
@@ -188,13 +189,13 @@ export default function CreateEventDialog({ open, onOpenChange, onSuccess, initi
           {isEdit && (
             <Button variant="destructive" size="sm" onClick={handleDelete} disabled={loading} className="mr-auto gap-1">
               <Trash2 className="h-3.5 w-3.5" />
-              Xóa
+              {cal.deleteBtn}
             </Button>
           )}
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Hủy</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>{cal.cancelBtn}</Button>
             <Button onClick={handleSubmit} disabled={loading || !title.trim() || !startTime}>
-              {isEdit ? 'Cập nhật' : 'Tạo'}
+              {isEdit ? cal.updateBtn : cal.createBtn}
             </Button>
           </div>
         </DialogFooter>

@@ -1,8 +1,9 @@
 import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { vi as viLocale } from 'date-fns/locale';
 import { CalendarEvent } from '@/types/calendar';
 import CalendarEventPill from './CalendarEventPill';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface CalendarDayDetailProps {
   open: boolean;
@@ -14,6 +15,10 @@ interface CalendarDayDetailProps {
 }
 
 export default function CalendarDayDetail({ open, onOpenChange, date, events, onEditEvent, onEventClick }: CalendarDayDetailProps) {
+  const { locale, translations: { app: t } } = useLanguage();
+  const cal = t.calendar;
+  const dateLocale = locale === 'vi' ? viLocale : undefined;
+
   const dayEvents = events
     .filter((ev) => format(ev.date, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'))
     .sort((a, b) => a.date.getTime() - b.date.getTime());
@@ -31,13 +36,13 @@ export default function CalendarDayDetail({ open, onOpenChange, date, events, on
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle className="capitalize">
-            {format(date, "EEEE, dd MMMM yyyy", { locale: vi })}
+            {format(date, "EEEE, dd MMMM yyyy", { locale: dateLocale })}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-2 max-h-[400px] overflow-y-auto">
           {dayEvents.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-4">Không có sự kiện nào</p>
+            <p className="text-sm text-muted-foreground text-center py-4">{cal.noEvents}</p>
           )}
           {dayEvents.map((ev) => (
             <div
@@ -57,7 +62,7 @@ export default function CalendarDayDetail({ open, onOpenChange, date, events, on
                 {ev.type === 'task' && ev.projectName && ` · ${ev.projectName}`}
                 {ev.type === 'task' && (
                   <span className={(ev.taskStatus as string) === 'DONE' || (ev.taskStatus as string) === 'VERIFIED' ? ' text-green-600' : ev.date < new Date() ? ' text-destructive' : ''}>
-                    {(ev.taskStatus as string) === 'DONE' ? ' ✓ Hoàn thành' : (ev.taskStatus as string) === 'VERIFIED' ? ' ✓ Đã duyệt' : ''}
+                    {(ev.taskStatus as string) === 'DONE' ? ` ✓ ${cal.done}` : (ev.taskStatus as string) === 'VERIFIED' ? ` ✓ ${cal.verified}` : ''}
                   </span>
                 )}
               </div>

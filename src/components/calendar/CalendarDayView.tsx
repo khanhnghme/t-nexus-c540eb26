@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
 import { format, isToday } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { vi as viLocale } from 'date-fns/locale';
 import { CalendarEvent } from '@/types/calendar';
 import CalendarEventPill from './CalendarEventPill';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface CalendarDayViewProps {
   currentDate: Date;
@@ -14,6 +15,9 @@ interface CalendarDayViewProps {
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 export default function CalendarDayView({ currentDate, events, onEventClick }: CalendarDayViewProps) {
+  const { locale } = useLanguage();
+  const dateLocale = locale === 'vi' ? viLocale : undefined;
+
   const eventsByHour = useMemo(() => {
     const map = new Map<number, CalendarEvent[]>();
     const dayStr = format(currentDate, 'yyyy-MM-dd');
@@ -31,9 +35,8 @@ export default function CalendarDayView({ currentDate, events, onEventClick }: C
 
   return (
     <div className="flex-1 flex flex-col border border-muted rounded-lg overflow-hidden">
-      {/* Day header — ETT primary */}
       <div className="py-3 border-b border-muted bg-primary text-center">
-        <div className="text-xs font-medium text-primary-foreground/80 capitalize">{format(currentDate, 'EEEE', { locale: vi })}</div>
+        <div className="text-xs font-medium text-primary-foreground/80 capitalize">{format(currentDate, 'EEEE', { locale: dateLocale })}</div>
         <div className={cn(
           "text-2xl font-bold w-10 h-10 flex items-center justify-center rounded-full mx-auto mt-0.5",
           today && "bg-accent text-accent-foreground",
@@ -41,7 +44,7 @@ export default function CalendarDayView({ currentDate, events, onEventClick }: C
         )}>
           {format(currentDate, 'd')}
         </div>
-        <div className="text-xs text-primary-foreground/70 capitalize">{format(currentDate, 'MMMM yyyy', { locale: vi })}</div>
+        <div className="text-xs text-primary-foreground/70 capitalize">{format(currentDate, 'MMMM yyyy', { locale: dateLocale })}</div>
       </div>
 
       <div className="flex-1 overflow-y-auto">

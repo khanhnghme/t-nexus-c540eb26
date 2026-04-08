@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, isToday, format } from 'date-fns';
-import { vi } from 'date-fns/locale';
 import { CalendarEvent } from '@/types/calendar';
 import CalendarEventPill from './CalendarEventPill';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface CalendarMonthViewProps {
   currentDate: Date;
@@ -12,10 +12,13 @@ interface CalendarMonthViewProps {
   onEventClick?: (event: CalendarEvent) => void;
 }
 
-const WEEKDAYS = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'];
 const MAX_VISIBLE_EVENTS = 4;
 
 export default function CalendarMonthView({ currentDate, events, onDayClick, onEventClick }: CalendarMonthViewProps) {
+  const { translations: { app: t } } = useLanguage();
+  const cal = t.calendar;
+  const WEEKDAYS = cal.weekdays as string[];
+
   const days = useMemo(() => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
@@ -44,16 +47,14 @@ export default function CalendarMonthView({ currentDate, events, onDayClick, onE
 
   return (
     <div className="flex-1 flex flex-col border border-muted rounded-lg overflow-hidden">
-      {/* Weekday header */}
       <div className="grid grid-cols-7 bg-primary">
-        {WEEKDAYS.map((day) => (
+        {WEEKDAYS.map((day: string) => (
           <div key={day} className="py-2 text-center text-sm font-semibold text-primary-foreground">
             {day}
           </div>
         ))}
       </div>
 
-      {/* Calendar grid */}
       <div className="flex-1 grid" style={{ gridTemplateRows: `repeat(${weeks.length}, 1fr)` }}>
         {weeks.map((week, wi) => (
           <div key={wi} className="grid grid-cols-7 border-b border-muted last:border-b-0">
@@ -89,7 +90,9 @@ export default function CalendarMonthView({ currentDate, events, onDayClick, onE
                       <CalendarEventPill key={ev.id} event={ev} compact onEventClick={onEventClick} />
                     ))}
                     {hasMore && (
-                      <p className="text-[10px] text-muted-foreground font-medium pl-1">+{dayEvents.length - MAX_VISIBLE_EVENTS} thêm</p>
+                      <p className="text-[10px] text-muted-foreground font-medium pl-1">
+                        {(cal.moreEvents as string).replace('{n}', String(dayEvents.length - MAX_VISIBLE_EVENTS))}
+                      </p>
                     )}
                   </div>
                 </div>
