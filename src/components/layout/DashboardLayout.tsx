@@ -183,6 +183,7 @@ function UpgradeBox({ collapsed }: { collapsed: boolean }) {
   const { user } = useAuth();
   const { activeWorkspace, workspaceRole, isAvailable } = useWorkspace();
   const { ownerPlan, ownerId } = useWorkspaceBilling();
+  const { locale } = useLanguage();
 
   const isOwner = user?.id === ownerId;
   if (!isAvailable || !activeWorkspace || workspaceRole !== 'workspace_owner') return null;
