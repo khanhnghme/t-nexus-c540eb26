@@ -1,348 +1,424 @@
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Users, CreditCard, Database, Package, HelpCircle, Lightbulb, ArrowRight, Lock, Clock, AlertTriangle, BookOpen, Check, X } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { TNexusLogo } from '@/components/TNexusLogo';
 import LanguageToggle from '@/components/LanguageToggle';
-import tNexusLogo from '@/assets/t-nexus-logo.png';
+import {
+  ArrowLeft, Users, CreditCard, Database, Package, HelpCircle,
+  Lightbulb, ArrowRight, Lock, Clock, AlertTriangle, BookOpen,
+  Check, X, Menu, ChevronRight,
+} from 'lucide-react';
+
+/* ------------------------------------------------------------------ */
+/*  TOC definition                                                     */
+/* ------------------------------------------------------------------ */
+
+interface TocEntry {
+  id: string;
+  labelKey: string;
+  level: 1 | 2;
+  chapter?: number;
+}
+
+const TOC_ENTRIES: TocEntry[] = [
+  { id: 'chapter-1', labelKey: 'ch1Label', level: 1, chapter: 1 },
+  { id: 'owner-billing', labelKey: 's1', level: 2 },
+  { id: 'unique-seat', labelKey: 's2', level: 2 },
+  { id: 'resource-pool', labelKey: 's3', level: 2 },
+  { id: 'addons', labelKey: 's4', level: 2 },
+  { id: 'examples', labelKey: 's5', level: 2 },
+  { id: 'faq', labelKey: 's6', level: 2 },
+  { id: 'chapter-2', labelKey: 'ch2Label', level: 1, chapter: 2 },
+  { id: 'read-only', labelKey: 'ch2s1', level: 2 },
+  { id: 'grace-period', labelKey: 'ch2s2', level: 2 },
+  { id: 'hard-delete', labelKey: 'ch2s3', level: 2 },
+];
+
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
 
 export default function PricingDocs() {
   const { translations: t, localizedPath: lp } = useLanguage();
+  const navigate = useNavigate();
   const d = t.pricingDocs;
 
+  const [activeId, setActiveId] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const scrollTo = useCallback((id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      const y = el.getBoundingClientRect().top + window.scrollY - 90;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+      setActiveId(id);
+      setSidebarOpen(false);
+    }
+  }, []);
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link to={lp('/')} className="flex items-center gap-2">
-            <img src={tNexusLogo} alt="T-Nexus" className="h-7 w-7" />
-            <span className="font-heading font-bold text-foreground text-lg">T-Nexus</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link to={lp('/pricing')} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              {t.common.pricing}
-            </Link>
-            <LanguageToggle />
-          </div>
+    <div style={{ minHeight: '100vh', background: '#fafaf8', display: 'flex', flexDirection: 'column' }}>
+      {/* ═══ Header ═══ */}
+      <header
+        style={{
+          position: 'sticky', top: 0, zIndex: 50,
+          background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid #e8e5e0', padding: '0 24px',
+          height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="pricing-docs-mobile-toggle"
+            style={{ display: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#37352f' }}
+          >
+            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+          <button
+            onClick={() => navigate(lp('/pricing'))}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', color: '#37352f', fontSize: 14, fontWeight: 500, padding: 0 }}
+          >
+            <ArrowLeft size={16} />
+            <span>{d.backToPricing}</span>
+          </button>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <LanguageToggle />
+          <TNexusLogo variant="text" width={80} />
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-10">
-        {/* Back */}
-        <Link to={lp('/pricing')} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8">
-          <ArrowLeft size={14} />
-          <span>{d.backToPricing}</span>
-        </Link>
+      <div style={{ display: 'flex', flex: 1, position: 'relative' }}>
+        {/* ═══ Sidebar ═══ */}
+        <aside
+          className={`pricing-docs-sidebar ${sidebarOpen ? 'open' : ''}`}
+          style={{
+            width: 280, minWidth: 280, position: 'sticky', top: 56,
+            height: 'calc(100vh - 56px)', overflowY: 'auto',
+            borderRight: '1px solid #e8e5e0', background: '#ffffff',
+            padding: '24px 0', flexShrink: 0,
+          }}
+        >
+          <div style={{ padding: '0 20px 16px', borderBottom: '1px solid #f0ede8', marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#37352f', fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
+              <BookOpen size={16} style={{ color: '#2383e2' }} />
+              {d.tocTitle}
+            </div>
+            <div style={{ fontSize: 12, color: '#9b9a97' }}>{d.subtitle?.slice(0, 60)}…</div>
+          </div>
 
-        {/* Title */}
-        <div className="mb-10">
-          <h1 className="text-3xl md:text-4xl font-heading font-bold tracking-tight text-foreground mb-3">
+          <nav style={{ padding: '0 8px' }}>
+            {TOC_ENTRIES.map((entry) => {
+              const label = entry.level === 1
+                ? (d[entry.labelKey] || entry.labelKey)
+                : (d.tocItems?.[entry.labelKey] || entry.labelKey);
+              return (
+                <button
+                  key={entry.id}
+                  onClick={() => scrollTo(entry.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6, width: '100%',
+                    border: 'none',
+                    background: activeId === entry.id ? 'rgba(35,131,226,0.06)' : 'transparent',
+                    color: activeId === entry.id ? '#2383e2' : '#37352f',
+                    fontWeight: activeId === entry.id ? 600 : entry.level === 1 ? 600 : 400,
+                    fontSize: 13, textAlign: 'left',
+                    padding: entry.level === 2 ? '6px 12px 6px 32px' : '8px 12px',
+                    borderRadius: 6, cursor: 'pointer', transition: 'all 0.15s', lineHeight: 1.4,
+                  }}
+                  onMouseEnter={(e) => { if (activeId !== entry.id) e.currentTarget.style.background = 'rgba(55,53,47,0.04)'; }}
+                  onMouseLeave={(e) => { if (activeId !== entry.id) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  {entry.level === 1 && <ChevronRight size={12} style={{ color: activeId === entry.id ? '#2383e2' : '#c4c3bf', flexShrink: 0 }} />}
+                  <span style={{ lineHeight: 1.4 }}>{label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
+
+        {/* Mobile overlay */}
+        {sidebarOpen && (
+          <div
+            className="pricing-docs-sidebar-overlay"
+            onClick={() => setSidebarOpen(false)}
+            style={{ position: 'fixed', inset: 0, top: 56, background: 'rgba(0,0,0,0.3)', zIndex: 39 }}
+          />
+        )}
+
+        {/* ═══ Main content ═══ */}
+        <main style={{ flex: 1, minWidth: 0, padding: '40px 48px 80px', maxWidth: 860 }}>
+          {/* Title */}
+          <h1 style={{ fontSize: 32, fontWeight: 700, margin: '0 0 8px', color: '#37352f', letterSpacing: '-0.02em' }}>
             {d.title}
           </h1>
-          <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl">
-            {d.subtitle}
-          </p>
-        </div>
+          <p style={{ fontSize: 15, color: '#6b6b6b', marginBottom: 40, lineHeight: 1.7 }}>{d.subtitle}</p>
 
-        {/* ── Table of Contents ── */}
-        <TableOfContents d={d} />
+          {/* ═══════════ CHAPTER 1 ═══════════ */}
+          <ChapterHeading id="chapter-1" title={d.ch1Label} />
 
-        {/* ═══════════ CHƯƠNG 1 ═══════════ */}
-        <div id="chapter-1" className="mb-6">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <BookOpen size={20} className="text-primary" />
-            </div>
-            <h2 className="text-2xl font-heading font-bold text-foreground">{d.ch1Label}</h2>
-          </div>
-        </div>
-
-        {/* Section 1 */}
-        <Section icon={CreditCard} title={d.s1Title} id="owner-billing">
-          <p className="text-muted-foreground leading-relaxed mb-6">{d.s1Desc}</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            {d.s1Steps.map((step: { title: string; desc: string }, i: number) => (
-              <div key={i} className="relative rounded-xl border border-border bg-muted/30 p-5">
-                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold mb-3">
-                  {i + 1}
+          <DocSection icon={CreditCard} title={d.s1Title} id="owner-billing">
+            <p className="pdoc-p">{d.s1Desc}</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 16 }}>
+              {d.s1Steps.map((step: { title: string; desc: string }, i: number) => (
+                <div key={i} style={{ border: '1px solid #e8e5e0', borderRadius: 8, padding: 16, background: '#f7f6f3' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(35,131,226,0.1)', color: '#2383e2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{i + 1}</div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: '#37352f', marginBottom: 4 }}>{step.title}</div>
+                  <div style={{ fontSize: 13, color: '#6b6b6b', lineHeight: 1.5 }}>{step.desc}</div>
                 </div>
-                <h4 className="font-semibold text-foreground text-sm mb-1">{step.title}</h4>
-                <p className="text-xs text-muted-foreground leading-relaxed">{step.desc}</p>
-                {i < 2 && (
-                  <ArrowRight size={16} className="absolute right-[-14px] top-1/2 -translate-y-1/2 text-muted-foreground/40 hidden sm:block" />
-                )}
-              </div>
-            ))}
-          </div>
-          <Callout>{d.s1Callout}</Callout>
-        </Section>
+              ))}
+            </div>
+            <DocCallout>{d.s1Callout}</DocCallout>
+          </DocSection>
 
-        {/* Section 2 */}
-        <Section icon={Users} title={d.s2Title} id="unique-seat">
-          <p className="text-muted-foreground leading-relaxed mb-6">{d.s2Desc}</p>
-          <div className="rounded-xl border border-border overflow-hidden mb-6">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-muted/50">
-                  {d.s2TableHeaders.map((h: string, i: number) => (
-                    <th key={i} className="text-left px-4 py-3 font-medium text-foreground">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {d.s2TableRows.map((row: string[], i: number) => (
-                  <tr key={i} className="border-t border-border">
-                    {row.map((cell: string, j: number) => (
-                      <td key={j} className="px-4 py-3 text-muted-foreground">{cell}</td>
+          <DocSection icon={Users} title={d.s2Title} id="unique-seat">
+            <p className="pdoc-p">{d.s2Desc}</p>
+            <DocTable headers={d.s2TableHeaders} rows={d.s2TableRows} />
+            <DocCallout>{d.s2Callout}</DocCallout>
+          </DocSection>
+
+          <DocSection icon={Database} title={d.s3Title} id="resource-pool">
+            <p className="pdoc-p">{d.s3Desc}</p>
+            <DocTable headers={d.s3TableHeaders} rows={d.s3TableRows} highlightFirst />
+            <DocCallout>{d.s3Callout}</DocCallout>
+          </DocSection>
+
+          <DocSection icon={Package} title={d.s4Title} id="addons">
+            <p className="pdoc-p">{d.s4Desc}</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 16 }}>
+              {d.s4Items.map((item: { name: string; price: string; note: string }, i: number) => (
+                <div key={i} style={{ border: '1px solid #e8e5e0', borderRadius: 8, padding: 16 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: '#37352f', marginBottom: 4 }}>{item.name}</div>
+                  <div style={{ fontWeight: 700, fontSize: 18, color: '#2383e2', marginBottom: 6 }}>{item.price}</div>
+                  <div style={{ fontSize: 13, color: '#6b6b6b', lineHeight: 1.5 }}>{item.note}</div>
+                </div>
+              ))}
+            </div>
+            <DocCallout>{d.s4Callout}</DocCallout>
+          </DocSection>
+
+          <DocSection icon={Lightbulb} title={d.s5Title} id="examples">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {d.s5Scenarios.map((sc: { title: string; desc: string; details: string[] }, i: number) => (
+                <div key={i} style={{ border: '1px solid #e8e5e0', borderRadius: 8, padding: 20, background: '#f7f6f3' }}>
+                  <div style={{ fontWeight: 600, fontSize: 15, color: '#37352f', marginBottom: 6 }}>{sc.title}</div>
+                  <div style={{ fontSize: 14, color: '#6b6b6b', marginBottom: 10 }}>{sc.desc}</div>
+                  <ul style={{ margin: 0, paddingLeft: 20 }}>
+                    {sc.details.map((detail: string, j: number) => (
+                      <li key={j} style={{ fontSize: 14, color: '#37352f', marginBottom: 4 }}>{detail}</li>
                     ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <Callout>{d.s2Callout}</Callout>
-        </Section>
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </DocSection>
 
-        {/* Section 3 */}
-        <Section icon={Database} title={d.s3Title} id="resource-pool">
-          <p className="text-muted-foreground leading-relaxed mb-6">{d.s3Desc}</p>
-          <div className="rounded-xl border border-border overflow-hidden mb-6">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-muted/50">
-                  {d.s3TableHeaders.map((h: string, i: number) => (
-                    <th key={i} className="text-left px-4 py-3 font-medium text-foreground">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {d.s3TableRows.map((row: string[], i: number) => (
-                  <tr key={i} className="border-t border-border">
-                    {row.map((cell: string, j: number) => (
-                      <td key={j} className={`px-4 py-3 ${j === 0 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>{cell}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <Callout>{d.s3Callout}</Callout>
-        </Section>
+          <DocSection icon={HelpCircle} title={d.s6Title} id="faq">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {d.s6Items.map((item: { q: string; a: string }, i: number) => (
+                <div key={i} style={{ border: '1px solid #e8e5e0', borderRadius: 8, padding: 16 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: '#37352f', marginBottom: 6 }}>{item.q}</div>
+                  <div style={{ fontSize: 14, color: '#6b6b6b', lineHeight: 1.6 }}>{item.a}</div>
+                </div>
+              ))}
+            </div>
+          </DocSection>
 
-        {/* Section 4 */}
-        <Section icon={Package} title={d.s4Title} id="addons">
-          <p className="text-muted-foreground leading-relaxed mb-6">{d.s4Desc}</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            {d.s4Items.map((item: { name: string; price: string; note: string }, i: number) => (
-              <div key={i} className="rounded-xl border border-border p-5">
-                <h4 className="font-semibold text-foreground text-sm mb-1">{item.name}</h4>
-                <p className="text-primary font-bold text-lg mb-2">{item.price}</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">{item.note}</p>
-              </div>
-            ))}
+          {/* ═══════════ CHAPTER 2 ═══════════ */}
+          <div style={{ borderTop: '1px solid #e8e5e0', marginTop: 40, paddingTop: 32 }}>
+            <ChapterHeading id="chapter-2" title={d.ch2Label} variant="destructive" />
+            <p className="pdoc-p">{d.ch2Subtitle}</p>
           </div>
-          <Callout>{d.s4Callout}</Callout>
-        </Section>
 
-        {/* Section 5 */}
-        <Section icon={Lightbulb} title={d.s5Title} id="examples">
-          <div className="space-y-6">
-            {d.s5Scenarios.map((sc: { title: string; desc: string; details: string[] }, i: number) => (
-              <div key={i} className="rounded-xl border border-border bg-muted/20 p-6">
-                <h4 className="font-semibold text-foreground mb-2">{sc.title}</h4>
-                <p className="text-sm text-muted-foreground mb-3">{sc.desc}</p>
-                <ul className="space-y-1.5">
-                  {sc.details.map((detail: string, j: number) => (
-                    <li key={j} className="text-sm text-muted-foreground flex items-start gap-2">
-                      <span className="text-primary mt-0.5">•</span>
-                      <span>{detail}</span>
+          <DocSection icon={Lock} title={d.ch2s1Title} id="read-only">
+            <p className="pdoc-p">{d.ch2s1Desc}</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginBottom: 16 }}>
+              <div style={{ border: '1px solid #e8e5e0', borderRadius: 8, padding: 16, background: '#f7f6f3' }}>
+                <div style={{ fontWeight: 600, fontSize: 14, color: '#37352f', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Check size={15} style={{ color: '#2383e2' }} />
+                  {t.language === 'vi' ? 'Được phép' : 'Allowed'}
+                </div>
+                <ul style={{ margin: 0, paddingLeft: 0, listStyle: 'none' }}>
+                  {d.ch2s1Allowed.map((item: string, i: number) => (
+                    <li key={i} style={{ fontSize: 13, color: '#37352f', marginBottom: 4, display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                      <Check size={13} style={{ color: '#2383e2', flexShrink: 0, marginTop: 2 }} />
+                      <span>{item}</span>
                     </li>
                   ))}
                 </ul>
               </div>
-            ))}
-          </div>
-        </Section>
-
-        {/* Section 6 */}
-        <Section icon={HelpCircle} title={d.s6Title} id="faq">
-          <div className="space-y-4">
-            {d.s6Items.map((item: { q: string; a: string }, i: number) => (
-              <div key={i} className="rounded-xl border border-border p-5">
-                <h4 className="font-semibold text-foreground text-sm mb-2">{item.q}</h4>
-                <p className="text-sm text-muted-foreground leading-relaxed">{item.a}</p>
-              </div>
-            ))}
-          </div>
-        </Section>
-
-        {/* ═══════════ CHƯƠNG 2 ═══════════ */}
-        <div id="chapter-2" className="mb-6 mt-16 pt-8 border-t border-border">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
-              <AlertTriangle size={20} className="text-destructive" />
-            </div>
-            <h2 className="text-2xl font-heading font-bold text-foreground">{d.ch2Label}</h2>
-          </div>
-          <p className="text-muted-foreground leading-relaxed max-w-2xl mb-8">{d.ch2Subtitle}</p>
-        </div>
-
-        {/* 2.1 Read-only */}
-        <Section icon={Lock} title={d.ch2s1Title} id="read-only">
-          <p className="text-muted-foreground leading-relaxed mb-6">{d.ch2s1Desc}</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            <div className="rounded-xl border border-border bg-muted/20 p-5">
-              <h4 className="font-semibold text-foreground text-sm mb-3 flex items-center gap-2">
-                <Check size={16} className="text-primary" />
-                {t.language === 'vi' ? 'Được phép' : 'Allowed'}
-              </h4>
-              <ul className="space-y-2">
-                {d.ch2s1Allowed.map((item: string, i: number) => (
-                  <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                    <Check size={14} className="text-primary shrink-0 mt-0.5" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-5">
-              <h4 className="font-semibold text-foreground text-sm mb-3 flex items-center gap-2">
-                <X size={16} className="text-destructive" />
-                {t.language === 'vi' ? 'Bị cấm' : 'Blocked'}
-              </h4>
-              <ul className="space-y-2">
-                {d.ch2s1Blocked.map((item: string, i: number) => (
-                  <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                    <X size={14} className="text-destructive shrink-0 mt-0.5" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-          <Callout>{d.ch2s1Callout}</Callout>
-        </Section>
-
-        {/* 2.2 30-day grace period */}
-        <Section icon={Clock} title={d.ch2s2Title} id="grace-period">
-          <p className="text-muted-foreground leading-relaxed mb-6">{d.ch2s2Desc}</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            {d.ch2s2Options.map((opt: { title: string; desc: string; icon: string }, i: number) => (
-              <div key={i} className={`rounded-xl border p-5 ${opt.icon === 'upgrade' ? 'border-primary/30 bg-primary/5' : 'border-border bg-muted/20'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mb-3 ${opt.icon === 'upgrade' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                  {i === 0 ? 'A' : 'B'}
+              <div style={{ border: '1px solid rgba(235,87,87,0.3)', borderRadius: 8, padding: 16, background: 'rgba(235,87,87,0.04)' }}>
+                <div style={{ fontWeight: 600, fontSize: 14, color: '#37352f', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <X size={15} style={{ color: '#eb5757' }} />
+                  {t.language === 'vi' ? 'Bị cấm' : 'Blocked'}
                 </div>
-                <h4 className="font-semibold text-foreground text-sm mb-2">{opt.title}</h4>
-                <p className="text-xs text-muted-foreground leading-relaxed">{opt.desc}</p>
+                <ul style={{ margin: 0, paddingLeft: 0, listStyle: 'none' }}>
+                  {d.ch2s1Blocked.map((item: string, i: number) => (
+                    <li key={i} style={{ fontSize: 13, color: '#37352f', marginBottom: 4, display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                      <X size={13} style={{ color: '#eb5757', flexShrink: 0, marginTop: 2 }} />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            ))}
-          </div>
-          <Callout>{d.ch2s2Callout}</Callout>
-        </Section>
+            </div>
+            <DocCallout>{d.ch2s1Callout}</DocCallout>
+          </DocSection>
 
-        {/* 2.3 Hard delete */}
-        <Section icon={AlertTriangle} title={d.ch2s3Title} id="hard-delete">
-          <p className="text-muted-foreground leading-relaxed mb-4">{d.ch2s3Desc}</p>
-          <ul className="space-y-2 mb-6">
-            {d.ch2s3Actions.map((action: string, i: number) => (
-              <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                <AlertTriangle size={14} className="text-destructive shrink-0 mt-0.5" />
-                <span>{action}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="rounded-xl border border-border bg-muted/30 p-5 mb-6">
-            <p className="text-sm text-foreground leading-relaxed font-medium">{d.ch2s3Rule}</p>
-          </div>
-          <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-            <AlertTriangle size={16} className="text-destructive shrink-0 mt-0.5" />
-            <p className="text-sm text-foreground/80 leading-relaxed">{d.ch2s3Callout}</p>
-          </div>
-        </Section>
+          <DocSection icon={Clock} title={d.ch2s2Title} id="grace-period">
+            <p className="pdoc-p">{d.ch2s2Desc}</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginBottom: 16 }}>
+              {d.ch2s2Options.map((opt: { title: string; desc: string; icon: string }, i: number) => (
+                <div key={i} style={{
+                  border: opt.icon === 'upgrade' ? '1px solid rgba(35,131,226,0.3)' : '1px solid #e8e5e0',
+                  borderRadius: 8, padding: 16,
+                  background: opt.icon === 'upgrade' ? 'rgba(35,131,226,0.04)' : '#f7f6f3',
+                }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: opt.icon === 'upgrade' ? 'rgba(35,131,226,0.1)' : '#e8e5e0', color: opt.icon === 'upgrade' ? '#2383e2' : '#6b6b6b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{i === 0 ? 'A' : 'B'}</div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: '#37352f', marginBottom: 6 }}>{opt.title}</div>
+                  <div style={{ fontSize: 13, color: '#6b6b6b', lineHeight: 1.5 }}>{opt.desc}</div>
+                </div>
+              ))}
+            </div>
+            <DocCallout>{d.ch2s2Callout}</DocCallout>
+          </DocSection>
 
-        {/* CTA */}
-        <div className="mt-12 mb-16 text-center">
-          <p className="text-muted-foreground mb-4">{d.ch2CtaText || d.ctaText}</p>
-          <Link
-            to={lp('/pricing')}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:opacity-90 transition-opacity"
-          >
-            {d.ch2CtaButton || d.ctaButton}
-            <ArrowRight size={16} />
-          </Link>
-        </div>
-      </main>
+          <DocSection icon={AlertTriangle} title={d.ch2s3Title} id="hard-delete">
+            <p className="pdoc-p">{d.ch2s3Desc}</p>
+            <ul style={{ margin: '0 0 16px', paddingLeft: 0, listStyle: 'none' }}>
+              {d.ch2s3Actions.map((action: string, i: number) => (
+                <li key={i} style={{ fontSize: 14, color: '#37352f', marginBottom: 6, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  <AlertTriangle size={14} style={{ color: '#eb5757', flexShrink: 0, marginTop: 3 }} />
+                  <span>{action}</span>
+                </li>
+              ))}
+            </ul>
+            <div style={{ border: '1px solid #e8e5e0', borderRadius: 8, padding: 16, background: '#f7f6f3', marginBottom: 16 }}>
+              <p style={{ fontSize: 14, color: '#37352f', fontWeight: 500, lineHeight: 1.6, margin: 0 }}>{d.ch2s3Rule}</p>
+            </div>
+            <div style={{
+              display: 'flex', alignItems: 'flex-start', gap: 10,
+              border: '1px solid rgba(235,87,87,0.3)', borderRadius: 8, padding: 14,
+              background: 'rgba(235,87,87,0.04)',
+            }}>
+              <AlertTriangle size={16} style={{ color: '#eb5757', flexShrink: 0, marginTop: 1 }} />
+              <p style={{ fontSize: 13, color: '#37352f', lineHeight: 1.6, margin: 0 }}>{d.ch2s3Callout}</p>
+            </div>
+          </DocSection>
+
+          {/* CTA */}
+          <div style={{ textAlign: 'center', marginTop: 48, paddingBottom: 40 }}>
+            <p style={{ fontSize: 15, color: '#6b6b6b', marginBottom: 16 }}>{d.ch2CtaText || d.ctaText}</p>
+            <Link
+              to={lp('/pricing')}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                padding: '10px 24px', borderRadius: 8,
+                background: '#2383e2', color: '#fff', fontWeight: 500, fontSize: 14,
+                textDecoration: 'none',
+              }}
+            >
+              {d.ch2CtaButton || d.ctaButton}
+              <ArrowRight size={16} />
+            </Link>
+          </div>
+        </main>
+      </div>
+
+      {/* ═══ Styles ═══ */}
+      <style>{`
+        .pdoc-p {
+          font-size: 15px;
+          color: #37352f;
+          line-height: 1.7;
+          margin: 0 0 16px;
+        }
+        @media (max-width: 860px) {
+          .pricing-docs-mobile-toggle {
+            display: flex !important;
+          }
+          .pricing-docs-sidebar {
+            position: fixed !important;
+            left: -300px;
+            top: 56px !important;
+            height: calc(100vh - 56px) !important;
+            z-index: 40;
+            transition: left 0.25s ease;
+            box-shadow: none;
+          }
+          .pricing-docs-sidebar.open {
+            left: 0;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.1);
+          }
+          main { padding: 24px 20px 60px !important; }
+        }
+        .pricing-docs-sidebar::-webkit-scrollbar { width: 4px; }
+        .pricing-docs-sidebar::-webkit-scrollbar-track { background: transparent; }
+        .pricing-docs-sidebar::-webkit-scrollbar-thumb { background: #d3d1cb; border-radius: 4px; }
+      `}</style>
     </div>
   );
 }
 
 /* ═══════════════ Sub-components ═══════════════ */
 
-function TableOfContents({ d }: { d: any }) {
-  const items = d.tocItems;
+function ChapterHeading({ id, title, variant }: { id: string; title: string; variant?: 'destructive' }) {
+  const color = variant === 'destructive' ? '#eb5757' : '#2383e2';
   return (
-    <nav className="rounded-xl border border-border bg-muted/20 p-6 mb-12">
-      <h3 className="font-heading font-bold text-foreground mb-4 flex items-center gap-2">
-        <BookOpen size={16} className="text-primary" />
-        {d.tocTitle}
+    <h2 id={id} style={{ fontSize: 22, fontWeight: 700, color: '#37352f', margin: '0 0 16px', paddingBottom: 8, borderBottom: `2px solid ${color}`, scrollMarginTop: 90, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <BookOpen size={18} style={{ color }} />
+      {title}
+    </h2>
+  );
+}
+
+function DocSection({ icon: Icon, title, id, children }: { icon: any; title: string; id: string; children: React.ReactNode }) {
+  return (
+    <section id={id} style={{ marginBottom: 40, scrollMarginTop: 90 }}>
+      <h3 style={{ fontSize: 17, fontWeight: 600, color: '#37352f', margin: '28px 0 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <Icon size={16} style={{ color: '#2383e2' }} />
+        {title}
       </h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1">
-        {/* Chapter 1 */}
-        <div>
-          <a href="#chapter-1" className="text-sm font-semibold text-foreground hover:text-primary transition-colors block py-1">
-            {d.ch1Label}
-          </a>
-          <div className="ml-3 space-y-0.5">
-            <TocLink href="#owner-billing">{items.s1}</TocLink>
-            <TocLink href="#unique-seat">{items.s2}</TocLink>
-            <TocLink href="#resource-pool">{items.s3}</TocLink>
-            <TocLink href="#addons">{items.s4}</TocLink>
-            <TocLink href="#examples">{items.s5}</TocLink>
-            <TocLink href="#faq">{items.s6}</TocLink>
-          </div>
-        </div>
-        {/* Chapter 2 */}
-        <div>
-          <a href="#chapter-2" className="text-sm font-semibold text-foreground hover:text-primary transition-colors block py-1">
-            {d.ch2Label}
-          </a>
-          <div className="ml-3 space-y-0.5">
-            <TocLink href="#read-only">{items.ch2s1}</TocLink>
-            <TocLink href="#grace-period">{items.ch2s2}</TocLink>
-            <TocLink href="#hard-delete">{items.ch2s3}</TocLink>
-          </div>
-        </div>
-      </div>
-    </nav>
-  );
-}
-
-function TocLink({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <a href={href} className="text-sm text-muted-foreground hover:text-primary transition-colors block py-0.5">
-      {children}
-    </a>
-  );
-}
-
-function Section({ icon: Icon, title, id, children }: { icon: any; title: string; id: string; children: React.ReactNode }) {
-  return (
-    <section id={id} className="mb-14 scroll-mt-20">
-      <div className="flex items-center gap-3 mb-5">
-        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-          <Icon size={18} className="text-primary" />
-        </div>
-        <h2 className="text-xl font-heading font-bold text-foreground">{title}</h2>
-      </div>
       {children}
     </section>
   );
 }
 
-function Callout({ children }: { children: React.ReactNode }) {
+function DocCallout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
-      <Lightbulb size={16} className="text-primary shrink-0 mt-0.5" />
-      <p className="text-sm text-foreground/80 leading-relaxed">{children}</p>
+    <div style={{
+      display: 'flex', alignItems: 'flex-start', gap: 10,
+      border: '1px solid rgba(35,131,226,0.15)', borderRadius: 8, padding: 14,
+      background: 'rgba(35,131,226,0.04)', marginTop: 8,
+    }}>
+      <Lightbulb size={15} style={{ color: '#2383e2', flexShrink: 0, marginTop: 1 }} />
+      <p style={{ fontSize: 13, color: '#37352f', lineHeight: 1.6, margin: 0 }}>{children}</p>
+    </div>
+  );
+}
+
+function DocTable({ headers, rows, highlightFirst }: { headers: string[]; rows: string[][]; highlightFirst?: boolean }) {
+  return (
+    <div style={{ overflowX: 'auto', marginBottom: 16 }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+        <thead>
+          <tr>
+            {headers.map((h: string, i: number) => (
+              <th key={i} style={{ textAlign: 'left', padding: '8px 12px', background: '#f7f6f3', fontWeight: 600, color: '#37352f', border: '1px solid #e8e5e0' }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row: string[], i: number) => (
+            <tr key={i}>
+              {row.map((cell: string, j: number) => (
+                <td key={j} style={{ padding: '8px 12px', border: '1px solid #e8e5e0', color: highlightFirst && j === 0 ? '#37352f' : '#6b6b6b', fontWeight: highlightFirst && j === 0 ? 500 : 400 }}>{cell}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
