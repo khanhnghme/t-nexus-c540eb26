@@ -581,15 +581,16 @@ html.google-mode ::-webkit-scrollbar-thumb:hover {
   gap: 8px;
   flex: 1;
   min-width: 0;
-  padding: 6px 8px;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--_sb-border);
+  background: var(--_sb-search-bg);
   cursor: pointer;
-  transition: background 150ms ease;
+  transition: all 150ms ease;
 }
 
 .ws-switcher-compact:hover {
+  border-color: var(--_sb-active-bar);
   background: var(--_sb-hover);
 }
 
