@@ -99,7 +99,7 @@ function WorkspaceSwitcherCell({ collapsed }: { collapsed: boolean }) {
         <Tooltip>
           <TooltipTrigger asChild>
             <DropdownMenuTrigger asChild>
-              <button className="sidebar-nav-item ws-switcher-collapsed">
+              <button className="ws-switcher-compact ws-switcher-collapsed">
                 <div className="ws-avatar-mini">
                   {activeWorkspace.name.charAt(0).toUpperCase()}
                 </div>
@@ -132,28 +132,22 @@ function WorkspaceSwitcherCell({ collapsed }: { collapsed: boolean }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="ws-switcher">
-          <div className="ws-avatar">
+        <button className="ws-switcher-compact">
+          <div className="ws-avatar-compact">
             {activeWorkspace.name.charAt(0).toUpperCase()}
           </div>
-          <div className="ws-switcher-info flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
-              <span className="ws-switcher-name truncate flex-1 min-w-0">{activeWorkspace.name}</span>
-              {ownerPlan && (
-                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold leading-none shrink-0 whitespace-nowrap ${
-                  ownerPlan !== 'plan_free'
-                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-                    : 'bg-muted text-muted-foreground'
-                }`}>
-                  {formatPlanName(ownerPlan)}
-                </span>
-              )}
-            </div>
-            <span className="ws-switcher-role truncate">
-              {getRoleBadge(workspaceRole)} {getRoleLabel(workspaceRole)}
+          <span className="ws-name-compact">{activeWorkspace.name}</span>
+          {ownerPlan && (
+            <span className={cn(
+              "ws-plan-badge",
+              ownerPlan !== 'plan_free'
+                ? 'ws-plan-badge--pro'
+                : 'ws-plan-badge--free'
+            )}>
+              {formatPlanName(ownerPlan)}
             </span>
-          </div>
-          <ChevronsUpDown className="w-3.5 h-3.5 shrink-0 opacity-40" />
+          )}
+          <ChevronsUpDown className="w-3 h-3 shrink-0 opacity-30" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width] min-w-56">
@@ -344,30 +338,30 @@ export default function DashboardLayout({
           <div className="grid-cell-logo">
             <WorkspaceSwitcherCell collapsed={sidebarCollapsed} />
 
-            {/* Desktop toggle */}
+            {/* Desktop toggle — tiny pill at right edge */}
             <button
               className={cn(
-                "hidden md:flex items-center justify-center transition-all bg-background border border-border shadow-sm text-muted-foreground hover:text-foreground hover:bg-muted z-50",
+                "hidden md:flex items-center justify-center transition-all z-50",
                 sidebarCollapsed
-                  ? "absolute -right-3.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full"
-                  : "sidebar-toggle-btn ml-auto relative"
+                  ? "absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-background border border-border shadow-sm text-muted-foreground hover:text-foreground hover:bg-muted"
+                  : "ws-toggle-inline"
               )}
               onClick={toggleSidebar}
               title={sidebarCollapsed ? 'Mở rộng' : 'Thu gọn'}
             >
               {sidebarCollapsed ? (
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ChevronRight className="w-3 h-3" />
               ) : (
-                <ChevronLeft className="w-3.5 h-3.5" />
+                <ChevronLeft className="w-3 h-3" />
               )}
             </button>
 
             {/* Mobile close */}
             <button
-              className="sidebar-toggle-btn ml-auto md:hidden"
+              className="ws-toggle-inline md:hidden"
               onClick={() => setIsMobileOpen(false)}
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
 
