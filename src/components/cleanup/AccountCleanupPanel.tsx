@@ -330,7 +330,10 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
     await supabase.from('task_assignments').delete().in('task_id', (tasks || []).map(t => t.id));
     await supabase.from('task_comments').delete().in('task_id', (tasks || []).map(t => t.id));
 
-    const { data: taskNotes } = await supabase.from('task_notes').select('id').eq('task_id', (tasks || []).map(t => t.id));
+    const taskIds = (tasks || []).map(t => t.id);
+    const { data: taskNotes } = taskIds.length > 0 
+      ? await supabase.from('task_notes').select('id').in('task_id', taskIds)
+      : { data: [] as { id: string }[] };
     if (taskNotes && taskNotes.length > 0) {
       await supabase.from('task_note_attachments').delete().in('note_id', taskNotes.map(n => n.id));
       await supabase.from('task_notes').delete().in('id', taskNotes.map(n => n.id));
