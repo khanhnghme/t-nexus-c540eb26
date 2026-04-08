@@ -6,12 +6,24 @@ interface ProjectInfo {
   zaloLink?: string | null;
 }
 
+export interface ProjectNavProps {
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  isLeaderInGroup: boolean;
+  isGroupCreator: boolean;
+  membersCount: number;
+  hasActiveMeeting?: boolean;
+  isScoreFinalized?: boolean;
+}
+
 interface DashboardLayoutContextType {
   projectInfo: ProjectInfo;
   setProjectInfo: (info: ProjectInfo) => void;
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (collapsed: boolean) => void;
   toggleSidebar: () => void;
+  projectNavProps: ProjectNavProps | null;
+  setProjectNavProps: (props: ProjectNavProps | null) => void;
 }
 
 const DashboardLayoutContext = createContext<DashboardLayoutContextType | null>(null);
@@ -22,11 +34,11 @@ export function DashboardLayoutProvider({ children }: { children: ReactNode }) {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('sidebar_collapsed');
       if (saved !== null) return saved === 'true';
-      // Default: collapsed on mobile, expanded on desktop
       return window.innerWidth < 1024;
     }
     return false;
   });
+  const [projectNavProps, setProjectNavPropsState] = useState<ProjectNavProps | null>(null);
 
   const setProjectInfo = useCallback((info: ProjectInfo) => {
     setProjectInfoState(info);
@@ -45,8 +57,12 @@ export function DashboardLayoutProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const setProjectNavProps = useCallback((props: ProjectNavProps | null) => {
+    setProjectNavPropsState(props);
+  }, []);
+
   return (
-    <DashboardLayoutContext.Provider value={{ projectInfo, setProjectInfo, sidebarCollapsed, setSidebarCollapsed, toggleSidebar }}>
+    <DashboardLayoutContext.Provider value={{ projectInfo, setProjectInfo, sidebarCollapsed, setSidebarCollapsed, toggleSidebar, projectNavProps, setProjectNavProps }}>
       {children}
     </DashboardLayoutContext.Provider>
   );

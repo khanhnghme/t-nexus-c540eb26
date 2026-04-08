@@ -1,5 +1,5 @@
 // GroupDetail page - Task management
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useDashboardLayoutContext } from '@/contexts/DashboardLayoutContext';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,7 +29,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Users, Loader2, ArrowLeft, Layers, Trash2, FileText, Calendar, Send, Clock } from 'lucide-react';
 import LoadingScreen from '@/components/LoadingScreen';
-import ProjectNavigation from '@/components/ProjectNavigation';
+
 import ProcessScores from '@/components/scores/ProcessScores';
 import ProjectResources from '@/components/ProjectResources';
 import ProjectEvidenceExport from '@/components/ProjectEvidenceExport';
@@ -69,7 +69,7 @@ export default function GroupDetail() {
   const { toast } = useToast();
   const { currentTab, setCurrentTab, goBack, goNext, canGoBack, canGoNext, isFirstTab, isLastTab } = useNavigation();
 
-  const { setProjectInfo } = useDashboardLayoutContext();
+  const { setProjectInfo, setProjectNavProps } = useDashboardLayoutContext();
   
   const [group, setGroup] = useState<ExtendedGroup | null>(null);
   const [members, setMembers] = useState<GroupMember[]>([]);
@@ -96,9 +96,9 @@ export default function GroupDetail() {
   // Sync local tab state with navigation context
   const activeTab = currentTab && availableTabs.includes(currentTab) ? currentTab : 'overview';
   
-  const handleTabChange = (tabId: string) => {
+  const handleTabChange = useCallback((tabId: string) => {
     setCurrentTab(tabId);
-  };
+  }, [setCurrentTab]);
   
   // Initialize tab on mount - check URL params first
   useEffect(() => {
@@ -117,6 +117,22 @@ export default function GroupDetail() {
     }
     return () => setProjectInfo({});
   }, [group?.id, group?.name, group?.zalo_link, setProjectInfo]);
+
+  // Sync project navigation to TopBar
+  useEffect(() => {
+    if (group) {
+      setProjectNavProps({
+        activeTab,
+        onTabChange: handleTabChange,
+        isLeaderInGroup,
+        isGroupCreator: group.created_by === user?.id || isAdmin,
+        membersCount: members.length,
+        hasActiveMeeting,
+        isScoreFinalized: !!(group as any).score_finalized_at,
+      });
+    }
+    return () => setProjectNavProps(null);
+  }, [group, activeTab, handleTabChange, isLeaderInGroup, isAdmin, members.length, hasActiveMeeting, user?.id, setProjectNavProps]);
   
   const handleGoBack = () => {
     goBack(availableTabs);
@@ -413,18 +429,7 @@ export default function GroupDetail() {
 
 
   return (
-    <>
-      <div className="w-full pt-2">
-        <ProjectNavigation
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-          isLeaderInGroup={isLeaderInGroup}
-          isGroupCreator={group.created_by === user?.id || isAdmin}
-          membersCount={members.length}
-          hasActiveMeeting={hasActiveMeeting}
-          isScoreFinalized={!!(group as any).score_finalized_at}
-        />
-      </div>
+      <div>
 
       <div>
         <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-0">
@@ -762,6 +767,6 @@ export default function GroupDetail() {
       <AlertDialog open={isDeleteGroupDialogOpen} onOpenChange={setIsDeleteGroupDialogOpen}>
         <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Xác nhận xóa project</AlertDialogTitle><AlertDialogDescription>Nhập tên project <span className="font-bold">"{group.name}"</span> để xác nhận:<Input className="mt-2" value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)} /></AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel onClick={() => setDeleteConfirmText('')}>Hủy</AlertDialogCancel><AlertDialogAction onClick={handleDeleteGroup} className="bg-destructive text-destructive-foreground" disabled={isDeletingGroup || deleteConfirmText !== group.name}>{isDeletingGroup ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Xóa vĩnh viễn'}</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 }

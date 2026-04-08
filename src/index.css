@@ -1557,13 +1557,14 @@ html.no-animations [data-state="active"][role="tabpanel"] {
   justify-content: space-between;
   padding: 0 24px;
   position: relative;
-  background: hsl(var(--background));
+  background: var(--_sb-bg);
+  backdrop-filter: blur(16px) saturate(1.6);
   border-bottom: 1px solid var(--_sb-border-strong);
   z-index: 3;
 }
 
 .dark .grid-cell-topbar {
-  background: #0f0f11;
+  background: var(--_sb-bg);
 }
 
 /* ── Cell 3: Bottom-left (Sidebar) ── */
