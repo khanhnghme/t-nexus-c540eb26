@@ -67,6 +67,7 @@ export default function GroupDetail() {
   const routeId = projectSlug || projectId || groupId;
   const { user, isAdmin, profile } = useAuth();
   const { toast } = useToast();
+  const { guardAction: guardReadOnly } = useReadOnlyGuard();
   const { currentTab, setCurrentTab, goBack, goNext, canGoBack, canGoNext, isFirstTab, isLastTab } = useNavigation();
 
   const { setProjectInfo, setProjectNavProps } = useDashboardLayoutContext();
@@ -227,7 +228,7 @@ export default function GroupDetail() {
         })) as Task[]);
       }
 
-
+import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
       // Check for active meetings (in_progress status)
       const { data: activeMeetings } = await supabase
         .from('meetings')
@@ -268,6 +269,7 @@ export default function GroupDetail() {
   };
 
   const handleCreateTask = async () => {
+    if (guardReadOnly()) return;
     if (!newTaskTitle.trim() || (stages.length > 0 && !newTaskStageId)) return;
     setIsCreatingTask(true);
     try {
