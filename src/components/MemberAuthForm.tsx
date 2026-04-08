@@ -109,7 +109,7 @@ export function MemberAuthForm() {
   const { translations, locale, localizedPath } = useLanguage();
   const ta = translations.auth;
   const dateLocale = locale === 'vi' ? viLocale : enUS;
-  const localizedPolicyPath = localizedPath('/docs/terms');
+  const localizedPolicyPath = localizedPath('/guide/terms');
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});

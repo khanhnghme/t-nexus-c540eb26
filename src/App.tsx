@@ -125,8 +125,8 @@ function AppRoutes() {
         <Route path="/auth" element={<ForceLightMode><Auth /></ForceLightMode>} />
         <Route path="/pricing" element={<ForceLightMode><Pricing /></ForceLightMode>} />
         <Route path="/download" element={<ForceLightMode><DownloadPage /></ForceLightMode>} />
-        <Route path="/docs/terms" element={<ForceLightMode><Terms /></ForceLightMode>} />
-        <Route path="/docs/pricing" element={<ForceLightMode><PricingDocs /></ForceLightMode>} />
+        <Route path="/guide/terms" element={<ForceLightMode><Terms /></ForceLightMode>} />
+        <Route path="/guide/pricing" element={<ForceLightMode><PricingDocs /></ForceLightMode>} />
 
         {/* ═══ Localized public routes — Vietnamese (/vi) ═══ */}
         <Route path="/vi">
@@ -134,8 +134,8 @@ function AppRoutes() {
           <Route path="auth" element={<ForceLightMode><Auth /></ForceLightMode>} />
           <Route path="pricing" element={<ForceLightMode><Pricing /></ForceLightMode>} />
           <Route path="download" element={<ForceLightMode><DownloadPage /></ForceLightMode>} />
-          <Route path="docs/terms" element={<ForceLightMode><Terms /></ForceLightMode>} />
-          <Route path="docs/pricing" element={<ForceLightMode><PricingDocs /></ForceLightMode>} />
+          <Route path="guide/terms" element={<ForceLightMode><Terms /></ForceLightMode>} />
+          <Route path="guide/pricing" element={<ForceLightMode><PricingDocs /></ForceLightMode>} />
         </Route>
 
         {/* ═══ Non-localized public routes ═══ */}

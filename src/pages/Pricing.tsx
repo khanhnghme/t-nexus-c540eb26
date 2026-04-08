@@ -237,7 +237,7 @@ export default function Pricing() {
           <p style={{ fontSize: 15, color: '#787774', marginBottom: 8 }}>
             {'💡 '}{t.pricingDocs?.pricingCta}
           </p>
-          <Link to={lp('/docs/pricing')} style={{ fontSize: 15, color: '#2383e2', textDecoration: 'underline', fontWeight: 500 }}>
+          <Link to={lp('/guide/pricing')} style={{ fontSize: 15, color: '#2383e2', textDecoration: 'underline', fontWeight: 500 }}>
             {t.pricingDocs?.pricingCtaLink}{' →'}
           </Link>
         </div>
