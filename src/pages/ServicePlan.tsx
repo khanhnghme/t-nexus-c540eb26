@@ -400,8 +400,15 @@ export default function ServicePlan() {
                   const totalStorageAll = wsUsages.reduce((s, w) => s + w.storageMb, 0);
                   const projectContribPct = totalProjectsAll > 0 ? Math.round((ws.projectCount / totalProjectsAll) * 100) : 0;
                   const storageContribPct = totalStorageAll > 0 ? Math.round((ws.storageMb / totalStorageAll) * 100) : 0;
-
                   const formatStorage = (mb: number) => mb >= 1000 ? `${(mb / 1000).toFixed(1)} GB` : `${mb} MB`;
+
+                  const projPct = ws.maxProjects ? (ws.projectCount / ws.maxProjects) * 100 : 0;
+                  const projOver = ws.maxProjects !== null && ws.projectCount >= ws.maxProjects;
+                  const projWarn = !projOver && ws.maxProjects !== null && projPct >= 80;
+
+                  const storagePct = ws.maxStorageMb > 0 ? (ws.storageMb / ws.maxStorageMb) * 100 : 0;
+                  const storageOver = ws.maxStorageMb > 0 && ws.storageMb >= ws.maxStorageMb;
+                  const storageWarn = !storageOver && ws.maxStorageMb > 0 && storagePct >= 80;
 
                   return (
                     <Card key={ws.id}>
@@ -420,15 +427,18 @@ export default function ServicePlan() {
                         <div className="space-y-3">
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground flex items-center gap-1.5">
+                              <span className={`flex items-center gap-1.5 ${projOver ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
                                 <FolderKanban className="w-3 h-3" /> {t.projects}
                               </span>
-                              <span className="font-medium tabular-nums">
+                              <span className={`font-medium tabular-nums ${projOver ? 'text-red-600 dark:text-red-400' : ''}`}>
                                 {ws.projectCount} {t.projectsLabel}
                                 <span className="text-muted-foreground ml-1">({projectContribPct}%)</span>
                               </span>
                             </div>
-                            <Progress value={ws.maxProjects ? Math.min(100, (ws.projectCount / ws.maxProjects) * 100) : projectContribPct} className="h-1.5" />
+                            <Progress
+                              value={ws.maxProjects ? Math.min(100, projPct) : projectContribPct}
+                              className={`h-1.5 ${projOver ? '[&>div]:bg-red-500' : projWarn ? '[&>div]:bg-amber-500' : ''}`}
+                            />
                           </div>
 
                           <div className="space-y-1.5">
@@ -444,15 +454,18 @@ export default function ServicePlan() {
 
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground flex items-center gap-1.5">
+                              <span className={`flex items-center gap-1.5 ${storageOver ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
                                 <HardDrive className="w-3 h-3" /> {t.storage}
                               </span>
-                              <span className="font-medium tabular-nums">
+                              <span className={`font-medium tabular-nums ${storageOver ? 'text-red-600 dark:text-red-400' : ''}`}>
                                 {formatStorage(ws.storageMb)}
                                 <span className="text-muted-foreground ml-1">({storageContribPct}%)</span>
                               </span>
                             </div>
-                            <Progress value={ws.maxStorageMb > 0 ? Math.min(100, (ws.storageMb / ws.maxStorageMb) * 100) : 0} className="h-1.5" />
+                            <Progress
+                              value={ws.maxStorageMb > 0 ? Math.min(100, storagePct) : 0}
+                              className={`h-1.5 ${storageOver ? '[&>div]:bg-red-500' : storageWarn ? '[&>div]:bg-amber-500' : ''}`}
+                            />
                           </div>
                         </div>
                       </CardContent>
