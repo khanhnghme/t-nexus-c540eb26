@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from 'react';
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAAC03fWi2C7rYFMTV';
 
@@ -6,6 +6,10 @@ interface TurnstileWidgetProps {
   onVerify: (token: string) => void;
   onExpire?: () => void;
   onError?: () => void;
+}
+
+export interface TurnstileWidgetRef {
+  reset: () => void;
 }
 
 declare global {
@@ -18,84 +22,101 @@ declare global {
   }
 }
 
-export const TurnstileWidget = ({ onVerify, onExpire, onError }: TurnstileWidgetProps) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const widgetIdRef = useRef<string | null>(null);
-  const scriptRequestedRef = useRef(false);
-  const callbacksRef = useRef({ onVerify, onExpire, onError });
+export const TurnstileWidget = forwardRef<TurnstileWidgetRef, TurnstileWidgetProps>(
+  ({ onVerify, onExpire, onError }, ref) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const widgetIdRef = useRef<string | null>(null);
+    const scriptRequestedRef = useRef(false);
+    const callbacksRef = useRef({ onVerify, onExpire, onError });
 
-  useEffect(() => {
-    callbacksRef.current = { onVerify, onExpire, onError };
-  }, [onVerify, onExpire, onError]);
+    useEffect(() => {
+      callbacksRef.current = { onVerify, onExpire, onError };
+    }, [onVerify, onExpire, onError]);
 
-  const removeWidget = useCallback(() => {
-    if (widgetIdRef.current && window.turnstile) {
-      try { window.turnstile.remove(widgetIdRef.current); } catch {}
-      widgetIdRef.current = null;
-    }
-    if (containerRef.current) {
-      containerRef.current.innerHTML = '';
-    }
-  }, []);
+    const removeWidget = useCallback(() => {
+      if (widgetIdRef.current && window.turnstile) {
+        try { window.turnstile.remove(widgetIdRef.current); } catch {}
+        widgetIdRef.current = null;
+      }
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+      }
+    }, []);
 
-  const renderWidget = useCallback(() => {
-    if (!containerRef.current || !window.turnstile) return;
-    removeWidget();
+    const renderWidget = useCallback(() => {
+      if (!containerRef.current || !window.turnstile) return;
+      removeWidget();
 
-    widgetIdRef.current = window.turnstile.render(containerRef.current, {
-      sitekey: TURNSTILE_SITE_KEY,
-      size: 'normal',
-      appearance: 'interaction-only',
-      theme: 'auto',
-      callback: (token: string) => callbacksRef.current.onVerify(token),
-      'expired-callback': () => callbacksRef.current.onExpire?.(),
-      'error-callback': () => callbacksRef.current.onError?.(),
-    });
-  }, [removeWidget]);
+      widgetIdRef.current = window.turnstile.render(containerRef.current, {
+        sitekey: TURNSTILE_SITE_KEY,
+        size: 'normal',
+        appearance: 'interaction-only',
+        theme: 'auto',
+        callback: (token: string) => callbacksRef.current.onVerify(token),
+        'expired-callback': () => callbacksRef.current.onExpire?.(),
+        'error-callback': () => callbacksRef.current.onError?.(),
+      });
+    }, [removeWidget]);
 
-  useEffect(() => {
-    if (window.turnstile) {
-      renderWidget();
-      return;
-    }
+    const resetWidget = useCallback(() => {
+      if (widgetIdRef.current && window.turnstile) {
+        try {
+          window.turnstile.reset(widgetIdRef.current);
+        } catch {
+          // If reset fails, re-render
+          renderWidget();
+        }
+      } else {
+        renderWidget();
+      }
+    }, [renderWidget]);
 
-    const existingScript = document.querySelector<HTMLScriptElement>('script[src*="turnstile"]');
-    if (existingScript) {
-      if (existingScript.dataset.loaded === 'true') {
+    useImperativeHandle(ref, () => ({ reset: resetWidget }), [resetWidget]);
+
+    useEffect(() => {
+      if (window.turnstile) {
         renderWidget();
         return;
       }
+
+      const existingScript = document.querySelector<HTMLScriptElement>('script[src*="turnstile"]');
+      if (existingScript) {
+        if (existingScript.dataset.loaded === 'true') {
+          renderWidget();
+          return;
+        }
+        const handleLoad = () => {
+          existingScript.dataset.loaded = 'true';
+          renderWidget();
+        };
+        existingScript.addEventListener('load', handleLoad, { once: true });
+        return () => existingScript.removeEventListener('load', handleLoad);
+      }
+
+      if (scriptRequestedRef.current) return;
+      scriptRequestedRef.current = true;
+
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      script.async = true;
+      script.defer = true;
+
       const handleLoad = () => {
-        existingScript.dataset.loaded = 'true';
+        script.dataset.loaded = 'true';
         renderWidget();
       };
-      existingScript.addEventListener('load', handleLoad, { once: true });
-      return () => existingScript.removeEventListener('load', handleLoad);
-    }
+      script.addEventListener('load', handleLoad, { once: true });
+      document.head.appendChild(script);
 
-    if (scriptRequestedRef.current) return;
-    scriptRequestedRef.current = true;
+      return () => script.removeEventListener('load', handleLoad);
+    }, [renderWidget]);
 
-    const script = document.createElement('script');
-    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-    script.async = true;
-    script.defer = true;
+    useEffect(() => {
+      return () => { removeWidget(); };
+    }, [removeWidget]);
 
-    const handleLoad = () => {
-      script.dataset.loaded = 'true';
-      renderWidget();
-    };
-    script.addEventListener('load', handleLoad, { once: true });
-    document.head.appendChild(script);
-
-    return () => script.removeEventListener('load', handleLoad);
-  }, [renderWidget]);
-
-  useEffect(() => {
-    return () => { removeWidget(); };
-  }, [removeWidget]);
-
-  return <div ref={containerRef} className="flex justify-center [&:empty]:hidden overflow-hidden rounded-lg" />;
-};
+    return <div ref={containerRef} className="flex justify-center [&:empty]:hidden overflow-hidden rounded-lg" />;
+  }
+);
 
 TurnstileWidget.displayName = 'TurnstileWidget';
