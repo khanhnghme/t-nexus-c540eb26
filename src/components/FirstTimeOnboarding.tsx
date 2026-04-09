@@ -1265,7 +1265,12 @@ export default function FirstTimeOnboarding({
                                     {cycle === 'yearly' ? (isVi ? 'Theo năm' : 'Billed yearly') : (isVi ? 'Theo tháng' : 'Billed monthly')}
                                   </p>
                                 </div>
-                                <span className="font-semibold">${baseAmount.toFixed(2)}</span>
+                                <div className="text-right">
+                                  {welcomeDiscount > 0 && (
+                                    <span className="text-[11px] text-muted-foreground line-through mr-1">${originalBaseAmount.toFixed(2)}</span>
+                                  )}
+                                  <span className="font-semibold">${baseAmount.toFixed(2)}</span>
+                                </div>
                               </div>
 
                               {hasAddons && (

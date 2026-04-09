@@ -13,9 +13,14 @@ const PLAN_PRICES: Record<string, { monthly: number; yearly: number }> = {
   plan_business: { monthly: 24, yearly: 240 },
 };
 
+const WELCOME_PRICES: Record<string, { monthly: number; yearly: number }> = {
+  plan_plus: { monthly: 3.9, yearly: 39 },
+  plan_pro: { monthly: 9.9, yearly: 99 },
+  plan_business: { monthly: 21.9, yearly: 219 },
+};
+
 const ADDON_PRICE = 2.49;
 
-// Addon discount by plan
 const ADDON_DISCOUNT_RATE: Record<string, number> = {
   plan_plus: 0.10,
   plan_pro: 0.20,
@@ -78,8 +83,32 @@ Deno.serve(async (req) => {
       });
     }
 
+    const serviceClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    // Check if first-time buyer (no completed orders)
+    const { data: completedOrders } = await serviceClient
+      .from("orders")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "completed")
+      .limit(1);
+
+    const isFirstTimeBuyer = !completedOrders || completedOrders.length === 0;
+
     const prices = PLAN_PRICES[plan];
-    const baseAmount = billing_cycle === "yearly" ? prices.yearly : prices.monthly;
+    const welcomePrices = WELCOME_PRICES[plan];
+    const originalAmount = billing_cycle === "yearly" ? prices.yearly : prices.monthly;
+
+    let baseAmount = originalAmount;
+    let welcomeDiscountAmount = 0;
+
+    if (isFirstTimeBuyer && welcomePrices) {
+      baseAmount = billing_cycle === "yearly" ? welcomePrices.yearly : welcomePrices.monthly;
+      welcomeDiscountAmount = Math.round((originalAmount - baseAmount) * 100) / 100;
+    }
 
     // Calculate addon amount WITH plan-based discount
     const addonDiscountRate = ADDON_DISCOUNT_RATE[plan] || 0;
@@ -103,11 +132,6 @@ Deno.serve(async (req) => {
     let validCouponCode: string | null = null;
 
     if (coupon_code) {
-      const serviceClient = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-      );
-
       const { data: coupon } = await serviceClient
         .from("coupons")
         .select("*")
@@ -122,7 +146,6 @@ Deno.serve(async (req) => {
         const hasUses = coupon.max_uses === null || coupon.used_count < coupon.max_uses;
         const planApplicable = !coupon.applicable_plans?.length || coupon.applicable_plans.includes(plan);
 
-        // Per-user check
         const { data: existingOrders } = await serviceClient
           .from("orders")
           .select("id")
@@ -189,11 +212,6 @@ Deno.serve(async (req) => {
     }
 
     // Save order to DB
-    const serviceClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
     await serviceClient.from("orders").insert({
       user_id: user.id,
       plan,
@@ -207,6 +225,7 @@ Deno.serve(async (req) => {
       payment_method: "paypal",
       paypal_order_id: paypalOrder.id,
       status: "pending",
+      welcome_discount: welcomeDiscountAmount,
     });
 
     return new Response(
