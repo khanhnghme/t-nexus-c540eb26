@@ -56,6 +56,8 @@ const DEFAULT_FILTERS: ActivityFilters = {
 
 export default function ProjectActivityLog({ groupId, groupName = 'Project', isLeader = false, isAdmin = false, isGroupCreator = false }: ProjectActivityLogProps) {
   const { user, profile } = useAuth();
+  const planLimits = usePlanLimits();
+  const { locale } = useLanguage();
   const canManage = isLeader || isAdmin;
   const canManageLogs = isGroupCreator || isAdmin; // Only creator/admin can toggle logging & delete logs
 
