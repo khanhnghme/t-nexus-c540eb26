@@ -322,9 +322,45 @@ export default function ProjectActivityLog({ groupId, groupName = 'Project', isL
     );
   }
 
+  // Activity log limit banner
+  const logDaysLimit = planLimits.maxActivityLogDays;
+  const isFreePlan = logDaysLimit === 0;
+  const hasRetentionLimit = logDaysLimit !== null && logDaysLimit > 0;
+
+  if (isFreePlan) {
+    return (
+      <Card>
+        <CardContent className="py-8">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <Lock className="w-10 h-10 text-muted-foreground" />
+            <div>
+              <p className="font-medium text-foreground">
+                {locale === 'vi' ? 'Gói Free không hỗ trợ nhật ký hoạt động' : 'Activity log is not available on the Free plan'}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {locale === 'vi' ? 'Nâng cấp lên Plus hoặc cao hơn để theo dõi hoạt động dự án.' : 'Upgrade to Plus or higher to track project activity.'}
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => window.location.href = '/service-plan'}>
+              {locale === 'vi' ? 'Xem gói dịch vụ' : 'View plans'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <>
       <Card>
+        {hasRetentionLimit && (
+          <div className="mx-6 mt-4 flex items-center gap-2 rounded-md bg-accent/50 border border-accent px-3 py-2 text-sm text-muted-foreground">
+            <Info className="w-4 h-4 shrink-0" />
+            {locale === 'vi'
+              ? `Nhật ký chỉ lưu giữ ${logDaysLimit} ngày gần nhất theo gói Plus. Các bản ghi cũ hơn sẽ tự động bị xóa.`
+              : `Activity logs are retained for the last ${logDaysLimit} days on the Plus plan. Older records are automatically deleted.`}
+          </div>
+        )}
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <CardTitle className="text-lg flex items-center gap-2">
