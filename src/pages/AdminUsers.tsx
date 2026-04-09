@@ -23,7 +23,7 @@ import {
   Users,
   UserCheck,
   UserMinus,
-  UserCog as _UserCog,
+  
   ClipboardList,
   Check,
   X,
