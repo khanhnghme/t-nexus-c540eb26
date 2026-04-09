@@ -438,6 +438,10 @@ export default function Checkout() {
                     <p className="font-medium">{getPlanLabel(plan)} Plan</p>
                     <p className="text-[11px] text-muted-foreground">
                       {cycle === 'yearly' ? (t?.billedYearly || 'Billed yearly') : (t?.billedMonthly || 'Billed monthly')}
+                      {' · '}
+                      <span className={addonDiscountRate > 0 ? "text-emerald-600 font-medium" : ""}>
+                        Add-on {addonDiscountRate > 0 ? `-${addonDiscountRate * 100}%` : (isVi ? 'không giảm' : 'no discount')}
+                      </span>
                     </p>
                   </div>
                   <span className="font-semibold">${baseAmount.toFixed(2)}</span>
