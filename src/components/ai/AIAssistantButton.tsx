@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import AIAssistantPanel from './AIAssistantPanel';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Sparkles, MessageCircle } from 'lucide-react';
-import tNexusLogo from '@/assets/t-nexus-logo.png';
+import tNexusTextLogo from '@/assets/t-nexus-text.png';
 import zaloLogo from '@/assets/zalo-logo.png';
 
 interface AIAssistantButtonProps {
