@@ -26,6 +26,7 @@ import {
   Rocket, Eye, EyeOff, Mail, ListChecks, Users, FolderKanban,
   Award, MessageSquare, ChevronLeft, Globe, Crown, Zap,
   Tag, Plus, Minus, Package, CreditCard, ShieldCheck,
+  ArrowRight, ArrowLeft, ChevronUp, ChevronDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -91,6 +92,8 @@ export default function FirstTimeOnboarding({
   const [couponError, setCouponError] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'failed'>('idle');
+  const [checkoutSubStep, setCheckoutSubStep] = useState<1 | 2>(1);
+  const [paymentMethodOpen, setPaymentMethodOpen] = useState(true);
   const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
 
   const allSteps: StepId[] = useMemo(() => {
