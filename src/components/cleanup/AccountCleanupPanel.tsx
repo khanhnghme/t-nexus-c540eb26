@@ -75,16 +75,21 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
       // Fetch projects, members, storage in parallel
       const [groupsRes, membersRes] = await Promise.all([
         supabase.from('groups').select('id, name, workspace_id').in('workspace_id', wsIds),
-        supabase.from('workspace_members').select('workspace_id').in('workspace_id', wsIds),
+        supabase.from('workspace_members').select('workspace_id, user_id').in('workspace_id', wsIds),
       ]);
 
       const groups = groupsRes.data || [];
       const members = membersRes.data || [];
 
-      // Member count per WS
+      // Member user_ids per WS
       const memberMap: Record<string, number> = {};
+      const memberUserIdsMap: Record<string, string[]> = {};
       members.forEach(m => {
-        if (m.workspace_id) memberMap[m.workspace_id] = (memberMap[m.workspace_id] || 0) + 1;
+        if (m.workspace_id) {
+          memberMap[m.workspace_id] = (memberMap[m.workspace_id] || 0) + 1;
+          if (!memberUserIdsMap[m.workspace_id]) memberUserIdsMap[m.workspace_id] = [];
+          if (m.user_id) memberUserIdsMap[m.workspace_id].push(m.user_id);
+        }
       });
 
       // Task count per project
