@@ -23,7 +23,7 @@ import DashboardProjectCard from '@/components/dashboard/DashboardProjectCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import UserPresenceIndicator from '@/components/UserPresenceIndicator';
-import FirstTimeOnboarding from '@/components/FirstTimeOnboarding';
+import { Navigate } from 'react-router-dom';
 
 
 import { getSystemRoleLabel } from '@/lib/roleLabels';
@@ -520,16 +520,7 @@ export default function Dashboard() {
       )}
 
       {user && profile && !profile.onboarding_completed && (
-        <FirstTimeOnboarding
-          open={!profile.onboarding_completed}
-          userId={user.id}
-          userFullName={profile.full_name}
-          userEmail={profile.email}
-          userStudentId={profile.student_id}
-          userPlan={profile.user_plan}
-          mustChangePassword={mustChangePassword}
-          onComplete={refreshProfile}
-        />
+        <Navigate to="/onboarding" replace />
       )}
 
       <MandatoryNotification mode="post_login" userId={user?.id} />
