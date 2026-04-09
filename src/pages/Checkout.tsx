@@ -571,20 +571,14 @@ export default function Checkout() {
             const qty = addons[addon.type] || 0;
             if (qty === 0) return null;
             const unitOriginal = cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
-            const unitFinal = Math.round(unitOriginal * (1 - addonDiscountRate) * 100) / 100;
-            const lineTotal = Math.round(unitFinal * qty * 100) / 100;
+            const lineTotal = unitOriginal * qty;
             return (
               <div key={addon.type} className="grid grid-cols-12 gap-2 items-center py-2.5 text-sm border-b border-dashed">
                 <div className="col-span-6 flex items-center gap-2">
                   <span>{addon.emoji}</span>
                   <span>{isVi ? addon.unitLabelVi : addon.unitLabel}</span>
                 </div>
-                <div className="col-span-2 text-right">
-                  {addonDiscountRate > 0 && (
-                    <span className="text-[11px] text-muted-foreground line-through mr-1">${unitOriginal.toFixed(2)}</span>
-                  )}
-                  <span className={addonDiscountRate > 0 ? "text-emerald-600" : "text-muted-foreground"}>${unitFinal.toFixed(2)}</span>
-                </div>
+                <div className="col-span-2 text-right text-muted-foreground">${unitOriginal.toFixed(2)}</div>
                 <div className="col-span-2 text-center text-muted-foreground">{qty}</div>
                 <div className="col-span-2 text-right font-medium">${lineTotal.toFixed(2)}</div>
               </div>
