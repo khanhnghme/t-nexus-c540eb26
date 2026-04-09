@@ -136,7 +136,7 @@ export default function AIAssistantButton({ projectId, projectName, zaloLink }: 
             )}
           >
             <Avatar className="h-[72px] w-[72px] transition-transform group-hover:scale-110 animate-float">
-              <AvatarImage src={tNexusLogo} alt="AI Assistant" className="object-cover rounded-full" />
+              <AvatarImage src={tNexusTextLogo} alt="AI Assistant" className="object-cover rounded-full" />
               <AvatarFallback className="bg-transparent">
                 <Sparkles className="h-8 w-8 text-primary" />
               </AvatarFallback>
