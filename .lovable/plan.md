@@ -1,83 +1,74 @@
-## Plan: Đợt 4 — Module 5 (Phân quyền Admin Billing)
 
-### Scope
-Thêm phân quyền chi tiết cho billing admin: `billing_viewer`, `billing_operator`, `billing_manager`. Gate tất cả actions trong ManagePlanDialog + ẩn/hiện UI theo quyền. `system_owner` bypass tất cả.
+
+## Đợt 4 — Module 5: Phân quyền Admin Billing (RBAC)
 
 ### 1. Migration SQL
+Thêm cột `billing_role` vào `user_roles` + tạo function `get_billing_role`:
 
-**Thêm cột `billing_role` vào `user_roles`**:
 ```sql
-ALTER TABLE user_roles ADD COLUMN billing_role text;
--- Values: null (no billing access), 'billing_viewer', 'billing_operator', 'billing_manager'
+ALTER TABLE public.user_roles ADD COLUMN IF NOT EXISTS billing_role text;
+
+CREATE OR REPLACE FUNCTION public.get_billing_role(_user_id uuid)
+RETURNS text
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public'
+AS $$
+  SELECT CASE
+    WHEN EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = _user_id AND role = 'system_owner')
+      THEN 'billing_manager'
+    WHEN EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = _user_id AND role IN ('system_owner','system_admin'))
+      THEN (SELECT COALESCE(ur.billing_role, 'billing_viewer') FROM public.user_roles ur WHERE ur.user_id = _user_id LIMIT 1)
+    ELSE NULL
+  END
+$$;
 ```
 
-**Tạo function `get_billing_role`**:
-```sql
-CREATE FUNCTION get_billing_role(_user_id uuid) RETURNS text
--- Returns: 'billing_manager' for system_owner (auto), 
--- or billing_role from user_roles for system_admin
--- null if no billing access
+### 2. `src/hooks/useAdminBillingRole.ts` — Hook mới
+- Query `user_roles` for current user
+- `system_owner` → auto `billing_manager`
+- `system_admin` → use `billing_role` column (default `billing_viewer`)
+- Export: `billingRole`, `canView`, `canOperate`, `canManage`
+
+### 3. `src/components/admin/ManagePlanDialog.tsx` — Gate actions
+- Import `useAdminBillingRole`
+- Viewer: dialog should not open (handled by parent)
+- Operator: filter out `suspend`/`restore` from action select
+- Manager: full access
+
+### 4. `src/pages/AdminUserBilling.tsx` — Gate quick actions
+- Import `useAdminBillingRole`
+- Viewer: hide all quick action buttons
+- Operator: hide suspend/restore buttons
+- Manager: show all
+
+### 5. `src/components/admin/UserNotesTab.tsx` — Prop `canAddNote`
+- Add prop, hide form when false
+
+### 6. `src/hooks/useAdminPlanActions.ts` — Validate role
+- Check billing role before executing dangerous actions
+- Reject operator attempting suspend/restore
+
+### 7. i18n (`en.ts` + `vi.ts`)
+Add `adminBilling.rbac` block:
 ```
-
-### Phân quyền chi tiết
-
-| Quyền | Viewer | Operator | Manager | Owner |
-|-------|--------|----------|---------|-------|
-| Xem gói, payments, history | ✓ | ✓ | ✓ | ✓ |
-| Xem notes | ✓ | ✓ | ✓ | ✓ |
-| Thêm notes | ✗ | ✓ | ✓ | ✓ |
-| Gia hạn (extend) | ✗ | ✓ | ✓ | ✓ |
-| Nâng/hạ gói | ✗ | ✓ | ✓ | ✓ |
-| Grant Trial | ✗ | ✓ | ✓ | ✓ |
-| Suspend / Restore | ✗ | ✗ | ✓ | ✓ |
-| Force downgrade to Free | ✗ | ✗ | ✓ | ✓ |
-| Custom plan assign | ✗ | ✗ | ✓ | ✓ |
-
-### 2. Hook `useAdminBillingRole.ts`
-- Fetch current user's `system_role` + `billing_role` từ `user_roles`
-- Export:
-  - `billingRole`: 'viewer' | 'operator' | 'manager' | null
-  - `canView`: boolean
-  - `canOperate`: boolean (extend, upgrade, downgrade, grant trial, add notes)
-  - `canManage`: boolean (suspend, restore, force actions)
-  - `isLoading`: boolean
-
-### 3. Cập nhật `ManagePlanDialog.tsx`
-- Import `useAdminBillingRole`
-- Disable/ẩn action options theo quyền:
-  - Viewer: dialog không mở (nút bị ẩn)
-  - Operator: ẩn `suspend`, `restore` khỏi select
-  - Manager/Owner: full access
-- Hiển thị badge quyền hiện tại của admin
-
-### 4. Cập nhật `AdminUserBilling.tsx`
-- Import `useAdminBillingRole`
-- Quick action buttons: ẩn/disable theo quyền
-  - Viewer: ẩn tất cả quick actions
-  - Operator: ẩn suspend/restore
-  - Manager: hiện tất cả
-- Tab Notes: ẩn form thêm note nếu viewer
-
-### 5. Cập nhật `UserNotesTab.tsx`
-- Nhận prop `canAddNote: boolean`
-- Ẩn form thêm note nếu `canAddNote === false`
-
-### 6. Cập nhật `useAdminPlanActions.ts`
-- Thêm server-side validation: check billing_role trước khi execute
-- Reject nếu operator cố suspend/restore
-
-### 7. i18n
-- `en.ts` + `vi.ts`: thêm block `adminBilling.rbac` (~10 chuỗi: role labels, permission denied messages, role badge labels)
+rbac: {
+  billingViewer: 'Billing Viewer' / 'Xem thanh toán',
+  billingOperator: 'Billing Operator' / 'Vận hành thanh toán',
+  billingManager: 'Billing Manager' / 'Quản lý thanh toán',
+  permissionDenied: 'You do not have permission...' / 'Bạn không có quyền...',
+  roleLabel: 'Your billing role' / 'Quyền thanh toán',
+}
+```
 
 ### Files
 
 | File | Thay đổi |
 |------|----------|
-| Migration SQL | Thêm `billing_role` vào `user_roles` + function `get_billing_role` |
-| `src/hooks/useAdminBillingRole.ts` | Hook mới: kiểm tra quyền billing |
-| `src/components/admin/ManagePlanDialog.tsx` | Gate actions theo role |
-| `src/pages/AdminUserBilling.tsx` | Ẩn/hiện quick actions theo role |
-| `src/components/admin/UserNotesTab.tsx` | Prop `canAddNote` |
-| `src/hooks/useAdminPlanActions.ts` | Validation quyền server-side |
-| `src/lib/i18n/en.ts` | Thêm chuỗi rbac |
-| `src/lib/i18n/vi.ts` | Thêm chuỗi rbac |
+| Migration SQL | `billing_role` column + `get_billing_role` function |
+| `src/hooks/useAdminBillingRole.ts` | Hook mới |
+| `src/components/admin/ManagePlanDialog.tsx` | Filter actions by role |
+| `src/pages/AdminUserBilling.tsx` | Gate quick actions by role |
+| `src/components/admin/UserNotesTab.tsx` | Add `canAddNote` prop |
+| `src/hooks/useAdminPlanActions.ts` | Server-side role validation |
+| `src/lib/i18n/en.ts` | Add rbac strings |
+| `src/lib/i18n/vi.ts` | Add rbac strings |
+
