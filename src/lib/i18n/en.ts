@@ -3042,6 +3042,24 @@ export const en = {
     tryAgain: 'Try Again',
     invalidPlan: 'Invalid plan selected',
   },
+  paymentResult: {
+    successTitle: 'Payment Successful!',
+    successDesc: 'Your plan has been upgraded successfully.',
+    failedTitle: 'Payment Failed',
+    failedDesc: 'Something went wrong with your payment. Please try again.',
+    orderDetails: 'Order Details',
+    plan: 'Plan',
+    cycle: 'Billing Cycle',
+    baseAmount: 'Base',
+    addons: 'Add-ons',
+    discount: 'Discount',
+    total: 'Total',
+    completed: 'Completed',
+    viewPlan: 'View Your Plan',
+    backDashboard: 'Back to Dashboard',
+    tryAgain: 'Try Again',
+    contactSupport: 'Contact Support',
+  },
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

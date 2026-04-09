@@ -41,13 +41,16 @@ interface PlanLimitsData {
   max_storage_mb: number;
 }
 
-const MOCK_BILLING = [
-  { id: 'TXN-20260301-001', date: '01/03/2026', plan: 'Pro', amount: '$12.00', status: 'Paid' },
-  { id: 'TXN-20260201-001', date: '01/02/2026', plan: 'Pro', amount: '$12.00', status: 'Paid' },
-  { id: 'TXN-20260115-002', date: '15/01/2026', plan: 'Pro (Upgrade)', amount: '$7.20', status: 'Paid' },
-  { id: 'TXN-20260101-001', date: '01/01/2026', plan: 'Plus', amount: '$4.80', status: 'Paid' },
-  { id: 'TXN-20251201-001', date: '01/12/2025', plan: 'Free', amount: '$0.00', status: 'Free' },
-];
+interface PaymentRecord {
+  id: string;
+  transaction_id: string | null;
+  created_at: string;
+  plan_purchased: string;
+  amount: number;
+  final_amount: number | null;
+  status: string;
+  payment_method: string | null;
+}
 
 const BASE_PRICE = 2.49;
 
@@ -69,6 +72,8 @@ export default function ServicePlan() {
   const [wsUsages, setWsUsages] = useState<WorkspaceUsage[]>([]);
   const [planLimits, setPlanLimits] = useState<PlanLimitsData | null>(null);
   const [uniqueMemberCount, setUniqueMemberCount] = useState(0);
+  const [billingHistory, setBillingHistory] = useState<PaymentRecord[]>([]);
+  const [billingLoading, setBillingLoading] = useState(false);
 
   // Local addon quantities for editing
   const [localAddons, setLocalAddons] = useState<Record<AddonType, number>>({
@@ -96,6 +101,22 @@ export default function ServicePlan() {
       setAddonDirty(false);
     }
   }, [userAddons.isLoading, userAddons.addons]);
+
+  // Fetch billing history
+  useEffect(() => {
+    if (!user) return;
+    setBillingLoading(true);
+    supabase
+      .from('payment_history')
+      .select('id, transaction_id, created_at, plan_purchased, amount, final_amount, status, payment_method')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20)
+      .then(({ data }) => {
+        setBillingHistory((data as PaymentRecord[]) || []);
+        setBillingLoading(false);
+      });
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -790,26 +811,36 @@ export default function ServicePlan() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {MOCK_BILLING.map(row => (
-                    <tr key={row.id} className="hover:bg-muted/50 transition-colors">
-                      <td className="px-5 py-3 text-sm">{row.date}</td>
-                      <td className="px-5 py-3 text-sm font-mono text-xs text-muted-foreground">{row.id}</td>
-                      <td className="px-5 py-3 text-sm font-medium">{row.plan}</td>
-                      <td className="px-5 py-3 text-sm text-right tabular-nums">{row.amount}</td>
-                      <td className="px-5 py-3 text-right">
-                        <Badge
-                          variant={row.status === 'Paid' ? 'default' : 'secondary'}
-                          className={`text-[10px] ${
-                            row.status === 'Paid' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-none' :
-                            row.status === 'Free' ? 'bg-muted text-muted-foreground border-none' :
-                            'bg-amber-500/15 text-amber-600'
-                          }`}
-                        >
-                          {row.status}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
+                  {billingLoading ? (
+                    <tr><td colSpan={5} className="text-center py-8"><Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" /></td></tr>
+                  ) : billingHistory.length === 0 ? (
+                    <tr><td colSpan={5} className="text-center py-8 text-sm text-muted-foreground">{t.noTransactions || 'No transactions yet'}</td></tr>
+                  ) : billingHistory.map(row => {
+                    const date = new Date(row.created_at);
+                    const formattedDate = `${date.getDate().toString().padStart(2,'0')}/${(date.getMonth()+1).toString().padStart(2,'0')}/${date.getFullYear()}`;
+                    const displayAmount = row.final_amount ?? row.amount;
+                    const statusLabel = row.status === 'completed' ? 'Paid' : row.status === 'pending' ? 'Pending' : row.status;
+                    return (
+                      <tr key={row.id} className="hover:bg-muted/50 transition-colors">
+                        <td className="px-5 py-3 text-sm">{formattedDate}</td>
+                        <td className="px-5 py-3 text-sm font-mono text-xs text-muted-foreground">{row.transaction_id || row.id.slice(0,13)}</td>
+                        <td className="px-5 py-3 text-sm font-medium">{formatPlanName(row.plan_purchased)}</td>
+                        <td className="px-5 py-3 text-sm text-right tabular-nums">${displayAmount.toFixed(2)}</td>
+                        <td className="px-5 py-3 text-right">
+                          <Badge
+                            variant={statusLabel === 'Paid' ? 'default' : 'secondary'}
+                            className={`text-[10px] ${
+                              statusLabel === 'Paid' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-none' :
+                              statusLabel === 'Pending' ? 'bg-amber-500/15 text-amber-600 border-none' :
+                              'bg-muted text-muted-foreground border-none'
+                            }`}
+                          >
+                            {statusLabel}
+                          </Badge>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
