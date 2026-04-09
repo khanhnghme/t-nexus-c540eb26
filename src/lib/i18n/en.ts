@@ -1975,8 +1975,8 @@ export const en = {
     ctaText: 'Ready to pick the right plan?',
     ctaButton: 'View pricing',
 
-    pricingCta: 'Want to understand the billing model, seat logic, and resource limits?',
-    pricingCtaLink: 'Read the Pricing Guide (/guide/pricing)',
+    pricingCta: 'Learn more about our billing guidelines and service policies',
+    pricingCtaLink: 'View Billing Guide & Service Policies',
 
     tocTitle: 'Table of Contents',
     ch1Label: 'Chapter 1: Pricing Guide',
