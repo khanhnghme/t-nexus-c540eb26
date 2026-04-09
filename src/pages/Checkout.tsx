@@ -326,11 +326,9 @@ export default function Checkout() {
                             /{cycle === 'yearly' ? (isVi ? 'năm' : 'yr') : (isVi ? 'tháng' : 'mo')}
                           </span>
                         </div>
-                        {p.addonDiscount > 0 && (
-                          <div className="text-[11px] text-emerald-600 mt-1 font-medium">
-                            Add-on -{p.addonDiscount * 100}%
-                          </div>
-                        )}
+                        <div className={cn("text-[11px] mt-1 font-medium", p.addonDiscount > 0 ? "text-emerald-600" : "text-muted-foreground")}>
+                          Add-on {p.addonDiscount > 0 ? `-${p.addonDiscount * 100}%` : (isVi ? 'không giảm' : 'no discount')}
+                        </div>
                       </button>
                     );
                   })}
