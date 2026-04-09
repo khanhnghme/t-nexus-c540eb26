@@ -403,17 +403,22 @@ function UpgradePlansAndFeatures({ yearly, planCols, comparison, tp, disabled, o
               const price = formatPrice(col.monthlyPrice, yearly);
               const isCustom = col.monthlyPrice === null;
               return (
-                <th key={col.key} className="p-4 text-left align-bottom border-b-2 border-border bg-background sticky top-0 z-10">
-                  <div className="text-sm font-bold text-foreground mb-0.5">{col.name}</div>
+                <th key={col.key} className={`p-4 text-left align-bottom border-b-2 border-border sticky top-0 z-10 ${col.isCurrent ? 'bg-primary/5' : 'bg-background'}`}>
+                  <div className="text-sm font-bold text-foreground mb-0.5">
+                    {col.name}
+                    {col.isCurrent && <span className="ml-1.5 text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">✓</span>}
+                  </div>
                   <div className="text-xs text-muted-foreground mb-2">
                     {isCustom ? tp.contactUs : <>{price}<span className="font-normal"> / {tp.mo}</span></>}
                   </div>
                   <button
                     onClick={onSelect}
-                    disabled={disabled}
-                    className={`w-full py-1 px-2.5 text-xs font-medium rounded-md cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ${col.primary
-                      ? 'bg-primary text-primary-foreground border-none hover:bg-primary/90'
-                      : 'bg-background text-foreground border border-border hover:bg-accent'
+                    disabled={disabled || col.isCurrent}
+                    className={`w-full py-1 px-2.5 text-xs font-medium rounded-md cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ${col.isCurrent
+                      ? 'bg-primary/10 text-primary border border-primary/30'
+                      : col.primary
+                        ? 'bg-primary text-primary-foreground border-none hover:bg-primary/90'
+                        : 'bg-background text-foreground border border-border hover:bg-accent'
                       }`}
                   >
                     {col.cta}
