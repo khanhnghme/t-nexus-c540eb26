@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
-import { ArrowLeft, ArrowRight, Tag, Plus, Minus, ShieldCheck, CreditCard, Loader2, Check, ChevronDown } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Tag, Plus, Minus, ShieldCheck, CreditCard, Loader2, Check, Package, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -72,6 +72,7 @@ export default function Checkout() {
   const [couponLoading, setCouponLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'failed'>('idle');
   const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
+  const [paymentMethodOpen, setPaymentMethodOpen] = useState(true);
 
   useEffect(() => {
     supabase.functions.invoke('get-paypal-config').then(({ data }) => {
@@ -79,12 +80,10 @@ export default function Checkout() {
     });
   }, []);
 
-  // Sync URL params when plan/cycle changes
   useEffect(() => {
     setSearchParams({ plan, cycle }, { replace: true });
   }, [plan, cycle, setSearchParams]);
 
-  // Clear coupon when plan changes (may no longer be applicable)
   useEffect(() => {
     if (couponDiscount) {
       setCouponDiscount(null);
@@ -112,7 +111,6 @@ export default function Checkout() {
   }, [addons, cycle, addonDiscountRate]);
 
   const addonSaving = Math.round((addonOriginal - addonFinal) * 100) / 100;
-
   const subtotal = baseAmount + addonFinal;
 
   const discountAmount = useMemo(() => {
@@ -220,11 +218,15 @@ export default function Checkout() {
   }
 
   const hasAddons = Object.values(addons).some(q => q > 0);
+  const selectedPlanData = PLANS.find(p => p.key === plan);
 
-  /* ═══ STEP 1: Plan Selection + Summary ═══ */
+  /* ═══════════════════════════════════════════════
+     STEP 1: 2-column — Left: config | Right: summary
+     Bottom: total + CTA
+     ═══════════════════════════════════════════════ */
   if (step === 1) {
     return (
-      <div className="max-w-3xl mx-auto py-8 px-4 space-y-6">
+      <div className="max-w-6xl mx-auto py-6 px-4 space-y-5">
         {/* Header */}
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
@@ -232,194 +234,269 @@ export default function Checkout() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold">{t?.title || 'Checkout'}</h1>
-            <p className="text-sm text-muted-foreground">{isVi ? 'Bước 1/2 — Chọn gói & tùy chỉnh' : 'Step 1/2 — Select plan & customize'}</p>
+            <p className="text-sm text-muted-foreground">
+              {isVi ? 'Bước 1/2 — Chọn gói & tùy chỉnh' : 'Step 1/2 — Select plan & customize'}
+            </p>
           </div>
         </div>
 
-        {/* Plan Selector */}
-        <Card>
-          <CardContent className="pt-6 space-y-4">
-            <h3 className="text-lg font-semibold">{isVi ? 'Chọn gói' : 'Select Plan'}</h3>
-            
-            {/* Billing cycle toggle */}
-            <div className="flex items-center gap-2 text-sm">
-              <button
-                onClick={() => setCycle('monthly')}
-                className={cn(
-                  "px-3 py-1.5 rounded-full transition-colors",
-                  cycle === 'monthly' ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
-                )}
-              >
-                {isVi ? 'Hàng tháng' : 'Monthly'}
-              </button>
-              <button
-                onClick={() => setCycle('yearly')}
-                className={cn(
-                  "px-3 py-1.5 rounded-full transition-colors",
-                  cycle === 'yearly' ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
-                )}
-              >
-                {isVi ? 'Hàng năm' : 'Yearly'}
-                <span className="ml-1 text-xs opacity-75">{isVi ? '(tiết kiệm 17%)' : '(save 17%)'}</span>
-              </button>
-            </div>
+        {/* 2-column layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+          {/* ── LEFT COLUMN: Config ── */}
+          <div className="lg:col-span-3 space-y-5">
+            {/* Plan Selector */}
+            <Card>
+              <CardContent className="pt-5 pb-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-semibold">{isVi ? 'Chọn gói' : 'Select Plan'}</h3>
+                  {/* Billing cycle toggle */}
+                  <div className="flex items-center gap-1 text-xs bg-muted rounded-full p-0.5">
+                    <button
+                      onClick={() => setCycle('monthly')}
+                      className={cn(
+                        "px-3 py-1 rounded-full transition-colors font-medium",
+                        cycle === 'monthly' ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {isVi ? 'Tháng' : 'Monthly'}
+                    </button>
+                    <button
+                      onClick={() => setCycle('yearly')}
+                      className={cn(
+                        "px-3 py-1 rounded-full transition-colors font-medium",
+                        cycle === 'yearly' ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {isVi ? 'Năm' : 'Yearly'}
+                      <span className="ml-1 opacity-75">-17%</span>
+                    </button>
+                  </div>
+                </div>
 
-            {/* Plan cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {PLANS.map(p => {
-                const price = cycle === 'yearly' ? p.yearly : p.monthly;
-                const isSelected = plan === p.key;
-                return (
-                  <button
-                    key={p.key}
-                    onClick={() => setPlan(p.key)}
-                    className={cn(
-                      "relative p-4 rounded-xl border-2 text-left transition-all",
-                      isSelected
-                        ? "border-primary bg-primary/5 shadow-sm"
-                        : "border-border hover:border-primary/40"
-                    )}
-                  >
-                    {p.popular && (
-                      <Badge className="absolute -top-2.5 right-3 text-[10px]">
-                        {isVi ? 'Phổ biến' : 'Popular'}
-                      </Badge>
-                    )}
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold">{p.label}</span>
-                      {isSelected && <Check className="h-4 w-4 text-primary" />}
-                    </div>
-                    <div className="text-xl font-bold">${price.toFixed(2)}</div>
-                    <div className="text-xs text-muted-foreground">
-                      /{cycle === 'yearly' ? (isVi ? 'năm' : 'year') : (isVi ? 'tháng' : 'month')}
-                    </div>
-                    {p.addonDiscount > 0 && (
-                      <div className="text-xs text-green-600 mt-1">
-                        Add-on: -{p.addonDiscount * 100}%
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                {/* Plan cards - horizontal */}
+                <div className="grid grid-cols-3 gap-2.5">
+                  {PLANS.map(p => {
+                    const price = cycle === 'yearly' ? p.yearly : p.monthly;
+                    const isSelected = plan === p.key;
+                    return (
+                      <button
+                        key={p.key}
+                        onClick={() => setPlan(p.key)}
+                        className={cn(
+                          "relative p-3.5 rounded-xl border-2 text-left transition-all",
+                          isSelected
+                            ? "border-primary bg-primary/5 shadow-sm"
+                            : "border-border hover:border-primary/40"
+                        )}
+                      >
+                        {p.popular && (
+                          <Badge className="absolute -top-2 right-2 text-[10px] px-1.5 py-0">
+                            {isVi ? 'Phổ biến' : 'Popular'}
+                          </Badge>
+                        )}
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-semibold text-sm">{p.label}</span>
+                          {isSelected && <Check className="h-3.5 w-3.5 text-primary" />}
+                        </div>
+                        <div className="text-lg font-bold">${price.toFixed(2)}</div>
+                        <div className="text-[11px] text-muted-foreground">
+                          /{cycle === 'yearly' ? (isVi ? 'năm' : 'yr') : (isVi ? 'tháng' : 'mo')}
+                        </div>
+                        {p.addonDiscount > 0 && (
+                          <div className="text-[11px] text-emerald-600 mt-1 font-medium">
+                            Add-on -{p.addonDiscount * 100}%
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Add-ons */}
-        <Card>
-          <CardContent className="pt-6 space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              {t?.addons || 'Add-ons'}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {t?.addonsDesc || 'Extend your plan with extra capacity'}
-              {addonDiscountRate > 0 && (
-                <span className="text-green-600 font-medium ml-1">
-                  ({isVi ? `Giảm ${addonDiscountRate * 100}% với gói ${PLAN_LABELS[plan]}` : `${addonDiscountRate * 100}% off with ${PLAN_LABELS[plan]}`})
-                </span>
-              )}
-            </p>
-            <div className="space-y-3">
-              {ADDON_TYPES.map(addon => {
-                const qty = addons[addon.type] || 0;
-                const unitPriceOriginal = cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
-                const unitPriceFinal = Math.round(unitPriceOriginal * (1 - addonDiscountRate) * 100) / 100;
-                const hasDiscount = addonDiscountRate > 0;
-                return (
-                  <div key={addon.type} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
-                    <div className="flex items-center gap-3">
-                      <span className="text-xl">{addon.emoji}</span>
-                      <div>
-                        <p className="font-medium text-sm">{isVi ? addon.unitLabelVi : addon.unitLabel}</p>
-                        <div className="flex items-center gap-1.5 text-xs">
-                          {hasDiscount && (
-                            <span className="text-muted-foreground line-through">${unitPriceOriginal.toFixed(2)}</span>
-                          )}
-                          <span className={hasDiscount ? "text-green-600 font-medium" : "text-muted-foreground"}>
-                            ${unitPriceFinal.toFixed(2)}
-                          </span>
-                          <span className="text-muted-foreground">/{cycle === 'yearly' ? (isVi ? 'năm' : 'yr') : (isVi ? 'tháng' : 'mo')}</span>
+            {/* Add-ons */}
+            <Card>
+              <CardContent className="pt-5 pb-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-semibold flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    {t?.addons || 'Add-ons'}
+                  </h3>
+                  {addonDiscountRate > 0 && (
+                    <Badge variant="secondary" className="text-emerald-600 text-[11px]">
+                      -{addonDiscountRate * 100}% {isVi ? 'với' : 'with'} {PLAN_LABELS[plan]}
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  {ADDON_TYPES.map(addon => {
+                    const qty = addons[addon.type] || 0;
+                    const unitOriginal = cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
+                    const unitFinal = Math.round(unitOriginal * (1 - addonDiscountRate) * 100) / 100;
+                    const hasDiscount = addonDiscountRate > 0;
+                    return (
+                      <div key={addon.type} className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/30">
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-lg">{addon.emoji}</span>
+                          <div>
+                            <p className="font-medium text-sm">{isVi ? addon.unitLabelVi : addon.unitLabel}</p>
+                            <div className="flex items-center gap-1 text-[11px]">
+                              {hasDiscount && (
+                                <span className="text-muted-foreground line-through">${unitOriginal.toFixed(2)}</span>
+                              )}
+                              <span className={hasDiscount ? "text-emerald-600 font-medium" : "text-muted-foreground"}>
+                                ${unitFinal.toFixed(2)}
+                              </span>
+                              <span className="text-muted-foreground">/{cycle === 'yearly' ? (isVi ? 'năm' : 'yr') : (isVi ? 'tháng' : 'mo')}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateAddon(addon.type, -1)} disabled={qty === 0}>
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-5 text-center font-medium text-sm tabular-nums">{qty}</span>
+                          <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateAddon(addon.type, 1)} disabled={qty >= 10}>
+                            <Plus className="h-3 w-3" />
+                          </Button>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateAddon(addon.type, -1)} disabled={qty === 0}>
-                        <Minus className="h-3 w-3" />
-                      </Button>
-                      <span className="w-6 text-center font-medium text-sm">{qty}</span>
-                      <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateAddon(addon.type, 1)} disabled={qty >= 10}>
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                    </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Coupon */}
+            <Card>
+              <CardContent className="pt-5 pb-5 space-y-2.5">
+                <h3 className="text-sm font-semibold flex items-center gap-2">
+                  <Tag className="h-3.5 w-3.5" />
+                  {t?.couponTitle || 'Discount Code'}
+                </h3>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder={t?.couponPlaceholder || 'Enter code'}
+                    value={couponCode}
+                    onChange={e => { setCouponCode(e.target.value); setCouponError(''); }}
+                    className="flex-1 h-9"
+                    disabled={!!couponDiscount}
+                  />
+                  {couponDiscount ? (
+                    <Button variant="outline" size="sm" onClick={() => { setCouponDiscount(null); setCouponCode(''); }}>
+                      {t?.removeCoupon || 'Remove'}
+                    </Button>
+                  ) : (
+                    <Button size="sm" onClick={applyCoupon} disabled={couponLoading || !couponCode.trim()}>
+                      {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (t?.applyCoupon || 'Apply')}
+                    </Button>
+                  )}
+                </div>
+                {couponError && <p className="text-xs text-destructive">{couponError}</p>}
+                {couponDiscount && (
+                  <Badge variant="secondary" className="text-emerald-600">
+                    {couponDiscount.type === 'percentage' ? `-${couponDiscount.value}%` : `-$${couponDiscount.value.toFixed(2)}`} {t?.applied || 'applied'}
+                  </Badge>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* ── RIGHT COLUMN: Order Summary ── */}
+          <div className="lg:col-span-2">
+            <Card className="sticky top-20">
+              <CardContent className="pt-5 pb-5 space-y-4">
+                <h3 className="text-base font-semibold">{t?.orderSummary || 'Order Summary'}</h3>
+                <Separator />
+
+                {/* Plan */}
+                <div className="flex justify-between items-start text-sm">
+                  <div>
+                    <p className="font-medium">{PLAN_LABELS[plan]} Plan</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {cycle === 'yearly' ? (t?.billedYearly || 'Billed yearly') : (t?.billedMonthly || 'Billed monthly')}
+                    </p>
                   </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                  <span className="font-semibold">${baseAmount.toFixed(2)}</span>
+                </div>
 
-        {/* Coupon */}
-        <Card>
-          <CardContent className="pt-6 space-y-3">
-            <h3 className="text-sm font-semibold flex items-center gap-2">
-              <Tag className="h-4 w-4" />
-              {t?.couponTitle || 'Discount Code'}
-            </h3>
-            <div className="flex gap-2">
-              <Input
-                placeholder={t?.couponPlaceholder || 'Enter code'}
-                value={couponCode}
-                onChange={e => { setCouponCode(e.target.value); setCouponError(''); }}
-                className="flex-1"
-                disabled={!!couponDiscount}
-              />
-              {couponDiscount ? (
-                <Button variant="outline" size="sm" onClick={() => { setCouponDiscount(null); setCouponCode(''); }}>
-                  {t?.removeCoupon || 'Remove'}
-                </Button>
-              ) : (
-                <Button size="sm" onClick={applyCoupon} disabled={couponLoading || !couponCode.trim()}>
-                  {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (t?.applyCoupon || 'Apply')}
-                </Button>
-              )}
-            </div>
-            {couponError && <p className="text-xs text-destructive">{couponError}</p>}
-            {couponDiscount && (
-              <Badge variant="secondary" className="text-green-600">
-                {couponDiscount.type === 'percentage' ? `-${couponDiscount.value}%` : `-$${couponDiscount.value.toFixed(2)}`} {t?.applied || 'applied'}
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
+                {/* Addons */}
+                {hasAddons && (
+                  <div className="space-y-1.5">
+                    {ADDON_TYPES.map(addon => {
+                      const qty = addons[addon.type] || 0;
+                      if (qty === 0) return null;
+                      const unitOriginal = cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
+                      const unitFinal = Math.round(unitOriginal * (1 - addonDiscountRate) * 100) / 100;
+                      return (
+                        <div key={addon.type} className="flex justify-between text-sm text-muted-foreground">
+                          <span>{addon.emoji} {isVi ? addon.unitLabelVi : addon.unitLabel} ×{qty}</span>
+                          <span>${(unitFinal * qty).toFixed(2)}</span>
+                        </div>
+                      );
+                    })}
+                    {addonSaving > 0 && (
+                      <div className="flex justify-between text-[11px] text-emerald-600">
+                        <span>{isVi ? 'Tiết kiệm add-on' : 'Add-on savings'}</span>
+                        <span>-${addonSaving.toFixed(2)}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-        {/* Summary + CTA */}
-        <Card className="border-primary/30 bg-primary/5">
-          <CardContent className="pt-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">{t?.total || 'Total'}</p>
-                <div className="text-3xl font-bold">${totalAmount.toFixed(2)}</div>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                {/* Coupon */}
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-sm text-emerald-600">
+                    <span className="flex items-center gap-1">
+                      <Tag className="h-3 w-3" />
+                      {couponDiscount?.code}
+                    </span>
+                    <span>-${discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
+
+                <Separator />
+
+                {/* Total */}
+                <div className="flex justify-between font-bold text-lg">
+                  <span>{t?.total || 'Total'}</span>
+                  <span>${totalAmount.toFixed(2)}</span>
+                </div>
+
+                <p className="text-[11px] text-muted-foreground text-center">
                   {cycle === 'yearly'
                     ? (t?.yearlyNote || 'Billed once per year')
                     : (t?.monthlyNote || 'Billed once per month')}
                 </p>
-              </div>
-              <Button size="lg" className="gap-2 px-8" onClick={() => setStep(2)}>
-                {isVi ? 'Thanh toán' : 'Pay'}
-                <ArrowRight className="h-4 w-4" />
-              </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Bottom CTA bar */}
+        <div className="sticky bottom-0 -mx-4 px-4 py-3 bg-background/95 backdrop-blur-sm border-t">
+          <div className="max-w-6xl mx-auto flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground">{t?.total || 'Total'}</p>
+              <p className="text-2xl font-bold">${totalAmount.toFixed(2)}</p>
             </div>
-          </CardContent>
-        </Card>
+            <Button size="lg" className="gap-2 px-10 text-base" onClick={() => setStep(2)}>
+              {isVi ? 'Thanh toán' : 'Continue to Pay'}
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
 
-  /* ═══ STEP 2: Order Details + Payment ═══ */
+  /* ═══════════════════════════════════════════════
+     STEP 2: Top: order summary | Bottom: 2 cols (payment method + pay box)
+     No quantity editing
+     ═══════════════════════════════════════════════ */
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4 space-y-6">
+    <div className="max-w-5xl mx-auto py-6 px-4 space-y-5">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => setStep(1)}>
@@ -427,136 +504,204 @@ export default function Checkout() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold">{isVi ? 'Xác nhận & Thanh toán' : 'Confirm & Pay'}</h1>
-          <p className="text-sm text-muted-foreground">{isVi ? 'Bước 2/2 — Kiểm tra và thanh toán' : 'Step 2/2 — Review and pay'}</p>
+          <p className="text-sm text-muted-foreground">
+            {isVi ? 'Bước 2/2 — Kiểm tra và thanh toán' : 'Step 2/2 — Review and pay'}
+          </p>
         </div>
       </div>
 
-      {/* Order Details */}
+      {/* ── TOP: Order Summary Table ── */}
       <Card>
-        <CardContent className="pt-6 space-y-4">
-          <h3 className="text-lg font-semibold">{t?.orderSummary || 'Order Summary'}</h3>
-          <Separator />
+        <CardContent className="pt-5 pb-5">
+          <h3 className="text-base font-semibold mb-4">{t?.orderSummary || 'Order Summary'}</h3>
 
-          {/* Plan line */}
-          <div className="flex justify-between items-center">
-            <div>
+          {/* Table header */}
+          <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground pb-2 border-b">
+            <div className="col-span-6">{isVi ? 'Sản phẩm' : 'Item'}</div>
+            <div className="col-span-2 text-right">{isVi ? 'Đơn giá' : 'Price'}</div>
+            <div className="col-span-2 text-center">{isVi ? 'SL' : 'Qty'}</div>
+            <div className="col-span-2 text-right">{isVi ? 'Thành tiền' : 'Total'}</div>
+          </div>
+
+          {/* Plan row */}
+          <div className="grid grid-cols-12 gap-2 items-center py-3 text-sm border-b border-dashed">
+            <div className="col-span-6">
               <p className="font-medium">{PLAN_LABELS[plan]} Plan</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[11px] text-muted-foreground">
                 {cycle === 'yearly' ? (t?.billedYearly || 'Billed yearly') : (t?.billedMonthly || 'Billed monthly')}
               </p>
             </div>
-            <span className="font-semibold">${baseAmount.toFixed(2)}</span>
+            <div className="col-span-2 text-right text-muted-foreground">${baseAmount.toFixed(2)}</div>
+            <div className="col-span-2 text-center text-muted-foreground">1</div>
+            <div className="col-span-2 text-right font-medium">${baseAmount.toFixed(2)}</div>
           </div>
 
-          {/* Addon lines */}
-          {hasAddons && (
-            <>
-              <Separator className="my-2" />
-              <p className="text-sm font-medium text-muted-foreground">{t?.addonsLabel || 'Add-ons'}</p>
-              {ADDON_TYPES.map(addon => {
-                const qty = addons[addon.type] || 0;
-                if (qty === 0) return null;
-                const unitOriginal = cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
-                const unitFinal = Math.round(unitOriginal * (1 - addonDiscountRate) * 100) / 100;
-                const lineTotal = Math.round(unitFinal * qty * 100) / 100;
-                return (
-                  <div key={addon.type} className="flex justify-between items-center text-sm pl-2">
-                    <div className="flex items-center gap-2">
-                      <span>{addon.emoji}</span>
-                      <span>{isVi ? addon.unitLabelVi : addon.unitLabel}</span>
-                      <span className="text-muted-foreground">× {qty}</span>
-                    </div>
-                    <div className="text-right">
-                      {addonDiscountRate > 0 && (
-                        <span className="text-xs text-muted-foreground line-through mr-2">
-                          ${(unitOriginal * qty).toFixed(2)}
-                        </span>
-                      )}
-                      <span className={addonDiscountRate > 0 ? "text-green-600 font-medium" : ""}>
-                        ${lineTotal.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-              {addonSaving > 0 && (
-                <div className="flex justify-between text-xs text-green-600 pl-2">
-                  <span>{isVi ? `Tiết kiệm add-on (${addonDiscountRate * 100}%)` : `Add-on savings (${addonDiscountRate * 100}%)`}</span>
-                  <span>-${addonSaving.toFixed(2)}</span>
+          {/* Addon rows */}
+          {ADDON_TYPES.map(addon => {
+            const qty = addons[addon.type] || 0;
+            if (qty === 0) return null;
+            const unitOriginal = cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
+            const unitFinal = Math.round(unitOriginal * (1 - addonDiscountRate) * 100) / 100;
+            const lineTotal = Math.round(unitFinal * qty * 100) / 100;
+            return (
+              <div key={addon.type} className="grid grid-cols-12 gap-2 items-center py-2.5 text-sm border-b border-dashed">
+                <div className="col-span-6 flex items-center gap-2">
+                  <span>{addon.emoji}</span>
+                  <span>{isVi ? addon.unitLabelVi : addon.unitLabel}</span>
                 </div>
-              )}
-            </>
-          )}
+                <div className="col-span-2 text-right">
+                  {addonDiscountRate > 0 && (
+                    <span className="text-[11px] text-muted-foreground line-through mr-1">${unitOriginal.toFixed(2)}</span>
+                  )}
+                  <span className={addonDiscountRate > 0 ? "text-emerald-600" : "text-muted-foreground"}>${unitFinal.toFixed(2)}</span>
+                </div>
+                <div className="col-span-2 text-center text-muted-foreground">{qty}</div>
+                <div className="col-span-2 text-right font-medium">${lineTotal.toFixed(2)}</div>
+              </div>
+            );
+          })}
 
-          {/* Coupon discount */}
-          {discountAmount > 0 && (
-            <>
-              <Separator className="my-2" />
-              <div className="flex justify-between text-sm text-green-600">
-                <span className="flex items-center gap-1.5">
-                  <Tag className="h-3.5 w-3.5" />
-                  {t?.discount || 'Discount'} ({couponDiscount?.code})
+          {/* Subtotal / Discount / Total */}
+          <div className="pt-3 space-y-1.5">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">{isVi ? 'Tạm tính' : 'Subtotal'}</span>
+              <span>${subtotal.toFixed(2)}</span>
+            </div>
+            {addonSaving > 0 && (
+              <div className="flex justify-between text-sm text-emerald-600">
+                <span>{isVi ? `Tiết kiệm add-on (${addonDiscountRate * 100}%)` : `Add-on savings (${addonDiscountRate * 100}%)`}</span>
+                <span>-${addonSaving.toFixed(2)}</span>
+              </div>
+            )}
+            {discountAmount > 0 && (
+              <div className="flex justify-between text-sm text-emerald-600">
+                <span className="flex items-center gap-1">
+                  <Tag className="h-3 w-3" />
+                  {isVi ? 'Mã giảm giá' : 'Coupon'} ({couponDiscount?.code})
                 </span>
                 <span>-${discountAmount.toFixed(2)}</span>
               </div>
-            </>
-          )}
-
-          <Separator />
-
-          {/* Total */}
-          <div className="flex justify-between font-bold text-lg">
-            <span>{t?.total || 'Total'}</span>
-            <span>${totalAmount.toFixed(2)}</span>
+            )}
+            <Separator />
+            <div className="flex justify-between font-bold text-lg pt-1">
+              <span>{t?.total || 'Total'}</span>
+              <span>${totalAmount.toFixed(2)}</span>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Payment Methods */}
-      <Card>
-        <CardContent className="pt-6 space-y-4">
-          <h4 className="text-lg font-semibold flex items-center gap-2">
-            <CreditCard className="h-4 w-4" />
-            {t?.paymentMethod || 'Payment Method'}
-          </h4>
+      {/* ── BOTTOM: 2-column — Payment Method | Pay Box ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+        {/* Left: Payment Methods */}
+        <div className="lg:col-span-3">
+          <Card>
+            <CardContent className="pt-5 pb-5 space-y-4">
+              <h4 className="text-base font-semibold flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                {t?.paymentMethod || 'Payment Method'}
+              </h4>
 
-          {paymentStatus === 'processing' ? (
-            <div className="flex items-center justify-center py-8 gap-2">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              <span className="text-sm text-muted-foreground">{t?.processing || 'Processing payment...'}</span>
-            </div>
-          ) : paypalClientId ? (
-            <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD' }}>
-              <PayPalButtons
-                style={{ layout: 'vertical', shape: 'rect', label: 'pay' }}
-                createOrder={async () => createOrder()}
-                onApprove={async (data) => onApprove(data)}
-                onError={(err) => {
-                  console.error('PayPal error:', err);
-                  toast.error(t?.paypalError || 'PayPal encountered an error');
-                }}
-                onCancel={() => {
-                  toast.info(t?.paypalCancelled || 'Payment cancelled');
-                }}
-              />
-            </PayPalScriptProvider>
-          ) : (
-            <div className="text-center py-4 text-sm text-muted-foreground">
-              {t?.paypalNotConfigured || 'Payment system is being configured. Please try again later.'}
-            </div>
-          )}
+              {/* PayPal - collapsible */}
+              <div className="border rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setPaymentMethodOpen(!paymentMethodOpen)}
+                  className="w-full flex items-center justify-between p-3 hover:bg-muted/30 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center">
+                      <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                    </div>
+                    <span className="font-medium text-sm">PayPal</span>
+                  </div>
+                  {paymentMethodOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                </button>
+                {paymentMethodOpen && (
+                  <div className="px-3 pb-3 pt-1">
+                    {paymentStatus === 'processing' ? (
+                      <div className="flex items-center justify-center py-6 gap-2">
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <span className="text-sm text-muted-foreground">{t?.processing || 'Processing payment...'}</span>
+                      </div>
+                    ) : paypalClientId ? (
+                      <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD' }}>
+                        <PayPalButtons
+                          style={{ layout: 'vertical', shape: 'rect', label: 'pay', height: 40 }}
+                          createOrder={async () => createOrder()}
+                          onApprove={async (data) => onApprove(data)}
+                          onError={(err) => {
+                            console.error('PayPal error:', err);
+                            toast.error(t?.paypalError || 'PayPal encountered an error');
+                          }}
+                          onCancel={() => {
+                            toast.info(t?.paypalCancelled || 'Payment cancelled');
+                          }}
+                        />
+                      </PayPalScriptProvider>
+                    ) : (
+                      <div className="text-center py-4 text-sm text-muted-foreground">
+                        {t?.paypalNotConfigured || 'Payment system is being configured. Please try again later.'}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
-          {/* Momo */}
-          <Button variant="outline" className="w-full opacity-50 cursor-not-allowed" disabled>
-            <span className="mr-2">🟣</span> MoMo — {t?.comingSoon || 'Coming soon'}
-          </Button>
+              {/* MoMo - disabled */}
+              <div className="border rounded-xl p-3 opacity-50">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30" />
+                  <span className="font-medium text-sm">🟣 MoMo</span>
+                  <Badge variant="outline" className="text-[10px] ml-auto">{t?.comingSoon || 'Coming soon'}</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-          <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground pt-2">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            {t?.securePayment || 'Secure payment powered by PayPal'}
-          </div>
-        </CardContent>
-      </Card>
+        {/* Right: Pay Box */}
+        <div className="lg:col-span-2">
+          <Card className="border-primary/30 bg-primary/5">
+            <CardContent className="pt-5 pb-5 space-y-4">
+              <div className="text-center space-y-1">
+                <p className="text-sm text-muted-foreground">{isVi ? 'Tổng thanh toán' : 'Amount Due'}</p>
+                <p className="text-3xl font-bold">${totalAmount.toFixed(2)}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {cycle === 'yearly'
+                    ? (t?.yearlyNote || 'Billed once per year')
+                    : (t?.monthlyNote || 'Billed once per month')}
+                </p>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-1.5 text-xs text-muted-foreground">
+                <div className="flex justify-between">
+                  <span>{PLAN_LABELS[plan]} Plan</span>
+                  <span>${baseAmount.toFixed(2)}</span>
+                </div>
+                {addonFinal > 0 && (
+                  <div className="flex justify-between">
+                    <span>Add-ons</span>
+                    <span>${addonFinal.toFixed(2)}</span>
+                  </div>
+                )}
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-emerald-600">
+                    <span>{isVi ? 'Giảm giá' : 'Discount'}</span>
+                    <span>-${discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground pt-2">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                {t?.securePayment || 'Secure payment powered by PayPal'}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
