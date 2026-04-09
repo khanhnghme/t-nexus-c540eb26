@@ -319,7 +319,7 @@ function ToggleBtn({ active, onClick, label }: { active: boolean; onClick: () =>
 
 /* ═══════════════════════ Plan Column ═══════════════════════ */
 
-function PlanColumn({ plan, yearly, tp, disabled, onSelect }: { plan: Plan; yearly: boolean; tp: any; disabled: boolean; onSelect: () => void }) {
+function PlanColumn({ plan, yearly, tp, disabled, onSelect }: { plan: Plan; yearly: boolean; tp: any; disabled: boolean; onSelect: (planKey?: string) => void }) {
   const price = formatPrice(plan.monthlyPrice, yearly);
   const isCustom = plan.monthlyPrice === null;
 
@@ -352,7 +352,7 @@ function PlanColumn({ plan, yearly, tp, disabled, onSelect }: { plan: Plan; year
 
       <div className="mb-5">
         <button
-          onClick={onSelect}
+          onClick={() => onSelect(plan.key)}
           disabled={disabled || plan.isCurrent}
           className={`w-full py-1.5 px-3.5 text-sm font-medium rounded-lg cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed ${plan.isCurrent
             ? 'bg-primary/10 text-primary border border-primary/30'
@@ -387,7 +387,7 @@ function CellContent({ value }: { value: CellValue }) {
   return <span className="text-[13px] text-foreground leading-relaxed">{value}</span>;
 }
 
-function UpgradePlansAndFeatures({ yearly, planCols, comparison, tp, disabled, onSelect }: { yearly: boolean; planCols: any[]; comparison: FeatureCategory[]; tp: any; disabled: boolean; onSelect: () => void }) {
+function UpgradePlansAndFeatures({ yearly, planCols, comparison, tp, disabled, onSelect }: { yearly: boolean; planCols: any[]; comparison: FeatureCategory[]; tp: any; disabled: boolean; onSelect: (planKey?: string) => void }) {
   return (
     <div style={{ marginTop: 72, paddingBottom: 48 }}>
       <h2 className="text-2xl font-bold text-foreground mb-8">{tp.comparisonTitle}</h2>
