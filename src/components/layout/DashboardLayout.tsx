@@ -338,9 +338,13 @@ export default function DashboardLayout({
           sidebarCollapsed && 'sidebar-collapsed',
           isMobileOpen && 'mobile-sidebar-open'
         )}>
-          {/* Cell 1: Top-left — Workspace Switcher */}
+          {/* Cell 1: Top-left — Workspace Switcher or Admin Back */}
           <div className="grid-cell-logo">
-            <WorkspaceSwitcherCell collapsed={sidebarCollapsed} />
+            {location.pathname.startsWith('/admin') ? (
+              <AdminBackCell collapsed={sidebarCollapsed} />
+            ) : (
+              <WorkspaceSwitcherCell collapsed={sidebarCollapsed} />
+            )}
 
             {/* Desktop toggle — tiny pill at right edge */}
             <button
