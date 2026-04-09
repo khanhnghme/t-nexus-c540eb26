@@ -81,7 +81,7 @@ export default function FirstTimeOnboarding({
   const [bio, setBio] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [infoErrors, setInfoErrors] = useState<Record<string, boolean>>({});
-  const [selectedPlan, setSelectedPlan] = useState<'plan_free' | 'plan_plus' | 'plan_pro'>('plan_free');
+  const [selectedPlan, setSelectedPlan] = useState<'plan_free' | 'plan_plus' | 'plan_pro' | 'plan_business'>('plan_free');
 
   const getInitials = (name: string) =>
     name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -723,30 +723,30 @@ export default function FirstTimeOnboarding({
                       {t.choosePlanDesc}
                     </p>
 
-                    <div className="w-full max-w-2xl grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="w-full max-w-4xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                       {/* Free */}
                       <button
                         onClick={() => setSelectedPlan('plan_free')}
                         className={cn(
-                          'relative flex flex-col rounded-2xl border-2 p-5 text-left transition-all duration-200',
+                          'relative flex flex-col rounded-2xl border-2 p-4 text-left transition-all duration-200',
                           selectedPlan === 'plan_free'
                             ? 'border-primary bg-primary/5 shadow-lg ring-2 ring-primary/20'
                             : 'border-border hover:border-primary/40 hover:bg-muted/50'
                         )}
                       >
-                        <div className="flex items-center gap-2 mb-2">
-                          <Zap className="w-5 h-5 text-muted-foreground" />
-                          <span className="font-bold text-base">Free</span>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <Zap className="w-4 h-4 text-muted-foreground" />
+                          <span className="font-bold text-sm">Free</span>
                         </div>
-                        <p className="text-2xl font-extrabold mb-1">$0<span className="text-sm font-normal text-muted-foreground">/{t.planMonth}</span></p>
-                        <ul className="text-xs text-muted-foreground space-y-1.5 mt-3">
-                          <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-primary shrink-0" />{t.planFreeF1}</li>
-                          <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-primary shrink-0" />{t.planFreeF2}</li>
-                          <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-primary shrink-0" />{t.planFreeF3}</li>
+                        <p className="text-xl font-extrabold mb-1">$0<span className="text-xs font-normal text-muted-foreground">/{t.planMonth}</span></p>
+                        <ul className="text-[11px] text-muted-foreground space-y-1 mt-2">
+                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-primary shrink-0 mt-0.5" />{t.planFreeF1}</li>
+                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-primary shrink-0 mt-0.5" />{t.planFreeF2}</li>
+                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-primary shrink-0 mt-0.5" />{t.planFreeF3}</li>
                         </ul>
                         {selectedPlan === 'plan_free' && (
-                          <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                            <Check className="w-4 h-4 text-primary-foreground" />
+                          <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                            <Check className="w-3 h-3 text-primary-foreground" />
                           </div>
                         )}
                       </button>
@@ -755,25 +755,25 @@ export default function FirstTimeOnboarding({
                       <button
                         onClick={() => setSelectedPlan('plan_plus')}
                         className={cn(
-                          'relative flex flex-col rounded-2xl border-2 p-5 text-left transition-all duration-200',
+                          'relative flex flex-col rounded-2xl border-2 p-4 text-left transition-all duration-200',
                           selectedPlan === 'plan_plus'
                             ? 'border-blue-500 bg-blue-500/5 shadow-lg ring-2 ring-blue-500/20'
                             : 'border-border hover:border-blue-500/40 hover:bg-muted/50'
                         )}
                       >
-                        <div className="flex items-center gap-2 mb-2">
-                          <Zap className="w-5 h-5 text-blue-500" />
-                          <span className="font-bold text-base">Plus</span>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <Zap className="w-4 h-4 text-blue-500" />
+                          <span className="font-bold text-sm">Plus</span>
                         </div>
-                        <p className="text-2xl font-extrabold mb-1">$4.8<span className="text-sm font-normal text-muted-foreground">/{t.planMonth}</span></p>
-                        <ul className="text-xs text-muted-foreground space-y-1.5 mt-3">
-                          <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-blue-500 shrink-0" />{t.planPlusF1}</li>
-                          <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-blue-500 shrink-0" />{t.planPlusF2}</li>
-                          <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-blue-500 shrink-0" />{t.planPlusF3}</li>
+                        <p className="text-xl font-extrabold mb-1">$4.8<span className="text-xs font-normal text-muted-foreground">/{t.planMonth}</span></p>
+                        <ul className="text-[11px] text-muted-foreground space-y-1 mt-2">
+                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-blue-500 shrink-0 mt-0.5" />{t.planPlusF1}</li>
+                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-blue-500 shrink-0 mt-0.5" />{t.planPlusF2}</li>
+                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-blue-500 shrink-0 mt-0.5" />{t.planPlusF3}</li>
                         </ul>
                         {selectedPlan === 'plan_plus' && (
-                          <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
-                            <Check className="w-4 h-4 text-primary-foreground" />
+                          <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
+                            <Check className="w-3 h-3 text-primary-foreground" />
                           </div>
                         )}
                       </button>
@@ -782,43 +782,82 @@ export default function FirstTimeOnboarding({
                       <button
                         onClick={() => setSelectedPlan('plan_pro')}
                         className={cn(
-                          'relative flex flex-col rounded-2xl border-2 p-5 text-left transition-all duration-200',
+                          'relative flex flex-col rounded-2xl border-2 p-4 text-left transition-all duration-200',
                           selectedPlan === 'plan_pro'
                             ? 'border-purple-500 bg-purple-500/5 shadow-lg ring-2 ring-purple-500/20'
                             : 'border-border hover:border-purple-500/40 hover:bg-muted/50'
                         )}
                       >
-                        <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-purple-500 text-white border-0 text-[10px] px-2.5 py-0.5">
+                        <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-purple-500 text-white border-0 text-[10px] px-2 py-0.5">
                           {t.planRecommended}
                         </Badge>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Crown className="w-5 h-5 text-purple-500" />
-                          <span className="font-bold text-base">Pro</span>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <Crown className="w-4 h-4 text-purple-500" />
+                          <span className="font-bold text-sm">Pro</span>
                         </div>
-                        <p className="text-2xl font-extrabold mb-1">$12<span className="text-sm font-normal text-muted-foreground">/{t.planMonth}</span></p>
-                        <ul className="text-xs text-muted-foreground space-y-1.5 mt-3">
-                          <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-purple-500 shrink-0" />{t.planProF1}</li>
-                          <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-purple-500 shrink-0" />{t.planProF2}</li>
-                          <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-purple-500 shrink-0" />{t.planProF3}</li>
+                        <p className="text-xl font-extrabold mb-1">$12<span className="text-xs font-normal text-muted-foreground">/{t.planMonth}</span></p>
+                        <ul className="text-[11px] text-muted-foreground space-y-1 mt-2">
+                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-purple-500 shrink-0 mt-0.5" />{t.planProF1}</li>
+                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-purple-500 shrink-0 mt-0.5" />{t.planProF2}</li>
+                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-purple-500 shrink-0 mt-0.5" />{t.planProF3}</li>
                         </ul>
                         {selectedPlan === 'plan_pro' && (
-                          <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center">
-                            <Check className="w-4 h-4 text-primary-foreground" />
+                          <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center">
+                            <Check className="w-3 h-3 text-primary-foreground" />
+                          </div>
+                        )}
+                      </button>
+
+                      {/* Business */}
+                      <button
+                        onClick={() => setSelectedPlan('plan_business')}
+                        className={cn(
+                          'relative flex flex-col rounded-2xl border-2 p-4 text-left transition-all duration-200',
+                          selectedPlan === 'plan_business'
+                            ? 'border-amber-500 bg-amber-500/5 shadow-lg ring-2 ring-amber-500/20'
+                            : 'border-border hover:border-amber-500/40 hover:bg-muted/50'
+                        )}
+                      >
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <Crown className="w-4 h-4 text-amber-500" />
+                          <span className="font-bold text-sm">Business</span>
+                        </div>
+                        <p className="text-xl font-extrabold mb-1">$24<span className="text-xs font-normal text-muted-foreground">/{t.planMonth}</span></p>
+                        <ul className="text-[11px] text-muted-foreground space-y-1 mt-2">
+                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-amber-500 shrink-0 mt-0.5" />{t.planBusinessF1}</li>
+                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-amber-500 shrink-0 mt-0.5" />{t.planBusinessF2}</li>
+                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-amber-500 shrink-0 mt-0.5" />{t.planBusinessF3}</li>
+                        </ul>
+                        {selectedPlan === 'plan_business' && (
+                          <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
+                            <Check className="w-3 h-3 text-primary-foreground" />
                           </div>
                         )}
                       </button>
                     </div>
 
-                    <p className="text-[11px] text-muted-foreground text-center mb-4 max-w-md">
+                    <p className="text-[11px] text-muted-foreground text-center mb-2 max-w-md">
                       {t.planNote}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground text-center mb-4 max-w-md">
+                      {t.planContactEnterprise}
                     </p>
 
                     <div className="flex gap-3 w-full max-w-xs">
                       <Button variant="outline" onClick={goBack} className="h-12 gap-2 rounded-xl text-base flex-1">
                         <ChevronLeft className="w-5 h-5" /> {t.goBack}
                       </Button>
-                      <Button onClick={goNext} className="h-12 gap-2 rounded-xl text-base shadow-lg flex-[2]">
-                        {t.continueNext} <ChevronRight className="w-5 h-5" />
+                      <Button onClick={() => {
+                        if (selectedPlan !== 'plan_free') {
+                          // For paid plans: complete onboarding first, then redirect to checkout
+                          handleFinish().then(() => {
+                            window.location.href = `/checkout?plan=${selectedPlan}`;
+                          });
+                        } else {
+                          goNext();
+                        }
+                      }} className="h-12 gap-2 rounded-xl text-base shadow-lg flex-[2]">
+                        {selectedPlan !== 'plan_free' ? t.planGoCheckout : t.continueNext} <ChevronRight className="w-5 h-5" />
                       </Button>
                     </div>
                   </div>
