@@ -2947,6 +2947,7 @@ export const vi: Translations = {
     couponNotStarted: 'Mã giảm giá chưa có hiệu lực',
     couponMaxUses: 'Mã giảm giá đã hết lượt sử dụng',
     couponNotApplicable: 'Mã không áp dụng cho gói này',
+    couponAlreadyUsed: 'Bạn đã sử dụng mã này rồi',
     couponApplied: 'Đã áp dụng mã giảm giá!',
     orderSummary: 'Tóm tắt đơn hàng',
     discount: 'Giảm giá',
