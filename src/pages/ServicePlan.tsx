@@ -191,6 +191,12 @@ export default function ServicePlan() {
     });
   };
 
+  const currentTab = searchParams.get('tab') || 'plan';
+  const plan = profile?.user_plan || 'plan_free';
+  const planName = formatPlanName(plan);
+  const isPremium = plan !== 'plan_free';
+  const features = featuresMap[plan] || featuresMap.plan_free;
+
   const billingCycle = (profile as any)?.billing_cycle || 'monthly';
   const addonBasePrice = billingCycle === 'yearly' ? BASE_PRICE * 10 : BASE_PRICE;
 
@@ -203,13 +209,6 @@ export default function ServicePlan() {
   const newSaving = Math.round(newTotalQty * addonBasePrice * discount.pct * 100) / 100;
   const newTotal = newTotalQty * unitPrice;
   const hasNewAddons = newTotalQty > 0;
-
-  const currentTab = searchParams.get('tab') || 'plan';
-
-  const plan = profile?.user_plan || 'plan_free';
-  const planName = formatPlanName(plan);
-  const isPremium = plan !== 'plan_free';
-  const features = featuresMap[plan] || featuresMap.plan_free;
 
   if (isLoading) {
     return (
