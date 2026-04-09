@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -19,7 +20,7 @@ import {
   Crown, Zap, Building2, FolderKanban, HardDrive,
   ArrowRight, Loader2, Infinity, Receipt,
   Check, Users, Shield, Sparkles, BarChart3,
-  Plus, Minus, Package, AlertTriangle,
+  Plus, Minus, Package, AlertTriangle, ShieldCheck,
 } from 'lucide-react';
 
 interface WorkspaceUsage {
@@ -82,6 +83,9 @@ export default function ServicePlan() {
     members: 0,
   });
   const [addonDirty, setAddonDirty] = useState(false);
+  const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
+  const [addonPaymentLoading, setAddonPaymentLoading] = useState(false);
+  const [showAddonPaypal, setShowAddonPaypal] = useState(false);
 
   const currentTab = searchParams.get('tab') || 'plan';
 
@@ -212,22 +216,87 @@ export default function ServicePlan() {
     setAddonDirty(true);
   };
 
-  const handleAddonConfirm = async () => {
-    for (const type of ['projects', 'storage', 'members'] as AddonType[]) {
-      await userAddons.updateAddon(type, localAddons[type]);
+  // Fetch PayPal client ID for addon payments
+  useEffect(() => {
+    if (isPremium && !paypalClientId) {
+      supabase.functions.invoke('get-paypal-config').then(({ data }) => {
+        if (data?.clientId) setPaypalClientId(data.clientId);
+      });
     }
-    setAddonDirty(false);
-    accountLimits.refresh();
-    toast({
-      title: '🧩 Add-on',
-      description: t.addonComingSoon || 'Payment for add-ons is coming soon.',
-    });
+  }, [isPremium, paypalClientId]);
+
+  // Calculate addon deltas (new - existing in DB)
+  const addonDeltas = {
+    projects: localAddons.projects - userAddons.getQuantity('projects'),
+    storage: localAddons.storage - userAddons.getQuantity('storage'),
+    members: localAddons.members - userAddons.getQuantity('members'),
   };
+  const hasAddonDelta = addonDeltas.projects > 0 || addonDeltas.storage > 0 || addonDeltas.members > 0;
+
+  const billingCycle = (profile as any)?.billing_cycle || 'monthly';
+  const addonBasePrice = billingCycle === 'yearly' ? BASE_PRICE * 10 : BASE_PRICE;
 
   const discount = getAddonDiscount(plan);
-  const unitPrice = BASE_PRICE * (1 - discount.pct);
+  const unitPrice = addonBasePrice * (1 - discount.pct);
+
+  // Delta cost (only for new additions)
+  const deltaAddons = (['projects', 'storage', 'members'] as AddonType[])
+    .filter(t => addonDeltas[t] > 0)
+    .map(t => ({ type: t, quantity: addonDeltas[t] }));
+  const deltaTotalOriginal = deltaAddons.reduce((s, a) => s + a.quantity * addonBasePrice, 0);
+  const deltaTotalFinal = deltaAddons.reduce((s, a) => s + a.quantity * unitPrice, 0);
+  const deltaSaving = Math.round((deltaTotalOriginal - deltaTotalFinal) * 100) / 100;
+
+  // Total display cost (all addons including existing)
   const totalAddonQty = localAddons.projects + localAddons.storage + localAddons.members;
   const totalAddonCost = totalAddonQty * unitPrice;
+
+  const createAddonOrder = useCallback(async (): Promise<string> => {
+    const addonsPayload = deltaAddons.map(a => ({ type: a.type, quantity: a.quantity }));
+
+    const { data, error } = await supabase.functions.invoke('create-paypal-order', {
+      body: {
+        order_type: 'addon',
+        billing_cycle: billingCycle,
+        addons: addonsPayload,
+      },
+    });
+
+    if (error || !data?.orderID) {
+      throw new Error(error?.message || 'Failed to create order');
+    }
+    return data.orderID;
+  }, [deltaAddons, billingCycle]);
+
+  const captureAddonOrder = useCallback(async (orderID: string) => {
+    setAddonPaymentLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('capture-paypal-order', {
+        body: { orderID },
+      });
+
+      if (error || !data?.success) {
+        throw new Error(error?.message || 'Capture failed');
+      }
+
+      userAddons.refresh();
+      accountLimits.refresh();
+      setShowAddonPaypal(false);
+      setAddonDirty(false);
+      toast({
+        title: '✅ Add-on',
+        description: t.addonPurchaseSuccess || 'Add-on purchased successfully!',
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Error',
+        description: err.message || 'Payment failed',
+        variant: 'destructive',
+      });
+    } finally {
+      setAddonPaymentLoading(false);
+    }
+  }, [userAddons, accountLimits, t]);
 
   if (isLoading) {
     return (
@@ -741,7 +810,7 @@ export default function ServicePlan() {
                                 <div className="text-sm font-semibold tabular-nums">
                                   ${costForThis.toFixed(2)}
                                 </div>
-                                <div className="text-[10px] text-muted-foreground">{t.addonPerMonth || '/month'}</div>
+                                <div className="text-[10px] text-muted-foreground">/{billingCycle === 'yearly' ? (t.addonPerYear || 'year') : (t.addonPerMonth || 'month')}</div>
                               </div>
                             </div>
                           </div>
@@ -751,31 +820,101 @@ export default function ServicePlan() {
                   })}
                 </div>
 
-                {/* Total cost + confirm */}
+                {/* Total cost + checkout */}
                 <Card className="bg-muted/50">
-                  <CardContent className="p-5 space-y-3">
+                  <CardContent className="p-5 space-y-4">
+                    {/* Current total */}
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                       <div>
                         <span className="text-sm font-medium">{t.addonTotalCost || 'Total add-on cost'}:</span>
                         <span className="text-2xl font-bold tabular-nums ml-3">
                           ${totalAddonCost.toFixed(2)}
                         </span>
-                        <span className="text-sm text-muted-foreground ml-1">{t.addonPerMonth || '/month'}</span>
+                        <span className="text-sm text-muted-foreground ml-1">/{billingCycle === 'yearly' ? (t.addonPerYear || 'year') : (t.addonPerMonth || 'month')}</span>
                       </div>
-                      <Button
-                        onClick={handleAddonConfirm}
-                        disabled={!addonDirty}
-                        className="bg-violet-600 hover:bg-violet-700 text-white"
-                      >
-                        <Package className="w-4 h-4 mr-2" />
-                        {t.addonConfirm || 'Confirm Changes'}
-                      </Button>
                     </div>
+
                     {discount.pct > 0 && totalAddonQty > 0 && (
-                      <div className="flex justify-between text-sm text-emerald-600 pt-1 border-t">
+                      <div className="flex justify-between text-sm text-emerald-600 pt-1 border-t border-border">
                         <span>{t.addonSavings || 'Add-on savings'} ({discount.pct * 100}%)</span>
-                        <span>-${(totalAddonQty * BASE_PRICE * discount.pct).toFixed(2)}/{t.addonPerMonth || 'month'}</span>
+                        <span>-${(totalAddonQty * addonBasePrice * discount.pct).toFixed(2)}</span>
                       </div>
+                    )}
+
+                    {/* Delta purchase section */}
+                    {hasAddonDelta && (
+                      <div className="pt-3 border-t border-border space-y-3">
+                        <div className="text-sm font-medium">{t.addonNewPurchase || 'New add-on purchase'}:</div>
+                        <div className="space-y-1">
+                          {deltaAddons.map(a => (
+                            <div key={a.type} className="flex justify-between text-sm">
+                              <span className="text-muted-foreground capitalize">{a.type} × {a.quantity}</span>
+                              <span className="tabular-nums">${(a.quantity * unitPrice).toFixed(2)}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {deltaSaving > 0 && (
+                          <div className="flex justify-between text-sm text-emerald-600">
+                            <span>{t.addonSavings || 'Savings'} ({discount.pct * 100}%)</span>
+                            <span>-${deltaSaving.toFixed(2)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-base font-bold pt-1 border-t border-border">
+                          <span>{t.addonPayTotal || 'Amount to pay'}</span>
+                          <span>${deltaTotalFinal.toFixed(2)}</span>
+                        </div>
+
+                        {!showAddonPaypal ? (
+                          <Button
+                            onClick={() => setShowAddonPaypal(true)}
+                            className="w-full bg-violet-600 hover:bg-violet-700 text-white"
+                          >
+                            <Package className="w-4 h-4 mr-2" />
+                            {t.addonCheckout || 'Proceed to Payment'}
+                          </Button>
+                        ) : (
+                          <div className="space-y-3">
+                            {addonPaymentLoading && (
+                              <div className="flex items-center justify-center py-4">
+                                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                              </div>
+                            )}
+                            {paypalClientId ? (
+                              <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD' }}>
+                                <PayPalButtons
+                                  style={{ layout: 'vertical', shape: 'rect', label: 'pay', height: 40 }}
+                                  createOrder={async () => createAddonOrder()}
+                                  onApprove={async (data) => {
+                                    await captureAddonOrder(data.orderID);
+                                  }}
+                                  onError={(err) => {
+                                    console.error('PayPal error:', err);
+                                    toast({ title: 'PayPal Error', description: 'Payment could not be completed.', variant: 'destructive' });
+                                  }}
+                                  onCancel={() => {
+                                    setShowAddonPaypal(false);
+                                    toast({ title: 'Cancelled', description: t.addonPaymentCancelled || 'Payment was cancelled.' });
+                                  }}
+                                />
+                              </PayPalScriptProvider>
+                            ) : (
+                              <div className="text-center py-4">
+                                <Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                              <ShieldCheck className="w-3.5 h-3.5" />
+                              <span>{t.securePayment || 'Secure payment via PayPal'}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {!hasAddonDelta && addonDirty && (
+                      <p className="text-xs text-muted-foreground text-center pt-2">
+                        {t.addonNoIncrease || 'You can only purchase additional add-ons, not reduce existing ones from here.'}
+                      </p>
                     )}
                   </CardContent>
                 </Card>

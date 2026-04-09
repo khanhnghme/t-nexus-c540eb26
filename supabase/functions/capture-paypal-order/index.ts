@@ -23,6 +23,33 @@ async function getPayPalAccessToken(): Promise<string> {
   return data.access_token;
 }
 
+async function updateUserAddons(
+  serviceClient: any,
+  userId: string,
+  addons: Array<{ type: string; quantity: number }>
+) {
+  for (const addon of addons) {
+    const { data: existing } = await serviceClient
+      .from("user_addons")
+      .select("id, quantity")
+      .eq("user_id", userId)
+      .eq("addon_type", addon.type)
+      .single();
+
+    if (existing) {
+      await serviceClient.from("user_addons").update({
+        quantity: existing.quantity + addon.quantity,
+      }).eq("id", existing.id);
+    } else {
+      await serviceClient.from("user_addons").insert({
+        user_id: userId,
+        addon_type: addon.type,
+        quantity: addon.quantity,
+      });
+    }
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -64,7 +91,6 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Get our order record
     const { data: order } = await serviceClient
       .from("orders")
       .select("*")
@@ -108,8 +134,57 @@ Deno.serve(async (req) => {
 
     const captureId = captureData.purchase_units?.[0]?.payments?.captures?.[0]?.id;
     const now = new Date().toISOString();
+    const isAddonOrder = order.order_type === "addon";
 
-    // Calculate plan expiry
+    // 1. Update order status
+    await serviceClient.from("orders").update({
+      status: "completed",
+      completed_at: now,
+    }).eq("id", order.id);
+
+    // 2. Update user addons (for both plan and addon orders)
+    const addons = order.addons as Array<{ type: string; quantity: number }> | null;
+    if (addons && addons.length > 0) {
+      await updateUserAddons(serviceClient, user.id, addons);
+    }
+
+    if (isAddonOrder) {
+      // ADDON-ONLY: skip profile/plan update, just log payment + history
+      const planLabel = (order.plan || "addon").replace("plan_", "").toUpperCase();
+
+      await serviceClient.from("payment_history").insert({
+        user_id: user.id,
+        plan_purchased: order.plan || "addon",
+        amount: order.total_amount,
+        currency: "USD",
+        status: "completed",
+        payment_method: "paypal",
+        transaction_id: captureId || orderID,
+        order_id: orderID,
+        original_amount: order.addon_amount,
+        discount_amount: order.discount_amount,
+        final_amount: order.total_amount,
+        paid_at: now,
+        description: `Add-on purchase (${order.billing_cycle})`,
+      });
+
+      await serviceClient.from("plan_change_logs").insert({
+        user_id: user.id,
+        action_type: "addon_purchase",
+        old_plan: order.plan,
+        new_plan: order.plan,
+        change_source: "user_payment",
+        reason: `Add-on PayPal payment ${captureId || orderID}`,
+        performed_by: user.id,
+      });
+
+      return new Response(
+        JSON.stringify({ success: true, orderId: order.id, order_type: "addon" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // PLAN ORDER: full profile + workspace update
     const startDate = new Date();
     const expiryDate = new Date();
     if (order.billing_cycle === "yearly") {
@@ -118,7 +193,6 @@ Deno.serve(async (req) => {
       expiryDate.setMonth(expiryDate.getMonth() + 1);
     }
 
-    // Get old plan for logging
     const { data: profile } = await serviceClient
       .from("profiles")
       .select("user_plan, plan_expires_at")
@@ -128,13 +202,6 @@ Deno.serve(async (req) => {
     const oldPlan = profile?.user_plan || "plan_free";
     const oldExpiry = profile?.plan_expires_at;
 
-    // 1. Update order status
-    await serviceClient.from("orders").update({
-      status: "completed",
-      completed_at: now,
-    }).eq("id", order.id);
-
-    // 2. Update user profile
     await serviceClient.from("profiles").update({
       user_plan: order.plan,
       plan_status: "active",
@@ -145,7 +212,6 @@ Deno.serve(async (req) => {
       downgraded_at: null,
     }).eq("id", user.id);
 
-    // 3. Insert payment history
     await serviceClient.from("payment_history").insert({
       user_id: user.id,
       plan_purchased: order.plan,
@@ -163,7 +229,6 @@ Deno.serve(async (req) => {
       description: `${order.plan.replace("plan_", "").toUpperCase()} plan (${order.billing_cycle})`,
     });
 
-    // 4. Insert plan change log
     await serviceClient.from("plan_change_logs").insert({
       user_id: user.id,
       action_type: oldPlan === "plan_free" ? "upgrade" : (order.plan === oldPlan ? "renew" : "upgrade"),
@@ -176,7 +241,6 @@ Deno.serve(async (req) => {
       performed_by: user.id,
     });
 
-    // 5. Update coupon used count
     if (order.coupon_code) {
       const { data: coupon } = await serviceClient
         .from("coupons")
@@ -191,32 +255,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 6. Update user addons
-    const addons = order.addons as Array<{ type: string; quantity: number }> | null;
-    if (addons && addons.length > 0) {
-      for (const addon of addons) {
-        const { data: existing } = await serviceClient
-          .from("user_addons")
-          .select("id, quantity")
-          .eq("user_id", user.id)
-          .eq("addon_type", addon.type)
-          .single();
-
-        if (existing) {
-          await serviceClient.from("user_addons").update({
-            quantity: existing.quantity + addon.quantity,
-          }).eq("id", existing.id);
-        } else {
-          await serviceClient.from("user_addons").insert({
-            user_id: user.id,
-            addon_type: addon.type,
-            quantity: addon.quantity,
-          });
-        }
-      }
-    }
-
-    // 7. Update workspace limits based on new plan
     const { data: planLimits } = await serviceClient
       .from("plan_limits")
       .select("*")
