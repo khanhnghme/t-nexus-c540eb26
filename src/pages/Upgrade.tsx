@@ -46,6 +46,7 @@ function formatPrice(monthly: number | null, yearly: boolean): string {
 
 export default function Upgrade() {
   const [yearly, setYearly] = useState(false);
+  const [isFirstTimeBuyer, setIsFirstTimeBuyer] = useState(false);
   const { translations: t, translations: { pricing: tp, common: tc } } = useLanguage();
   const { user, profile } = useAuth();
   const { activeWorkspace } = useWorkspace();
@@ -58,6 +59,21 @@ export default function Upgrade() {
   // When from personal, always use user's own plan & treat them as owner
   const effectivePlan = isFromPersonal ? (profile?.user_plan || 'plan_free') : ownerPlan;
   const isOwner = isFromPersonal ? true : (user?.id === ownerId);
+  const isVi = tc?.language === 'vi' || document.documentElement.lang === 'vi';
+
+  // Check first-time buyer
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from('orders')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('status', 'completed')
+      .limit(1)
+      .then(({ data }) => {
+        setIsFirstTimeBuyer(!data || data.length === 0);
+      });
+  }, [user?.id]);
 
   const handleSelectPlan = (planKey?: string) => {
     if (!isOwner) return;
