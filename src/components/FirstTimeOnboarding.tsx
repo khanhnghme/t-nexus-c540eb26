@@ -20,7 +20,7 @@ import {
   Loader2, Key, Camera, User, Check, ChevronRight,
   GraduationCap, BookOpen, Phone, Sparkles, Shield,
   Rocket, Eye, EyeOff, Mail, ListChecks, Users, FolderKanban,
-  Award, MessageSquare, ChevronLeft, Globe,
+  Award, MessageSquare, ChevronLeft, Globe, Crown, Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -37,13 +37,14 @@ interface FirstTimeOnboardingProps {
   onComplete: () => void;
 }
 
-type StepId = 'language' | 'welcome' | 'password' | 'info' | 'finish';
+type StepId = 'language' | 'welcome' | 'password' | 'info' | 'plan' | 'finish';
 
 const stepIcons: Record<StepId, React.ReactNode> = {
   language: <Globe className="w-4 h-4" />,
   welcome: <Sparkles className="w-4 h-4" />,
   password: <Key className="w-4 h-4" />,
   info: <User className="w-4 h-4" />,
+  plan: <Crown className="w-4 h-4" />,
   finish: <Rocket className="w-4 h-4" />,
 };
 
@@ -59,8 +60,8 @@ export default function FirstTimeOnboarding({
   const [selectedLang, setSelectedLang] = useState<'en' | 'vi' | null>(null);
 
   const allSteps: StepId[] = mustChangePassword
-    ? ['language', 'welcome', 'password', 'info', 'finish']
-    : ['language', 'welcome', 'info', 'finish'];
+    ? ['language', 'welcome', 'password', 'info', 'plan', 'finish']
+    : ['language', 'welcome', 'info', 'plan', 'finish'];
 
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const currentStep = allSteps[currentStepIndex];
@@ -80,6 +81,7 @@ export default function FirstTimeOnboarding({
   const [bio, setBio] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [infoErrors, setInfoErrors] = useState<Record<string, boolean>>({});
+  const [selectedPlan, setSelectedPlan] = useState<'plan_free' | 'plan_plus' | 'plan_pro'>('plan_free');
 
   const getInitials = (name: string) =>
     name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -216,6 +218,7 @@ export default function FirstTimeOnboarding({
         bio: bio.trim() || null,
         onboarding_completed: true,
         must_change_password: false,
+        user_plan: selectedPlan,
       };
       if (avatarUrl) updateData.avatar_url = avatarUrl;
 
@@ -240,6 +243,7 @@ export default function FirstTimeOnboarding({
     welcome: t.stepWelcome,
     password: t.stepSecurity,
     info: t.stepInfo,
+    plan: t.stepPlan,
     finish: t.stepFinish,
   };
 
@@ -248,6 +252,7 @@ export default function FirstTimeOnboarding({
     welcome: t.stepWelcomeDesc,
     password: t.stepSecurityDesc,
     info: t.stepInfoDesc,
+    plan: t.stepPlanDesc,
     finish: t.stepFinishDesc,
   };
 
