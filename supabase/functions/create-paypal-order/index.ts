@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const PAYPAL_BASE = "https://api-m.paypal.com"; // Change to sandbox for testing
+const PAYPAL_BASE = "https://api-m.paypal.com";
 
 const PLAN_PRICES: Record<string, { monthly: number; yearly: number }> = {
   plan_plus: { monthly: 4.8, yearly: 48 },
@@ -13,7 +13,14 @@ const PLAN_PRICES: Record<string, { monthly: number; yearly: number }> = {
   plan_business: { monthly: 24, yearly: 240 },
 };
 
-const ADDON_PRICE = 2.49; // per unit per month
+const ADDON_PRICE = 2.49;
+
+// Addon discount by plan
+const ADDON_DISCOUNT_RATE: Record<string, number> = {
+  plan_plus: 0.10,
+  plan_pro: 0.20,
+  plan_business: 0.20,
+};
 
 async function getPayPalAccessToken(): Promise<string> {
   const clientId = Deno.env.get("PAYPAL_CLIENT_ID")!;
@@ -40,8 +47,7 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -54,44 +60,43 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const body = await req.json();
     const { plan, billing_cycle = "monthly", addons = [], coupon_code } = body;
 
-    // Validate plan
     if (!plan || !PLAN_PRICES[plan]) {
       return new Response(JSON.stringify({ error: "Invalid plan" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
     if (!["monthly", "yearly"].includes(billing_cycle)) {
       return new Response(JSON.stringify({ error: "Invalid billing cycle" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Calculate base price
     const prices = PLAN_PRICES[plan];
     const baseAmount = billing_cycle === "yearly" ? prices.yearly : prices.monthly;
 
-    // Calculate addon amount
-    let addonAmount = 0;
+    // Calculate addon amount WITH plan-based discount
+    const addonDiscountRate = ADDON_DISCOUNT_RATE[plan] || 0;
+    let addonAmountOriginal = 0;
+    let addonAmountFinal = 0;
     const validAddons: Array<{ type: string; quantity: number }> = [];
+
     for (const addon of addons) {
       if (addon.quantity > 0 && ["projects", "storage", "members"].includes(addon.type)) {
         const qty = Math.min(Math.max(1, Math.floor(addon.quantity)), 10);
-        const price = billing_cycle === "yearly" ? ADDON_PRICE * 10 * qty : ADDON_PRICE * qty;
-        addonAmount += price;
+        const originalPrice = billing_cycle === "yearly" ? ADDON_PRICE * 10 * qty : ADDON_PRICE * qty;
+        addonAmountOriginal += originalPrice;
+        addonAmountFinal += originalPrice * (1 - addonDiscountRate);
         validAddons.push({ type: addon.type, quantity: qty });
       }
     }
+    addonAmountFinal = Math.round(addonAmountFinal * 100) / 100;
 
     // Validate coupon
     let discountAmount = 0;
@@ -117,8 +122,19 @@ Deno.serve(async (req) => {
         const hasUses = coupon.max_uses === null || coupon.used_count < coupon.max_uses;
         const planApplicable = !coupon.applicable_plans?.length || coupon.applicable_plans.includes(plan);
 
-        if (notExpired && notStarted && hasUses && planApplicable) {
-          const subtotal = baseAmount + addonAmount;
+        // Per-user check
+        const { data: existingOrders } = await serviceClient
+          .from("orders")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("coupon_code", coupon.code)
+          .eq("status", "completed")
+          .limit(1);
+
+        const notUsedByUser = !existingOrders || existingOrders.length === 0;
+
+        if (notExpired && notStarted && hasUses && planApplicable && notUsedByUser) {
+          const subtotal = baseAmount + addonAmountFinal;
           if (coupon.discount_type === "percentage") {
             discountAmount = Math.round((subtotal * coupon.discount_value / 100) * 100) / 100;
           } else {
@@ -129,12 +145,11 @@ Deno.serve(async (req) => {
       }
     }
 
-    const totalAmount = Math.round((baseAmount + addonAmount - discountAmount) * 100) / 100;
+    const totalAmount = Math.round((baseAmount + addonAmountFinal - discountAmount) * 100) / 100;
 
     if (totalAmount <= 0) {
       return new Response(JSON.stringify({ error: "Total must be greater than 0" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -150,19 +165,17 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         intent: "CAPTURE",
-        purchase_units: [
-          {
-            amount: {
-              currency_code: "USD",
-              value: totalAmount.toFixed(2),
-              breakdown: {
-                item_total: { currency_code: "USD", value: (baseAmount + addonAmount).toFixed(2) },
-                discount: { currency_code: "USD", value: discountAmount.toFixed(2) },
-              },
+        purchase_units: [{
+          amount: {
+            currency_code: "USD",
+            value: totalAmount.toFixed(2),
+            breakdown: {
+              item_total: { currency_code: "USD", value: (baseAmount + addonAmountFinal).toFixed(2) },
+              discount: { currency_code: "USD", value: discountAmount.toFixed(2) },
             },
-            description: `T-Nexus ${planLabel} Plan (${billing_cycle})`,
           },
-        ],
+          description: `T-Nexus ${planLabel} Plan (${billing_cycle})`,
+        }],
       }),
     });
 
@@ -171,8 +184,7 @@ Deno.serve(async (req) => {
     if (!paypalOrder.id) {
       console.error("PayPal error:", JSON.stringify(paypalOrder));
       return new Response(JSON.stringify({ error: "Failed to create PayPal order" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -187,7 +199,7 @@ Deno.serve(async (req) => {
       plan,
       billing_cycle,
       base_amount: baseAmount,
-      addon_amount: addonAmount,
+      addon_amount: addonAmountFinal,
       discount_amount: discountAmount,
       total_amount: totalAmount,
       coupon_code: validCouponCode,
@@ -204,8 +216,7 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error("create-paypal-order error:", err);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

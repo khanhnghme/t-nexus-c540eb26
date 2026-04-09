@@ -3020,6 +3020,7 @@ export const en = {
     couponNotStarted: 'Coupon is not yet active',
     couponMaxUses: 'Coupon usage limit reached',
     couponNotApplicable: 'Coupon not applicable to this plan',
+    couponAlreadyUsed: 'You have already used this coupon',
     couponApplied: 'Coupon applied!',
     orderSummary: 'Order Summary',
     discount: 'Discount',
