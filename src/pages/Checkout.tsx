@@ -326,11 +326,9 @@ export default function Checkout() {
                             /{cycle === 'yearly' ? (isVi ? 'năm' : 'yr') : (isVi ? 'tháng' : 'mo')}
                           </span>
                         </div>
-                        {p.addonDiscount > 0 && (
-                          <div className="text-[11px] text-emerald-600 mt-1 font-medium">
-                            Add-on -{p.addonDiscount * 100}%
-                          </div>
-                        )}
+                        <div className={cn("text-[11px] mt-1 font-medium", p.addonDiscount > 0 ? "text-emerald-600" : "text-muted-foreground")}>
+                          Add-on {p.addonDiscount > 0 ? `-${p.addonDiscount * 100}%` : (isVi ? 'không giảm' : 'no discount')}
+                        </div>
                       </button>
                     );
                   })}
@@ -440,6 +438,10 @@ export default function Checkout() {
                     <p className="font-medium">{getPlanLabel(plan)} Plan</p>
                     <p className="text-[11px] text-muted-foreground">
                       {cycle === 'yearly' ? (t?.billedYearly || 'Billed yearly') : (t?.billedMonthly || 'Billed monthly')}
+                      {' · '}
+                      <span className={addonDiscountRate > 0 ? "text-emerald-600 font-medium" : ""}>
+                        Add-on {addonDiscountRate > 0 ? `-${addonDiscountRate * 100}%` : (isVi ? 'không giảm' : 'no discount')}
+                      </span>
                     </p>
                   </div>
                   <span className="font-semibold">${baseAmount.toFixed(2)}</span>
@@ -553,6 +555,10 @@ export default function Checkout() {
               <p className="font-medium">{getPlanLabel(plan)} Plan</p>
               <p className="text-[11px] text-muted-foreground">
                 {cycle === 'yearly' ? (t?.billedYearly || 'Billed yearly') : (t?.billedMonthly || 'Billed monthly')}
+                {' · '}
+                <span className={addonDiscountRate > 0 ? "text-emerald-600 font-medium" : ""}>
+                  Add-on {addonDiscountRate > 0 ? `-${addonDiscountRate * 100}%` : (isVi ? 'không giảm' : 'no discount')}
+                </span>
               </p>
             </div>
             <div className="col-span-2 text-right text-muted-foreground">${baseAmount.toFixed(2)}</div>
