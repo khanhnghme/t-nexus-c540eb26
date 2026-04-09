@@ -356,9 +356,12 @@ function ToggleBtn({ active, onClick, label }: { active: boolean; onClick: () =>
 
 /* ═══════════════════════ Plan Column ═══════════════════════ */
 
-function PlanColumn({ plan, yearly, tp, disabled, onSelect }: { plan: Plan; yearly: boolean; tp: any; disabled: boolean; onSelect: (planKey?: string) => void }) {
+function PlanColumn({ plan, yearly, tp, disabled, onSelect, isFirstTimeBuyer = false }: { plan: Plan; yearly: boolean; tp: any; disabled: boolean; onSelect: (planKey?: string) => void; isFirstTimeBuyer?: boolean }) {
   const price = formatPrice(plan.monthlyPrice, yearly);
   const isCustom = plan.monthlyPrice === null;
+  const planKey = `plan_${plan.key}`;
+  const welcomePrice = isFirstTimeBuyer ? getWelcomePrice(planKey, yearly ? 'yearly' : 'monthly') : null;
+  const hasWelcome = welcomePrice !== null && welcomePrice > 0;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -371,15 +374,24 @@ function PlanColumn({ plan, yearly, tp, disabled, onSelect }: { plan: Plan; year
         )}
       </div>
 
-      <div className="min-h-[56px] mb-2 flex items-baseline flex-wrap">
-        <span className="text-3xl font-bold text-foreground tracking-tight leading-none">{price}</span>
+      <div className="min-h-[56px] mb-2 flex items-baseline flex-wrap gap-1.5">
+        {hasWelcome ? (
+          <>
+            <span className="text-lg text-muted-foreground line-through">{price}</span>
+            <span className="text-3xl font-bold text-green-600 tracking-tight leading-none">
+              ${yearly ? welcomePrice.toFixed(0) : welcomePrice % 1 === 0 ? welcomePrice.toFixed(0) : welcomePrice.toFixed(1)}
+            </span>
+          </>
+        ) : (
+          <span className="text-3xl font-bold text-foreground tracking-tight leading-none">{price}</span>
+        )}
         {!isCustom && (
-          <span className="text-xs text-muted-foreground ml-1.5">
+          <span className="text-xs text-muted-foreground">
             {tp.perWorkspace} / {yearly ? tp.mo : tp.month}
           </span>
         )}
         {isCustom && (
-          <span className="text-xs text-muted-foreground ml-1.5">{tp.customPricing}</span>
+          <span className="text-xs text-muted-foreground">{tp.customPricing}</span>
         )}
       </div>
 
