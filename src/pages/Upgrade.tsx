@@ -87,7 +87,6 @@ export default function Upgrade() {
   };
 
   const currentPlanKey: string = effectivePlan ? effectivePlan.replace(/^plan_/, '') : 'free';
-  const isVi = tc?.language === 'vi' || document.documentElement.lang === 'vi';
   const upgradeCta = isVi ? 'Nâng cấp' : 'Upgrade';
   const currentPlanCta = isVi ? 'Gói hiện tại' : 'Current plan';
   const downgradeCta = isVi ? 'Hạ cấp' : 'Downgrade';
