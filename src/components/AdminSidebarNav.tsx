@@ -15,7 +15,6 @@ interface AdminSidebarNavProps {
 export default function AdminSidebarNav({ collapsed }: AdminSidebarNavProps) {
   const location = useLocation();
   const { translations } = useLanguage();
-  const { translations } = useLanguage();
   const t = translations.app?.sidebar;
 
   const adminItems = [
