@@ -14,16 +14,13 @@ import {
   ChevronRight,
   Lock,
   Globe,
-  Users as UsersIcon,
   CalendarDays,
   MessageSquare,
   UserCircle,
   Settings,
   BookOpen,
   Lightbulb,
-  FolderArchive,
   Shield,
-  Wrench,
   Plus,
   LayoutGrid,
   ChevronsUpDown,
@@ -117,12 +114,8 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
     { name: t?.settings || 'Settings', href: '/account-settings' },
   ];
 
-  const adminItems = [
-    { name: t?.systemMembers || 'Members', href: '/members', icon: Users },
-    { name: t?.backup || 'Backup', href: '/admin/backup', icon: FolderArchive },
-    { name: t?.admin || 'Admin', href: '/admin/system', icon: Shield },
-    { name: t?.utilities || 'Utilities', href: '/utilities', icon: Wrench },
-  ].filter(i => !hiddenNav.includes(i.href));
+  const adminHref = '/admin';
+  const isAdminActive = location.pathname.startsWith('/admin');
 
   const isPathActive = (href: string) => {
     if (href === '/dashboard') return location.pathname === '/dashboard';
@@ -162,10 +155,10 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
         <TreeItemCollapsed icon={UserCircle} label={t?.account || 'Account'} href="/personal-info" active={isPathActive('/personal-info') || isPathActive('/account-settings')} />
         <TreeItemCollapsed icon={CreditCard} label={t?.servicePlan || 'Service Plan'} href="/service-plan" active={isPathActive('/service-plan')} />
 
-        {/* Admin */}
-        {isAdmin && adminItems.map(item => (
-          <TreeItemCollapsed key={item.href} icon={item.icon} label={item.name} href={item.href} active={isPathActive(item.href)} />
-        ))}
+        {/* Admin — single item */}
+        {isAdmin && (
+          <TreeItemCollapsed icon={Shield} label={t?.system || 'Admin'} href={adminHref} active={isAdminActive} />
+        )}
       </div>
     );
   }
@@ -305,17 +298,14 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
       )}
 
 
-      {/* ── Admin section ── */}
-      {isAdmin && adminItems.length > 0 && (
+      {/* ── Admin — single link ── */}
+      {isAdmin && (
         <>
           <div className="sidebar-nav-separator" />
-          <div className="sidebar-section-label">{t?.system || 'ADMIN'}</div>
-          {adminItems.map(item => (
-            <Link key={item.href} to={item.href} className={cn('sidebar-nav-item', isPathActive(item.href) && 'active')}>
-              <item.icon className="nav-icon" strokeWidth={1.8} />
-              <span className="nav-label">{item.name}</span>
-            </Link>
-          ))}
+          <Link to={adminHref} className={cn('sidebar-nav-item', isAdminActive && 'active')}>
+            <Shield className="nav-icon" strokeWidth={1.8} />
+            <span className="nav-label">{t?.system || 'Admin'}</span>
+          </Link>
         </>
       )}
     </div>

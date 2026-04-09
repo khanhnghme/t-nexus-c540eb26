@@ -19,10 +19,10 @@ const TOGGLEABLE_PAGES = [
   { href: '/communication', name: 'Communication', nameVi: 'Trao đổi', icon: MessageSquare, description: 'Messages & discussions', descVi: 'Tin nhắn & thảo luận', adminOnly: false },
   { href: '/tips', name: 'Tips', nameVi: 'Mẹo', icon: BookOpen, description: 'System usage guides', descVi: 'Hướng dẫn sử dụng hệ thống', adminOnly: false },
   { href: '/feedback', name: 'Feedback', nameVi: 'Góp ý', icon: Lightbulb, description: 'Send feedback', descVi: 'Gửi ý kiến phản hồi', adminOnly: false },
-  { href: '/members', name: 'Members', nameVi: 'Thành viên', icon: Users, description: 'User management', descVi: 'Quản lý người dùng', adminOnly: true },
+  { href: '/admin/members', name: 'Members', nameVi: 'Thành viên', icon: Users, description: 'User management', descVi: 'Quản lý người dùng', adminOnly: true },
   { href: '/admin/backup', name: 'Backup', nameVi: 'Sao lưu', icon: FolderArchive, description: 'Data backup', descVi: 'Backup dữ liệu', adminOnly: true },
   { href: '/admin/system', name: 'Admin', nameVi: 'Quản trị', icon: Shield, description: 'System administration', descVi: 'Quản trị hệ thống', adminOnly: true },
-  { href: '/utilities', name: 'Utilities', nameVi: 'Tiện ích', icon: Wrench, description: 'Tools & utilities', descVi: 'Công cụ & tiện ích', adminOnly: true },
+  { href: '/admin/utilities', name: 'Utilities', nameVi: 'Tiện ích', icon: Wrench, description: 'Tools & utilities', descVi: 'Công cụ & tiện ích', adminOnly: true },
 ];
 
 function NavCustomizationCard({ userId, isAdmin, locale }: { userId?: string; isAdmin: boolean; locale: Locale }) {

@@ -671,6 +671,7 @@ export const vi: Translations = {
       utilities: 'Tiện ích',
       personal: 'CÁ NHÂN',
       system: 'QUẢN TRỊ',
+      backToDashboard: 'Quay lại',
       createWorkspace: 'Tạo Workspace mới',
       guestHint: '👽 Bạn đang truy cập với vai trò khách mời',
       notifications: 'Thông báo',
