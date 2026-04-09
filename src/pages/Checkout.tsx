@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { ArrowLeft, Tag, Plus, Minus, ShieldCheck, CreditCard, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -34,8 +34,6 @@ const ADDON_TYPES = [
 
 const ADDON_PRICE_MONTHLY = 2.49;
 
-const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID || '';
-
 /* ═══ Component ═══ */
 
 export default function Checkout() {
@@ -54,6 +52,13 @@ export default function Checkout() {
   const [couponError, setCouponError] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'failed'>('idle');
+  const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.functions.invoke('get-paypal-config').then(({ data }) => {
+      if (data?.clientId) setPaypalClientId(data.clientId);
+    });
+  }, []);
 
   // Calculate prices
   const prices = PLAN_PRICES[plan];
@@ -358,8 +363,8 @@ export default function Checkout() {
                     <Loader2 className="h-5 w-5 animate-spin" />
                     <span className="text-sm text-muted-foreground">{t?.processing || 'Processing payment...'}</span>
                   </div>
-                ) : PAYPAL_CLIENT_ID ? (
-                  <PayPalScriptProvider options={{ clientId: PAYPAL_CLIENT_ID, currency: 'USD' }}>
+                ) : paypalClientId ? (
+                  <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD' }}>
                     <PayPalButtons
                       style={{ layout: 'vertical', shape: 'rect', label: 'pay' }}
                       createOrder={async () => createOrder()}
