@@ -44,6 +44,7 @@ import {
   ChevronsUpDown,
 } from 'lucide-react';
 import SidebarTreeNav from '@/components/SidebarTreeNav';
+import AdminSidebarNav from '@/components/AdminSidebarNav';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import tNexusLogo from '@/assets/t-nexus-logo.png';
@@ -375,12 +376,18 @@ export default function DashboardLayout({
           <div className="grid-cell-sidebar">
             {/* Scrollable nav */}
             <div className="sidebar-nav-scroll">
-              <SidebarTreeNav collapsed={sidebarCollapsed} />
+              {location.pathname.startsWith('/admin') ? (
+                <AdminSidebarNav collapsed={sidebarCollapsed} />
+              ) : (
+                <SidebarTreeNav collapsed={sidebarCollapsed} />
+              )}
             </div>
 
             {/* Bottom section */}
             <div className="sidebar-bottom">
-              <UpgradeBox collapsed={sidebarCollapsed} />
+              {!location.pathname.startsWith('/admin') && (
+                <UpgradeBox collapsed={sidebarCollapsed} />
+              )}
 
               {/* User profile */}
               <DropdownMenu>
