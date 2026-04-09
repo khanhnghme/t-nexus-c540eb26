@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { ArrowLeft, Tag, Plus, Minus, ShieldCheck, CreditCard, Loader2, CheckCircle2, XCircle } from 'lucide-react';
@@ -33,8 +33,6 @@ const ADDON_TYPES = [
 ] as const;
 
 const ADDON_PRICE_MONTHLY = 2.49;
-
-const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID || '';
 
 /* ═══ Component ═══ */
 
