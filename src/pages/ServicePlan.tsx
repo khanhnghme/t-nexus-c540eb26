@@ -184,22 +184,12 @@ export default function ServicePlan() {
     setSearchParams({ tab: value }, { replace: true });
   };
 
-  const handleAddonChange = (type: AddonType, delta: number) => {
-    setLocalAddons(prev => {
+  const handleNewAddonChange = (type: AddonType, delta: number) => {
+    setNewAddons(prev => {
       const newVal = Math.max(0, (prev[type] || 0) + delta);
       return { ...prev, [type]: newVal };
     });
-    setAddonDirty(true);
   };
-
-
-  // Calculate addon deltas (new - existing in DB)
-  const addonDeltas = {
-    projects: localAddons.projects - userAddons.getQuantity('projects'),
-    storage: localAddons.storage - userAddons.getQuantity('storage'),
-    members: localAddons.members - userAddons.getQuantity('members'),
-  };
-  const hasAddonDelta = addonDeltas.projects > 0 || addonDeltas.storage > 0 || addonDeltas.members > 0;
 
   const billingCycle = (profile as any)?.billing_cycle || 'monthly';
   const addonBasePrice = billingCycle === 'yearly' ? BASE_PRICE * 10 : BASE_PRICE;
@@ -207,17 +197,12 @@ export default function ServicePlan() {
   const discount = getAddonDiscount(plan);
   const unitPrice = addonBasePrice * (1 - discount.pct);
 
-  // Delta cost (only for new additions)
-  const deltaAddons = (['projects', 'storage', 'members'] as AddonType[])
-    .filter(t => addonDeltas[t] > 0)
-    .map(t => ({ type: t, quantity: addonDeltas[t] }));
-  const deltaTotalOriginal = deltaAddons.reduce((s, a) => s + a.quantity * addonBasePrice, 0);
-  const deltaTotalFinal = deltaAddons.reduce((s, a) => s + a.quantity * unitPrice, 0);
-  const deltaSaving = Math.round((deltaTotalOriginal - deltaTotalFinal) * 100) / 100;
-
-  // Total display cost (all addons including existing)
-  const totalAddonQty = localAddons.projects + localAddons.storage + localAddons.members;
-  const totalAddonCost = totalAddonQty * unitPrice;
+  // New purchase calculations
+  const newTotalQty = newAddons.projects + newAddons.storage + newAddons.members;
+  const newSubtotal = newTotalQty * addonBasePrice;
+  const newSaving = Math.round(newTotalQty * addonBasePrice * discount.pct * 100) / 100;
+  const newTotal = newTotalQty * unitPrice;
+  const hasNewAddons = newTotalQty > 0;
 
 
   if (isLoading) {
