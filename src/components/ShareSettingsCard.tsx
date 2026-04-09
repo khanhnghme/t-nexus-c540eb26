@@ -92,24 +92,28 @@ export default function ShareSettingsCard({
     setIsUpdating(true);
     try {
       // Use slug as share_token for clean URLs
-      const newToken = enabled ? (groupSlug || localShareToken) : localShareToken;
+      const newToken = enabled ? (groupSlug || localShareToken) : null;
       const { error } = await supabase
         .from('groups')
-        .update({ is_public: enabled, share_token: newToken })
+        .update({ 
+          is_public: enabled, 
+          share_token: newToken,
+          visibility: enabled ? 'public_link' : 'private',
+        } as any)
         .eq('id', groupId);
       if (error) throw error;
       setLocalIsPublic(enabled);
       setLocalShareToken(newToken);
       toast({
         title: enabled ? 'Đã bật chia sẻ' : 'Đã tắt chia sẻ',
-        description: enabled ? 'Link xem project đã được tạo' : 'Link xem project đã bị vô hiệu hóa',
+        description: enabled ? 'Link xem project đã được tạo' : 'Dự án đã chuyển về chế độ riêng tư',
       });
       if (user && profile) {
         await logActivity({
           userId: user.id, userName: profile.full_name,
           action: enabled ? 'ENABLE_PUBLIC_SHARE' : 'DISABLE_PUBLIC_SHARE',
           actionType: 'setting',
-          description: enabled ? 'Bật chia sẻ công khai dự án' : 'Tắt chia sẻ công khai dự án',
+          description: enabled ? 'Bật chia sẻ công khai dự án' : 'Tắt chia sẻ công khai — chuyển về riêng tư',
           groupId,
         });
       }
