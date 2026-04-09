@@ -31,6 +31,8 @@ export default function CreateMeetingDialog({
 }: CreateMeetingDialogProps) {
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
+  const planLimits = usePlanLimits();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [scheduledAt, setScheduledAt] = useState('');
@@ -40,6 +42,20 @@ export default function CreateMeetingDialog({
   const [isCreating, setIsCreating] = useState(false);
 
   const { guardAction: guardReadOnly } = useReadOnlyGuard();
+
+  const maxDuration = planLimits.maxMeetingDurationMinutes;
+  const allDurationOptions = [15, 30, 45, 60, 90, 120];
+  const filteredDurationOptions = useMemo(() => {
+    if (maxDuration === null) return allDurationOptions;
+    return allDurationOptions.filter(m => m <= maxDuration);
+  }, [maxDuration]);
+
+  // Auto-correct if current selection exceeds limit
+  useState(() => {
+    if (maxDuration !== null && durationMinutes > maxDuration && filteredDurationOptions.length > 0) {
+      setDurationMinutes(filteredDurationOptions[filteredDurationOptions.length - 1]);
+    }
+  });
 
   const handleCreate = async () => {
     if (guardReadOnly()) return;
