@@ -27,6 +27,25 @@ export function useAdminPlanActions() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
+    // Server-side billing role validation
+    const { data: roles } = await supabase
+      .from('user_roles')
+      .select('role, billing_role')
+      .eq('user_id', user.id);
+
+    const isOwner = roles?.some(r => r.role === 'system_owner');
+    const isAdmin = roles?.some(r => r.role === 'system_admin' || r.role === 'system_owner');
+    if (!isAdmin) throw new Error('Not authorized');
+
+    const billingRole = isOwner ? 'billing_manager' : (roles?.[0]?.billing_role || 'billing_viewer');
+    const dangerousActions = ['suspend', 'restore'];
+    if (dangerousActions.includes(action) && billingRole !== 'billing_manager') {
+      throw new Error('Insufficient billing permissions for this action');
+    }
+    if (billingRole === 'billing_viewer') {
+      throw new Error('Billing viewers cannot perform plan actions');
+    }
+
     // Build profile update based on action
     const profileUpdate: Record<string, any> = { updated_at: new Date().toISOString() };
     let logNewPlan = newPlan || null;

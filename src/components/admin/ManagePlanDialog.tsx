@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { PlanImpactPreview } from './PlanImpactPreview';
 import { useAdminPlanActions, PlanActionType } from '@/hooks/useAdminPlanActions';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAdminBillingRole } from '@/hooks/useAdminBillingRole';
 import { AlertTriangle, ArrowUpCircle, ArrowDownCircle, CalendarPlus, ShieldOff, ShieldCheck, Gift } from 'lucide-react';
 
 interface Props {
