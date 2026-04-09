@@ -559,10 +559,6 @@ export default function Checkout() {
               <p className="font-medium">{getPlanLabel(plan)} Plan</p>
               <p className="text-[11px] text-muted-foreground">
                 {cycle === 'yearly' ? (t?.billedYearly || 'Billed yearly') : (t?.billedMonthly || 'Billed monthly')}
-                {' · '}
-                <span className={addonDiscountRate > 0 ? "text-emerald-600 font-medium" : ""}>
-                  Add-on {addonDiscountRate > 0 ? `-${addonDiscountRate * 100}%` : (isVi ? 'không giảm' : 'no discount')}
-                </span>
               </p>
             </div>
             <div className="col-span-2 text-right text-muted-foreground">${originalBaseAmount.toFixed(2)}</div>
@@ -714,37 +710,6 @@ export default function Checkout() {
               </div>
 
               <Separator />
-
-              <div className="space-y-1.5 text-xs text-muted-foreground">
-                <div className="flex justify-between">
-                  <span>{getPlanLabel(plan)} Plan</span>
-                  <span>${originalBaseAmount.toFixed(2)}</span>
-                </div>
-                {welcomeDiscount > 0 && (
-                  <div className="flex justify-between text-emerald-600">
-                    <span>🎉 {isVi ? 'Ưu đãi chào mừng' : 'Welcome Offer'}</span>
-                    <span>-${welcomeDiscount.toFixed(2)}</span>
-                  </div>
-                )}
-                {addonOriginal > 0 && (
-                  <div className="flex justify-between">
-                    <span>Add-ons</span>
-                    <span>${addonOriginal.toFixed(2)}</span>
-                  </div>
-                )}
-                {addonSaving > 0 && (
-                  <div className="flex justify-between text-emerald-600">
-                    <span>{isVi ? 'Tiết kiệm add-on' : 'Add-on savings'}</span>
-                    <span>-${addonSaving.toFixed(2)}</span>
-                  </div>
-                )}
-                {discountAmount > 0 && (
-                  <div className="flex justify-between text-emerald-600">
-                    <span>{isVi ? 'Mã giảm giá' : 'Coupon'}</span>
-                    <span>-${discountAmount.toFixed(2)}</span>
-                  </div>
-                )}
-              </div>
 
               <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground pt-2">
                 <ShieldCheck className="h-3.5 w-3.5" />
