@@ -2574,18 +2574,21 @@ export type Database = {
       }
       user_roles: {
         Row: {
+          billing_role: string | null
           created_at: string
           id: string
           role: Database["public"]["Enums"]["system_role"]
           user_id: string
         }
         Insert: {
+          billing_role?: string | null
           created_at?: string
           id?: string
           role: Database["public"]["Enums"]["system_role"]
           user_id: string
         }
         Update: {
+          billing_role?: string | null
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["system_role"]
@@ -2765,6 +2768,7 @@ export type Database = {
         Args: { _owner_id: string }
         Returns: number
       }
+      get_billing_role: { Args: { _user_id: string }; Returns: string }
       get_email_by_student_id: {
         Args: { _student_id: string }
         Returns: string
