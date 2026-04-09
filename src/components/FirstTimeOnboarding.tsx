@@ -1027,277 +1027,444 @@ export default function FirstTimeOnboarding({
                     <CreditCard className="w-7 h-7 text-primary" />
                   </div>
                   <h2 className="text-2xl font-extrabold mb-1">
-                    {isVi ? 'Thanh toán' : 'Payment'}
+                    {checkoutSubStep === 1
+                      ? (isVi ? 'Thanh toán' : 'Checkout')
+                      : (isVi ? 'Xác nhận & Thanh toán' : 'Confirm & Pay')}
                   </h2>
                   <p className="text-muted-foreground text-sm">
-                    {isVi ? `Hoàn tất thanh toán cho gói ${getPlanLabelFromConfig(selectedPlan)}` : `Complete payment for ${getPlanLabelFromConfig(selectedPlan)} plan`}
+                    {checkoutSubStep === 1
+                      ? (isVi ? `Bước 1/2 — Chọn gói & tùy chỉnh` : `Step 1/2 — Select plan & customize`)
+                      : (isVi ? `Bước 2/2 — Kiểm tra và thanh toán` : `Step 2/2 — Review and pay`)}
                   </p>
                 </div>
 
                 <div className="flex-1 px-4 md:px-8 pb-6 overflow-y-auto">
-                  <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-5 gap-5">
-                    {/* Left: Config */}
-                    <div className="lg:col-span-3 space-y-4">
-                      {/* Billing Cycle */}
-                      <Card>
-                        <CardContent className="pt-4 pb-4 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-semibold">{isVi ? 'Chu kỳ thanh toán' : 'Billing Cycle'}</h3>
-                            <div className="flex items-center gap-1 text-xs bg-muted rounded-full p-0.5">
-                              <button
-                                onClick={() => setCycle('monthly')}
-                                className={cn(
-                                  "px-3 py-1 rounded-full transition-colors font-medium",
-                                  cycle === 'monthly' ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                                )}
-                              >
-                                {isVi ? 'Tháng' : 'Monthly'}
-                              </button>
-                              <button
-                                onClick={() => setCycle('yearly')}
-                                className={cn(
-                                  "px-3 py-1 rounded-full transition-colors font-medium",
-                                  cycle === 'yearly' ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                                )}
-                              >
-                                {isVi ? 'Năm' : 'Yearly'}
-                                <span className="ml-1 opacity-75">-17%</span>
-                              </button>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between p-3 rounded-xl border bg-muted/30">
-                            <div>
-                              <p className="font-semibold text-sm">{getPlanLabelFromConfig(selectedPlan)} Plan</p>
-                              <p className="text-[11px] text-muted-foreground">
-                                {cycle === 'yearly' ? (isVi ? 'Thanh toán theo năm' : 'Billed yearly') : (isVi ? 'Thanh toán theo tháng' : 'Billed monthly')}
-                              </p>
-                            </div>
-                            <span className="text-lg font-bold">${baseAmount.toFixed(2)}</span>
-                          </div>
-                        </CardContent>
-                      </Card>
+                  {/* ═══ SUB-STEP 1: Config + Order Summary ═══ */}
+                  {checkoutSubStep === 1 && (
+                    <>
+                      <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-5 gap-5">
+                        {/* Left: Config */}
+                        <div className="lg:col-span-3 space-y-4">
+                          {/* Billing Cycle */}
+                          <Card>
+                            <CardContent className="pt-4 pb-4 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <h3 className="text-sm font-semibold">{isVi ? 'Chu kỳ thanh toán' : 'Billing Cycle'}</h3>
+                                <div className="flex items-center gap-1 text-xs bg-muted rounded-full p-0.5">
+                                  <button
+                                    onClick={() => setCycle('monthly')}
+                                    className={cn(
+                                      "px-3 py-1 rounded-full transition-colors font-medium",
+                                      cycle === 'monthly' ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                  >
+                                    {isVi ? 'Tháng' : 'Monthly'}
+                                  </button>
+                                  <button
+                                    onClick={() => setCycle('yearly')}
+                                    className={cn(
+                                      "px-3 py-1 rounded-full transition-colors font-medium",
+                                      cycle === 'yearly' ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                  >
+                                    {isVi ? 'Năm' : 'Yearly'}
+                                    <span className="ml-1 opacity-75">-17%</span>
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between p-3 rounded-xl border bg-muted/30">
+                                <div>
+                                  <p className="font-semibold text-sm">{getPlanLabelFromConfig(selectedPlan)} Plan</p>
+                                  <p className="text-[11px] text-muted-foreground">
+                                    {cycle === 'yearly' ? (isVi ? 'Thanh toán theo năm' : 'Billed yearly') : (isVi ? 'Thanh toán theo tháng' : 'Billed monthly')}
+                                  </p>
+                                </div>
+                                <span className="text-lg font-bold">${baseAmount.toFixed(2)}</span>
+                              </div>
+                            </CardContent>
+                          </Card>
 
-                      {/* Add-ons */}
-                      <Card>
-                        <CardContent className="pt-4 pb-4 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-semibold flex items-center gap-2">
-                              <Package className="h-4 w-4" />
-                              Add-ons
-                            </h3>
-                            {addonDiscountRate > 0 && (
-                              <Badge variant="secondary" className="text-emerald-600 text-[11px]">
-                                -{addonDiscountRate * 100}% {isVi ? 'với' : 'with'} {getPlanLabelFromConfig(selectedPlan)}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="space-y-2">
-                            {ADDON_TYPES.map(addon => {
-                              const qty = addons[addon.type] || 0;
-                              const unitOriginal = cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
-                              const unitFinal = Math.round(unitOriginal * (1 - addonDiscountRate) * 100) / 100;
-                              const hasDiscount = addonDiscountRate > 0;
-                              return (
-                                <div key={addon.type} className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/30">
-                                  <div className="flex items-center gap-2.5">
-                                    <span className="text-lg">{addon.emoji}</span>
-                                    <div>
-                                      <p className="font-medium text-sm">{isVi ? addon.unitLabelVi : addon.unitLabel}</p>
-                                      <div className="flex items-center gap-1 text-[11px]">
-                                        {hasDiscount && (
-                                          <span className="text-muted-foreground line-through">${unitOriginal.toFixed(2)}</span>
-                                        )}
-                                        <span className={hasDiscount ? "text-emerald-600 font-medium" : "text-muted-foreground"}>
-                                          ${unitFinal.toFixed(2)}
-                                        </span>
-                                        <span className="text-muted-foreground">/{cycle === 'yearly' ? (isVi ? 'năm' : 'yr') : (isVi ? 'tháng' : 'mo')}</span>
+                          {/* Add-ons */}
+                          <Card>
+                            <CardContent className="pt-4 pb-4 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <h3 className="text-sm font-semibold flex items-center gap-2">
+                                  <Package className="h-4 w-4" />
+                                  Add-ons
+                                </h3>
+                                {addonDiscountRate > 0 && (
+                                  <Badge variant="secondary" className="text-emerald-600 text-[11px]">
+                                    -{addonDiscountRate * 100}% {isVi ? 'với' : 'with'} {getPlanLabelFromConfig(selectedPlan)}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="space-y-2">
+                                {ADDON_TYPES.map(addon => {
+                                  const qty = addons[addon.type] || 0;
+                                  const unitOriginal = cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
+                                  const unitFinal = Math.round(unitOriginal * (1 - addonDiscountRate) * 100) / 100;
+                                  const hasDiscount = addonDiscountRate > 0;
+                                  return (
+                                    <div key={addon.type} className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/30">
+                                      <div className="flex items-center gap-2.5">
+                                        <span className="text-lg">{addon.emoji}</span>
+                                        <div>
+                                          <p className="font-medium text-sm">{isVi ? addon.unitLabelVi : addon.unitLabel}</p>
+                                          <div className="flex items-center gap-1 text-[11px]">
+                                            {hasDiscount && (
+                                              <span className="text-muted-foreground line-through">${unitOriginal.toFixed(2)}</span>
+                                            )}
+                                            <span className={hasDiscount ? "text-emerald-600 font-medium" : "text-muted-foreground"}>
+                                              ${unitFinal.toFixed(2)}
+                                            </span>
+                                            <span className="text-muted-foreground">/{cycle === 'yearly' ? (isVi ? 'năm' : 'yr') : (isVi ? 'tháng' : 'mo')}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-1.5">
+                                        <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateAddon(addon.type, -1)} disabled={qty === 0}>
+                                          <Minus className="h-3 w-3" />
+                                        </Button>
+                                        <span className="w-5 text-center font-medium text-sm tabular-nums">{qty}</span>
+                                        <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateAddon(addon.type, 1)} disabled={qty >= 10}>
+                                          <Plus className="h-3 w-3" />
+                                        </Button>
                                       </div>
                                     </div>
+                                  );
+                                })}
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          {/* Coupon */}
+                          <Card>
+                            <CardContent className="pt-4 pb-4 space-y-2">
+                              <h3 className="text-sm font-semibold flex items-center gap-2">
+                                <Tag className="h-3.5 w-3.5" />
+                                {isVi ? 'Mã giảm giá' : 'Discount Code'}
+                              </h3>
+                              <div className="flex gap-2">
+                                <Input
+                                  placeholder={isVi ? 'Nhập mã' : 'Enter code'}
+                                  value={couponCode}
+                                  onChange={e => { setCouponCode(e.target.value); setCouponError(''); }}
+                                  className="flex-1 h-9"
+                                  disabled={!!couponDiscount}
+                                />
+                                {couponDiscount ? (
+                                  <Button variant="outline" size="sm" onClick={() => { setCouponDiscount(null); setCouponCode(''); }}>
+                                    {isVi ? 'Xóa' : 'Remove'}
+                                  </Button>
+                                ) : (
+                                  <Button size="sm" onClick={applyCoupon} disabled={couponLoading || !couponCode.trim()}>
+                                    {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (isVi ? 'Áp dụng' : 'Apply')}
+                                  </Button>
+                                )}
+                              </div>
+                              {couponError && <p className="text-xs text-destructive">{couponError}</p>}
+                              {couponDiscount && (
+                                <Badge variant="secondary" className="text-emerald-600">
+                                  {couponDiscount.type === 'percentage' ? `-${couponDiscount.value}%` : `-$${couponDiscount.value.toFixed(2)}`} {isVi ? 'đã áp dụng' : 'applied'}
+                                </Badge>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </div>
+
+                        {/* Right: Order Summary (sticky) */}
+                        <div className="lg:col-span-2">
+                          <Card className="sticky top-4 border-primary/30 bg-primary/5">
+                            <CardContent className="pt-4 pb-4 space-y-3">
+                              <h3 className="text-sm font-semibold">{isVi ? 'Tóm tắt đơn hàng' : 'Order Summary'}</h3>
+                              <Separator />
+
+                              <div className="flex justify-between items-start text-sm">
+                                <div>
+                                  <p className="font-medium">{getPlanLabelFromConfig(selectedPlan)} Plan</p>
+                                  <p className="text-[11px] text-muted-foreground">
+                                    {cycle === 'yearly' ? (isVi ? 'Theo năm' : 'Billed yearly') : (isVi ? 'Theo tháng' : 'Billed monthly')}
+                                  </p>
+                                </div>
+                                <span className="font-semibold">${baseAmount.toFixed(2)}</span>
+                              </div>
+
+                              {hasAddons && (
+                                <div className="space-y-1.5">
+                                  {ADDON_TYPES.map(addon => {
+                                    const qty = addons[addon.type] || 0;
+                                    if (qty === 0) return null;
+                                    const unitOriginal = cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
+                                    const unitFinal = Math.round(unitOriginal * (1 - addonDiscountRate) * 100) / 100;
+                                    return (
+                                      <div key={addon.type} className="flex justify-between text-sm text-muted-foreground">
+                                        <span>{addon.emoji} {isVi ? addon.unitLabelVi : addon.unitLabel} ×{qty}</span>
+                                        <span>${(unitFinal * qty).toFixed(2)}</span>
+                                      </div>
+                                    );
+                                  })}
+                                  {addonSaving > 0 && (
+                                    <div className="flex justify-between text-[11px] text-emerald-600">
+                                      <span>{isVi ? 'Tiết kiệm add-on' : 'Add-on savings'}</span>
+                                      <span>-${addonSaving.toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {discountAmount > 0 && (
+                                <div className="flex justify-between text-sm text-emerald-600">
+                                  <span className="flex items-center gap-1">
+                                    <Tag className="h-3 w-3" />
+                                    {couponDiscount?.code}
+                                  </span>
+                                  <span>-${discountAmount.toFixed(2)}</span>
+                                </div>
+                              )}
+
+                              <Separator />
+
+                              <div className="flex justify-between font-bold text-lg">
+                                <span>{isVi ? 'Tổng' : 'Total'}</span>
+                                <span>${totalAmount.toFixed(2)}</span>
+                              </div>
+
+                              <p className="text-[11px] text-muted-foreground text-center">
+                                {cycle === 'yearly'
+                                  ? (isVi ? 'Thanh toán 1 lần / năm' : 'Billed once per year')
+                                  : (isVi ? 'Thanh toán 1 lần / tháng' : 'Billed once per month')}
+                              </p>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </div>
+
+                      {/* Bottom CTA bar */}
+                      <div className="max-w-4xl mx-auto mt-5 flex items-center justify-between p-3 rounded-xl border bg-muted/30">
+                        <div>
+                          <p className="text-xs text-muted-foreground">{isVi ? 'Tổng' : 'Total'}</p>
+                          <p className="text-2xl font-bold">${totalAmount.toFixed(2)}</p>
+                        </div>
+                        <div className="flex gap-3">
+                          <Button variant="outline" onClick={goBack} className="h-10 gap-2 rounded-xl text-sm">
+                            <ChevronLeft className="w-4 h-4" /> {isVi ? 'Quay lại' : 'Back'}
+                          </Button>
+                          <Button size="lg" className="gap-2 px-8 text-base" onClick={() => setCheckoutSubStep(2)}>
+                            {isVi ? 'Thanh toán' : 'Continue to Pay'}
+                            <ArrowRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* ═══ SUB-STEP 2: Order Summary Table + Payment Method + Pay Box ═══ */}
+                  {checkoutSubStep === 2 && (
+                    <>
+                      {/* Order Summary Table */}
+                      <div className="max-w-4xl mx-auto">
+                        <Card>
+                          <CardContent className="pt-5 pb-5">
+                            <h3 className="text-base font-semibold mb-4">{isVi ? 'Tóm tắt đơn hàng' : 'Order Summary'}</h3>
+
+                            {/* Table header */}
+                            <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground pb-2 border-b">
+                              <div className="col-span-6">{isVi ? 'Sản phẩm' : 'Item'}</div>
+                              <div className="col-span-2 text-right">{isVi ? 'Đơn giá' : 'Price'}</div>
+                              <div className="col-span-2 text-center">{isVi ? 'SL' : 'Qty'}</div>
+                              <div className="col-span-2 text-right">{isVi ? 'Thành tiền' : 'Total'}</div>
+                            </div>
+
+                            {/* Plan row */}
+                            <div className="grid grid-cols-12 gap-2 items-center py-3 text-sm border-b border-dashed">
+                              <div className="col-span-6">
+                                <p className="font-medium">{getPlanLabelFromConfig(selectedPlan)} Plan</p>
+                                <p className="text-[11px] text-muted-foreground">
+                                  {cycle === 'yearly' ? (isVi ? 'Theo năm' : 'Billed yearly') : (isVi ? 'Theo tháng' : 'Billed monthly')}
+                                </p>
+                              </div>
+                              <div className="col-span-2 text-right text-muted-foreground">${baseAmount.toFixed(2)}</div>
+                              <div className="col-span-2 text-center text-muted-foreground">1</div>
+                              <div className="col-span-2 text-right font-medium">${baseAmount.toFixed(2)}</div>
+                            </div>
+
+                            {/* Addon rows */}
+                            {ADDON_TYPES.map(addon => {
+                              const qty = addons[addon.type] || 0;
+                              if (qty === 0) return null;
+                              const unitOriginal = cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
+                              const unitFinal = Math.round(unitOriginal * (1 - addonDiscountRate) * 100) / 100;
+                              const lineTotal = Math.round(unitFinal * qty * 100) / 100;
+                              return (
+                                <div key={addon.type} className="grid grid-cols-12 gap-2 items-center py-2.5 text-sm border-b border-dashed">
+                                  <div className="col-span-6 flex items-center gap-2">
+                                    <span>{addon.emoji}</span>
+                                    <span>{isVi ? addon.unitLabelVi : addon.unitLabel}</span>
                                   </div>
-                                  <div className="flex items-center gap-1.5">
-                                    <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateAddon(addon.type, -1)} disabled={qty === 0}>
-                                      <Minus className="h-3 w-3" />
-                                    </Button>
-                                    <span className="w-5 text-center font-medium text-sm tabular-nums">{qty}</span>
-                                    <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateAddon(addon.type, 1)} disabled={qty >= 10}>
-                                      <Plus className="h-3 w-3" />
-                                    </Button>
+                                  <div className="col-span-2 text-right">
+                                    {addonDiscountRate > 0 && (
+                                      <span className="text-[11px] text-muted-foreground line-through mr-1">${unitOriginal.toFixed(2)}</span>
+                                    )}
+                                    <span className={addonDiscountRate > 0 ? "text-emerald-600" : "text-muted-foreground"}>${unitFinal.toFixed(2)}</span>
                                   </div>
+                                  <div className="col-span-2 text-center text-muted-foreground">{qty}</div>
+                                  <div className="col-span-2 text-right font-medium">${lineTotal.toFixed(2)}</div>
                                 </div>
                               );
                             })}
-                          </div>
-                        </CardContent>
-                      </Card>
 
-                      {/* Coupon */}
-                      <Card>
-                        <CardContent className="pt-4 pb-4 space-y-2">
-                          <h3 className="text-sm font-semibold flex items-center gap-2">
-                            <Tag className="h-3.5 w-3.5" />
-                            {isVi ? 'Mã giảm giá' : 'Discount Code'}
-                          </h3>
-                          <div className="flex gap-2">
-                            <Input
-                              placeholder={isVi ? 'Nhập mã' : 'Enter code'}
-                              value={couponCode}
-                              onChange={e => { setCouponCode(e.target.value); setCouponError(''); }}
-                              className="flex-1 h-9"
-                              disabled={!!couponDiscount}
-                            />
-                            {couponDiscount ? (
-                              <Button variant="outline" size="sm" onClick={() => { setCouponDiscount(null); setCouponCode(''); }}>
-                                {isVi ? 'Xóa' : 'Remove'}
-                              </Button>
-                            ) : (
-                              <Button size="sm" onClick={applyCoupon} disabled={couponLoading || !couponCode.trim()}>
-                                {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (isVi ? 'Áp dụng' : 'Apply')}
-                              </Button>
-                            )}
-                          </div>
-                          {couponError && <p className="text-xs text-destructive">{couponError}</p>}
-                          {couponDiscount && (
-                            <Badge variant="secondary" className="text-emerald-600">
-                              {couponDiscount.type === 'percentage' ? `-${couponDiscount.value}%` : `-$${couponDiscount.value.toFixed(2)}`} {isVi ? 'đã áp dụng' : 'applied'}
-                            </Badge>
-                          )}
-                        </CardContent>
-                      </Card>
-
-                      {/* Payment Method */}
-                      <Card>
-                        <CardContent className="pt-4 pb-4 space-y-3">
-                          <h3 className="text-sm font-semibold flex items-center gap-2">
-                            <CreditCard className="h-4 w-4" />
-                            {isVi ? 'Phương thức thanh toán' : 'Payment Method'}
-                          </h3>
-
-                          <div className="border rounded-xl overflow-hidden">
-                            <div className="flex items-center gap-2.5 p-3">
-                              <div className="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center">
-                                <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                            {/* Subtotal / Discount / Total */}
+                            <div className="pt-3 space-y-1.5">
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">{isVi ? 'Tạm tính' : 'Subtotal'}</span>
+                                <span>${subtotal.toFixed(2)}</span>
                               </div>
-                              <span className="font-medium text-sm">PayPal</span>
-                            </div>
-                            <div className="px-3 pb-3 pt-1">
-                              {paymentStatus === 'processing' ? (
-                                <div className="flex items-center justify-center py-6 gap-2">
-                                  <Loader2 className="h-5 w-5 animate-spin" />
-                                  <span className="text-sm text-muted-foreground">{isVi ? 'Đang xử lý thanh toán...' : 'Processing payment...'}</span>
-                                </div>
-                              ) : paypalClientId ? (
-                                <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD' }}>
-                                  <PayPalButtons
-                                    style={{ layout: 'vertical', shape: 'rect', label: 'pay', height: 40 }}
-                                    createOrder={async () => createOrder()}
-                                    onApprove={async (data) => onApprove(data)}
-                                    onError={(err) => {
-                                      console.error('PayPal error:', err);
-                                      toast({ title: isVi ? 'PayPal gặp lỗi' : 'PayPal encountered an error', variant: 'destructive' });
-                                    }}
-                                    onCancel={() => {
-                                      toast({ title: isVi ? 'Đã hủy thanh toán' : 'Payment cancelled' });
-                                    }}
-                                  />
-                                </PayPalScriptProvider>
-                              ) : (
-                                <div className="text-center py-4 text-sm text-muted-foreground">
-                                  <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
-                                  {isVi ? 'Đang tải hệ thống thanh toán...' : 'Loading payment system...'}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* MoMo - disabled */}
-                          <div className="border rounded-xl p-3 opacity-50">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30" />
-                              <span className="font-medium text-sm">🟣 MoMo</span>
-                              <Badge variant="outline" className="text-[10px] ml-auto">{isVi ? 'Sắp ra mắt' : 'Coming soon'}</Badge>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    {/* Right: Order Summary */}
-                    <div className="lg:col-span-2">
-                      <Card className="sticky top-4 border-primary/30 bg-primary/5">
-                        <CardContent className="pt-4 pb-4 space-y-3">
-                          <h3 className="text-sm font-semibold">{isVi ? 'Tóm tắt đơn hàng' : 'Order Summary'}</h3>
-                          <Separator />
-
-                          <div className="flex justify-between items-start text-sm">
-                            <div>
-                              <p className="font-medium">{getPlanLabelFromConfig(selectedPlan)} Plan</p>
-                              <p className="text-[11px] text-muted-foreground">
-                                {cycle === 'yearly' ? (isVi ? 'Theo năm' : 'Billed yearly') : (isVi ? 'Theo tháng' : 'Billed monthly')}
-                              </p>
-                            </div>
-                            <span className="font-semibold">${baseAmount.toFixed(2)}</span>
-                          </div>
-
-                          {hasAddons && (
-                            <div className="space-y-1.5">
-                              {ADDON_TYPES.map(addon => {
-                                const qty = addons[addon.type] || 0;
-                                if (qty === 0) return null;
-                                const unitOriginal = cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
-                                const unitFinal = Math.round(unitOriginal * (1 - addonDiscountRate) * 100) / 100;
-                                return (
-                                  <div key={addon.type} className="flex justify-between text-sm text-muted-foreground">
-                                    <span>{addon.emoji} {isVi ? addon.unitLabelVi : addon.unitLabel} ×{qty}</span>
-                                    <span>${(unitFinal * qty).toFixed(2)}</span>
-                                  </div>
-                                );
-                              })}
                               {addonSaving > 0 && (
-                                <div className="flex justify-between text-[11px] text-emerald-600">
-                                  <span>{isVi ? 'Tiết kiệm add-on' : 'Add-on savings'}</span>
+                                <div className="flex justify-between text-sm text-emerald-600">
+                                  <span>{isVi ? `Tiết kiệm add-on (${addonDiscountRate * 100}%)` : `Add-on savings (${addonDiscountRate * 100}%)`}</span>
                                   <span>-${addonSaving.toFixed(2)}</span>
                                 </div>
                               )}
+                              {discountAmount > 0 && (
+                                <div className="flex justify-between text-sm text-emerald-600">
+                                  <span className="flex items-center gap-1">
+                                    <Tag className="h-3 w-3" />
+                                    {isVi ? 'Mã giảm giá' : 'Coupon'} ({couponDiscount?.code})
+                                  </span>
+                                  <span>-${discountAmount.toFixed(2)}</span>
+                                </div>
+                              )}
+                              <Separator />
+                              <div className="flex justify-between font-bold text-lg pt-1">
+                                <span>{isVi ? 'Tổng' : 'Total'}</span>
+                                <span>${totalAmount.toFixed(2)}</span>
+                              </div>
                             </div>
-                          )}
+                          </CardContent>
+                        </Card>
 
-                          {discountAmount > 0 && (
-                            <div className="flex justify-between text-sm text-emerald-600">
-                              <span className="flex items-center gap-1">
-                                <Tag className="h-3 w-3" />
-                                {couponDiscount?.code}
-                              </span>
-                              <span>-${discountAmount.toFixed(2)}</span>
-                            </div>
-                          )}
+                        {/* Bottom: 2-column — Payment Method | Pay Box */}
+                        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 mt-5">
+                          {/* Left: Payment Methods */}
+                          <div className="lg:col-span-3">
+                            <Card>
+                              <CardContent className="pt-5 pb-5 space-y-4">
+                                <h4 className="text-base font-semibold flex items-center gap-2">
+                                  <CreditCard className="h-4 w-4" />
+                                  {isVi ? 'Phương thức thanh toán' : 'Payment Method'}
+                                </h4>
 
-                          <Separator />
+                                {/* PayPal - collapsible */}
+                                <div className="border rounded-xl overflow-hidden">
+                                  <button
+                                    onClick={() => setPaymentMethodOpen(!paymentMethodOpen)}
+                                    className="w-full flex items-center justify-between p-3 hover:bg-muted/30 transition-colors"
+                                  >
+                                    <div className="flex items-center gap-2.5">
+                                      <div className="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center">
+                                        <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                                      </div>
+                                      <span className="font-medium text-sm">PayPal</span>
+                                    </div>
+                                    {paymentMethodOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                                  </button>
+                                  {paymentMethodOpen && (
+                                    <div className="px-3 pb-3 pt-1">
+                                      {paymentStatus === 'processing' ? (
+                                        <div className="flex items-center justify-center py-6 gap-2">
+                                          <Loader2 className="h-5 w-5 animate-spin" />
+                                          <span className="text-sm text-muted-foreground">{isVi ? 'Đang xử lý thanh toán...' : 'Processing payment...'}</span>
+                                        </div>
+                                      ) : paypalClientId ? (
+                                        <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD' }}>
+                                          <PayPalButtons
+                                            style={{ layout: 'vertical', shape: 'rect', label: 'pay', height: 40 }}
+                                            createOrder={async () => createOrder()}
+                                            onApprove={async (data) => onApprove(data)}
+                                            onError={(err) => {
+                                              console.error('PayPal error:', err);
+                                              toast({ title: isVi ? 'PayPal gặp lỗi' : 'PayPal encountered an error', variant: 'destructive' });
+                                            }}
+                                            onCancel={() => {
+                                              toast({ title: isVi ? 'Đã hủy thanh toán' : 'Payment cancelled' });
+                                            }}
+                                          />
+                                        </PayPalScriptProvider>
+                                      ) : (
+                                        <div className="text-center py-4 text-sm text-muted-foreground">
+                                          <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
+                                          {isVi ? 'Đang tải hệ thống thanh toán...' : 'Loading payment system...'}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
 
-                          <div className="flex justify-between font-bold text-lg">
-                            <span>{isVi ? 'Tổng' : 'Total'}</span>
-                            <span>${totalAmount.toFixed(2)}</span>
+                                {/* MoMo - disabled */}
+                                <div className="border rounded-xl p-3 opacity-50">
+                                  <div className="flex items-center gap-2.5">
+                                    <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30" />
+                                    <span className="font-medium text-sm">🟣 MoMo</span>
+                                    <Badge variant="outline" className="text-[10px] ml-auto">{isVi ? 'Sắp ra mắt' : 'Coming soon'}</Badge>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
                           </div>
 
-                          <p className="text-[11px] text-muted-foreground text-center">
-                            {cycle === 'yearly'
-                              ? (isVi ? 'Thanh toán 1 lần / năm' : 'Billed once per year')
-                              : (isVi ? 'Thanh toán 1 lần / tháng' : 'Billed once per month')}
-                          </p>
+                          {/* Right: Pay Box */}
+                          <div className="lg:col-span-2">
+                            <Card className="border-primary/30 bg-primary/5">
+                              <CardContent className="pt-5 pb-5 space-y-4">
+                                <div className="text-center space-y-1">
+                                  <p className="text-sm text-muted-foreground">{isVi ? 'Tổng thanh toán' : 'Amount Due'}</p>
+                                  <p className="text-3xl font-bold">${totalAmount.toFixed(2)}</p>
+                                  <p className="text-[11px] text-muted-foreground">
+                                    {cycle === 'yearly'
+                                      ? (isVi ? 'Thanh toán 1 lần / năm' : 'Billed once per year')
+                                      : (isVi ? 'Thanh toán 1 lần / tháng' : 'Billed once per month')}
+                                  </p>
+                                </div>
 
-                          <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground pt-1">
-                            <ShieldCheck className="h-3.5 w-3.5" />
-                            {isVi ? 'Thanh toán bảo mật qua PayPal' : 'Secure payment powered by PayPal'}
+                                <Separator />
+
+                                <div className="space-y-1.5 text-xs text-muted-foreground">
+                                  <div className="flex justify-between">
+                                    <span>{getPlanLabelFromConfig(selectedPlan)} Plan</span>
+                                    <span>${baseAmount.toFixed(2)}</span>
+                                  </div>
+                                  {addonFinal > 0 && (
+                                    <div className="flex justify-between">
+                                      <span>Add-ons</span>
+                                      <span>${addonFinal.toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                  {discountAmount > 0 && (
+                                    <div className="flex justify-between text-emerald-600">
+                                      <span>{isVi ? 'Giảm giá' : 'Discount'}</span>
+                                      <span>-${discountAmount.toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground pt-2">
+                                  <ShieldCheck className="h-3.5 w-3.5" />
+                                  {isVi ? 'Thanh toán bảo mật qua PayPal' : 'Secure payment powered by PayPal'}
+                                </div>
+                              </CardContent>
+                            </Card>
                           </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
+                        </div>
 
-                  <div className="flex justify-center mt-5">
-                    <Button variant="outline" onClick={goBack} className="h-10 gap-2 rounded-xl text-sm">
-                      <ChevronLeft className="w-4 h-4" /> {isVi ? 'Quay lại chọn gói' : 'Back to plan selection'}
-                    </Button>
-                  </div>
+                        {/* Back button */}
+                        <div className="flex justify-center mt-5">
+                          <Button variant="outline" onClick={() => setCheckoutSubStep(1)} className="h-10 gap-2 rounded-xl text-sm">
+                            <ArrowLeft className="w-4 h-4" /> {isVi ? 'Quay lại tùy chỉnh' : 'Back to configuration'}
+                          </Button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             )}
