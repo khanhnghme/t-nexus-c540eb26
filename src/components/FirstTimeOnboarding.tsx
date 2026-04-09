@@ -1102,6 +1102,17 @@ export default function FirstTimeOnboarding({
                 </div>
 
                 <div className="flex-1 px-4 md:px-8 pb-6 overflow-y-auto">
+                  {/* Welcome Offer Banner in checkout */}
+                  {isFirstTimeBuyer && welcomeDiscount > 0 && (
+                    <div className="max-w-4xl mx-auto mb-4 p-3 rounded-xl bg-gradient-to-r from-emerald-500/10 via-primary/10 to-violet-500/10 border border-emerald-500/20">
+                      <div className="text-center">
+                        <p className="font-bold text-sm">{t.welcomeBannerTitle}</p>
+                        <p className="text-sm">{t.welcomeBannerDesc}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{t.welcomeBannerNote}</p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* ═══ SUB-STEP 1: Config + Order Summary ═══ */}
                   {checkoutSubStep === 1 && (
                     <>
