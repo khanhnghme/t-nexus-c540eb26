@@ -31,7 +31,7 @@ export default function CreateMeetingDialog({
 }: CreateMeetingDialogProps) {
   const { user, profile } = useAuth();
   const { toast } = useToast();
-  const { t } = useLanguage();
+  const { translations: t } = useLanguage();
   const planLimits = usePlanLimits();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
