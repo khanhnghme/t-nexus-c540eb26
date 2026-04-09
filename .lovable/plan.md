@@ -1,63 +1,62 @@
 
 
-## Plan: Triển khai giới hạn nhật ký hoạt động & tự động xóa log cũ
+## Plan: Triển khai giới hạn "Xuất dữ liệu đầy đủ" theo gói cước
 
 ### Hiện trạng
-- Trang Pricing đã hiển thị: Free = không có, Plus = 30 ngày, Pro/Business = Không giới hạn
-- Bảng `plan_limits` **chưa có** cột lưu giới hạn ngày nhật ký
-- `logActivity()` ghi log mà không kiểm tra giới hạn
-- Không có cơ chế tự động xóa log cũ
+- Pricing table đã ghi: Free = ✗, Plus/Pro/Business = ✓
+- Bảng `plan_limits` chưa có cột cho tính năng này
+- Tất cả chức năng xuất dữ liệu hiện hoạt động không kiểm tra gói cước
+
+### Phạm vi ảnh hưởng — 4 tính năng export cần gate
+
+| Tính năng | Component | Vị trí |
+|-----------|-----------|--------|
+| Xuất minh chứng PDF | `ProjectEvidenceExport.tsx` | Tab Quản lý trong GroupDetail |
+| Sao lưu dự án (ZIP) | `AdminBackupRestore.tsx` | Trang Admin Backup |
+| Xuất Excel thành viên (project) | `MemberManagementCard.tsx` | Tab thành viên project |
+| Xuất PDF nhật ký | `ProjectActivityLog.tsx` | Tab nhật ký project |
+
+> **Lưu ý**: Xuất Excel thành viên **hệ thống** (trang Admin) và Data Migration (admin) KHÔNG bị giới hạn vì đây là chức năng admin hệ thống.
 
 ### Thay đổi
 
-**1. Migration — thêm cột `max_activity_log_days` vào `plan_limits`**
+**1. Migration — thêm cột `can_export_data` vào `plan_limits`**
 ```sql
-ALTER TABLE plan_limits ADD COLUMN max_activity_log_days integer;
-UPDATE plan_limits SET max_activity_log_days = 0 WHERE plan = 'plan_free';    -- không ghi log
-UPDATE plan_limits SET max_activity_log_days = 30 WHERE plan = 'plan_plus';   -- 30 ngày
--- Pro, Business, Custom = NULL (unlimited)
+ALTER TABLE plan_limits ADD COLUMN can_export_data boolean NOT NULL DEFAULT false;
+UPDATE plan_limits SET can_export_data = false WHERE plan = 'plan_free';
+UPDATE plan_limits SET can_export_data = true WHERE plan IN ('plan_plus', 'plan_pro', 'plan_business', 'plan_custom');
 ```
 
-**2. `activityLogger.ts` — kiểm tra limit trước khi ghi + tự động xóa log cũ**
-- Trước khi insert, tra `plan_limits` qua workspace → owner → plan
-- Nếu `max_activity_log_days = 0` → không ghi log (Free plan)
-- Nếu `max_activity_log_days > 0` → ghi log + xóa các log cũ hơn N ngày của group đó
-- Nếu `max_activity_log_days = NULL` → ghi log, không xóa (unlimited)
-
-Logic xóa tự động:
-```typescript
-// Sau khi insert thành công, xóa log cũ quá hạn
-if (maxDays && groupId) {
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - maxDays);
-  await supabase.from('activity_logs')
-    .delete()
-    .eq('group_id', groupId)
-    .lt('created_at', cutoff.toISOString());
-}
-```
-
-**3. `usePlanLimits.ts` — thêm `maxActivityLogDays`**
+**2. `usePlanLimits.ts` — thêm `canExportData: boolean`**
 - Thêm field vào interface + fetch logic
+- Default `false` khi chưa load xong
 
-**4. UI — hiển thị cảnh báo tại `ProjectActivityLog.tsx`**
-- Nếu có limit (Plus = 30 ngày): hiển thị info banner "Nhật ký chỉ lưu giữ 30 ngày gần nhất theo gói Plus"
-- Nếu Free (limit = 0): hiển thị cảnh báo "Gói Free không hỗ trợ nhật ký hoạt động. Nâng cấp để sử dụng."
-- Nếu unlimited: không hiển thị gì
+**3. Gate tại 4 component export**
 
-**5. i18n (`en.ts`, `vi.ts`) — thêm chuỗi**
-- Cảnh báo Free không hỗ trợ
-- Thông báo giới hạn N ngày
-- Gợi ý nâng cấp
+Tại mỗi component, kiểm tra `canExportData` từ `usePlanLimits()`:
+- Nếu `false` (Free): hiển thị thông báo khóa + nút nâng cấp, vô hiệu hóa nút xuất
+- Nếu `true` (Plus+): hoạt động bình thường
+
+Cách hiển thị khi bị khóa:
+- `ProjectEvidenceExport.tsx`: Thay nội dung card bằng banner khóa + link nâng cấp
+- `AdminBackupRestore.tsx`: Disable nút backup, hiển thị cảnh báo
+- `MemberManagementCard.tsx`: Disable nút "Xuất Excel", tooltip giải thích
+- `ProjectActivityLog.tsx`: Disable nút "Xuất PDF", tooltip giải thích
+
+**4. i18n — thêm chuỗi**
+- `exportDataLocked`: "Tính năng xuất dữ liệu chỉ dành cho gói Plus trở lên"
+- `upgradeToExport`: "Nâng cấp để xuất dữ liệu"
 
 ### Files
 
 | File | Thay đổi |
 |------|----------|
-| Migration SQL | Thêm cột `max_activity_log_days` + seed data |
-| `src/lib/activityLogger.ts` | Check limit trước khi ghi, xóa log cũ quá hạn |
-| `src/hooks/usePlanLimits.ts` | Thêm `maxActivityLogDays` |
-| `src/components/ProjectActivityLog.tsx` | Banner cảnh báo theo limit |
-| `src/lib/i18n/en.ts` | Thêm chuỗi activity log limit |
-| `src/lib/i18n/vi.ts` | Thêm chuỗi activity log limit |
+| Migration SQL | Thêm cột `can_export_data` + seed |
+| `src/hooks/usePlanLimits.ts` | Thêm `canExportData` |
+| `src/components/ProjectEvidenceExport.tsx` | Gate xuất PDF minh chứng |
+| `src/components/AdminBackupRestore.tsx` | Gate sao lưu dự án |
+| `src/components/MemberManagementCard.tsx` | Gate xuất Excel thành viên |
+| `src/components/ProjectActivityLog.tsx` | Gate xuất PDF nhật ký |
+| `src/lib/i18n/en.ts` | Thêm chuỗi export limit |
+| `src/lib/i18n/vi.ts` | Thêm chuỗi export limit |
 
