@@ -248,10 +248,10 @@ export default function Upgrade() {
         {/* Pricing docs CTA */}
         <div className="text-center py-6 border-t border-border mt-8">
           <p className="text-sm text-muted-foreground mb-2">
-            📋 {t.pricingDocs?.pricingCta}
+            📋 {t.app?.pricingDocs?.pricingCta}
           </p>
           <Link to="/guide/pricing" className="text-sm text-primary underline font-medium">
-            {t.pricingDocs?.pricingCtaLink} →
+            {t.app?.pricingDocs?.pricingCtaLink} →
           </Link>
         </div>
       </div>
