@@ -87,37 +87,38 @@ export function UserNotesTab({ userId, canAddNote = true }: Props) {
     <div className="space-y-6 mt-4">
       {/* Add note form */}
       {canAddNote && (
-        <h3 className="text-sm font-medium flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          {t?.addTitle || 'Add Internal Note'}
-        </h3>
-        <div className="flex gap-2">
-          <Select value={noteType} onValueChange={v => setNoteType(v as NoteType)}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {NOTE_TYPES.map(nt => (
-                <SelectItem key={nt} value={nt}>
-                  <Badge className={`${TYPE_COLORS[nt]} text-xs`} variant="secondary">{typeLabel(nt)}</Badge>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="flex-1" />
+        <div className="rounded-xl border bg-card p-5 space-y-3">
+          <h3 className="text-sm font-medium flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            {t?.addTitle || 'Add Internal Note'}
+          </h3>
+          <div className="flex gap-2">
+            <Select value={noteType} onValueChange={v => setNoteType(v as NoteType)}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {NOTE_TYPES.map(nt => (
+                  <SelectItem key={nt} value={nt}>
+                    <Badge className={`${TYPE_COLORS[nt]} text-xs`} variant="secondary">{typeLabel(nt)}</Badge>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex-1" />
+          </div>
+          <Textarea
+            placeholder={t?.placeholder || 'Write your internal note here...'}
+            value={content}
+            onChange={e => setContent(e.target.value)}
+            rows={3}
+          />
+          <div className="flex justify-end">
+            <Button size="sm" disabled={!content.trim() || addNote.isPending} onClick={() => addNote.mutate()}>
+              {addNote.isPending ? (t?.adding || 'Adding...') : (t?.addButton || 'Add Note')}
+            </Button>
+          </div>
         </div>
-        <Textarea
-          placeholder={t?.placeholder || 'Write your internal note here...'}
-          value={content}
-          onChange={e => setContent(e.target.value)}
-          rows={3}
-        />
-        <div className="flex justify-end">
-          <Button size="sm" disabled={!content.trim() || addNote.isPending} onClick={() => addNote.mutate()}>
-            {addNote.isPending ? (t?.adding || 'Adding...') : (t?.addButton || 'Add Note')}
-          </Button>
-        </div>
-      </div>
       )}
 
       {/* Notes list */}
