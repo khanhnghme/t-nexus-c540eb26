@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
-import { Users, FolderArchive, Shield, Wrench } from 'lucide-react';
+import { Users, FolderArchive, Shield, Wrench, CreditCard } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -19,6 +19,7 @@ export default function AdminSidebarNav({ collapsed }: AdminSidebarNavProps) {
 
   const adminItems = [
     { name: t?.systemMembers || 'Members', href: '/admin/members', icon: Users },
+    { name: t?.billing || 'Billing', href: '/admin/billing', icon: CreditCard },
     { name: t?.backup || 'Backup', href: '/admin/backup', icon: FolderArchive },
     { name: t?.admin || 'System', href: '/admin/system', icon: Shield },
     { name: t?.utilities || 'Utilities', href: '/admin/utilities', icon: Wrench },
