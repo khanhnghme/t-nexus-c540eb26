@@ -798,6 +798,8 @@ export default function MemberManagementCard({
                   size="sm" 
                   variant="outline" 
                   className="gap-2"
+                  disabled={!canExportData}
+                  title={!canExportData ? 'Tính năng xuất dữ liệu chỉ dành cho gói Plus trở lên' : undefined}
                   onClick={() => {
                     const exportData = members.map(m => ({
                       fullName: m.profiles?.full_name || '',
@@ -808,6 +810,7 @@ export default function MemberManagementCard({
                     exportMembersToExcel(exportData, `danh-sach-thanh-vien-project`);
                   }}
                 >
+                  {!canExportData && <Lock className="w-3.5 h-3.5" />}
                   <Download className="w-4 h-4" />
                   <span className="hidden sm:inline">Xuất Excel</span>
                 </Button>

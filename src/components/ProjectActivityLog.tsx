@@ -418,7 +418,8 @@ export default function ProjectActivityLog({ groupId, groupName = 'Project', isL
                 </Button>
               </div>
               
-              <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={isExporting || filteredLogs.length === 0} className="gap-2">
+              <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={isExporting || filteredLogs.length === 0 || !planLimits.canExportData} className="gap-2" title={!planLimits.canExportData ? 'Tính năng xuất dữ liệu chỉ dành cho gói Plus trở lên' : undefined}>
+                {!planLimits.canExportData && <Lock className="w-3.5 h-3.5" />}
                 <FileDown className="w-4 h-4" />
                 <span className="hidden sm:inline">Xuất PDF</span>
               </Button>
