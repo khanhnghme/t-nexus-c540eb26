@@ -180,7 +180,7 @@ export default function AccountSettings() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <LanguageCard locale={locale} setLocale={setLocale} />
-        <NavCustomizationCard userId={user?.id} isAdmin={isAdmin} locale={locale} />
+        <NavCustomizationCard userId={user?.id} locale={locale} />
       </div>
     </div>
   );
