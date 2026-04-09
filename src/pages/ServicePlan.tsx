@@ -676,11 +676,6 @@ export default function ServicePlan() {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span className="font-semibold text-sm">{card.label}</span>
-                                  {discount.pct > 0 && (
-                                    <Badge variant="secondary" className="text-[10px] bg-emerald-500/15 text-emerald-600 border-none">
-                                      {discount.label}
-                                    </Badge>
-                                  )}
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-0.5">{card.desc}</p>
 
@@ -758,27 +753,30 @@ export default function ServicePlan() {
 
                 {/* Total cost + confirm */}
                 <Card className="bg-muted/50">
-                  <CardContent className="p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div>
-                      <span className="text-sm font-medium">{t.addonTotalCost || 'Total add-on cost'}:</span>
-                      <span className="text-2xl font-bold tabular-nums ml-3">
-                        ${totalAddonCost.toFixed(2)}
-                      </span>
-                      <span className="text-sm text-muted-foreground ml-1">{t.addonPerMonth || '/month'}</span>
-                      {discount.pct > 0 && (
-                        <Badge variant="secondary" className="ml-2 text-[10px] bg-emerald-500/15 text-emerald-600 border-none">
-                          {discount.label}
-                        </Badge>
-                      )}
+                  <CardContent className="p-5 space-y-3">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div>
+                        <span className="text-sm font-medium">{t.addonTotalCost || 'Total add-on cost'}:</span>
+                        <span className="text-2xl font-bold tabular-nums ml-3">
+                          ${totalAddonCost.toFixed(2)}
+                        </span>
+                        <span className="text-sm text-muted-foreground ml-1">{t.addonPerMonth || '/month'}</span>
+                      </div>
+                      <Button
+                        onClick={handleAddonConfirm}
+                        disabled={!addonDirty}
+                        className="bg-violet-600 hover:bg-violet-700 text-white"
+                      >
+                        <Package className="w-4 h-4 mr-2" />
+                        {t.addonConfirm || 'Confirm Changes'}
+                      </Button>
                     </div>
-                    <Button
-                      onClick={handleAddonConfirm}
-                      disabled={!addonDirty}
-                      className="bg-violet-600 hover:bg-violet-700 text-white"
-                    >
-                      <Package className="w-4 h-4 mr-2" />
-                      {t.addonConfirm || 'Confirm Changes'}
-                    </Button>
+                    {discount.pct > 0 && totalAddonQty > 0 && (
+                      <div className="flex justify-between text-sm text-emerald-600 pt-1 border-t">
+                        <span>{isVi ? `Tiết kiệm add-on (${discount.pct * 100}%)` : `Add-on savings (${discount.pct * 100}%)`}</span>
+                        <span>-${(totalAddonQty * BASE_PRICE * discount.pct).toFixed(2)}/{t.addonPerMonth || 'month'}</span>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </>

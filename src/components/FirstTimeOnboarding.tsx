@@ -1179,11 +1179,6 @@ export default function FirstTimeOnboarding({
                                   <Package className="h-4 w-4" />
                                   Add-ons
                                 </h3>
-                                {addonDiscountRate > 0 && (
-                                  <Badge variant="secondary" className="text-emerald-600 text-[11px]">
-                                    -{addonDiscountRate * 100}% {isVi ? 'với' : 'with'} {getPlanLabelFromConfig(selectedPlan)}
-                                  </Badge>
-                                )}
                               </div>
                               <div className="space-y-2">
                                 {ADDON_TYPES.map(addon => {
@@ -1266,51 +1261,62 @@ export default function FirstTimeOnboarding({
                               <h3 className="text-sm font-semibold">{isVi ? 'Tóm tắt đơn hàng' : 'Order Summary'}</h3>
                               <Separator />
 
-                              <div className="flex justify-between items-start text-sm">
-                                <div>
-                                  <p className="font-medium">{getPlanLabelFromConfig(selectedPlan)} Plan</p>
-                                  <p className="text-[11px] text-muted-foreground">
-                                    {cycle === 'yearly' ? (isVi ? 'Theo năm' : 'Billed yearly') : (isVi ? 'Theo tháng' : 'Billed monthly')}
-                                  </p>
+                              {/* Items */}
+                              <div className="space-y-1.5">
+                                <div className="flex justify-between text-sm">
+                                  <span className="font-medium">{getPlanLabelFromConfig(selectedPlan)} Plan</span>
+                                  <span className="font-semibold">${originalBaseAmount.toFixed(2)}</span>
                                 </div>
-                                <div className="text-right">
-                                  {welcomeDiscount > 0 && (
-                                    <span className="text-[11px] text-muted-foreground line-through mr-1">${originalBaseAmount.toFixed(2)}</span>
-                                  )}
-                                  <span className="font-semibold">${baseAmount.toFixed(2)}</span>
-                                </div>
+                                <p className="text-[11px] text-muted-foreground">
+                                  {cycle === 'yearly' ? (isVi ? 'Theo năm' : 'Billed yearly') : (isVi ? 'Theo tháng' : 'Billed monthly')}
+                                </p>
+                                {hasAddons && ADDON_TYPES.map(addon => {
+                                  const qty = addons[addon.type] || 0;
+                                  if (qty === 0) return null;
+                                  const unitOriginal = cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
+                                  return (
+                                    <div key={addon.type} className="flex justify-between text-sm text-muted-foreground">
+                                      <span>{addon.emoji} {isVi ? addon.unitLabelVi : addon.unitLabel} ×{qty}</span>
+                                      <span>${(unitOriginal * qty).toFixed(2)}</span>
+                                    </div>
+                                  );
+                                })}
                               </div>
 
-                              {hasAddons && (
-                                <div className="space-y-1.5">
-                                  {ADDON_TYPES.map(addon => {
-                                    const qty = addons[addon.type] || 0;
-                                    if (qty === 0) return null;
-                                    const unitOriginal = cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
-                                    const unitFinal = Math.round(unitOriginal * (1 - addonDiscountRate) * 100) / 100;
-                                    return (
-                                      <div key={addon.type} className="flex justify-between text-sm text-muted-foreground">
-                                        <span>{addon.emoji} {isVi ? addon.unitLabelVi : addon.unitLabel} ×{qty}</span>
-                                        <span>${(unitFinal * qty).toFixed(2)}</span>
-                                      </div>
-                                    );
-                                  })}
+                              {/* Subtotal + Discounts */}
+                              {(welcomeDiscount > 0 || addonSaving > 0 || discountAmount > 0) && (
+                                <>
+                                  <Separator className="my-1" />
+                                  <div className="flex justify-between text-sm text-muted-foreground">
+                                    <span>{isVi ? 'Tạm tính' : 'Subtotal'}</span>
+                                    <span>${(originalBaseAmount + addonOriginal).toFixed(2)}</span>
+                                  </div>
+                                </>
+                              )}
+
+                              {(welcomeDiscount > 0 || addonSaving > 0 || discountAmount > 0) && (
+                                <div className="space-y-1">
+                                  {welcomeDiscount > 0 && (
+                                    <div className="flex justify-between text-sm text-emerald-600">
+                                      <span>🎉 {isVi ? 'Ưu đãi chào mừng' : 'Welcome Offer'}</span>
+                                      <span>-${welcomeDiscount.toFixed(2)}</span>
+                                    </div>
+                                  )}
                                   {addonSaving > 0 && (
-                                    <div className="flex justify-between text-[11px] text-emerald-600">
-                                      <span>{isVi ? 'Tiết kiệm add-on' : 'Add-on savings'}</span>
+                                    <div className="flex justify-between text-sm text-emerald-600">
+                                      <span>{isVi ? `Tiết kiệm add-on (${addonDiscountRate * 100}%)` : `Add-on savings (${addonDiscountRate * 100}%)`}</span>
                                       <span>-${addonSaving.toFixed(2)}</span>
                                     </div>
                                   )}
-                                </div>
-                              )}
-
-                              {discountAmount > 0 && (
-                                <div className="flex justify-between text-sm text-emerald-600">
-                                  <span className="flex items-center gap-1">
-                                    <Tag className="h-3 w-3" />
-                                    {couponDiscount?.code}
-                                  </span>
-                                  <span>-${discountAmount.toFixed(2)}</span>
+                                  {discountAmount > 0 && (
+                                    <div className="flex justify-between text-sm text-emerald-600">
+                                      <span className="flex items-center gap-1">
+                                        <Tag className="h-3 w-3" />
+                                        {couponDiscount?.code}
+                                      </span>
+                                      <span>-${discountAmount.toFixed(2)}</span>
+                                    </div>
+                                  )}
                                 </div>
                               )}
 
@@ -1367,7 +1373,7 @@ export default function FirstTimeOnboarding({
                               <div className="col-span-2 text-right">{isVi ? 'Thành tiền' : 'Total'}</div>
                             </div>
 
-                            {/* Plan row */}
+                            {/* Plan row — show original price */}
                             <div className="grid grid-cols-12 gap-2 items-center py-3 text-sm border-b border-dashed">
                               <div className="col-span-6">
                                 <p className="font-medium">{getPlanLabelFromConfig(selectedPlan)} Plan</p>
@@ -1375,42 +1381,42 @@ export default function FirstTimeOnboarding({
                                   {cycle === 'yearly' ? (isVi ? 'Theo năm' : 'Billed yearly') : (isVi ? 'Theo tháng' : 'Billed monthly')}
                                 </p>
                               </div>
-                              <div className="col-span-2 text-right text-muted-foreground">${baseAmount.toFixed(2)}</div>
+                              <div className="col-span-2 text-right text-muted-foreground">${originalBaseAmount.toFixed(2)}</div>
                               <div className="col-span-2 text-center text-muted-foreground">1</div>
-                              <div className="col-span-2 text-right font-medium">${baseAmount.toFixed(2)}</div>
+                              <div className="col-span-2 text-right font-medium">${originalBaseAmount.toFixed(2)}</div>
                             </div>
 
-                            {/* Addon rows */}
+                            {/* Addon rows — show original prices */}
                             {ADDON_TYPES.map(addon => {
                               const qty = addons[addon.type] || 0;
                               if (qty === 0) return null;
                               const unitOriginal = cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
-                              const unitFinal = Math.round(unitOriginal * (1 - addonDiscountRate) * 100) / 100;
-                              const lineTotal = Math.round(unitFinal * qty * 100) / 100;
+                              const lineTotal = unitOriginal * qty;
                               return (
                                 <div key={addon.type} className="grid grid-cols-12 gap-2 items-center py-2.5 text-sm border-b border-dashed">
                                   <div className="col-span-6 flex items-center gap-2">
                                     <span>{addon.emoji}</span>
                                     <span>{isVi ? addon.unitLabelVi : addon.unitLabel}</span>
                                   </div>
-                                  <div className="col-span-2 text-right">
-                                    {addonDiscountRate > 0 && (
-                                      <span className="text-[11px] text-muted-foreground line-through mr-1">${unitOriginal.toFixed(2)}</span>
-                                    )}
-                                    <span className={addonDiscountRate > 0 ? "text-emerald-600" : "text-muted-foreground"}>${unitFinal.toFixed(2)}</span>
-                                  </div>
+                                  <div className="col-span-2 text-right text-muted-foreground">${unitOriginal.toFixed(2)}</div>
                                   <div className="col-span-2 text-center text-muted-foreground">{qty}</div>
                                   <div className="col-span-2 text-right font-medium">${lineTotal.toFixed(2)}</div>
                                 </div>
                               );
                             })}
 
-                            {/* Subtotal / Discount / Total */}
+                            {/* Subtotal / Discounts / Total */}
                             <div className="pt-3 space-y-1.5">
                               <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">{isVi ? 'Tạm tính' : 'Subtotal'}</span>
-                                <span>${subtotal.toFixed(2)}</span>
+                                <span>${(originalBaseAmount + addonOriginal).toFixed(2)}</span>
                               </div>
+                              {welcomeDiscount > 0 && (
+                                <div className="flex justify-between text-sm text-emerald-600">
+                                  <span>🎉 {isVi ? 'Ưu đãi chào mừng' : 'Welcome Offer'}</span>
+                                  <span>-${welcomeDiscount.toFixed(2)}</span>
+                                </div>
+                              )}
                               {addonSaving > 0 && (
                                 <div className="flex justify-between text-sm text-emerald-600">
                                   <span>{isVi ? `Tiết kiệm add-on (${addonDiscountRate * 100}%)` : `Add-on savings (${addonDiscountRate * 100}%)`}</span>
@@ -1516,27 +1522,6 @@ export default function FirstTimeOnboarding({
                                       ? (isVi ? 'Thanh toán 1 lần / năm' : 'Billed once per year')
                                       : (isVi ? 'Thanh toán 1 lần / tháng' : 'Billed once per month')}
                                   </p>
-                                </div>
-
-                                <Separator />
-
-                                <div className="space-y-1.5 text-xs text-muted-foreground">
-                                  <div className="flex justify-between">
-                                    <span>{getPlanLabelFromConfig(selectedPlan)} Plan</span>
-                                    <span>${baseAmount.toFixed(2)}</span>
-                                  </div>
-                                  {addonFinal > 0 && (
-                                    <div className="flex justify-between">
-                                      <span>Add-ons</span>
-                                      <span>${addonFinal.toFixed(2)}</span>
-                                    </div>
-                                  )}
-                                  {discountAmount > 0 && (
-                                    <div className="flex justify-between text-emerald-600">
-                                      <span>{isVi ? 'Giảm giá' : 'Discount'}</span>
-                                      <span>-${discountAmount.toFixed(2)}</span>
-                                    </div>
-                                  )}
                                 </div>
 
                                 <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground pt-2">
