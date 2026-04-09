@@ -82,9 +82,6 @@ export default function ServicePlan() {
     members: 0,
   });
   const [addonDirty, setAddonDirty] = useState(false);
-  const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
-  const [addonPaymentLoading, setAddonPaymentLoading] = useState(false);
-  const [showAddonPaypal, setShowAddonPaypal] = useState(false);
 
   const currentTab = searchParams.get('tab') || 'plan';
 
