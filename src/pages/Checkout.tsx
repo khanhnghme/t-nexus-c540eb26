@@ -188,12 +188,7 @@ export default function Checkout() {
 
       setPaymentStatus('success');
       toast.success(t?.paymentSuccess || 'Payment successful!');
-      const fromOnboarding = searchParams.get('from') === 'onboarding';
-      if (fromOnboarding) {
-        navigate('/onboarding?from=checkout_success', { replace: true });
-      } else {
-        navigate(`/checkout/result?status=success&order_id=${res.data.orderId || ''}`);
-      }
+      navigate(`/checkout/result?status=success&order_id=${res.data.orderId || ''}`);
     } catch {
       setPaymentStatus('failed');
       toast.error(t?.paymentFailed || 'Payment failed. Please try again.');
