@@ -1,7 +1,7 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
-import { Users, FolderArchive, Shield, Wrench, ArrowLeft } from 'lucide-react';
+import { Users, FolderArchive, Shield, Wrench } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
