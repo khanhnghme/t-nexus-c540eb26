@@ -52,6 +52,13 @@ export default function Checkout() {
   const [couponError, setCouponError] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'failed'>('idle');
+  const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.functions.invoke('get-paypal-config').then(({ data }) => {
+      if (data?.clientId) setPaypalClientId(data.clientId);
+    });
+  }, []);
 
   // Calculate prices
   const prices = PLAN_PRICES[plan];
