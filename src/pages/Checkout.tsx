@@ -320,9 +320,11 @@ export default function Checkout() {
                           {isSelected && <Check className="h-3.5 w-3.5 text-primary" />}
                         </div>
                         {showWelcome && <span className="text-sm text-muted-foreground line-through">${originalPrice.toFixed(2)}</span>}
-                        <div className="text-lg font-bold">${wPrice.toFixed(2)}</div>
-                        <div className="text-[11px] text-muted-foreground">
-                          /{cycle === 'yearly' ? (isVi ? 'năm' : 'yr') : (isVi ? 'tháng' : 'mo')}
+                        <div className="flex items-baseline gap-0.5 flex-nowrap">
+                          <span className="text-lg font-bold">${wPrice.toFixed(2)}</span>
+                          <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+                            /{cycle === 'yearly' ? (isVi ? 'năm' : 'yr') : (isVi ? 'tháng' : 'mo')}
+                          </span>
                         </div>
                         {p.addonDiscount > 0 && (
                           <div className="text-[11px] text-emerald-600 mt-1 font-medium">
