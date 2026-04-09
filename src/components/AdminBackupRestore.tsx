@@ -2744,9 +2744,16 @@ export default function AdminBackupRestore() {
                         </CollapsibleContent>
                       </Collapsible>
 
+                      {!canExportData && (
+                        <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-sm text-amber-700 dark:text-amber-400">
+                          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                          Tính năng sao lưu chỉ dành cho gói Plus trở lên
+                        </div>
+                      )}
+
                       <Button 
                         onClick={exportProject} 
-                        disabled={!selectedGroupId || isExporting}
+                        disabled={!selectedGroupId || isExporting || !canExportData}
                         className="w-full gap-2 h-12 text-base"
                         size="lg"
                       >
