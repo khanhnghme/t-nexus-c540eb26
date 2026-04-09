@@ -58,6 +58,33 @@ export type Database = {
           },
         ]
       }
+      admin_notes: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          id: string
+          note_type: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          id?: string
+          note_type?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          note_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_releases: {
         Row: {
           created_at: string
@@ -1107,6 +1134,69 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_history: {
+        Row: {
+          amount: number
+          coupon_code: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          discount_amount: number | null
+          final_amount: number | null
+          id: string
+          invoice_id: string | null
+          order_id: string | null
+          original_amount: number | null
+          paid_at: string | null
+          payment_method: string | null
+          plan_purchased: string
+          status: string
+          system_note: string | null
+          transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          coupon_code?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          discount_amount?: number | null
+          final_amount?: number | null
+          id?: string
+          invoice_id?: string | null
+          order_id?: string | null
+          original_amount?: number | null
+          paid_at?: string | null
+          payment_method?: string | null
+          plan_purchased: string
+          status?: string
+          system_note?: string | null
+          transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          coupon_code?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          discount_amount?: number | null
+          final_amount?: number | null
+          id?: string
+          invoice_id?: string | null
+          order_id?: string | null
+          original_amount?: number | null
+          paid_at?: string | null
+          payment_method?: string | null
+          plan_purchased?: string
+          status?: string
+          system_note?: string | null
+          transaction_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       pending_approvals: {
         Row: {
           created_at: string
@@ -1177,6 +1267,57 @@ export type Database = {
           start_time?: string
           title?: string
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      plan_change_logs: {
+        Row: {
+          action_type: string
+          change_source: string
+          created_at: string
+          effective_mode: string
+          id: string
+          internal_note: string | null
+          metadata: Json | null
+          new_expires_at: string | null
+          new_plan: string | null
+          old_expires_at: string | null
+          old_plan: string | null
+          performed_by: string | null
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          change_source?: string
+          created_at?: string
+          effective_mode?: string
+          id?: string
+          internal_note?: string | null
+          metadata?: Json | null
+          new_expires_at?: string | null
+          new_plan?: string | null
+          old_expires_at?: string | null
+          old_plan?: string | null
+          performed_by?: string | null
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          change_source?: string
+          created_at?: string
+          effective_mode?: string
+          id?: string
+          internal_note?: string | null
+          metadata?: Json | null
+          new_expires_at?: string | null
+          new_plan?: string | null
+          old_expires_at?: string | null
+          old_plan?: string | null
+          performed_by?: string | null
+          reason?: string | null
           user_id?: string
         }
         Relationships: []
@@ -1270,7 +1411,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          auto_renew: boolean
           avatar_url: string | null
+          billing_cycle: string
           bio: string | null
           created_at: string
           current_status: string | null
@@ -1287,6 +1430,10 @@ export type Database = {
           onboarding_completed: boolean
           phone: string | null
           plan: string
+          plan_expires_at: string | null
+          plan_source: string
+          plan_started_at: string | null
+          plan_status: string
           preferred_locale: string
           project_limit: number | null
           skills: string | null
@@ -1304,7 +1451,9 @@ export type Database = {
           year_batch: string | null
         }
         Insert: {
+          auto_renew?: boolean
           avatar_url?: string | null
+          billing_cycle?: string
           bio?: string | null
           created_at?: string
           current_status?: string | null
@@ -1321,6 +1470,10 @@ export type Database = {
           onboarding_completed?: boolean
           phone?: string | null
           plan?: string
+          plan_expires_at?: string | null
+          plan_source?: string
+          plan_started_at?: string | null
+          plan_status?: string
           preferred_locale?: string
           project_limit?: number | null
           skills?: string | null
@@ -1338,7 +1491,9 @@ export type Database = {
           year_batch?: string | null
         }
         Update: {
+          auto_renew?: boolean
           avatar_url?: string | null
+          billing_cycle?: string
           bio?: string | null
           created_at?: string
           current_status?: string | null
@@ -1355,6 +1510,10 @@ export type Database = {
           onboarding_completed?: boolean
           phone?: string | null
           plan?: string
+          plan_expires_at?: string | null
+          plan_source?: string
+          plan_started_at?: string | null
+          plan_status?: string
           preferred_locale?: string
           project_limit?: number | null
           skills?: string | null
