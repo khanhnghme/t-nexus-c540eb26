@@ -1,6 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -20,7 +19,7 @@ import {
   Crown, Zap, Building2, FolderKanban, HardDrive,
   ArrowRight, Loader2, Infinity, Receipt,
   Check, Users, Shield, Sparkles, BarChart3,
-  Plus, Minus, Package, AlertTriangle, ShieldCheck,
+  Plus, Minus, Package, AlertTriangle,
 } from 'lucide-react';
 
 interface WorkspaceUsage {
@@ -83,9 +82,6 @@ export default function ServicePlan() {
     members: 0,
   });
   const [addonDirty, setAddonDirty] = useState(false);
-  const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
-  const [addonPaymentLoading, setAddonPaymentLoading] = useState(false);
-  const [showAddonPaypal, setShowAddonPaypal] = useState(false);
 
   const currentTab = searchParams.get('tab') || 'plan';
 
@@ -216,14 +212,6 @@ export default function ServicePlan() {
     setAddonDirty(true);
   };
 
-  // Fetch PayPal client ID for addon payments
-  useEffect(() => {
-    if (isPremium && !paypalClientId) {
-      supabase.functions.invoke('get-paypal-config').then(({ data }) => {
-        if (data?.clientId) setPaypalClientId(data.clientId);
-      });
-    }
-  }, [isPremium, paypalClientId]);
 
   // Calculate addon deltas (new - existing in DB)
   const addonDeltas = {
@@ -251,52 +239,6 @@ export default function ServicePlan() {
   const totalAddonQty = localAddons.projects + localAddons.storage + localAddons.members;
   const totalAddonCost = totalAddonQty * unitPrice;
 
-  const createAddonOrder = useCallback(async (): Promise<string> => {
-    const addonsPayload = deltaAddons.map(a => ({ type: a.type, quantity: a.quantity }));
-
-    const { data, error } = await supabase.functions.invoke('create-paypal-order', {
-      body: {
-        order_type: 'addon',
-        billing_cycle: billingCycle,
-        addons: addonsPayload,
-      },
-    });
-
-    if (error || !data?.orderID) {
-      throw new Error(error?.message || 'Failed to create order');
-    }
-    return data.orderID;
-  }, [deltaAddons, billingCycle]);
-
-  const captureAddonOrder = useCallback(async (orderID: string) => {
-    setAddonPaymentLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('capture-paypal-order', {
-        body: { orderID },
-      });
-
-      if (error || !data?.success) {
-        throw new Error(error?.message || 'Capture failed');
-      }
-
-      userAddons.refresh();
-      accountLimits.refresh();
-      setShowAddonPaypal(false);
-      setAddonDirty(false);
-      toast({
-        title: '✅ Add-on',
-        description: t.addonPurchaseSuccess || 'Add-on purchased successfully!',
-      });
-    } catch (err: any) {
-      toast({
-        title: 'Error',
-        description: err.message || 'Payment failed',
-        variant: 'destructive',
-      });
-    } finally {
-      setAddonPaymentLoading(false);
-    }
-  }, [userAddons, accountLimits, t]);
 
   if (isLoading) {
     return (
@@ -864,50 +806,17 @@ export default function ServicePlan() {
                           <span>${deltaTotalFinal.toFixed(2)}</span>
                         </div>
 
-                        {!showAddonPaypal ? (
-                          <Button
-                            onClick={() => setShowAddonPaypal(true)}
-                            className="w-full bg-violet-600 hover:bg-violet-700 text-white"
-                          >
-                            <Package className="w-4 h-4 mr-2" />
-                            {t.addonCheckout || 'Proceed to Payment'}
-                          </Button>
-                        ) : (
-                          <div className="space-y-3">
-                            {addonPaymentLoading && (
-                              <div className="flex items-center justify-center py-4">
-                                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                              </div>
-                            )}
-                            {paypalClientId ? (
-                              <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD' }}>
-                                <PayPalButtons
-                                  style={{ layout: 'vertical', shape: 'rect', label: 'pay', height: 40 }}
-                                  createOrder={async () => createAddonOrder()}
-                                  onApprove={async (data) => {
-                                    await captureAddonOrder(data.orderID);
-                                  }}
-                                  onError={(err) => {
-                                    console.error('PayPal error:', err);
-                                    toast({ title: 'PayPal Error', description: 'Payment could not be completed.', variant: 'destructive' });
-                                  }}
-                                  onCancel={() => {
-                                    setShowAddonPaypal(false);
-                                    toast({ title: 'Cancelled', description: t.addonPaymentCancelled || 'Payment was cancelled.' });
-                                  }}
-                                />
-                              </PayPalScriptProvider>
-                            ) : (
-                              <div className="text-center py-4">
-                                <Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" />
-                              </div>
-                            )}
-                            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                              <ShieldCheck className="w-3.5 h-3.5" />
-                              <span>{t.securePayment || 'Secure payment via PayPal'}</span>
-                            </div>
-                          </div>
-                        )}
+                        <Button
+                          onClick={() => {
+                            const params = new URLSearchParams();
+                            deltaAddons.forEach(a => params.set(a.type, String(a.quantity)));
+                            navigate(`/addon-checkout?${params.toString()}`);
+                          }}
+                          className="w-full bg-violet-600 hover:bg-violet-700 text-white"
+                        >
+                          <Package className="w-4 h-4 mr-2" />
+                          {t.addonCheckout || 'Proceed to Payment'}
+                        </Button>
                       </div>
                     )}
 
