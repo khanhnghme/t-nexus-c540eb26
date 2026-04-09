@@ -1,74 +1,29 @@
 
 
-## Đợt 4 — Module 5: Phân quyền Admin Billing (RBAC)
+## Plan: Fix logic giới hạn — chuyển từ "per workspace" sang "Total Account"
 
-### 1. Migration SQL
-Thêm cột `billing_role` vào `user_roles` + tạo function `get_billing_role`:
+### Vấn đề
+- `PlanImpactPreview.tsx`: label hiển thị "Projects/WS", "Members/WS" — sai ngữ nghĩa. Projects usage hardcoded = 0.
+- `AdminUserBilling.tsx`: hiển thị limits đúng nhưng vẫn dùng field name `max_projects_per_workspace` / `max_members_per_workspace` — cần đảm bảo label UI rõ ràng là "Total Account".
+- Lưu ý: tên cột DB (`max_projects_per_workspace`, `max_members_per_workspace`) giữ nguyên vì không thể đổi schema dễ dàng, nhưng **UI và logic đều phải hiểu đây là giới hạn account-wide**.
 
-```sql
-ALTER TABLE public.user_roles ADD COLUMN IF NOT EXISTS billing_role text;
+### Thay đổi
 
-CREATE OR REPLACE FUNCTION public.get_billing_role(_user_id uuid)
-RETURNS text
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public'
-AS $$
-  SELECT CASE
-    WHEN EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = _user_id AND role = 'system_owner')
-      THEN 'billing_manager'
-    WHEN EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = _user_id AND role IN ('system_owner','system_admin'))
-      THEN (SELECT COALESCE(ur.billing_role, 'billing_viewer') FROM public.user_roles ur WHERE ur.user_id = _user_id LIMIT 1)
-    ELSE NULL
-  END
-$$;
-```
+**1. `src/components/admin/PlanImpactPreview.tsx`**
+- Đổi label: `Projects/WS` → `Projects (Total)`, `Members/WS` → `Members (Total)`
+- Fetch tổng projects thực tế (query tất cả workspace của owner → đếm groups) thay vì hardcode `used: 0`
 
-### 2. `src/hooks/useAdminBillingRole.ts` — Hook mới
-- Query `user_roles` for current user
-- `system_owner` → auto `billing_manager`
-- `system_admin` → use `billing_role` column (default `billing_viewer`)
-- Export: `billingRole`, `canView`, `canOperate`, `canManage`
+**2. `src/pages/AdminUserBilling.tsx`**
+- Đảm bảo label hiển thị rõ ràng: "Projects (Total)", "Members (Unique)" thay vì chỉ "Projects", "Members"
+- Giữ nguyên logic fetch đã đúng (đang dùng `get_account_unique_members` + đếm projects across all workspaces)
 
-### 3. `src/components/admin/ManagePlanDialog.tsx` — Gate actions
-- Import `useAdminBillingRole`
-- Viewer: dialog should not open (handled by parent)
-- Operator: filter out `suspend`/`restore` from action select
-- Manager: full access
-
-### 4. `src/pages/AdminUserBilling.tsx` — Gate quick actions
-- Import `useAdminBillingRole`
-- Viewer: hide all quick action buttons
-- Operator: hide suspend/restore buttons
-- Manager: show all
-
-### 5. `src/components/admin/UserNotesTab.tsx` — Prop `canAddNote`
-- Add prop, hide form when false
-
-### 6. `src/hooks/useAdminPlanActions.ts` — Validate role
-- Check billing role before executing dangerous actions
-- Reject operator attempting suspend/restore
-
-### 7. i18n (`en.ts` + `vi.ts`)
-Add `adminBilling.rbac` block:
-```
-rbac: {
-  billingViewer: 'Billing Viewer' / 'Xem thanh toán',
-  billingOperator: 'Billing Operator' / 'Vận hành thanh toán',
-  billingManager: 'Billing Manager' / 'Quản lý thanh toán',
-  permissionDenied: 'You do not have permission...' / 'Bạn không có quyền...',
-  roleLabel: 'Your billing role' / 'Quyền thanh toán',
-}
-```
+**3. `src/pages/ServicePlan.tsx`**
+- Kiểm tra label hiển thị — đảm bảo không có chỗ nào ghi "per workspace"
 
 ### Files
 
 | File | Thay đổi |
 |------|----------|
-| Migration SQL | `billing_role` column + `get_billing_role` function |
-| `src/hooks/useAdminBillingRole.ts` | Hook mới |
-| `src/components/admin/ManagePlanDialog.tsx` | Filter actions by role |
-| `src/pages/AdminUserBilling.tsx` | Gate quick actions by role |
-| `src/components/admin/UserNotesTab.tsx` | Add `canAddNote` prop |
-| `src/hooks/useAdminPlanActions.ts` | Server-side role validation |
-| `src/lib/i18n/en.ts` | Add rbac strings |
-| `src/lib/i18n/vi.ts` | Add rbac strings |
+| `src/components/admin/PlanImpactPreview.tsx` | Fix labels + fetch total projects usage |
+| `src/pages/AdminUserBilling.tsx` | Cập nhật label rõ ràng hơn |
 
