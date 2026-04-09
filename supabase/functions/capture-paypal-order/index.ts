@@ -233,7 +233,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, plan: order.plan, expires_at: expiryDate.toISOString() }),
+      JSON.stringify({ success: true, orderId: order.id, plan: order.plan, expires_at: expiryDate.toISOString() }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
