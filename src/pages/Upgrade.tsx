@@ -241,7 +241,7 @@ export default function Upgrade() {
               padding: '24px 22px 28px',
               borderRight: idx < LEFT_PLANS.length - 1 ? '1px solid hsl(var(--border))' : 'none',
             }}>
-              <PlanColumn plan={plan} yearly={yearly} tp={tp} disabled={!isOwner} onSelect={handleSelectPlan} />
+              <PlanColumn plan={plan} yearly={yearly} tp={tp} disabled={!isOwner} onSelect={handleSelectPlan} isFirstTimeBuyer={isFirstTimeBuyer} />
             </div>
           ))}
         </div>
