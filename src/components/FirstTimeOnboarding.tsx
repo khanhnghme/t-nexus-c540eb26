@@ -142,6 +142,14 @@ export default function FirstTimeOnboarding({
     }
   }, [selectedPlan, paypalClientId]);
 
+  // Check if user is first-time buyer (no completed orders)
+  useEffect(() => {
+    supabase.from('orders').select('id').eq('user_id', userId).eq('status', 'completed').limit(1)
+      .then(({ data }) => {
+        setIsFirstTimeBuyer(!data || data.length === 0);
+      });
+  }, [userId]);
+
   // Reset coupon when plan changes
   useEffect(() => {
     setCouponDiscount(null);
