@@ -36,6 +36,7 @@ interface MeetingRoomProps {
 export default function MeetingRoom({ meeting, members, isLeader, groupId, onBack, onRefresh }: MeetingRoomProps) {
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const planLimits = usePlanLimits();
   const [attendance, setAttendance] = useState<any[]>([]);
   const [isEnding, setIsEnding] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
@@ -50,6 +51,9 @@ export default function MeetingRoom({ meeting, members, isLeader, groupId, onBac
     meeting.status === 'in_progress' ? new Date(meeting.updated_at || meeting.scheduled_at) : null
   );
   const [elapsed, setElapsed] = useState('00:00:00');
+  const [remaining, setRemaining] = useState<string | null>(null);
+  const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
+  const autoEndTriggered = useRef(false);
   const notesTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
