@@ -190,6 +190,26 @@ export default function Upgrade() {
           {tp.heroTitle}
         </h1>
 
+        {/* Welcome Offer Banner */}
+        {isFirstTimeBuyer && (
+          <div className="mb-6 p-4 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-lg">🎉</span>
+              <span className="font-semibold text-foreground text-sm">
+                {isVi ? 'Ưu đãi chào mừng dành riêng cho bạn' : 'Welcome offer just for you'}
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground ml-7">
+              {isVi
+                ? 'Giảm tối đa lên đến gần 20% cho gói đăng ký đầu tiên'
+                : 'Save up to nearly 20% on your first subscription'}
+            </p>
+            <p className="text-xs text-muted-foreground/70 ml-7 mt-0.5 italic">
+              {isVi ? '(Không áp dụng cho tiện ích bổ sung)' : '(Does not apply to add-ons)'}
+            </p>
+          </div>
+        )}
+
         {/* Toggle row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
