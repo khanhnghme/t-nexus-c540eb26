@@ -13,7 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
-import { PLAN_CONFIG, getPlanLabel, type PlanKey, PLAN_ORDER } from '@/lib/planConfig';
+import { PLAN_CONFIG, getPlanLabel, getWelcomePrice, type PlanKey, PLAN_ORDER } from '@/lib/planConfig';
 
 /* ═══ Constants ═══ */
 
@@ -68,12 +68,22 @@ export default function Checkout() {
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'failed'>('idle');
   const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
   const [paymentMethodOpen, setPaymentMethodOpen] = useState(true);
+  const [isFirstTimeBuyer, setIsFirstTimeBuyer] = useState(true);
 
   useEffect(() => {
     supabase.functions.invoke('get-paypal-config').then(({ data }) => {
       if (data?.clientId) setPaypalClientId(data.clientId);
     });
   }, []);
+
+  // Check if first-time buyer
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('orders').select('id').eq('user_id', user.id).eq('status', 'completed').limit(1)
+      .then(({ data }) => {
+        setIsFirstTimeBuyer(!data || data.length === 0);
+      });
+  }, [user]);
 
   useEffect(() => {
     setSearchParams({ plan, cycle }, { replace: true });
@@ -88,9 +98,12 @@ export default function Checkout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan]);
 
-  // Price calculations
+  // Price calculations — use welcome price if first-time buyer
   const prices = PLAN_PRICES[plan];
-  const baseAmount = prices ? (cycle === 'yearly' ? prices.yearly : prices.monthly) : 0;
+  const originalBaseAmount = prices ? (cycle === 'yearly' ? prices.yearly : prices.monthly) : 0;
+  const welcomePrice = isFirstTimeBuyer ? (getWelcomePrice(plan, cycle) ?? originalBaseAmount) : originalBaseAmount;
+  const baseAmount = welcomePrice;
+  const welcomeDiscount = originalBaseAmount - baseAmount;
   const addonDiscountRate = ADDON_DISCOUNT_RATE[plan] || 0;
 
   const { addonOriginal, addonFinal } = useMemo(() => {
