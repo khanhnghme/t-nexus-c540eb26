@@ -91,14 +91,14 @@ export default function Upgrade() {
   };
 
   const LEFT_PLANS: Plan[] = useMemo(() => [
-    { name: tp.plans.free.name, monthlyPrice: 0, description: tp.plans.free.description, cta: getCta('free'), ctaStyle: getCtaStyle('free'), features: tp.plans.free.features },
-    { name: tp.plans.plus.name, monthlyPrice: 4.8, description: tp.plans.plus.description, cta: getCta('plus'), ctaStyle: getCtaStyle('plus'), features: tp.plans.plus.features },
-    { name: tp.plans.pro.name, monthlyPrice: 12.0, description: tp.plans.pro.description, cta: getCta('pro'), ctaStyle: getCtaStyle('pro'), recommended: currentPlanKey !== 'pro', features: tp.plans.pro.features },
+    { name: tp.plans.free.name, monthlyPrice: 0, description: tp.plans.free.description, cta: getCta('free'), ctaStyle: getCtaStyle('free'), isCurrent: currentPlanKey === 'free', features: tp.plans.free.features },
+    { name: tp.plans.plus.name, monthlyPrice: 4.8, description: tp.plans.plus.description, cta: getCta('plus'), ctaStyle: getCtaStyle('plus'), isCurrent: currentPlanKey === 'plus', features: tp.plans.plus.features },
+    { name: tp.plans.pro.name, monthlyPrice: 12.0, description: tp.plans.pro.description, cta: getCta('pro'), ctaStyle: getCtaStyle('pro'), recommended: currentPlanKey !== 'pro', isCurrent: currentPlanKey === 'pro', features: tp.plans.pro.features },
   ], [tp, currentPlanKey, currentRank]);
 
   const RIGHT_PLANS: Plan[] = useMemo(() => [
-    { name: tp.plans.business.name, monthlyPrice: 24.0, description: tp.plans.business.description, cta: getCta('business'), ctaStyle: getCtaStyle('business'), features: tp.plans.business.features },
-    { name: tp.plans.enterprise.name, monthlyPrice: null, description: tp.plans.enterprise.description, cta: getCta('enterprise'), ctaStyle: getCtaStyle('enterprise'), features: tp.plans.enterprise.features },
+    { name: tp.plans.business.name, monthlyPrice: 24.0, description: tp.plans.business.description, cta: getCta('business'), ctaStyle: getCtaStyle('business'), isCurrent: currentPlanKey === 'business', features: tp.plans.business.features },
+    { name: tp.plans.enterprise.name, monthlyPrice: null, description: tp.plans.enterprise.description, cta: getCta('enterprise'), ctaStyle: getCtaStyle('enterprise'), isCurrent: currentPlanKey === 'enterprise', features: tp.plans.enterprise.features },
   ], [tp, currentPlanKey, currentRank]);
 
   const ADDONS: AddOn[] = useMemo(() => tp.addOns, [tp]);
