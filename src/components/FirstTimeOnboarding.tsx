@@ -95,6 +95,8 @@ export default function FirstTimeOnboarding({
   const [checkoutSubStep, setCheckoutSubStep] = useState<1 | 2>(1);
   const [paymentMethodOpen, setPaymentMethodOpen] = useState(true);
   const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
+  const [isFirstTimeBuyer, setIsFirstTimeBuyer] = useState(true);
+  const navigate = useNavigate();
 
   const allSteps: StepId[] = useMemo(() => {
     const base: StepId[] = ['language', 'welcome'];
