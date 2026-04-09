@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
-import { ArrowLeft, Tag, Plus, Minus, ShieldCheck, CreditCard, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, Tag, Plus, Minus, ShieldCheck, CreditCard, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -190,23 +190,10 @@ export default function Checkout() {
     );
   }
 
-  if (paymentStatus === 'success') {
+  if (paymentStatus === 'success' || paymentStatus === 'failed') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <CheckCircle2 className="h-16 w-16 text-green-500" />
-        <h2 className="text-2xl font-bold">{t?.successTitle || 'Payment Successful!'}</h2>
-        <p className="text-muted-foreground">{t?.successMessage || 'Your plan has been upgraded. Redirecting...'}</p>
-      </div>
-    );
-  }
-
-  if (paymentStatus === 'failed') {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <XCircle className="h-16 w-16 text-destructive" />
-        <h2 className="text-2xl font-bold">{t?.failedTitle || 'Payment Failed'}</h2>
-        <p className="text-muted-foreground">{t?.failedMessage || 'Something went wrong. Please try again.'}</p>
-        <Button onClick={() => setPaymentStatus('idle')}>{t?.tryAgain || 'Try Again'}</Button>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
