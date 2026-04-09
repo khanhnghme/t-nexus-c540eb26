@@ -204,6 +204,12 @@ export default function ServicePlan() {
   const newTotal = newTotalQty * unitPrice;
   const hasNewAddons = newTotalQty > 0;
 
+  const currentTab = searchParams.get('tab') || 'plan';
+
+  const plan = profile?.user_plan || 'plan_free';
+  const planName = formatPlanName(plan);
+  const isPremium = plan !== 'plan_free';
+  const features = featuresMap[plan] || featuresMap.plan_free;
 
   if (isLoading) {
     return (
