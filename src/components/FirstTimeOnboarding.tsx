@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import confetti from 'canvas-confetti';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,7 +27,6 @@ import { cn } from '@/lib/utils';
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 interface FirstTimeOnboardingProps {
-  open: boolean;
   userId: string;
   userFullName: string;
   userEmail: string;
@@ -49,21 +48,29 @@ const stepIcons: Record<StepId, React.ReactNode> = {
 };
 
 export default function FirstTimeOnboarding({
-  open, userId, userFullName, userEmail, userStudentId, userPlan, mustChangePassword, onComplete,
+  userId, userFullName, userEmail, userStudentId, userPlan, mustChangePassword, onComplete,
 }: FirstTimeOnboardingProps) {
   const { toast } = useToast();
   const { translations: { app: appT }, setLocale, locale } = useLanguage();
   const t = appT.onboarding;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [searchParams] = useSearchParams();
 
-  // Language selection: null = not selected yet
   const [selectedLang, setSelectedLang] = useState<'en' | 'vi' | null>(null);
 
   const allSteps: StepId[] = mustChangePassword
     ? ['language', 'welcome', 'password', 'info', 'plan', 'finish']
     : ['language', 'welcome', 'info', 'plan', 'finish'];
 
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  // Check if returning from checkout success
+  const fromCheckout = searchParams.get('from') === 'checkout_success';
+
+  const [currentStepIndex, setCurrentStepIndex] = useState(() => {
+    if (fromCheckout) {
+      return allSteps.indexOf('finish');
+    }
+    return 0;
+  });
   const currentStep = allSteps[currentStepIndex];
 
   const [showCelebration, setShowCelebration] = useState(false);
@@ -82,6 +89,24 @@ export default function FirstTimeOnboarding({
   const [isSaving, setIsSaving] = useState(false);
   const [infoErrors, setInfoErrors] = useState<Record<string, boolean>>({});
   const [selectedPlan, setSelectedPlan] = useState<'plan_free' | 'plan_plus' | 'plan_pro' | 'plan_business'>('plan_free');
+
+  // Load saved profile data if returning from checkout
+  useEffect(() => {
+    if (fromCheckout) {
+      const loadSavedData = async () => {
+        const { data } = await supabase.from('profiles').select('year_batch, major, phone, skills, bio, avatar_url').eq('id', userId).single();
+        if (data) {
+          if (data.year_batch) setYearBatch(data.year_batch);
+          if (data.major) setMajor(data.major);
+          if (data.phone) setPhone(data.phone);
+          if (data.skills) setSkills(data.skills);
+          if (data.bio) setBio(data.bio);
+          if (data.avatar_url) setPreviewUrl(data.avatar_url);
+        }
+      };
+      loadSavedData();
+    }
+  }, [fromCheckout, userId]);
 
   const getInitials = (name: string) =>
     name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -107,7 +132,6 @@ export default function FirstTimeOnboarding({
     }
   };
 
-  // --- Language selection handler ---
   const handleLanguageSelect = async (lang: 'en' | 'vi') => {
     setSelectedLang(lang);
     await setLocale(lang);
@@ -121,7 +145,6 @@ export default function FirstTimeOnboarding({
     goNext();
   };
 
-  // --- Handlers ---
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword.length < 6) {
@@ -196,6 +219,34 @@ export default function FirstTimeOnboarding({
     confetti({ particleCount: 100, spread: 100, origin: { y: 0.6 }, colors, zIndex: 99999 });
   }, []);
 
+  // Save profile data temporarily (for paid plan redirect)
+  const saveProfileTemp = async () => {
+    let avatarUrl: string | undefined;
+    if (selectedFile) {
+      const fileExt = selectedFile.name.split('.').pop();
+      const filePath = `${userId}/${Date.now()}.${fileExt}`;
+      const { data: uploadData, error: uploadError } = await r2Storage
+        .from('avatars')
+        .upload(filePath, selectedFile, { upsert: true, contentType: selectedFile.type });
+      if (uploadError) throw uploadError;
+      avatarUrl = uploadData?.publicUrl;
+    }
+
+    const updateData: Record<string, any> = {
+      year_batch: yearBatch.trim() || null,
+      major: major.trim() || null,
+      phone: phone.trim() || null,
+      skills: skills.trim() || null,
+      bio: bio.trim() || null,
+      onboarding_completed: false,
+      user_plan: 'plan_free' as const,
+    };
+    if (avatarUrl) updateData.avatar_url = avatarUrl;
+
+    const { error } = await supabase.from('profiles').update(updateData).eq('id', userId);
+    if (error) throw error;
+  };
+
   const handleFinish = async () => {
     setIsSaving(true);
     try {
@@ -218,7 +269,7 @@ export default function FirstTimeOnboarding({
         bio: bio.trim() || null,
         onboarding_completed: true,
         must_change_password: false,
-        user_plan: selectedPlan,
+        user_plan: 'plan_free' as const,
       };
       if (avatarUrl) updateData.avatar_url = avatarUrl;
 
@@ -235,6 +286,21 @@ export default function FirstTimeOnboarding({
     } catch (error: any) {
       toast({ title: appT.common.error, description: error.message, variant: 'destructive' });
       setIsSaving(false);
+    }
+  };
+
+  const handlePlanContinue = async () => {
+    if (selectedPlan !== 'plan_free') {
+      setIsSaving(true);
+      try {
+        await saveProfileTemp();
+        window.location.href = `/checkout?plan=${selectedPlan}&from=onboarding`;
+      } catch (error: any) {
+        toast({ title: appT.common.error, description: error.message, variant: 'destructive' });
+        setIsSaving(false);
+      }
+    } else {
+      goNext();
     }
   };
 
@@ -272,704 +338,681 @@ export default function FirstTimeOnboarding({
   const pwStrength = getPasswordStrength();
 
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent
-        className="w-[95vw] max-w-[1200px] h-[92vh] max-h-[740px] p-0 overflow-hidden border-0 shadow-2xl"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-      >
-        <div className="flex h-full">
-          {/* ===== SIDEBAR ===== */}
-          <div className="hidden md:flex w-[300px] shrink-0 relative overflow-hidden flex-col">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/95 to-primary/80" />
-            <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-white/5" />
-            <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-white/5" />
-            <div className="absolute top-1/2 right-0 w-24 h-24 rounded-full bg-white/5" />
+    <div className="min-h-screen flex bg-background">
+      {/* ===== SIDEBAR ===== */}
+      <div className="hidden md:flex w-[300px] shrink-0 relative overflow-hidden flex-col">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/95 to-primary/80" />
+        <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-white/5" />
+        <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-white/5" />
+        <div className="absolute top-1/2 right-0 w-24 h-24 rounded-full bg-white/5" />
 
-            <div className="relative z-10 p-6 flex flex-col h-full">
-              {/* Logo */}
-              <div className="flex items-center gap-3 mb-10">
-                <img src={tNexusTextWhite} alt="T-Nexus" className="h-7 object-contain" />
-              </div>
+        <div className="relative z-10 p-6 flex flex-col h-full">
+          <div className="flex items-center gap-3 mb-10">
+            <img src={tNexusTextWhite} alt="T-Nexus" className="h-7 object-contain" />
+          </div>
 
-              {/* Steps */}
-              <div className="flex-1 space-y-0">
-                {allSteps.map((step, idx) => {
-                  const isDone = idx < currentStepIndex;
-                  const isCurrent = idx === currentStepIndex;
-                  return (
-                    <div key={step}>
-                      <div className={cn(
-                        'flex items-center gap-3 py-3 px-3 rounded-xl transition-all duration-300',
-                        isCurrent && 'bg-white/15 backdrop-blur-sm',
-                      )}>
-                        <div className={cn(
-                          'w-9 h-9 rounded-xl flex items-center justify-center text-sm font-semibold transition-all duration-300 shrink-0',
-                          isDone ? 'bg-white text-primary shadow-lg' :
-                          isCurrent ? 'bg-white text-primary shadow-lg scale-110' :
-                          'bg-white/10 text-white/40 border border-white/20'
-                        )}>
-                          {isDone ? <Check className="w-4 h-4" /> : stepIcons[step]}
-                        </div>
-                        <div className="min-w-0">
-                          <p className={cn(
-                            'text-sm font-semibold transition-colors',
-                            isCurrent ? 'text-white' : isDone ? 'text-white/80' : 'text-white/40'
-                          )}>
-                            {stepLabels[step]}
-                          </p>
-                          <p className={cn(
-                            'text-[11px] truncate',
-                            isCurrent ? 'text-white/70' : 'text-white/30'
-                          )}>
-                            {stepDescriptions[step]}
-                          </p>
-                        </div>
-                      </div>
-                      {idx < allSteps.length - 1 && (
-                        <div className="flex justify-center py-0.5">
-                          <div className={cn(
-                            'w-0.5 h-4 rounded-full transition-colors',
-                            idx < currentStepIndex ? 'bg-white/50' : 'bg-white/15'
-                          )} />
-                        </div>
-                      )}
+          <div className="flex-1 space-y-0">
+            {allSteps.map((step, idx) => {
+              const isDone = idx < currentStepIndex;
+              const isCurrent = idx === currentStepIndex;
+              return (
+                <div key={step}>
+                  <div className={cn(
+                    'flex items-center gap-3 py-3 px-3 rounded-xl transition-all duration-300',
+                    isCurrent && 'bg-white/15 backdrop-blur-sm',
+                  )}>
+                    <div className={cn(
+                      'w-9 h-9 rounded-xl flex items-center justify-center text-sm font-semibold transition-all duration-300 shrink-0',
+                      isDone ? 'bg-white text-primary shadow-lg' :
+                      isCurrent ? 'bg-white text-primary shadow-lg scale-110' :
+                      'bg-white/10 text-white/40 border border-white/20'
+                    )}>
+                      {isDone ? <Check className="w-4 h-4" /> : stepIcons[step]}
                     </div>
-                  );
-                })}
-              </div>
-
-              {/* User card */}
-              <div className="mt-auto pt-4 border-t border-white/15">
-                <div className="flex items-center gap-3 bg-white/10 rounded-xl p-3">
-                  <Avatar className="h-9 w-9 border border-white/30">
-                    {previewUrl ? (
-                      <AvatarImage src={previewUrl} />
-                    ) : (
-                      <AvatarFallback className="bg-white/20 text-white text-xs font-bold">
-                        {getInitials(userFullName)}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-white truncate">{userFullName}</p>
-                    <p className="text-[10px] text-white/50 truncate">{userEmail}</p>
+                    <div className="min-w-0">
+                      <p className={cn(
+                        'text-sm font-semibold transition-colors',
+                        isCurrent ? 'text-white' : isDone ? 'text-white/80' : 'text-white/40'
+                      )}>
+                        {stepLabels[step]}
+                      </p>
+                      <p className={cn(
+                        'text-[11px] truncate',
+                        isCurrent ? 'text-white/70' : 'text-white/30'
+                      )}>
+                        {stepDescriptions[step]}
+                      </p>
+                    </div>
                   </div>
+                  {idx < allSteps.length - 1 && (
+                    <div className="flex justify-center py-0.5">
+                      <div className={cn(
+                        'w-0.5 h-4 rounded-full transition-colors',
+                        idx < currentStepIndex ? 'bg-white/50' : 'bg-white/15'
+                      )} />
+                    </div>
+                  )}
                 </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-auto pt-4 border-t border-white/15">
+            <div className="flex items-center gap-3 bg-white/10 rounded-xl p-3">
+              <Avatar className="h-9 w-9 border border-white/30">
+                {previewUrl ? (
+                  <AvatarImage src={previewUrl} />
+                ) : (
+                  <AvatarFallback className="bg-white/20 text-white text-xs font-bold">
+                    {getInitials(userFullName)}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-white truncate">{userFullName}</p>
+                <p className="text-[10px] text-white/50 truncate">{userEmail}</p>
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* ===== CONTENT ===== */}
-          <div className="flex-1 flex flex-col overflow-hidden bg-background">
-            {/* Mobile step indicator */}
-            <div className="md:hidden flex items-center gap-2 px-5 pt-4 pb-2">
-              <img src={tNexusTextWhite} alt="T-Nexus" className="h-5 brightness-0 dark:brightness-100" />
-              <div className="ml-auto flex items-center gap-1.5">
-                {allSteps.map((_, idx) => (
-                  <div key={idx} className={cn(
-                    'h-1.5 rounded-full transition-all',
-                    idx === currentStepIndex ? 'w-6 bg-primary' :
-                    idx < currentStepIndex ? 'w-3 bg-primary/50' : 'w-3 bg-muted'
-                  )} />
-                ))}
+      {/* ===== CONTENT ===== */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Mobile step indicator */}
+        <div className="md:hidden flex items-center gap-2 px-5 pt-4 pb-2">
+          <img src={tNexusTextWhite} alt="T-Nexus" className="h-5 brightness-0 dark:brightness-100" />
+          <div className="ml-auto flex items-center gap-1.5">
+            {allSteps.map((_, idx) => (
+              <div key={idx} className={cn(
+                'h-1.5 rounded-full transition-all',
+                idx === currentStepIndex ? 'w-6 bg-primary' :
+                idx < currentStepIndex ? 'w-3 bg-primary/50' : 'w-3 bg-muted'
+              )} />
+            ))}
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          <div key={currentStep} className="animate-fade-in h-full">
+            {/* ===== LANGUAGE STEP ===== */}
+            {currentStep === 'language' && (
+              <div className="h-full flex flex-col items-center justify-center px-6 md:px-10">
+                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
+                  <Globe className="w-8 h-8 text-primary" />
+                </div>
+                <h2 className="text-2xl md:text-3xl font-extrabold mb-2 text-center">
+                  {t.langTitle}
+                </h2>
+                <p className="text-muted-foreground mb-8 text-center max-w-md">
+                  {t.langSubtitle}
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md mb-8">
+                  <button
+                    onClick={() => handleLanguageSelect('en')}
+                    className={cn(
+                      'flex-1 flex items-center gap-4 p-5 rounded-2xl border-2 transition-all duration-200 text-left',
+                      selectedLang === 'en'
+                        ? 'border-primary bg-primary/5 shadow-lg ring-2 ring-primary/20'
+                        : 'border-border hover:border-primary/40 hover:bg-muted/50'
+                    )}
+                  >
+                    <span className="text-3xl">🇺🇸</span>
+                    <div>
+                      <p className="font-bold text-base">English</p>
+                      <p className="text-xs text-muted-foreground">Use English interface</p>
+                    </div>
+                    {selectedLang === 'en' && (
+                      <div className="ml-auto w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                        <Check className="w-4 h-4 text-primary-foreground" />
+                      </div>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => handleLanguageSelect('vi')}
+                    className={cn(
+                      'flex-1 flex items-center gap-4 p-5 rounded-2xl border-2 transition-all duration-200 text-left',
+                      selectedLang === 'vi'
+                        ? 'border-primary bg-primary/5 shadow-lg ring-2 ring-primary/20'
+                        : 'border-border hover:border-primary/40 hover:bg-muted/50'
+                    )}
+                  >
+                    <span className="text-3xl">🇻🇳</span>
+                    <div>
+                      <p className="font-bold text-base">Tiếng Việt</p>
+                      <p className="text-xs text-muted-foreground">Sử dụng giao diện tiếng Việt</p>
+                    </div>
+                    {selectedLang === 'vi' && (
+                      <div className="ml-auto w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                        <Check className="w-4 h-4 text-primary-foreground" />
+                      </div>
+                    )}
+                  </button>
+                </div>
+
+                <Button
+                  onClick={handleLanguageContinue}
+                  disabled={!selectedLang}
+                  size="lg"
+                  className="w-full max-w-xs gap-2 h-12 text-base rounded-xl shadow-lg hover:shadow-xl transition-all"
+                >
+                  {t.continueBtn}
+                  <ChevronRight className="w-5 h-5" />
+                </Button>
               </div>
-            </div>
+            )}
 
-            <div className="flex-1 overflow-y-auto">
-              {/* ===== LANGUAGE STEP ===== */}
-              {currentStep === 'language' && (
-                <div className="h-full flex flex-col items-center justify-center px-6 md:px-10">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
-                    <Globe className="w-8 h-8 text-primary" />
-                  </div>
-                  <h2 className="text-2xl md:text-3xl font-extrabold mb-2 text-center">
-                    {t.langTitle}
+            {/* ===== WELCOME ===== */}
+            {currentStep === 'welcome' && (
+              <div className="h-full flex flex-col">
+                <div className="relative bg-gradient-to-br from-primary/5 via-primary/10 to-accent/5 px-8 pt-6 pb-2 flex justify-center">
+                  <img src={welcomeImg} alt="Welcome" className="h-40 md:h-48 object-contain drop-shadow-lg" />
+                  <div className="absolute top-4 left-8 w-8 h-8 rounded-lg bg-primary/10 animate-pulse" />
+                  <div className="absolute bottom-8 right-12 w-6 h-6 rounded-full bg-accent/15 animate-pulse delay-500" />
+                </div>
+
+                <div className="flex-1 px-6 md:px-10 pb-6 flex flex-col items-center text-center">
+                  <h2 className="text-2xl md:text-3xl font-extrabold mt-4 mb-1 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                    {t.welcomeTitle}
                   </h2>
-                  <p className="text-muted-foreground mb-8 text-center max-w-md">
-                    {t.langSubtitle}
+                  <p className="text-muted-foreground mb-5 max-w-md">
+                    {t.welcomeSubtitle.replace('{name}', userFullName)}
                   </p>
 
-                  <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md mb-8">
-                    {/* English */}
-                    <button
-                      onClick={() => handleLanguageSelect('en')}
-                      className={cn(
-                        'flex-1 flex items-center gap-4 p-5 rounded-2xl border-2 transition-all duration-200 text-left',
-                        selectedLang === 'en'
-                          ? 'border-primary bg-primary/5 shadow-lg ring-2 ring-primary/20'
-                          : 'border-border hover:border-primary/40 hover:bg-muted/50'
-                      )}
-                    >
-                      <span className="text-3xl">🇺🇸</span>
-                      <div>
-                        <p className="font-bold text-base">English</p>
-                        <p className="text-xs text-muted-foreground">Use English interface</p>
-                      </div>
-                      {selectedLang === 'en' && (
-                        <div className="ml-auto w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                          <Check className="w-4 h-4 text-primary-foreground" />
+                  <div className="w-full max-w-xl grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+                    <div className="bg-card border rounded-2xl p-4 text-left space-y-2.5">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t.accountInfo}</p>
+                      <div className="flex items-center gap-2.5 text-sm">
+                        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <GraduationCap className="w-3.5 h-3.5 text-primary" />
                         </div>
-                      )}
-                    </button>
+                        <div>
+                          <p className="text-[10px] text-muted-foreground">{t.studentId}</p>
+                          <p className="font-semibold text-sm">{userStudentId}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2.5 text-sm">
+                        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <Mail className="w-3.5 h-3.5 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[10px] text-muted-foreground">{t.email}</p>
+                          <p className="font-semibold text-sm truncate">{userEmail}</p>
+                        </div>
+                      </div>
+                    </div>
 
-                    {/* Vietnamese */}
-                    <button
-                      onClick={() => handleLanguageSelect('vi')}
-                      className={cn(
-                        'flex-1 flex items-center gap-4 p-5 rounded-2xl border-2 transition-all duration-200 text-left',
-                        selectedLang === 'vi'
-                          ? 'border-primary bg-primary/5 shadow-lg ring-2 ring-primary/20'
-                          : 'border-border hover:border-primary/40 hover:bg-muted/50'
-                      )}
-                    >
-                      <span className="text-3xl">🇻🇳</span>
-                      <div>
-                        <p className="font-bold text-base">Tiếng Việt</p>
-                        <p className="text-xs text-muted-foreground">Sử dụng giao diện tiếng Việt</p>
-                      </div>
-                      {selectedLang === 'vi' && (
-                        <div className="ml-auto w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                          <Check className="w-4 h-4 text-primary-foreground" />
-                        </div>
-                      )}
-                    </button>
+                    <div className="border rounded-2xl p-4 text-left bg-gradient-to-br from-secondary/40 to-secondary/10 border-secondary/40">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{t.currentPlan}</p>
+                      <Badge className={cn('gap-1.5 px-3 py-1.5 text-sm border', getPlanColor())}>
+                        <Sparkles className="w-4 h-4" />
+                        {getPlanLabel()}
+                      </Badge>
+                    </div>
                   </div>
 
-                  <Button
-                    onClick={handleLanguageContinue}
-                    disabled={!selectedLang}
-                    size="lg"
-                    className="w-full max-w-xs gap-2 h-12 text-base rounded-xl shadow-lg hover:shadow-xl transition-all"
-                  >
-                    {t.continueBtn}
+                  <div className="w-full max-w-xl grid grid-cols-4 gap-2 mb-6">
+                    {[
+                      { icon: <FolderKanban className="w-4 h-4" />, label: t.projectMgmt },
+                      { icon: <ListChecks className="w-4 h-4" />, label: t.trackProgress },
+                      { icon: <Users className="w-4 h-4" />, label: t.teamwork },
+                      { icon: <MessageSquare className="w-4 h-4" />, label: t.messaging },
+                    ].map((f, i) => (
+                      <div key={i} className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                          {f.icon}
+                        </div>
+                        <p className="text-[10px] font-medium text-muted-foreground text-center leading-tight">{f.label}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Button onClick={goNext} size="lg" className="w-full max-w-xs gap-2 h-12 text-base rounded-xl shadow-lg hover:shadow-xl transition-all">
+                    {t.startSetup}
                     <ChevronRight className="w-5 h-5" />
                   </Button>
+                  <button
+                    type="button"
+                    onClick={goBack}
+                    className="mt-3 text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 transition-colors"
+                  >
+                    <ChevronLeft className="w-3 h-3" />
+                    {t.changeLang}
+                  </button>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* ===== WELCOME ===== */}
-              {currentStep === 'welcome' && (
-                <div className="h-full flex flex-col">
-                  <div className="relative bg-gradient-to-br from-primary/5 via-primary/10 to-accent/5 px-8 pt-6 pb-2 flex justify-center">
-                    <img src={welcomeImg} alt="Welcome" className="h-40 md:h-48 object-contain drop-shadow-lg" />
-                    <div className="absolute top-4 left-8 w-8 h-8 rounded-lg bg-primary/10 animate-pulse" />
-                    <div className="absolute bottom-8 right-12 w-6 h-6 rounded-full bg-accent/15 animate-pulse delay-500" />
-                  </div>
+            {/* ===== PASSWORD ===== */}
+            {currentStep === 'password' && (
+              <div className="h-full flex flex-col">
+                <div className="relative bg-gradient-to-br from-warning/10 via-warning/5 to-transparent px-8 pt-6 pb-2 flex justify-center">
+                  <img src={securityImg} alt="Security" className="h-32 md:h-40 object-contain drop-shadow-lg" />
+                </div>
 
-                  <div className="flex-1 px-6 md:px-10 pb-6 flex flex-col items-center text-center">
-                    <h2 className="text-2xl md:text-3xl font-extrabold mt-4 mb-1 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                      {t.welcomeTitle}
-                    </h2>
-                    <p className="text-muted-foreground mb-5 max-w-md">
-                      {t.welcomeSubtitle.replace('{name}', userFullName)}
-                    </p>
-
-                    <div className="w-full max-w-xl grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
-                      {/* Info card */}
-                      <div className="bg-card border rounded-2xl p-4 text-left space-y-2.5">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t.accountInfo}</p>
-                        <div className="flex items-center gap-2.5 text-sm">
-                          <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                            <GraduationCap className="w-3.5 h-3.5 text-primary" />
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-muted-foreground">{t.studentId}</p>
-                            <p className="font-semibold text-sm">{userStudentId}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2.5 text-sm">
-                          <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                            <Mail className="w-3.5 h-3.5 text-primary" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-[10px] text-muted-foreground">{t.email}</p>
-                            <p className="font-semibold text-sm truncate">{userEmail}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Plan card */}
-                      <div className="border rounded-2xl p-4 text-left bg-gradient-to-br from-secondary/40 to-secondary/10 border-secondary/40">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{t.currentPlan}</p>
-                        <Badge className={cn('gap-1.5 px-3 py-1.5 text-sm border', getPlanColor())}>
-                          <Sparkles className="w-4 h-4" />
-                          {getPlanLabel()}
-                        </Badge>
-                      </div>
+                <div className="flex-1 px-6 md:px-10 pb-6 flex flex-col items-center">
+                  <div className="w-full max-w-md">
+                    <div className="text-center mb-6">
+                      <h2 className="text-2xl font-extrabold mb-1">{t.securityTitle}</h2>
+                      <p className="text-muted-foreground text-sm">{t.securityDesc}</p>
                     </div>
 
-                    {/* Feature highlights */}
-                    <div className="w-full max-w-xl grid grid-cols-4 gap-2 mb-6">
-                      {[
-                        { icon: <FolderKanban className="w-4 h-4" />, label: t.projectMgmt },
-                        { icon: <ListChecks className="w-4 h-4" />, label: t.trackProgress },
-                        { icon: <Users className="w-4 h-4" />, label: t.teamwork },
-                        { icon: <MessageSquare className="w-4 h-4" />, label: t.messaging },
-                      ].map((f, i) => (
-                        <div key={i} className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
-                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                            {f.icon}
-                          </div>
-                          <p className="text-[10px] font-medium text-muted-foreground text-center leading-tight">{f.label}</p>
-                        </div>
-                      ))}
+                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 mb-5">
+                      <p className="text-xs font-semibold text-primary mb-1.5 flex items-center gap-1.5">
+                        <Shield className="w-3.5 h-3.5" /> {t.securityTip}
+                      </p>
+                      <ul className="text-[11px] text-muted-foreground space-y-0.5">
+                        <li>{t.securityTip1}</li>
+                        <li>{t.securityTip2}</li>
+                        <li>{t.securityTip3}</li>
+                      </ul>
+                      <p className="text-[10px] text-muted-foreground/70 mt-2 italic leading-relaxed">
+                        {t.securityDisclaimer}
+                      </p>
                     </div>
 
-                    <Button onClick={goNext} size="lg" className="w-full max-w-xs gap-2 h-12 text-base rounded-xl shadow-lg hover:shadow-xl transition-all">
-                      {t.startSetup}
-                      <ChevronRight className="w-5 h-5" />
-                    </Button>
-                    <button
-                      type="button"
-                      onClick={goBack}
-                      className="mt-3 text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 transition-colors"
-                    >
-                      <ChevronLeft className="w-3 h-3" />
-                      {t.changeLang}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* ===== PASSWORD ===== */}
-              {currentStep === 'password' && (
-                <div className="h-full flex flex-col">
-                  <div className="relative bg-gradient-to-br from-warning/10 via-warning/5 to-transparent px-8 pt-6 pb-2 flex justify-center">
-                    <img src={securityImg} alt="Security" className="h-32 md:h-40 object-contain drop-shadow-lg" />
-                  </div>
-
-                  <div className="flex-1 px-6 md:px-10 pb-6 flex flex-col items-center">
-                    <div className="w-full max-w-md">
-                      <div className="text-center mb-6">
-                        <h2 className="text-2xl font-extrabold mb-1">{t.securityTitle}</h2>
-                        <p className="text-muted-foreground text-sm">{t.securityDesc}</p>
-                      </div>
-
-                      <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 mb-5">
-                        <p className="text-xs font-semibold text-primary mb-1.5 flex items-center gap-1.5">
-                          <Shield className="w-3.5 h-3.5" /> {t.securityTip}
-                        </p>
-                        <ul className="text-[11px] text-muted-foreground space-y-0.5">
-                          <li>{t.securityTip1}</li>
-                          <li>{t.securityTip2}</li>
-                          <li>{t.securityTip3}</li>
-                        </ul>
-                        <p className="text-[10px] text-muted-foreground/70 mt-2 italic leading-relaxed">
-                          {t.securityDisclaimer}
-                        </p>
-                      </div>
-
-                      <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                        <div className="space-y-1.5">
-                          <Label htmlFor="newPassword" className="text-sm font-medium">{t.newPassword}</Label>
-                          <div className="relative">
-                            <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <Input id="newPassword" type={showPassword ? 'text' : 'password'} placeholder={t.minChars}
-                              className="pl-10 pr-10 h-12 rounded-xl" value={newPassword}
-                              onChange={(e) => setNewPassword(e.target.value)} required autoFocus />
-                            <button type="button" onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                            </button>
-                          </div>
-                          {newPassword && (
-                            <div className="flex items-center gap-2 mt-1">
-                              <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden flex gap-0.5">
-                                {[1, 2, 3, 4, 5].map(i => (
-                                  <div key={i} className={cn('flex-1 rounded-full transition-colors', i <= pwStrength.level ? pwStrength.color : 'bg-muted')} />
-                                ))}
-                              </div>
-                              <span className={cn('text-[10px] font-medium', pwStrength.level <= 2 ? 'text-destructive' : pwStrength.level <= 3 ? 'text-warning' : 'text-success')}>
-                                {pwStrength.label}
-                              </span>
+                    <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="newPassword" className="text-sm font-medium">{t.newPassword}</Label>
+                        <div className="relative">
+                          <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input id="newPassword" type={showPassword ? 'text' : 'password'} placeholder={t.minChars}
+                            className="pl-10 pr-10 h-12 rounded-xl" value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)} required autoFocus />
+                          <button type="button" onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                        {newPassword && (
+                          <div className="flex items-center gap-2 mt-1">
+                            <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden flex gap-0.5">
+                              {[1, 2, 3, 4, 5].map(i => (
+                                <div key={i} className={cn('flex-1 rounded-full transition-colors', i <= pwStrength.level ? pwStrength.color : 'bg-muted')} />
+                              ))}
                             </div>
-                          )}
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor="confirmPassword" className="text-sm font-medium">{t.confirmPassword}</Label>
-                          <div className="relative">
-                            <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <Input id="confirmPassword" type={showConfirm ? 'text' : 'password'} placeholder={t.reenterPassword}
-                              className="pl-10 pr-10 h-12 rounded-xl" value={confirmPassword}
-                              onChange={(e) => setConfirmPassword(e.target.value)} required />
-                            <button type="button" onClick={() => setShowConfirm(!showConfirm)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                              {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                            </button>
+                            <span className={cn('text-[10px] font-medium', pwStrength.level <= 2 ? 'text-destructive' : pwStrength.level <= 3 ? 'text-warning' : 'text-success')}>
+                              {pwStrength.label}
+                            </span>
                           </div>
-                          {confirmPassword && newPassword !== confirmPassword && (
-                            <p className="text-[11px] text-destructive mt-0.5">{t.passwordMismatch}</p>
-                          )}
+                        )}
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="confirmPassword" className="text-sm font-medium">{t.confirmPassword}</Label>
+                        <div className="relative">
+                          <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input id="confirmPassword" type={showConfirm ? 'text' : 'password'} placeholder={t.reenterPassword}
+                            className="pl-10 pr-10 h-12 rounded-xl" value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)} required />
+                          <button type="button" onClick={() => setShowConfirm(!showConfirm)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                            {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
                         </div>
-                        <div className="flex gap-3">
-                          <Button type="button" variant="outline" onClick={goBack} className="h-12 gap-2 rounded-xl text-base flex-1">
-                            <ChevronLeft className="w-5 h-5" /> {t.goBack}
-                          </Button>
-                          <Button type="submit" disabled={isChangingPassword} className="h-12 gap-2 rounded-xl text-base shadow-lg flex-[2]">
-                            {isChangingPassword && <Loader2 className="w-4 h-4 animate-spin" />}
-                            {t.continueNext} <ChevronRight className="w-5 h-5" />
-                          </Button>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ===== INFO ===== */}
-              {currentStep === 'info' && (
-                <div className="h-full flex flex-col">
-                  <div className="relative bg-gradient-to-br from-primary/5 via-accent/5 to-secondary/5 px-8 pt-4 pb-1 flex justify-center">
-                    <img src={profileImg} alt="Profile" className="h-24 md:h-28 object-contain drop-shadow-lg" />
-                  </div>
-
-                  <div className="flex-1 px-6 md:px-10 pb-6 overflow-y-auto">
-                    <div className="w-full max-w-lg mx-auto">
-                      <div className="text-center mb-4">
-                        <h2 className="text-xl font-extrabold mb-0.5">{t.infoTitle}</h2>
-                        <p className="text-muted-foreground text-sm">{t.infoDesc}</p>
+                        {confirmPassword && newPassword !== confirmPassword && (
+                          <p className="text-[11px] text-destructive mt-0.5">{t.passwordMismatch}</p>
+                        )}
                       </div>
-
-                      {/* Avatar */}
-                      <div className="flex flex-col items-center mb-5">
-                        <div className="relative group cursor-pointer mb-2" onClick={() => fileInputRef.current?.click()}>
-                          <Avatar className="h-20 w-20 border-4 border-background shadow-xl ring-2 ring-primary/20">
-                            {previewUrl ? (
-                              <AvatarImage src={previewUrl} alt="Preview" />
-                            ) : (
-                              <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-primary text-xl font-bold">
-                                {getInitials(userFullName)}
-                              </AvatarFallback>
-                            )}
-                          </Avatar>
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Camera className="w-6 h-6 text-white" />
-                          </div>
-                          <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg">
-                            <Camera className="w-3.5 h-3.5" />
-                          </div>
-                        </div>
-                        <button type="button" onClick={() => fileInputRef.current?.click()}
-                          className="text-xs text-primary font-medium hover:underline">
-                          {previewUrl ? t.changeAvatar : t.uploadAvatar}
-                        </button>
-                        <p className="text-[10px] text-muted-foreground">{t.avatarOptional}</p>
-                        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
-                      </div>
-
-                      {/* Fields */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {[
-                          { id: 'yearBatch', label: t.fieldBatch, icon: <GraduationCap className="w-4 h-4" />, placeholder: t.fieldBatchPlaceholder, value: yearBatch, setter: setYearBatch },
-                          { id: 'major', label: t.fieldMajor, icon: <BookOpen className="w-4 h-4" />, placeholder: t.fieldMajorPlaceholder, value: major, setter: setMajor },
-                          { id: 'phone', label: t.fieldPhone, icon: <Phone className="w-4 h-4" />, placeholder: t.fieldPhonePlaceholder, value: phone, setter: setPhone },
-                          { id: 'skills', label: t.fieldSkills, icon: <Award className="w-4 h-4" />, placeholder: t.fieldSkillsPlaceholder, value: skills, setter: setSkills },
-                        ].map(field => (
-                          <div key={field.id} className={cn(
-                            'rounded-xl border p-3 transition-all',
-                            infoErrors[field.id] ? 'border-destructive bg-destructive/5' : 'bg-card hover:shadow-sm'
-                          )}>
-                            <Label htmlFor={field.id} className="text-xs flex items-center gap-1.5 mb-1.5 font-semibold">
-                              <span className="text-primary">{field.icon}</span>
-                              {field.label} <span className="text-destructive">*</span>
-                            </Label>
-                            <Input id={field.id} placeholder={field.placeholder}
-                              value={field.value}
-                              onChange={(e) => { field.setter(e.target.value); setInfoErrors(p => ({ ...p, [field.id]: false })); }}
-                              className={cn('h-9 border-0 bg-muted/50 rounded-lg focus-visible:ring-1', infoErrors[field.id] && 'bg-destructive/10')} />
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Bio */}
-                      <div className="mt-3 rounded-xl border bg-card p-3">
-                        <Label htmlFor="bio" className="text-xs font-semibold flex items-center gap-1.5 mb-1.5">
-                          <Sparkles className="w-4 h-4 text-primary" /> {t.fieldBio}
-                          <span className="text-muted-foreground font-normal">{t.fieldBioOptional}</span>
-                        </Label>
-                        <Textarea id="bio" placeholder={t.fieldBioPlaceholder}
-                          value={bio} onChange={(e) => setBio(e.target.value)}
-                          rows={2} className="resize-none border-0 bg-muted/50 rounded-lg focus-visible:ring-1" />
-                      </div>
-
-                      <div className="flex gap-3 mt-4">
-                        <Button variant="outline" onClick={goBack} className="h-12 gap-2 rounded-xl text-base flex-1">
+                      <div className="flex gap-3">
+                        <Button type="button" variant="outline" onClick={goBack} className="h-12 gap-2 rounded-xl text-base flex-1">
                           <ChevronLeft className="w-5 h-5" /> {t.goBack}
                         </Button>
-                        <Button onClick={handleInfoNext} className="h-12 gap-2 rounded-xl text-base shadow-lg flex-[2]">
+                        <Button type="submit" disabled={isChangingPassword} className="h-12 gap-2 rounded-xl text-base shadow-lg flex-[2]">
+                          {isChangingPassword && <Loader2 className="w-4 h-4 animate-spin" />}
                           {t.continueNext} <ChevronRight className="w-5 h-5" />
                         </Button>
                       </div>
-                    </div>
+                    </form>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* ===== PLAN SELECTION ===== */}
-              {currentStep === 'plan' && (
-                <div className="h-full flex flex-col">
-                  <div className="relative bg-gradient-to-br from-primary/5 via-accent/10 to-primary/5 px-8 pt-6 pb-2 flex justify-center">
-                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-                      <Crown className="w-8 h-8 text-primary" />
-                    </div>
-                  </div>
-
-                  <div className="flex-1 px-6 md:px-10 pb-6 overflow-y-auto flex flex-col items-center">
-                    <h2 className="text-2xl md:text-3xl font-extrabold mt-3 mb-1 text-center">
-                      {t.choosePlanTitle}
-                    </h2>
-                    <p className="text-muted-foreground mb-6 text-center max-w-md text-sm">
-                      {t.choosePlanDesc}
-                    </p>
-
-                    <div className="w-full max-w-4xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                      {/* Free */}
-                      <button
-                        onClick={() => setSelectedPlan('plan_free')}
-                        className={cn(
-                          'relative flex flex-col rounded-2xl border-2 p-4 text-left transition-all duration-200',
-                          selectedPlan === 'plan_free'
-                            ? 'border-primary bg-primary/5 shadow-lg ring-2 ring-primary/20'
-                            : 'border-border hover:border-primary/40 hover:bg-muted/50'
-                        )}
-                      >
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <Zap className="w-4 h-4 text-muted-foreground" />
-                          <span className="font-bold text-sm">Free</span>
-                        </div>
-                        <p className="text-xl font-extrabold mb-1">$0<span className="text-xs font-normal text-muted-foreground">/{t.planMonth}</span></p>
-                        <ul className="text-[11px] text-muted-foreground space-y-1 mt-2">
-                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-primary shrink-0 mt-0.5" />{t.planFreeF1}</li>
-                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-primary shrink-0 mt-0.5" />{t.planFreeF2}</li>
-                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-primary shrink-0 mt-0.5" />{t.planFreeF3}</li>
-                        </ul>
-                        {selectedPlan === 'plan_free' && (
-                          <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                            <Check className="w-3 h-3 text-primary-foreground" />
-                          </div>
-                        )}
-                      </button>
-
-                      {/* Plus */}
-                      <button
-                        onClick={() => setSelectedPlan('plan_plus')}
-                        className={cn(
-                          'relative flex flex-col rounded-2xl border-2 p-4 text-left transition-all duration-200',
-                          selectedPlan === 'plan_plus'
-                            ? 'border-blue-500 bg-blue-500/5 shadow-lg ring-2 ring-blue-500/20'
-                            : 'border-border hover:border-blue-500/40 hover:bg-muted/50'
-                        )}
-                      >
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <Zap className="w-4 h-4 text-blue-500" />
-                          <span className="font-bold text-sm">Plus</span>
-                        </div>
-                        <p className="text-xl font-extrabold mb-1">$4.8<span className="text-xs font-normal text-muted-foreground">/{t.planMonth}</span></p>
-                        <ul className="text-[11px] text-muted-foreground space-y-1 mt-2">
-                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-blue-500 shrink-0 mt-0.5" />{t.planPlusF1}</li>
-                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-blue-500 shrink-0 mt-0.5" />{t.planPlusF2}</li>
-                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-blue-500 shrink-0 mt-0.5" />{t.planPlusF3}</li>
-                        </ul>
-                        {selectedPlan === 'plan_plus' && (
-                          <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
-                            <Check className="w-3 h-3 text-primary-foreground" />
-                          </div>
-                        )}
-                      </button>
-
-                      {/* Pro */}
-                      <button
-                        onClick={() => setSelectedPlan('plan_pro')}
-                        className={cn(
-                          'relative flex flex-col rounded-2xl border-2 p-4 text-left transition-all duration-200',
-                          selectedPlan === 'plan_pro'
-                            ? 'border-purple-500 bg-purple-500/5 shadow-lg ring-2 ring-purple-500/20'
-                            : 'border-border hover:border-purple-500/40 hover:bg-muted/50'
-                        )}
-                      >
-                        <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-purple-500 text-white border-0 text-[10px] px-2 py-0.5">
-                          {t.planRecommended}
-                        </Badge>
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <Crown className="w-4 h-4 text-purple-500" />
-                          <span className="font-bold text-sm">Pro</span>
-                        </div>
-                        <p className="text-xl font-extrabold mb-1">$12<span className="text-xs font-normal text-muted-foreground">/{t.planMonth}</span></p>
-                        <ul className="text-[11px] text-muted-foreground space-y-1 mt-2">
-                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-purple-500 shrink-0 mt-0.5" />{t.planProF1}</li>
-                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-purple-500 shrink-0 mt-0.5" />{t.planProF2}</li>
-                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-purple-500 shrink-0 mt-0.5" />{t.planProF3}</li>
-                        </ul>
-                        {selectedPlan === 'plan_pro' && (
-                          <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center">
-                            <Check className="w-3 h-3 text-primary-foreground" />
-                          </div>
-                        )}
-                      </button>
-
-                      {/* Business */}
-                      <button
-                        onClick={() => setSelectedPlan('plan_business')}
-                        className={cn(
-                          'relative flex flex-col rounded-2xl border-2 p-4 text-left transition-all duration-200',
-                          selectedPlan === 'plan_business'
-                            ? 'border-amber-500 bg-amber-500/5 shadow-lg ring-2 ring-amber-500/20'
-                            : 'border-border hover:border-amber-500/40 hover:bg-muted/50'
-                        )}
-                      >
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <Crown className="w-4 h-4 text-amber-500" />
-                          <span className="font-bold text-sm">Business</span>
-                        </div>
-                        <p className="text-xl font-extrabold mb-1">$24<span className="text-xs font-normal text-muted-foreground">/{t.planMonth}</span></p>
-                        <ul className="text-[11px] text-muted-foreground space-y-1 mt-2">
-                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-amber-500 shrink-0 mt-0.5" />{t.planBusinessF1}</li>
-                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-amber-500 shrink-0 mt-0.5" />{t.planBusinessF2}</li>
-                          <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-amber-500 shrink-0 mt-0.5" />{t.planBusinessF3}</li>
-                        </ul>
-                        {selectedPlan === 'plan_business' && (
-                          <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
-                            <Check className="w-3 h-3 text-primary-foreground" />
-                          </div>
-                        )}
-                      </button>
-                    </div>
-
-                    <p className="text-[11px] text-muted-foreground text-center mb-2 max-w-md">
-                      {t.planNote}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground text-center mb-4 max-w-md">
-                      {t.planContactEnterprise}
-                    </p>
-
-                    <div className="flex gap-3 w-full max-w-xs">
-                      <Button variant="outline" onClick={goBack} className="h-12 gap-2 rounded-xl text-base flex-1">
-                        <ChevronLeft className="w-5 h-5" /> {t.goBack}
-                      </Button>
-                      <Button onClick={() => {
-                        if (selectedPlan !== 'plan_free') {
-                          // For paid plans: complete onboarding first, then redirect to checkout
-                          handleFinish().then(() => {
-                            window.location.href = `/checkout?plan=${selectedPlan}`;
-                          });
-                        } else {
-                          goNext();
-                        }
-                      }} className="h-12 gap-2 rounded-xl text-base shadow-lg flex-[2]">
-                        {selectedPlan !== 'plan_free' ? t.planGoCheckout : t.continueNext} <ChevronRight className="w-5 h-5" />
-                      </Button>
-                    </div>
-                  </div>
+            {/* ===== INFO ===== */}
+            {currentStep === 'info' && (
+              <div className="h-full flex flex-col">
+                <div className="relative bg-gradient-to-br from-primary/5 via-accent/5 to-secondary/5 px-8 pt-4 pb-1 flex justify-center">
+                  <img src={profileImg} alt="Profile" className="h-24 md:h-28 object-contain drop-shadow-lg" />
                 </div>
-              )}
 
-              {currentStep === 'finish' && (
-                <div className="h-full flex flex-col">
-                  <div className="relative bg-gradient-to-br from-primary/5 via-accent/10 to-primary/5 px-8 pt-6 pb-2 flex justify-center overflow-hidden">
-                    <img src={completeImg} alt="Complete" className="h-36 md:h-44 object-contain drop-shadow-lg" />
-                    <div className="absolute top-6 left-[20%] w-2 h-2 rounded-full bg-primary/30 animate-bounce" />
-                    <div className="absolute top-10 right-[25%] w-3 h-3 rounded-full bg-accent/30 animate-bounce delay-300" />
-                    <div className="absolute bottom-4 left-[30%] w-2 h-2 rounded-sm bg-warning/30 animate-bounce delay-500 rotate-45" />
-                  </div>
+                <div className="flex-1 px-6 md:px-10 pb-6 overflow-y-auto">
+                  <div className="w-full max-w-lg mx-auto">
+                    <div className="text-center mb-4">
+                      <h2 className="text-xl font-extrabold mb-0.5">{t.infoTitle}</h2>
+                      <p className="text-muted-foreground text-sm">{t.infoDesc}</p>
+                    </div>
 
-                  <div className="flex-1 px-6 md:px-10 pb-6 flex flex-col items-center">
-                    <h2 className="text-2xl md:text-3xl font-extrabold mt-3 mb-1 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                      {t.finishTitle}
-                    </h2>
-                    <p className="text-muted-foreground mb-5 text-center max-w-md">{t.finishDesc}</p>
-
-                    {/* Summary card */}
-                    <div className="w-full max-w-lg bg-card border rounded-2xl overflow-hidden shadow-sm mb-5">
-                      <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-5 py-3 flex items-center gap-3 border-b">
-                        <Avatar className="h-12 w-12 border-2 border-background shadow">
+                    <div className="flex flex-col items-center mb-5">
+                      <div className="relative group cursor-pointer mb-2" onClick={() => fileInputRef.current?.click()}>
+                        <Avatar className="h-20 w-20 border-4 border-background shadow-xl ring-2 ring-primary/20">
                           {previewUrl ? (
-                            <AvatarImage src={previewUrl} />
+                            <AvatarImage src={previewUrl} alt="Preview" />
                           ) : (
-                            <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-primary font-bold">
+                            <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-primary text-xl font-bold">
                               {getInitials(userFullName)}
                             </AvatarFallback>
                           )}
                         </Avatar>
-                        <div className="min-w-0">
-                          <p className="font-bold text-base">{userFullName}</p>
-                          <p className="text-xs text-muted-foreground">{userStudentId} • {userEmail}</p>
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Camera className="w-6 h-6 text-white" />
                         </div>
-                        <Badge className={cn('gap-1 text-xs ml-auto shrink-0 border', getPlanColor())}>
-                          <Sparkles className="w-3 h-3" />
-                          {getPlanLabel()}
-                        </Badge>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-0 divide-x divide-y">
-                        {[
-                          { icon: <GraduationCap className="w-3.5 h-3.5" />, label: t.batchLabel, value: yearBatch },
-                          { icon: <BookOpen className="w-3.5 h-3.5" />, label: t.majorLabel, value: major },
-                          { icon: <Phone className="w-3.5 h-3.5" />, label: t.phoneLabel, value: phone },
-                          { icon: <Award className="w-3.5 h-3.5" />, label: t.skillsLabel, value: skills },
-                        ].map((item, i) => (
-                          <div key={i} className="px-4 py-2.5">
-                            <p className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
-                              <span className="text-primary">{item.icon}</span> {item.label}
-                            </p>
-                            <p className="text-sm font-medium truncate">{item.value}</p>
-                          </div>
-                        ))}
-                      </div>
-
-                      {bio && (
-                        <div className="px-4 py-2.5 border-t">
-                          <p className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
-                            <Sparkles className="w-3 h-3 text-primary" /> {t.bioLabel}
-                          </p>
-                          <p className="text-sm text-muted-foreground">{bio}</p>
+                        <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg">
+                          <Camera className="w-3.5 h-3.5" />
                         </div>
-                      )}
+                      </div>
+                      <button type="button" onClick={() => fileInputRef.current?.click()}
+                        className="text-xs text-primary font-medium hover:underline">
+                        {previewUrl ? t.changeAvatar : t.uploadAvatar}
+                      </button>
+                      <p className="text-[10px] text-muted-foreground">{t.avatarOptional}</p>
+                      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
                     </div>
 
-                    <div className="flex gap-3 w-full max-w-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {[
+                        { id: 'yearBatch', label: t.fieldBatch, icon: <GraduationCap className="w-4 h-4" />, placeholder: t.fieldBatchPlaceholder, value: yearBatch, setter: setYearBatch },
+                        { id: 'major', label: t.fieldMajor, icon: <BookOpen className="w-4 h-4" />, placeholder: t.fieldMajorPlaceholder, value: major, setter: setMajor },
+                        { id: 'phone', label: t.fieldPhone, icon: <Phone className="w-4 h-4" />, placeholder: t.fieldPhonePlaceholder, value: phone, setter: setPhone },
+                        { id: 'skills', label: t.fieldSkills, icon: <Award className="w-4 h-4" />, placeholder: t.fieldSkillsPlaceholder, value: skills, setter: setSkills },
+                      ].map(field => (
+                        <div key={field.id} className={cn(
+                          'rounded-xl border p-3 transition-all',
+                          infoErrors[field.id] ? 'border-destructive bg-destructive/5' : 'bg-card hover:shadow-sm'
+                        )}>
+                          <Label htmlFor={field.id} className="text-xs flex items-center gap-1.5 mb-1.5 font-semibold">
+                            <span className="text-primary">{field.icon}</span>
+                            {field.label} <span className="text-destructive">*</span>
+                          </Label>
+                          <Input id={field.id} placeholder={field.placeholder}
+                            value={field.value}
+                            onChange={(e) => { field.setter(e.target.value); setInfoErrors(p => ({ ...p, [field.id]: false })); }}
+                            className={cn('h-9 border-0 bg-muted/50 rounded-lg focus-visible:ring-1', infoErrors[field.id] && 'bg-destructive/10')} />
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-3 rounded-xl border bg-card p-3">
+                      <Label htmlFor="bio" className="text-xs font-semibold flex items-center gap-1.5 mb-1.5">
+                        <Sparkles className="w-4 h-4 text-primary" /> {t.fieldBio}
+                        <span className="text-muted-foreground font-normal">{t.fieldBioOptional}</span>
+                      </Label>
+                      <Textarea id="bio" placeholder={t.fieldBioPlaceholder}
+                        value={bio} onChange={(e) => setBio(e.target.value)}
+                        rows={2} className="resize-none border-0 bg-muted/50 rounded-lg focus-visible:ring-1" />
+                    </div>
+
+                    <div className="flex gap-3 mt-4">
                       <Button variant="outline" onClick={goBack} className="h-12 gap-2 rounded-xl text-base flex-1">
                         <ChevronLeft className="w-5 h-5" /> {t.goBack}
                       </Button>
-                      <Button onClick={handleFinish} disabled={isSaving} size="lg"
-                        className="gap-2 h-12 text-base rounded-xl shadow-lg hover:shadow-xl transition-all bg-gradient-to-r from-primary to-primary/90 flex-[2]">
-                        {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Rocket className="w-5 h-5" />}
-                        {t.enterSystem}
+                      <Button onClick={handleInfoNext} className="h-12 gap-2 rounded-xl text-base shadow-lg flex-[2]">
+                        {t.continueNext} <ChevronRight className="w-5 h-5" />
                       </Button>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Celebration Overlay */}
-              {showCelebration && (
-                <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm animate-fade-in">
-                  <div className="relative mb-6">
-                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center animate-scale-in">
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
-                        <Check className="w-8 h-8 text-primary-foreground" />
-                      </div>
-                    </div>
-                    <div className="absolute -top-2 -right-2 text-2xl animate-bounce">🎉</div>
-                    <div className="absolute -bottom-1 -left-2 text-2xl animate-bounce" style={{ animationDelay: '0.2s' }}>✨</div>
-                  </div>
-                  <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-2 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-                    {t.celebrationTitle}
-                  </h2>
-                  <p className="text-muted-foreground text-center max-w-sm animate-fade-in" style={{ animationDelay: '0.5s' }}>
-                    {t.celebrationDesc}
-                  </p>
-                  <div className="mt-6 flex gap-1 animate-fade-in" style={{ animationDelay: '0.7s' }}>
-                    {[0, 1, 2].map(i => (
-                      <div key={i} className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
-                    ))}
+            {/* ===== PLAN SELECTION ===== */}
+            {currentStep === 'plan' && (
+              <div className="h-full flex flex-col">
+                <div className="relative bg-gradient-to-br from-primary/5 via-accent/10 to-primary/5 px-8 pt-6 pb-2 flex justify-center">
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <Crown className="w-8 h-8 text-primary" />
                   </div>
                 </div>
-              )}
-            </div>
+
+                <div className="flex-1 px-6 md:px-10 pb-6 overflow-y-auto flex flex-col items-center">
+                  <h2 className="text-2xl md:text-3xl font-extrabold mt-3 mb-1 text-center">
+                    {t.choosePlanTitle}
+                  </h2>
+                  <p className="text-muted-foreground mb-6 text-center max-w-md text-sm">
+                    {t.choosePlanDesc}
+                  </p>
+
+                  <div className="w-full max-w-4xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    {/* Free */}
+                    <button
+                      onClick={() => setSelectedPlan('plan_free')}
+                      className={cn(
+                        'relative flex flex-col rounded-2xl border-2 p-4 text-left transition-all duration-200',
+                        selectedPlan === 'plan_free'
+                          ? 'border-primary bg-primary/5 shadow-lg ring-2 ring-primary/20'
+                          : 'border-border hover:border-primary/40 hover:bg-muted/50'
+                      )}
+                    >
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <Zap className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-bold text-sm">Free</span>
+                      </div>
+                      <p className="text-xl font-extrabold mb-1">$0<span className="text-xs font-normal text-muted-foreground">/{t.planMonth}</span></p>
+                      <ul className="text-[11px] text-muted-foreground space-y-1 mt-2">
+                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-primary shrink-0 mt-0.5" />{t.planFreeF1}</li>
+                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-primary shrink-0 mt-0.5" />{t.planFreeF2}</li>
+                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-primary shrink-0 mt-0.5" />{t.planFreeF3}</li>
+                      </ul>
+                      {selectedPlan === 'plan_free' && (
+                        <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                          <Check className="w-3 h-3 text-primary-foreground" />
+                        </div>
+                      )}
+                    </button>
+
+                    {/* Plus */}
+                    <button
+                      onClick={() => setSelectedPlan('plan_plus')}
+                      className={cn(
+                        'relative flex flex-col rounded-2xl border-2 p-4 text-left transition-all duration-200',
+                        selectedPlan === 'plan_plus'
+                          ? 'border-blue-500 bg-blue-500/5 shadow-lg ring-2 ring-blue-500/20'
+                          : 'border-border hover:border-blue-500/40 hover:bg-muted/50'
+                      )}
+                    >
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <Zap className="w-4 h-4 text-blue-500" />
+                        <span className="font-bold text-sm">Plus</span>
+                      </div>
+                      <p className="text-xl font-extrabold mb-1">$4.8<span className="text-xs font-normal text-muted-foreground">/{t.planMonth}</span></p>
+                      <ul className="text-[11px] text-muted-foreground space-y-1 mt-2">
+                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-blue-500 shrink-0 mt-0.5" />{t.planPlusF1}</li>
+                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-blue-500 shrink-0 mt-0.5" />{t.planPlusF2}</li>
+                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-blue-500 shrink-0 mt-0.5" />{t.planPlusF3}</li>
+                      </ul>
+                      {selectedPlan === 'plan_plus' && (
+                        <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
+                          <Check className="w-3 h-3 text-primary-foreground" />
+                        </div>
+                      )}
+                    </button>
+
+                    {/* Pro */}
+                    <button
+                      onClick={() => setSelectedPlan('plan_pro')}
+                      className={cn(
+                        'relative flex flex-col rounded-2xl border-2 p-4 text-left transition-all duration-200',
+                        selectedPlan === 'plan_pro'
+                          ? 'border-purple-500 bg-purple-500/5 shadow-lg ring-2 ring-purple-500/20'
+                          : 'border-border hover:border-purple-500/40 hover:bg-muted/50'
+                      )}
+                    >
+                      <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-purple-500 text-white border-0 text-[10px] px-2 py-0.5">
+                        {t.planRecommended}
+                      </Badge>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <Crown className="w-4 h-4 text-purple-500" />
+                        <span className="font-bold text-sm">Pro</span>
+                      </div>
+                      <p className="text-xl font-extrabold mb-1">$12<span className="text-xs font-normal text-muted-foreground">/{t.planMonth}</span></p>
+                      <ul className="text-[11px] text-muted-foreground space-y-1 mt-2">
+                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-purple-500 shrink-0 mt-0.5" />{t.planProF1}</li>
+                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-purple-500 shrink-0 mt-0.5" />{t.planProF2}</li>
+                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-purple-500 shrink-0 mt-0.5" />{t.planProF3}</li>
+                      </ul>
+                      {selectedPlan === 'plan_pro' && (
+                        <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center">
+                          <Check className="w-3 h-3 text-primary-foreground" />
+                        </div>
+                      )}
+                    </button>
+
+                    {/* Business */}
+                    <button
+                      onClick={() => setSelectedPlan('plan_business')}
+                      className={cn(
+                        'relative flex flex-col rounded-2xl border-2 p-4 text-left transition-all duration-200',
+                        selectedPlan === 'plan_business'
+                          ? 'border-amber-500 bg-amber-500/5 shadow-lg ring-2 ring-amber-500/20'
+                          : 'border-border hover:border-amber-500/40 hover:bg-muted/50'
+                      )}
+                    >
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <Crown className="w-4 h-4 text-amber-500" />
+                        <span className="font-bold text-sm">Business</span>
+                      </div>
+                      <p className="text-xl font-extrabold mb-1">$24<span className="text-xs font-normal text-muted-foreground">/{t.planMonth}</span></p>
+                      <ul className="text-[11px] text-muted-foreground space-y-1 mt-2">
+                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-amber-500 shrink-0 mt-0.5" />{t.planBusinessF1}</li>
+                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-amber-500 shrink-0 mt-0.5" />{t.planBusinessF2}</li>
+                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-amber-500 shrink-0 mt-0.5" />{t.planBusinessF3}</li>
+                      </ul>
+                      {selectedPlan === 'plan_business' && (
+                        <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
+                          <Check className="w-3 h-3 text-primary-foreground" />
+                        </div>
+                      )}
+                    </button>
+                  </div>
+
+                  <p className="text-[11px] text-muted-foreground text-center mb-2 max-w-md">
+                    {t.planNote}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground text-center mb-4 max-w-md">
+                    {t.planContactEnterprise}
+                  </p>
+
+                  <div className="flex gap-3 w-full max-w-xs">
+                    <Button variant="outline" onClick={goBack} className="h-12 gap-2 rounded-xl text-base flex-1">
+                      <ChevronLeft className="w-5 h-5" /> {t.goBack}
+                    </Button>
+                    <Button onClick={handlePlanContinue} disabled={isSaving} className="h-12 gap-2 rounded-xl text-base shadow-lg flex-[2]">
+                      {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                      {selectedPlan !== 'plan_free' ? t.planGoCheckout : t.continueNext} <ChevronRight className="w-5 h-5" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ===== FINISH ===== */}
+            {currentStep === 'finish' && (
+              <div className="h-full flex flex-col">
+                <div className="relative bg-gradient-to-br from-primary/5 via-accent/10 to-primary/5 px-8 pt-6 pb-2 flex justify-center overflow-hidden">
+                  <img src={completeImg} alt="Complete" className="h-36 md:h-44 object-contain drop-shadow-lg" />
+                  <div className="absolute top-6 left-[20%] w-2 h-2 rounded-full bg-primary/30 animate-bounce" />
+                  <div className="absolute top-10 right-[25%] w-3 h-3 rounded-full bg-accent/30 animate-bounce delay-300" />
+                  <div className="absolute bottom-4 left-[30%] w-2 h-2 rounded-sm bg-warning/30 animate-bounce delay-500 rotate-45" />
+                </div>
+
+                <div className="flex-1 px-6 md:px-10 pb-6 flex flex-col items-center">
+                  <h2 className="text-2xl md:text-3xl font-extrabold mt-3 mb-1 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                    {t.finishTitle}
+                  </h2>
+                  <p className="text-muted-foreground mb-5 text-center max-w-md">{t.finishDesc}</p>
+
+                  <div className="w-full max-w-lg bg-card border rounded-2xl overflow-hidden shadow-sm mb-5">
+                    <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-5 py-3 flex items-center gap-3 border-b">
+                      <Avatar className="h-12 w-12 border-2 border-background shadow">
+                        {previewUrl ? (
+                          <AvatarImage src={previewUrl} />
+                        ) : (
+                          <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-primary font-bold">
+                            {getInitials(userFullName)}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="font-bold text-base">{userFullName}</p>
+                        <p className="text-xs text-muted-foreground">{userStudentId} • {userEmail}</p>
+                      </div>
+                      <Badge className={cn('gap-1 text-xs ml-auto shrink-0 border', getPlanColor())}>
+                        <Sparkles className="w-3 h-3" />
+                        {getPlanLabel()}
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-0 divide-x divide-y">
+                      {[
+                        { icon: <GraduationCap className="w-3.5 h-3.5" />, label: t.batchLabel, value: yearBatch },
+                        { icon: <BookOpen className="w-3.5 h-3.5" />, label: t.majorLabel, value: major },
+                        { icon: <Phone className="w-3.5 h-3.5" />, label: t.phoneLabel, value: phone },
+                        { icon: <Award className="w-3.5 h-3.5" />, label: t.skillsLabel, value: skills },
+                      ].map((item, i) => (
+                        <div key={i} className="px-4 py-2.5">
+                          <p className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
+                            <span className="text-primary">{item.icon}</span> {item.label}
+                          </p>
+                          <p className="text-sm font-medium truncate">{item.value}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {bio && (
+                      <div className="px-4 py-2.5 border-t">
+                        <p className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
+                          <Sparkles className="w-3 h-3 text-primary" /> {t.bioLabel}
+                        </p>
+                        <p className="text-sm text-muted-foreground">{bio}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-3 w-full max-w-xs">
+                    {!fromCheckout && (
+                      <Button variant="outline" onClick={goBack} className="h-12 gap-2 rounded-xl text-base flex-1">
+                        <ChevronLeft className="w-5 h-5" /> {t.goBack}
+                      </Button>
+                    )}
+                    <Button onClick={handleFinish} disabled={isSaving} size="lg"
+                      className={cn("gap-2 h-12 text-base rounded-xl shadow-lg hover:shadow-xl transition-all bg-gradient-to-r from-primary to-primary/90", fromCheckout ? "w-full max-w-xs" : "flex-[2]")}>
+                      {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Rocket className="w-5 h-5" />}
+                      {t.enterSystem}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        {/* Celebration Overlay */}
+        {showCelebration && (
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm animate-fade-in">
+            <div className="relative mb-6">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center animate-scale-in">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
+                  <Check className="w-8 h-8 text-primary-foreground" />
+                </div>
+              </div>
+              <div className="absolute -top-2 -right-2 text-2xl animate-bounce">🎉</div>
+              <div className="absolute -bottom-1 -left-2 text-2xl animate-bounce" style={{ animationDelay: '0.2s' }}>✨</div>
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-2 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+              {t.celebrationTitle}
+            </h2>
+            <p className="text-muted-foreground text-center max-w-sm animate-fade-in" style={{ animationDelay: '0.5s' }}>
+              {t.celebrationDesc}
+            </p>
+            <div className="mt-6 flex gap-1 animate-fade-in" style={{ animationDelay: '0.7s' }}>
+              {[0, 1, 2].map(i => (
+                <div key={i} className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

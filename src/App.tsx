@@ -52,6 +52,7 @@ import CreateWorkspace from "./pages/CreateWorkspace";
 import Notifications from "./pages/Notifications";
 import Upgrade from "./pages/Upgrade";
 import Checkout from "./pages/Checkout";
+import Onboarding from "./pages/Onboarding";
 import PaymentResult from "./pages/PaymentResult";
 import ServicePlan from "./pages/ServicePlan";
 import AdminLayout from "./components/layout/AdminLayout";
@@ -152,6 +153,7 @@ function AppRoutes() {
         <Route path="/reset-password" element={<ForceLightMode><ResetPassword /></ForceLightMode>} />
         <Route path="/auth/member" element={<Navigate to="/auth" replace />} />
         <Route path="/auth/admin" element={<Navigate to="/auth" replace />} />
+        <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
         <Route path="/u/:username" element={<ForceLightMode><PublicProfile /></ForceLightMode>} />
         <Route path="/file-preview" element={<ForceLightMode><FilePreview /></ForceLightMode>} />
 
