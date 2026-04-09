@@ -23,7 +23,7 @@ import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { INSTITUTIONS, REGIONS, searchInstitutions } from '@/lib/institutions';
 import { cn } from '@/lib/utils';
-import { TurnstileWidget } from '@/components/TurnstileWidget';
+import { TurnstileWidget, type TurnstileWidgetRef } from '@/components/TurnstileWidget';
 
 import { format, type Locale } from 'date-fns';
 import { vi as viLocale, enUS } from 'date-fns/locale';
@@ -125,6 +125,7 @@ export function MemberAuthForm() {
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileWidgetRef>(null);
   // Login fields
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -264,9 +265,13 @@ export function MemberAuthForm() {
       if (captchaError || !captchaResult?.success) {
         setIsLoading(false);
         setTurnstileToken(null);
+        turnstileRef.current?.reset();
         toast({ title: ta.captchaFailed, variant: 'destructive' });
         return;
       }
+      // Token consumed, reset for next attempt
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
 
       let loginEmail = input;
       let profileQuery: 'email' | 'student_id' = isEmail ? 'email' : 'student_id';
@@ -464,9 +469,13 @@ export function MemberAuthForm() {
       if (captchaError || !captchaResult?.success) {
         setIsLoading(false);
         setTurnstileToken(null);
+        turnstileRef.current?.reset();
         toast({ title: ta.captchaFailed, variant: 'destructive' });
         return;
       }
+      // Token consumed, reset for next attempt
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
 
       const { data: existingEmail } = await supabase
         .rpc('get_email_by_student_id', { _student_id: regStudentId.trim() });
@@ -732,6 +741,7 @@ export function MemberAuthForm() {
                 />
 
                 <TurnstileWidget
+                  ref={turnstileRef}
                   onVerify={(token) => setTurnstileToken(token)}
                   onExpire={() => setTurnstileToken(null)}
                   onError={() => {
@@ -1154,6 +1164,7 @@ export function MemberAuthForm() {
 
 
                 <TurnstileWidget
+                  ref={turnstileRef}
                   onVerify={(token) => setTurnstileToken(token)}
                   onExpire={() => setTurnstileToken(null)}
                   onError={() => {
