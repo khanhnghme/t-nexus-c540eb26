@@ -286,7 +286,7 @@ export default function ProjectEvidenceExport({ groupId, project }: ProjectEvide
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => navigate('/pricing')}>
+          <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => navigate('/upgrade?from=personal')}>
             <ArrowUpRight className="w-4 h-4" />
             Nâng cấp để xuất dữ liệu
           </Button>
