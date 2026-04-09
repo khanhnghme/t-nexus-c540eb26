@@ -1,6 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
-import { useWorkspaceBilling, formatPlanName } from '@/hooks/useWorkspaceBilling';
+import { useWorkspaceBilling } from '@/hooks/useWorkspaceBilling';
+import { getPlanLabel, isPremiumPlan } from '@/lib/planConfig';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,9 +16,9 @@ export default function BillingWidget() {
 
   if (isLoading || !activeWorkspace) return null;
 
-  const planLabel = formatPlanName(ownerPlan);
+  const planLabel = getPlanLabel(ownerPlan);
   const isOwner = user?.id === ownerId;
-  const isPremium = ownerPlan && ownerPlan !== 'plan_free';
+  const isPremium = isPremiumPlan(ownerPlan);
 
   return (
     <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-border bg-card/60 backdrop-blur-sm">
