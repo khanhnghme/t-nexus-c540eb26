@@ -1236,6 +1236,8 @@ export const vi: Translations = {
       stepInfoDesc: 'Điền thông tin cá nhân',
       stepPlan: 'Chọn gói',
       stepPlanDesc: 'Chọn gói phù hợp',
+      stepCheckout: 'Thanh toán',
+      stepCheckoutDesc: 'Hoàn tất thanh toán',
       stepFinish: 'Hoàn tất',
       stepFinishDesc: 'Xác nhận & bắt đầu',
       choosePlanTitle: 'Chọn gói của bạn',

@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import confetti from 'canvas-confetti';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,10 +7,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { r2Storage } from '@/lib/r2Storage';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { PLAN_CONFIG, getPlanLabel as getPlanLabelFromConfig, type PlanKey } from '@/lib/planConfig';
 import tNexusTextWhite from '@/assets/t-nexus-text-white.png';
 import welcomeImg from '@/assets/onboarding-welcome.png';
 import securityImg from '@/assets/onboarding-security.png';
@@ -21,10 +25,29 @@ import {
   GraduationCap, BookOpen, Phone, Sparkles, Shield,
   Rocket, Eye, EyeOff, Mail, ListChecks, Users, FolderKanban,
   Award, MessageSquare, ChevronLeft, Globe, Crown, Zap,
+  Tag, Plus, Minus, Package, CreditCard, ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+const ADDON_TYPES = [
+  { type: 'projects', emoji: '📁', unitLabel: '+5 projects', unitLabelVi: '+5 dự án' },
+  { type: 'storage', emoji: '💾', unitLabel: '+5 GB storage', unitLabelVi: '+5 GB lưu trữ' },
+  { type: 'members', emoji: '👥', unitLabel: '+5 members', unitLabelVi: '+5 thành viên' },
+] as const;
+
+const ADDON_PRICE_MONTHLY = 2.49;
+
+const COUPON_ERROR_MAP: Record<string, { en: string; vi: string }> = {
+  invalid: { en: 'Invalid coupon code', vi: 'Mã giảm giá không hợp lệ' },
+  expired: { en: 'Coupon has expired', vi: 'Mã giảm giá đã hết hạn' },
+  not_started: { en: 'Coupon is not yet active', vi: 'Mã giảm giá chưa có hiệu lực' },
+  max_uses: { en: 'Coupon usage limit reached', vi: 'Mã giảm giá đã hết lượt sử dụng' },
+  not_applicable: { en: 'Coupon not applicable to this plan', vi: 'Mã không áp dụng cho gói này' },
+  already_used: { en: 'You have already used this coupon', vi: 'Bạn đã sử dụng mã này rồi' },
+  server_error: { en: 'Server error. Please try again.', vi: 'Lỗi hệ thống. Vui lòng thử lại.' },
+};
 
 interface FirstTimeOnboardingProps {
   userId: string;
@@ -36,7 +59,7 @@ interface FirstTimeOnboardingProps {
   onComplete: () => void;
 }
 
-type StepId = 'language' | 'welcome' | 'password' | 'info' | 'plan' | 'finish';
+type StepId = 'language' | 'welcome' | 'password' | 'info' | 'plan' | 'checkout' | 'finish';
 
 const stepIcons: Record<StepId, React.ReactNode> = {
   language: <Globe className="w-4 h-4" />,
@@ -44,6 +67,7 @@ const stepIcons: Record<StepId, React.ReactNode> = {
   password: <Key className="w-4 h-4" />,
   info: <User className="w-4 h-4" />,
   plan: <Crown className="w-4 h-4" />,
+  checkout: <CreditCard className="w-4 h-4" />,
   finish: <Rocket className="w-4 h-4" />,
 };
 
@@ -51,27 +75,42 @@ export default function FirstTimeOnboarding({
   userId, userFullName, userEmail, userStudentId, userPlan, mustChangePassword, onComplete,
 }: FirstTimeOnboardingProps) {
   const { toast } = useToast();
-  const { translations: { app: appT }, setLocale, locale } = useLanguage();
+  const { translations: { app: appT, pricing: pricingT }, setLocale, locale } = useLanguage();
   const t = appT.onboarding;
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [searchParams] = useSearchParams();
+  const isVi = locale === 'vi';
 
   const [selectedLang, setSelectedLang] = useState<'en' | 'vi' | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<'plan_free' | 'plan_plus' | 'plan_pro' | 'plan_business'>('plan_free');
 
-  const allSteps: StepId[] = mustChangePassword
-    ? ['language', 'welcome', 'password', 'info', 'plan', 'finish']
-    : ['language', 'welcome', 'info', 'plan', 'finish'];
+  // Checkout state
+  const [cycle, setCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [addons, setAddons] = useState<Record<string, number>>({});
+  const [couponCode, setCouponCode] = useState('');
+  const [couponDiscount, setCouponDiscount] = useState<{ type: string; value: number; code: string } | null>(null);
+  const [couponError, setCouponError] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'failed'>('idle');
+  const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
 
-  // Check if returning from checkout success
-  const fromCheckout = searchParams.get('from') === 'checkout_success';
+  const allSteps: StepId[] = useMemo(() => {
+    const base: StepId[] = ['language', 'welcome'];
+    if (mustChangePassword) base.push('password');
+    base.push('info', 'plan');
+    if (selectedPlan !== 'plan_free') base.push('checkout');
+    base.push('finish');
+    return base;
+  }, [mustChangePassword, selectedPlan]);
 
-  const [currentStepIndex, setCurrentStepIndex] = useState(() => {
-    if (fromCheckout) {
-      return allSteps.indexOf('finish');
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const currentStep = allSteps[currentStepIndex] ?? 'language';
+
+  // Ensure step index doesn't go out of bounds when steps change
+  useEffect(() => {
+    if (currentStepIndex >= allSteps.length) {
+      setCurrentStepIndex(allSteps.length - 1);
     }
-    return 0;
-  });
-  const currentStep = allSteps[currentStepIndex];
+  }, [allSteps.length, currentStepIndex]);
 
   const [showCelebration, setShowCelebration] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -88,25 +127,60 @@ export default function FirstTimeOnboarding({
   const [bio, setBio] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [infoErrors, setInfoErrors] = useState<Record<string, boolean>>({});
-  const [selectedPlan, setSelectedPlan] = useState<'plan_free' | 'plan_plus' | 'plan_pro' | 'plan_business'>('plan_free');
 
-  // Load saved profile data if returning from checkout
+  // Load PayPal config when checkout step is possible
   useEffect(() => {
-    if (fromCheckout) {
-      const loadSavedData = async () => {
-        const { data } = await supabase.from('profiles').select('year_batch, major, phone, skills, bio, avatar_url').eq('id', userId).single();
-        if (data) {
-          if (data.year_batch) setYearBatch(data.year_batch);
-          if (data.major) setMajor(data.major);
-          if (data.phone) setPhone(data.phone);
-          if (data.skills) setSkills(data.skills);
-          if (data.bio) setBio(data.bio);
-          if (data.avatar_url) setPreviewUrl(data.avatar_url);
-        }
-      };
-      loadSavedData();
+    if (selectedPlan !== 'plan_free' && !paypalClientId) {
+      supabase.functions.invoke('get-paypal-config').then(({ data }) => {
+        if (data?.clientId) setPaypalClientId(data.clientId);
+      });
     }
-  }, [fromCheckout, userId]);
+  }, [selectedPlan, paypalClientId]);
+
+  // Reset coupon when plan changes
+  useEffect(() => {
+    setCouponDiscount(null);
+    setCouponCode('');
+    setCouponError('');
+  }, [selectedPlan]);
+
+  // Price calculations
+  const planConfig = PLAN_CONFIG[selectedPlan as PlanKey];
+  const baseAmount = planConfig ? (cycle === 'yearly' ? (planConfig.yearlyPrice ?? 0) : (planConfig.monthlyPrice ?? 0)) : 0;
+  const addonDiscountRate = planConfig?.addonDiscount ?? 0;
+
+  const { addonOriginal, addonFinal } = useMemo(() => {
+    let original = 0;
+    for (const [, qty] of Object.entries(addons)) {
+      if (qty > 0) {
+        original += cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 * qty : ADDON_PRICE_MONTHLY * qty;
+      }
+    }
+    original = Math.round(original * 100) / 100;
+    const final = Math.round(original * (1 - addonDiscountRate) * 100) / 100;
+    return { addonOriginal: original, addonFinal: final };
+  }, [addons, cycle, addonDiscountRate]);
+
+  const addonSaving = Math.round((addonOriginal - addonFinal) * 100) / 100;
+  const subtotal = baseAmount + addonFinal;
+
+  const discountAmount = useMemo(() => {
+    if (!couponDiscount) return 0;
+    if (couponDiscount.type === 'percentage') {
+      return Math.round((subtotal * couponDiscount.value / 100) * 100) / 100;
+    }
+    return Math.min(couponDiscount.value, subtotal);
+  }, [couponDiscount, subtotal]);
+
+  const totalAmount = Math.round((subtotal - discountAmount) * 100) / 100;
+
+  const updateAddon = (type: string, delta: number) => {
+    setAddons(prev => {
+      const current = prev[type] || 0;
+      const next = Math.max(0, Math.min(10, current + delta));
+      return { ...prev, [type]: next };
+    });
+  };
 
   const getInitials = (name: string) =>
     name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -114,21 +188,21 @@ export default function FirstTimeOnboarding({
   const goNext = () => setCurrentStepIndex(i => Math.min(i + 1, allSteps.length - 1));
   const goBack = () => setCurrentStepIndex(i => Math.max(i - 1, 0));
 
-  const getPlanLabel = () => {
+  const getPlanColorLocal = () => {
+    switch (userPlan) {
+      case 'plan_plus': return 'bg-blue-500/10 text-blue-600 border-blue-200';
+      case 'plan_pro': return 'bg-violet-500/10 text-violet-600 border-violet-200';
+      case 'plan_enterprise': return 'bg-amber-500/10 text-amber-600 border-amber-200';
+      default: return 'bg-secondary text-secondary-foreground border-secondary';
+    }
+  };
+
+  const getPlanLabelLocal = () => {
     switch (userPlan) {
       case 'plan_plus': return t.planPlus;
       case 'plan_pro': return t.planPro;
       case 'plan_enterprise': return t.planEnterprise;
       default: return t.planFree;
-    }
-  };
-
-  const getPlanColor = () => {
-    switch (userPlan) {
-      case 'plan_plus': return 'bg-blue-500/10 text-blue-600 border-blue-200';
-      case 'plan_pro': return 'bg-violet-500/10 text-purple-600 border-purple-200';
-      case 'plan_enterprise': return 'bg-amber-500/10 text-amber-600 border-amber-200';
-      default: return 'bg-secondary text-secondary-foreground border-secondary';
     }
   };
 
@@ -219,34 +293,6 @@ export default function FirstTimeOnboarding({
     confetti({ particleCount: 100, spread: 100, origin: { y: 0.6 }, colors, zIndex: 99999 });
   }, []);
 
-  // Save profile data temporarily (for paid plan redirect)
-  const saveProfileTemp = async () => {
-    let avatarUrl: string | undefined;
-    if (selectedFile) {
-      const fileExt = selectedFile.name.split('.').pop();
-      const filePath = `${userId}/${Date.now()}.${fileExt}`;
-      const { data: uploadData, error: uploadError } = await r2Storage
-        .from('avatars')
-        .upload(filePath, selectedFile, { upsert: true, contentType: selectedFile.type });
-      if (uploadError) throw uploadError;
-      avatarUrl = uploadData?.publicUrl;
-    }
-
-    const updateData: Record<string, any> = {
-      year_batch: yearBatch.trim() || null,
-      major: major.trim() || null,
-      phone: phone.trim() || null,
-      skills: skills.trim() || null,
-      bio: bio.trim() || null,
-      onboarding_completed: false,
-      user_plan: 'plan_free' as const,
-    };
-    if (avatarUrl) updateData.avatar_url = avatarUrl;
-
-    const { error } = await supabase.from('profiles').update(updateData).eq('id', userId);
-    if (error) throw error;
-  };
-
   const handleFinish = async () => {
     setIsSaving(true);
     try {
@@ -289,20 +335,85 @@ export default function FirstTimeOnboarding({
     }
   };
 
-  const handlePlanContinue = async () => {
+  const handlePlanContinue = () => {
     if (selectedPlan !== 'plan_free') {
-      setIsSaving(true);
-      try {
-        await saveProfileTemp();
-        window.location.href = `/checkout?plan=${selectedPlan}&from=onboarding`;
-      } catch (error: any) {
-        toast({ title: appT.common.error, description: error.message, variant: 'destructive' });
-        setIsSaving(false);
-      }
-    } else {
+      // Go to checkout step (it's dynamically added to allSteps)
       goNext();
+    } else {
+      goNext(); // Goes to finish
     }
   };
+
+  // Checkout handlers
+  const applyCoupon = useCallback(async () => {
+    if (!couponCode.trim()) return;
+    setCouponLoading(true);
+    setCouponError('');
+    setCouponDiscount(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-coupon', {
+        body: { code: couponCode.trim(), plan: selectedPlan },
+      });
+
+      if (error || !data?.valid) {
+        const errorKey = data?.error || 'invalid';
+        const msg = COUPON_ERROR_MAP[errorKey];
+        setCouponError(msg ? (isVi ? msg.vi : msg.en) : (isVi ? 'Mã không hợp lệ' : 'Invalid coupon code'));
+        setCouponLoading(false);
+        return;
+      }
+
+      setCouponDiscount({ type: data.discount_type, value: data.discount_value, code: data.code });
+      toast({ title: isVi ? 'Đã áp dụng mã giảm giá!' : 'Coupon applied!' });
+    } catch {
+      setCouponError(isVi ? 'Lỗi hệ thống' : 'System error');
+    } finally {
+      setCouponLoading(false);
+    }
+  }, [couponCode, selectedPlan, isVi, toast]);
+
+  const createOrder = useCallback(async () => {
+    const addonsList = Object.entries(addons)
+      .filter(([, qty]) => qty > 0)
+      .map(([type, quantity]) => ({ type, quantity }));
+
+    const res = await supabase.functions.invoke('create-paypal-order', {
+      body: {
+        plan: selectedPlan,
+        billing_cycle: cycle,
+        addons: addonsList,
+        coupon_code: couponDiscount ? couponDiscount.code : undefined,
+      },
+    });
+
+    if (res.error || !res.data?.orderID) {
+      throw new Error(res.error?.message || 'Failed to create order');
+    }
+
+    return res.data.orderID;
+  }, [selectedPlan, cycle, addons, couponDiscount]);
+
+  const onApprove = useCallback(async (data: { orderID: string }) => {
+    setPaymentStatus('processing');
+    try {
+      const res = await supabase.functions.invoke('capture-paypal-order', {
+        body: { orderID: data.orderID },
+      });
+
+      if (res.error || !res.data?.success) {
+        throw new Error(res.error?.message || 'Payment capture failed');
+      }
+
+      setPaymentStatus('success');
+      toast({ title: isVi ? 'Thanh toán thành công!' : 'Payment successful!' });
+      // Go to finish step
+      goNext();
+    } catch {
+      setPaymentStatus('failed');
+      toast({ title: isVi ? 'Thanh toán thất bại. Vui lòng thử lại.' : 'Payment failed. Please try again.', variant: 'destructive' });
+    }
+  }, [isVi, toast]);
 
   const stepLabels: Record<StepId, string> = {
     language: t.stepLang,
@@ -310,6 +421,7 @@ export default function FirstTimeOnboarding({
     password: t.stepSecurity,
     info: t.stepInfo,
     plan: t.stepPlan,
+    checkout: t.stepCheckout,
     finish: t.stepFinish,
   };
 
@@ -319,6 +431,7 @@ export default function FirstTimeOnboarding({
     password: t.stepSecurityDesc,
     info: t.stepInfoDesc,
     plan: t.stepPlanDesc,
+    checkout: t.stepCheckoutDesc,
     finish: t.stepFinishDesc,
   };
 
@@ -336,6 +449,48 @@ export default function FirstTimeOnboarding({
   };
 
   const pwStrength = getPasswordStrength();
+
+  // Get features from pricing translations
+  const getPlanFeatures = (planKey: string): string[] => {
+    const pricingPlans = pricingT?.plans as any;
+    if (!pricingPlans) return [];
+    const map: Record<string, string> = {
+      plan_free: 'free',
+      plan_plus: 'plus',
+      plan_pro: 'pro',
+      plan_business: 'business',
+    };
+    return pricingPlans[map[planKey]]?.features ?? [];
+  };
+
+  const getPlanDescription = (planKey: string): string => {
+    const pricingPlans = pricingT?.plans as any;
+    if (!pricingPlans) return '';
+    const map: Record<string, string> = {
+      plan_free: 'free',
+      plan_plus: 'plus',
+      plan_pro: 'pro',
+      plan_business: 'business',
+    };
+    return pricingPlans[map[planKey]]?.description ?? '';
+  };
+
+  const planCards: Array<{
+    key: 'plan_free' | 'plan_plus' | 'plan_pro' | 'plan_business';
+    icon: React.ReactNode;
+    color: string;
+    borderColor: string;
+    checkColor: string;
+    badgeBg: string;
+    recommended?: boolean;
+  }> = [
+    { key: 'plan_free', icon: <Zap className="w-4 h-4 text-muted-foreground" />, color: 'text-muted-foreground', borderColor: 'border-primary', checkColor: 'bg-primary', badgeBg: '' },
+    { key: 'plan_plus', icon: <Zap className="w-4 h-4 text-blue-500" />, color: 'text-blue-500', borderColor: 'border-blue-500', checkColor: 'bg-blue-500', badgeBg: '' },
+    { key: 'plan_pro', icon: <Crown className="w-4 h-4 text-violet-500" />, color: 'text-violet-500', borderColor: 'border-violet-500', checkColor: 'bg-violet-500', badgeBg: 'bg-violet-500', recommended: true },
+    { key: 'plan_business', icon: <Crown className="w-4 h-4 text-amber-500" />, color: 'text-amber-500', borderColor: 'border-amber-500', checkColor: 'bg-amber-500', badgeBg: '' },
+  ];
+
+  const hasAddons = Object.values(addons).some(q => q > 0);
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -546,9 +701,9 @@ export default function FirstTimeOnboarding({
 
                     <div className="border rounded-2xl p-4 text-left bg-gradient-to-br from-secondary/40 to-secondary/10 border-secondary/40">
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{t.currentPlan}</p>
-                      <Badge className={cn('gap-1.5 px-3 py-1.5 text-sm border', getPlanColor())}>
+                      <Badge className={cn('gap-1.5 px-3 py-1.5 text-sm border', getPlanColorLocal())}>
                         <Sparkles className="w-4 h-4" />
-                        {getPlanLabel()}
+                        {getPlanLabelLocal()}
                       </Badge>
                     </div>
                   </div>
@@ -756,150 +911,379 @@ export default function FirstTimeOnboarding({
               </div>
             )}
 
-            {/* ===== PLAN SELECTION ===== */}
+            {/* ===== PLAN SELECTION (with full features) ===== */}
             {currentStep === 'plan' && (
               <div className="h-full flex flex-col">
-                <div className="relative bg-gradient-to-br from-primary/5 via-accent/10 to-primary/5 px-8 pt-6 pb-2 flex justify-center">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <Crown className="w-8 h-8 text-primary" />
+                <div className="px-6 md:px-10 pt-6 pb-2 text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                    <Crown className="w-7 h-7 text-primary" />
                   </div>
-                </div>
-
-                <div className="flex-1 px-6 md:px-10 pb-6 overflow-y-auto flex flex-col items-center">
-                  <h2 className="text-2xl md:text-3xl font-extrabold mt-3 mb-1 text-center">
+                  <h2 className="text-2xl md:text-3xl font-extrabold mb-1">
                     {t.choosePlanTitle}
                   </h2>
-                  <p className="text-muted-foreground mb-6 text-center max-w-md text-sm">
+                  <p className="text-muted-foreground text-sm max-w-md mx-auto">
                     {t.choosePlanDesc}
                   </p>
+                </div>
 
-                  <div className="w-full max-w-4xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                    {/* Free */}
-                    <button
-                      onClick={() => setSelectedPlan('plan_free')}
-                      className={cn(
-                        'relative flex flex-col rounded-2xl border-2 p-4 text-left transition-all duration-200',
-                        selectedPlan === 'plan_free'
-                          ? 'border-primary bg-primary/5 shadow-lg ring-2 ring-primary/20'
-                          : 'border-border hover:border-primary/40 hover:bg-muted/50'
-                      )}
-                    >
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <Zap className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-bold text-sm">Free</span>
-                      </div>
-                      <p className="text-xl font-extrabold mb-1">$0<span className="text-xs font-normal text-muted-foreground">/{t.planMonth}</span></p>
-                      <ul className="text-[11px] text-muted-foreground space-y-1 mt-2">
-                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-primary shrink-0 mt-0.5" />{t.planFreeF1}</li>
-                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-primary shrink-0 mt-0.5" />{t.planFreeF2}</li>
-                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-primary shrink-0 mt-0.5" />{t.planFreeF3}</li>
-                      </ul>
-                      {selectedPlan === 'plan_free' && (
-                        <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                          <Check className="w-3 h-3 text-primary-foreground" />
-                        </div>
-                      )}
-                    </button>
+                <div className="flex-1 px-4 md:px-8 pb-6 overflow-y-auto">
+                  <div className="w-full max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4 mt-4">
+                    {planCards.map(card => {
+                      const cfg = PLAN_CONFIG[card.key];
+                      const features = getPlanFeatures(card.key);
+                      const desc = getPlanDescription(card.key);
+                      const isSelected = selectedPlan === card.key;
+                      const price = cfg.monthlyPrice;
 
-                    {/* Plus */}
-                    <button
-                      onClick={() => setSelectedPlan('plan_plus')}
-                      className={cn(
-                        'relative flex flex-col rounded-2xl border-2 p-4 text-left transition-all duration-200',
-                        selectedPlan === 'plan_plus'
-                          ? 'border-blue-500 bg-blue-500/5 shadow-lg ring-2 ring-blue-500/20'
-                          : 'border-border hover:border-blue-500/40 hover:bg-muted/50'
-                      )}
-                    >
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <Zap className="w-4 h-4 text-blue-500" />
-                        <span className="font-bold text-sm">Plus</span>
-                      </div>
-                      <p className="text-xl font-extrabold mb-1">$4.8<span className="text-xs font-normal text-muted-foreground">/{t.planMonth}</span></p>
-                      <ul className="text-[11px] text-muted-foreground space-y-1 mt-2">
-                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-blue-500 shrink-0 mt-0.5" />{t.planPlusF1}</li>
-                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-blue-500 shrink-0 mt-0.5" />{t.planPlusF2}</li>
-                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-blue-500 shrink-0 mt-0.5" />{t.planPlusF3}</li>
-                      </ul>
-                      {selectedPlan === 'plan_plus' && (
-                        <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
-                          <Check className="w-3 h-3 text-primary-foreground" />
-                        </div>
-                      )}
-                    </button>
+                      return (
+                        <button
+                          key={card.key}
+                          onClick={() => setSelectedPlan(card.key)}
+                          className={cn(
+                            'relative flex flex-col rounded-2xl border-2 p-4 text-left transition-all duration-200',
+                            isSelected
+                              ? `${card.borderColor} bg-primary/5 shadow-lg ring-2 ring-primary/20`
+                              : 'border-border hover:border-primary/30 hover:bg-muted/50'
+                          )}
+                        >
+                          {card.recommended && (
+                            <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-violet-500 text-white border-0 text-[10px] px-2 py-0.5">
+                              {t.planRecommended}
+                            </Badge>
+                          )}
 
-                    {/* Pro */}
-                    <button
-                      onClick={() => setSelectedPlan('plan_pro')}
-                      className={cn(
-                        'relative flex flex-col rounded-2xl border-2 p-4 text-left transition-all duration-200',
-                        selectedPlan === 'plan_pro'
-                          ? 'border-violet-500 bg-violet-500/5 shadow-lg ring-2 ring-violet-500/20'
-                          : 'border-border hover:border-violet-500/40 hover:bg-muted/50'
-                      )}
-                    >
-                      <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-violet-500 text-white border-0 text-[10px] px-2 py-0.5">
-                        {t.planRecommended}
-                      </Badge>
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <Crown className="w-4 h-4 text-violet-500" />
-                        <span className="font-bold text-sm">Pro</span>
-                      </div>
-                      <p className="text-xl font-extrabold mb-1">$12<span className="text-xs font-normal text-muted-foreground">/{t.planMonth}</span></p>
-                      <ul className="text-[11px] text-muted-foreground space-y-1 mt-2">
-                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-violet-500 shrink-0 mt-0.5" />{t.planProF1}</li>
-                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-violet-500 shrink-0 mt-0.5" />{t.planProF2}</li>
-                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-violet-500 shrink-0 mt-0.5" />{t.planProF3}</li>
-                      </ul>
-                      {selectedPlan === 'plan_pro' && (
-                        <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center">
-                          <Check className="w-3 h-3 text-primary-foreground" />
-                        </div>
-                      )}
-                    </button>
+                          <div className="flex items-center gap-2 mb-1">
+                            {card.icon}
+                            <span className="font-bold text-sm">{cfg.label}</span>
+                          </div>
 
-                    {/* Business */}
-                    <button
-                      onClick={() => setSelectedPlan('plan_business')}
-                      className={cn(
-                        'relative flex flex-col rounded-2xl border-2 p-4 text-left transition-all duration-200',
-                        selectedPlan === 'plan_business'
-                          ? 'border-amber-500 bg-amber-500/5 shadow-lg ring-2 ring-amber-500/20'
-                          : 'border-border hover:border-amber-500/40 hover:bg-muted/50'
-                      )}
-                    >
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <Crown className="w-4 h-4 text-amber-500" />
-                        <span className="font-bold text-sm">Business</span>
-                      </div>
-                      <p className="text-xl font-extrabold mb-1">$24<span className="text-xs font-normal text-muted-foreground">/{t.planMonth}</span></p>
-                      <ul className="text-[11px] text-muted-foreground space-y-1 mt-2">
-                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-amber-500 shrink-0 mt-0.5" />{t.planBusinessF1}</li>
-                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-amber-500 shrink-0 mt-0.5" />{t.planBusinessF2}</li>
-                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-amber-500 shrink-0 mt-0.5" />{t.planBusinessF3}</li>
-                      </ul>
-                      {selectedPlan === 'plan_business' && (
-                        <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
-                          <Check className="w-3 h-3 text-primary-foreground" />
-                        </div>
-                      )}
-                    </button>
+                          <p className="text-xl font-extrabold mb-0.5">
+                            {price !== null ? `$${price}` : isVi ? 'Tùy chỉnh' : 'Custom'}
+                            {price !== null && <span className="text-xs font-normal text-muted-foreground">/{t.planMonth}</span>}
+                          </p>
+
+                          {desc && (
+                            <p className="text-[10px] text-muted-foreground mb-2 leading-relaxed">{desc}</p>
+                          )}
+
+                          <ScrollArea className="flex-1 max-h-[180px]">
+                            <ul className="text-[11px] text-muted-foreground space-y-1">
+                              {features.map((f, i) => (
+                                <li key={i} className="flex items-start gap-1.5">
+                                  <Check className={cn('w-3 h-3 shrink-0 mt-0.5', card.color)} />
+                                  <span>{f}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </ScrollArea>
+
+                          {isSelected && (
+                            <div className={cn('absolute top-2.5 right-2.5 w-5 h-5 rounded-full flex items-center justify-center', card.checkColor)}>
+                              <Check className="w-3 h-3 text-primary-foreground" />
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
 
-                  <p className="text-[11px] text-muted-foreground text-center mb-2 max-w-md">
+                  <p className="text-[11px] text-muted-foreground text-center mb-2 max-w-md mx-auto">
                     {t.planNote}
                   </p>
-                  <p className="text-[10px] text-muted-foreground text-center mb-4 max-w-md">
+                  <p className="text-[10px] text-muted-foreground text-center mb-4 max-w-md mx-auto">
                     {t.planContactEnterprise}
                   </p>
 
-                  <div className="flex gap-3 w-full max-w-xs">
+                  <div className="flex gap-3 w-full max-w-xs mx-auto">
                     <Button variant="outline" onClick={goBack} className="h-12 gap-2 rounded-xl text-base flex-1">
                       <ChevronLeft className="w-5 h-5" /> {t.goBack}
                     </Button>
                     <Button onClick={handlePlanContinue} disabled={isSaving} className="h-12 gap-2 rounded-xl text-base shadow-lg flex-[2]">
                       {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
                       {selectedPlan !== 'plan_free' ? t.planGoCheckout : t.continueNext} <ChevronRight className="w-5 h-5" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ===== CHECKOUT (inline) ===== */}
+            {currentStep === 'checkout' && (
+              <div className="h-full flex flex-col">
+                <div className="px-6 md:px-10 pt-6 pb-3 text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                    <CreditCard className="w-7 h-7 text-primary" />
+                  </div>
+                  <h2 className="text-2xl font-extrabold mb-1">
+                    {isVi ? 'Thanh toán' : 'Payment'}
+                  </h2>
+                  <p className="text-muted-foreground text-sm">
+                    {isVi ? `Hoàn tất thanh toán cho gói ${getPlanLabelFromConfig(selectedPlan)}` : `Complete payment for ${getPlanLabelFromConfig(selectedPlan)} plan`}
+                  </p>
+                </div>
+
+                <div className="flex-1 px-4 md:px-8 pb-6 overflow-y-auto">
+                  <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-5 gap-5">
+                    {/* Left: Config */}
+                    <div className="lg:col-span-3 space-y-4">
+                      {/* Billing Cycle */}
+                      <Card>
+                        <CardContent className="pt-4 pb-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-semibold">{isVi ? 'Chu kỳ thanh toán' : 'Billing Cycle'}</h3>
+                            <div className="flex items-center gap-1 text-xs bg-muted rounded-full p-0.5">
+                              <button
+                                onClick={() => setCycle('monthly')}
+                                className={cn(
+                                  "px-3 py-1 rounded-full transition-colors font-medium",
+                                  cycle === 'monthly' ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                                )}
+                              >
+                                {isVi ? 'Tháng' : 'Monthly'}
+                              </button>
+                              <button
+                                onClick={() => setCycle('yearly')}
+                                className={cn(
+                                  "px-3 py-1 rounded-full transition-colors font-medium",
+                                  cycle === 'yearly' ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                                )}
+                              >
+                                {isVi ? 'Năm' : 'Yearly'}
+                                <span className="ml-1 opacity-75">-17%</span>
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between p-3 rounded-xl border bg-muted/30">
+                            <div>
+                              <p className="font-semibold text-sm">{getPlanLabelFromConfig(selectedPlan)} Plan</p>
+                              <p className="text-[11px] text-muted-foreground">
+                                {cycle === 'yearly' ? (isVi ? 'Thanh toán theo năm' : 'Billed yearly') : (isVi ? 'Thanh toán theo tháng' : 'Billed monthly')}
+                              </p>
+                            </div>
+                            <span className="text-lg font-bold">${baseAmount.toFixed(2)}</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Add-ons */}
+                      <Card>
+                        <CardContent className="pt-4 pb-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-semibold flex items-center gap-2">
+                              <Package className="h-4 w-4" />
+                              Add-ons
+                            </h3>
+                            {addonDiscountRate > 0 && (
+                              <Badge variant="secondary" className="text-emerald-600 text-[11px]">
+                                -{addonDiscountRate * 100}% {isVi ? 'với' : 'with'} {getPlanLabelFromConfig(selectedPlan)}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            {ADDON_TYPES.map(addon => {
+                              const qty = addons[addon.type] || 0;
+                              const unitOriginal = cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
+                              const unitFinal = Math.round(unitOriginal * (1 - addonDiscountRate) * 100) / 100;
+                              const hasDiscount = addonDiscountRate > 0;
+                              return (
+                                <div key={addon.type} className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/30">
+                                  <div className="flex items-center gap-2.5">
+                                    <span className="text-lg">{addon.emoji}</span>
+                                    <div>
+                                      <p className="font-medium text-sm">{isVi ? addon.unitLabelVi : addon.unitLabel}</p>
+                                      <div className="flex items-center gap-1 text-[11px]">
+                                        {hasDiscount && (
+                                          <span className="text-muted-foreground line-through">${unitOriginal.toFixed(2)}</span>
+                                        )}
+                                        <span className={hasDiscount ? "text-emerald-600 font-medium" : "text-muted-foreground"}>
+                                          ${unitFinal.toFixed(2)}
+                                        </span>
+                                        <span className="text-muted-foreground">/{cycle === 'yearly' ? (isVi ? 'năm' : 'yr') : (isVi ? 'tháng' : 'mo')}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateAddon(addon.type, -1)} disabled={qty === 0}>
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="w-5 text-center font-medium text-sm tabular-nums">{qty}</span>
+                                    <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateAddon(addon.type, 1)} disabled={qty >= 10}>
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Coupon */}
+                      <Card>
+                        <CardContent className="pt-4 pb-4 space-y-2">
+                          <h3 className="text-sm font-semibold flex items-center gap-2">
+                            <Tag className="h-3.5 w-3.5" />
+                            {isVi ? 'Mã giảm giá' : 'Discount Code'}
+                          </h3>
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder={isVi ? 'Nhập mã' : 'Enter code'}
+                              value={couponCode}
+                              onChange={e => { setCouponCode(e.target.value); setCouponError(''); }}
+                              className="flex-1 h-9"
+                              disabled={!!couponDiscount}
+                            />
+                            {couponDiscount ? (
+                              <Button variant="outline" size="sm" onClick={() => { setCouponDiscount(null); setCouponCode(''); }}>
+                                {isVi ? 'Xóa' : 'Remove'}
+                              </Button>
+                            ) : (
+                              <Button size="sm" onClick={applyCoupon} disabled={couponLoading || !couponCode.trim()}>
+                                {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (isVi ? 'Áp dụng' : 'Apply')}
+                              </Button>
+                            )}
+                          </div>
+                          {couponError && <p className="text-xs text-destructive">{couponError}</p>}
+                          {couponDiscount && (
+                            <Badge variant="secondary" className="text-emerald-600">
+                              {couponDiscount.type === 'percentage' ? `-${couponDiscount.value}%` : `-$${couponDiscount.value.toFixed(2)}`} {isVi ? 'đã áp dụng' : 'applied'}
+                            </Badge>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {/* Payment Method */}
+                      <Card>
+                        <CardContent className="pt-4 pb-4 space-y-3">
+                          <h3 className="text-sm font-semibold flex items-center gap-2">
+                            <CreditCard className="h-4 w-4" />
+                            {isVi ? 'Phương thức thanh toán' : 'Payment Method'}
+                          </h3>
+
+                          <div className="border rounded-xl overflow-hidden">
+                            <div className="flex items-center gap-2.5 p-3">
+                              <div className="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center">
+                                <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                              </div>
+                              <span className="font-medium text-sm">PayPal</span>
+                            </div>
+                            <div className="px-3 pb-3 pt-1">
+                              {paymentStatus === 'processing' ? (
+                                <div className="flex items-center justify-center py-6 gap-2">
+                                  <Loader2 className="h-5 w-5 animate-spin" />
+                                  <span className="text-sm text-muted-foreground">{isVi ? 'Đang xử lý thanh toán...' : 'Processing payment...'}</span>
+                                </div>
+                              ) : paypalClientId ? (
+                                <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD' }}>
+                                  <PayPalButtons
+                                    style={{ layout: 'vertical', shape: 'rect', label: 'pay', height: 40 }}
+                                    createOrder={async () => createOrder()}
+                                    onApprove={async (data) => onApprove(data)}
+                                    onError={(err) => {
+                                      console.error('PayPal error:', err);
+                                      toast({ title: isVi ? 'PayPal gặp lỗi' : 'PayPal encountered an error', variant: 'destructive' });
+                                    }}
+                                    onCancel={() => {
+                                      toast({ title: isVi ? 'Đã hủy thanh toán' : 'Payment cancelled' });
+                                    }}
+                                  />
+                                </PayPalScriptProvider>
+                              ) : (
+                                <div className="text-center py-4 text-sm text-muted-foreground">
+                                  <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
+                                  {isVi ? 'Đang tải hệ thống thanh toán...' : 'Loading payment system...'}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* MoMo - disabled */}
+                          <div className="border rounded-xl p-3 opacity-50">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30" />
+                              <span className="font-medium text-sm">🟣 MoMo</span>
+                              <Badge variant="outline" className="text-[10px] ml-auto">{isVi ? 'Sắp ra mắt' : 'Coming soon'}</Badge>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Right: Order Summary */}
+                    <div className="lg:col-span-2">
+                      <Card className="sticky top-4 border-primary/30 bg-primary/5">
+                        <CardContent className="pt-4 pb-4 space-y-3">
+                          <h3 className="text-sm font-semibold">{isVi ? 'Tóm tắt đơn hàng' : 'Order Summary'}</h3>
+                          <Separator />
+
+                          <div className="flex justify-between items-start text-sm">
+                            <div>
+                              <p className="font-medium">{getPlanLabelFromConfig(selectedPlan)} Plan</p>
+                              <p className="text-[11px] text-muted-foreground">
+                                {cycle === 'yearly' ? (isVi ? 'Theo năm' : 'Billed yearly') : (isVi ? 'Theo tháng' : 'Billed monthly')}
+                              </p>
+                            </div>
+                            <span className="font-semibold">${baseAmount.toFixed(2)}</span>
+                          </div>
+
+                          {hasAddons && (
+                            <div className="space-y-1.5">
+                              {ADDON_TYPES.map(addon => {
+                                const qty = addons[addon.type] || 0;
+                                if (qty === 0) return null;
+                                const unitOriginal = cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
+                                const unitFinal = Math.round(unitOriginal * (1 - addonDiscountRate) * 100) / 100;
+                                return (
+                                  <div key={addon.type} className="flex justify-between text-sm text-muted-foreground">
+                                    <span>{addon.emoji} {isVi ? addon.unitLabelVi : addon.unitLabel} ×{qty}</span>
+                                    <span>${(unitFinal * qty).toFixed(2)}</span>
+                                  </div>
+                                );
+                              })}
+                              {addonSaving > 0 && (
+                                <div className="flex justify-between text-[11px] text-emerald-600">
+                                  <span>{isVi ? 'Tiết kiệm add-on' : 'Add-on savings'}</span>
+                                  <span>-${addonSaving.toFixed(2)}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {discountAmount > 0 && (
+                            <div className="flex justify-between text-sm text-emerald-600">
+                              <span className="flex items-center gap-1">
+                                <Tag className="h-3 w-3" />
+                                {couponDiscount?.code}
+                              </span>
+                              <span>-${discountAmount.toFixed(2)}</span>
+                            </div>
+                          )}
+
+                          <Separator />
+
+                          <div className="flex justify-between font-bold text-lg">
+                            <span>{isVi ? 'Tổng' : 'Total'}</span>
+                            <span>${totalAmount.toFixed(2)}</span>
+                          </div>
+
+                          <p className="text-[11px] text-muted-foreground text-center">
+                            {cycle === 'yearly'
+                              ? (isVi ? 'Thanh toán 1 lần / năm' : 'Billed once per year')
+                              : (isVi ? 'Thanh toán 1 lần / tháng' : 'Billed once per month')}
+                          </p>
+
+                          <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground pt-1">
+                            <ShieldCheck className="h-3.5 w-3.5" />
+                            {isVi ? 'Thanh toán bảo mật qua PayPal' : 'Secure payment powered by PayPal'}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-center mt-5">
+                    <Button variant="outline" onClick={goBack} className="h-10 gap-2 rounded-xl text-sm">
+                      <ChevronLeft className="w-4 h-4" /> {isVi ? 'Quay lại chọn gói' : 'Back to plan selection'}
                     </Button>
                   </div>
                 </div>
@@ -937,9 +1321,9 @@ export default function FirstTimeOnboarding({
                         <p className="font-bold text-base">{userFullName}</p>
                         <p className="text-xs text-muted-foreground">{userStudentId} • {userEmail}</p>
                       </div>
-                      <Badge className={cn('gap-1 text-xs ml-auto shrink-0 border', getPlanColor())}>
+                      <Badge className={cn('gap-1 text-xs ml-auto shrink-0 border', getPlanColorLocal())}>
                         <Sparkles className="w-3 h-3" />
-                        {getPlanLabel()}
+                        {getPlanLabelLocal()}
                       </Badge>
                     </div>
 
@@ -970,13 +1354,11 @@ export default function FirstTimeOnboarding({
                   </div>
 
                   <div className="flex gap-3 w-full max-w-xs">
-                    {!fromCheckout && (
-                      <Button variant="outline" onClick={goBack} className="h-12 gap-2 rounded-xl text-base flex-1">
-                        <ChevronLeft className="w-5 h-5" /> {t.goBack}
-                      </Button>
-                    )}
+                    <Button variant="outline" onClick={goBack} className="h-12 gap-2 rounded-xl text-base flex-1">
+                      <ChevronLeft className="w-5 h-5" /> {t.goBack}
+                    </Button>
                     <Button onClick={handleFinish} disabled={isSaving} size="lg"
-                      className={cn("gap-2 h-12 text-base rounded-xl shadow-lg hover:shadow-xl transition-all bg-gradient-to-r from-primary to-primary/90", fromCheckout ? "w-full max-w-xs" : "flex-[2]")}>
+                      className="gap-2 h-12 text-base rounded-xl shadow-lg hover:shadow-xl transition-all bg-gradient-to-r from-primary to-primary/90 flex-[2]">
                       {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Rocket className="w-5 h-5" />}
                       {t.enterSystem}
                     </Button>
