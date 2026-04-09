@@ -63,6 +63,7 @@ import {
   LogOut,
   Clock,
   ChevronDown,
+  Lock,
 } from 'lucide-react';
 import { exportMembersToExcel, getRoleDisplayName } from '@/lib/excelExport';
 import { supabase } from '@/integrations/supabase/client';
