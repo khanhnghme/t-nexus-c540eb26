@@ -312,6 +312,21 @@ export default function MeetingRoom({ meeting, members, isLeader, groupId, onBac
               <Badge variant="outline" className="text-[10px] px-2 py-0.5 font-mono tabular-nums tracking-wider">
                 {elapsed}
               </Badge>
+              {remaining !== null && (
+                <Badge 
+                  variant="outline" 
+                  className={`text-[10px] px-2 py-0.5 font-mono tabular-nums tracking-wider gap-1 ${
+                    remainingSeconds !== null && remainingSeconds <= 300 
+                      ? 'border-destructive text-destructive animate-pulse' 
+                      : remainingSeconds !== null && remainingSeconds <= 600
+                        ? 'border-warning text-warning'
+                        : 'border-muted-foreground/50'
+                  }`}
+                >
+                  <Clock className="w-3 h-3" />
+                  Còn {remaining}
+                </Badge>
+              )}
             </div>
           ) : localStatus === 'completed' ? (
             <Badge variant="secondary" className="text-[10px] shrink-0">Đã xong</Badge>
