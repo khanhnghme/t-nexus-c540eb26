@@ -449,7 +449,7 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
               },
               {
                 label: 'Thành viên',
-                current: limits.uniqueMembers,
+                current: preview.afterMembers,
                 max: limits.maxMembers,
                 original: limits.uniqueMembers,
                 ok: preview.membersOk,
