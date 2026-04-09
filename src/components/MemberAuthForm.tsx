@@ -741,6 +741,7 @@ export function MemberAuthForm() {
                 />
 
                 <TurnstileWidget
+                  ref={turnstileRef}
                   onVerify={(token) => setTurnstileToken(token)}
                   onExpire={() => setTurnstileToken(null)}
                   onError={() => {
@@ -1163,6 +1164,7 @@ export function MemberAuthForm() {
 
 
                 <TurnstileWidget
+                  ref={turnstileRef}
                   onVerify={(token) => setTurnstileToken(token)}
                   onExpire={() => setTurnstileToken(null)}
                   onError={() => {
