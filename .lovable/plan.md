@@ -1,56 +1,32 @@
 
 
-## Plan: Chi tiết hóa gói dịch vụ + Tích hợp Checkout trực tiếp trong Onboarding
+## Plan: Áp dụng layout 2 bước cho trang Checkout trong Onboarding
 
 ### Vấn đề
-- Bước "Plan" trong onboarding chỉ hiển thị 3 dòng feature ngắn gọn cho mỗi gói, trong khi Pricing page có 7-11 feature chi tiết
-- Khi chọn gói trả phí, user bị redirect ra `/checkout` rồi quay lại — không mượt
+Trang Checkout chính (`/checkout`) có 2 bước rõ ràng:
+- **Bước 1**: Cấu hình (chu kỳ, add-ons, coupon) + Order Summary bên phải → nút "Tiếp tục thanh toán"
+- **Bước 2**: Bảng Order Summary chi tiết ở trên + Payment Method (trái) + Pay Box (phải)
+
+Nhưng Checkout trong Onboarding hiện tại gộp tất cả vào 1 màn hình duy nhất — không có phân bước.
 
 ### Giải pháp
 
-#### 1. Chi tiết hóa bước Plan
-Thay 3 feature ngắn (`planFreeF1/F2/F3`) bằng danh sách đầy đủ lấy từ `pricing.plans.{plan}.features` (cùng source với trang Pricing). Card mỗi gói sẽ cao hơn, scrollable, hiển thị mô tả gói + toàn bộ feature list.
+Thêm state `checkoutStep` (1 hoặc 2) trong `FirstTimeOnboarding.tsx`. Khi `currentStep === 'checkout'`:
 
-#### 2. Thêm bước `checkout` vào onboarding flow
-Thay vì redirect sang `/checkout`, thêm step mới `'checkout'` ngay sau `'plan'`:
+**checkoutStep = 1**: Giống Checkout.tsx step 1
+- Cột trái (3/5): Billing Cycle + Add-ons + Coupon
+- Cột phải (2/5): Order Summary (sticky)
+- Thanh CTA dưới cùng: Tổng + nút "Thanh toán" → chuyển sang checkoutStep 2
 
-```text
-language → welcome → [password] → info → plan → [checkout] → finish
-```
+**checkoutStep = 2**: Giống Checkout.tsx step 2
+- Trên: Bảng Order Summary dạng table (Item / Price / Qty / Total)
+- Dưới 2 cột: Payment Method trái (3/5) + Pay Box phải (2/5) với tổng tiền + PayPal buttons
+- Nút quay lại → checkoutStep = 1
 
-- Bước `checkout` chỉ xuất hiện khi chọn gói trả phí
-- Tích hợp toàn bộ UI checkout (chọn chu kỳ, add-ons, coupon, PayPal) trực tiếp trong FirstTimeOnboarding
-- Thanh toán thành công → tự động chuyển sang bước Finish
-- Cancel/quay lại → về bước Plan
-
-#### 3. Xoá logic redirect cũ
-- Xoá `handlePlanContinue` redirect đến `/checkout`
-- Xoá `saveProfileTemp` (không cần save tạm nữa vì user ở cùng 1 trang)
-- Xoá xử lý `from=checkout_success` URL param
-- Xoá logic redirect trong `Checkout.tsx` liên quan `from=onboarding`
-
-### Thay đổi chi tiết
-
-**`src/components/FirstTimeOnboarding.tsx`**:
-- Thêm `'checkout'` vào `StepId`, chỉ thêm vào `allSteps` khi `selectedPlan !== 'plan_free'`
-- Import `PayPalScriptProvider`, `PayPalButtons` từ `@paypal/react-paypal-js`
-- Import `PLAN_CONFIG` từ `planConfig.ts`
-- Thêm state: `cycle`, `addons`, `couponCode`, `couponDiscount`, `paypalClientId`, `paymentStatus`
-- Bước Plan: hiển thị features đầy đủ từ `pricing.plans` translations
-- Bước Checkout: render UI checkout (cycle toggle, add-ons, coupon, order summary, PayPal buttons) — tái sử dụng logic tính giá từ Checkout.tsx
-- `handlePlanContinue`: nếu free → goNext (finish), nếu trả phí → goNext (checkout)
-- PayPal `onApprove` success → auto goNext (finish)
-
-**`src/lib/i18n/en.ts` + `vi.ts`**:
-- Thêm translation key `stepCheckout`, `stepCheckoutDesc` cho sidebar
-- Xoá các key `planFreeF1/F2/F3`, `planPlusF1/F2/F3`... (thay bằng `pricing.plans.*.features`)
-
-**`src/pages/Checkout.tsx`**:
-- Xoá logic `from=onboarding` redirect
+Nút "Back" ở sidebar/header:
+- Nếu checkoutStep = 2 → về checkoutStep = 1
+- Nếu checkoutStep = 1 → về bước Plan
 
 ### Files cần sửa
-- `src/components/FirstTimeOnboarding.tsx` (refactor lớn — thêm checkout step inline)
-- `src/lib/i18n/en.ts` (thêm checkout step labels)
-- `src/lib/i18n/vi.ts` (thêm checkout step labels)
-- `src/pages/Checkout.tsx` (xoá onboarding redirect logic)
+- `src/components/FirstTimeOnboarding.tsx` — refactor checkout section thành 2 sub-steps
 
