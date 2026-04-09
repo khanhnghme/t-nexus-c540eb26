@@ -2636,4 +2636,12 @@ export const vi: Translations = {
     settings: 'Cài đặt',
     },
   },
+
+  meeting: {
+    durationLimitWarning: 'Gói hiện tại giới hạn tối đa {limit} phút/cuộc họp.',
+    upgradeCta: 'Nâng cấp',
+    autoEndTitle: 'Hết thời lượng',
+    autoEndDescription: 'Cuộc họp đã tự động kết thúc do hết giới hạn {limit} phút của gói cước.',
+    remaining: 'Còn',
+  },
 };
