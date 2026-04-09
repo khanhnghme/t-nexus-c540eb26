@@ -75,32 +75,12 @@ export default function ServicePlan() {
   const [billingHistory, setBillingHistory] = useState<PaymentRecord[]>([]);
   const [billingLoading, setBillingLoading] = useState(false);
 
-  // Local addon quantities for editing
-  const [localAddons, setLocalAddons] = useState<Record<AddonType, number>>({
+  // New addon quantities for purchasing (starts from 0)
+  const [newAddons, setNewAddons] = useState<Record<AddonType, number>>({
     projects: 0,
     storage: 0,
     members: 0,
   });
-  const [addonDirty, setAddonDirty] = useState(false);
-
-  const currentTab = searchParams.get('tab') || 'plan';
-
-  const plan = profile?.user_plan || 'plan_free';
-  const planName = formatPlanName(plan);
-  const isPremium = plan !== 'plan_free';
-  const features = featuresMap[plan] || featuresMap.plan_free;
-
-  // Sync local addons from DB
-  useEffect(() => {
-    if (!userAddons.isLoading) {
-      setLocalAddons({
-        projects: userAddons.getQuantity('projects'),
-        storage: userAddons.getQuantity('storage'),
-        members: userAddons.getQuantity('members'),
-      });
-      setAddonDirty(false);
-    }
-  }, [userAddons.isLoading, userAddons.addons]);
 
   // Fetch billing history
   useEffect(() => {
@@ -204,22 +184,18 @@ export default function ServicePlan() {
     setSearchParams({ tab: value }, { replace: true });
   };
 
-  const handleAddonChange = (type: AddonType, delta: number) => {
-    setLocalAddons(prev => {
+  const handleNewAddonChange = (type: AddonType, delta: number) => {
+    setNewAddons(prev => {
       const newVal = Math.max(0, (prev[type] || 0) + delta);
       return { ...prev, [type]: newVal };
     });
-    setAddonDirty(true);
   };
 
-
-  // Calculate addon deltas (new - existing in DB)
-  const addonDeltas = {
-    projects: localAddons.projects - userAddons.getQuantity('projects'),
-    storage: localAddons.storage - userAddons.getQuantity('storage'),
-    members: localAddons.members - userAddons.getQuantity('members'),
-  };
-  const hasAddonDelta = addonDeltas.projects > 0 || addonDeltas.storage > 0 || addonDeltas.members > 0;
+  const currentTab = searchParams.get('tab') || 'plan';
+  const plan = profile?.user_plan || 'plan_free';
+  const planName = formatPlanName(plan);
+  const isPremium = plan !== 'plan_free';
+  const features = featuresMap[plan] || featuresMap.plan_free;
 
   const billingCycle = (profile as any)?.billing_cycle || 'monthly';
   const addonBasePrice = billingCycle === 'yearly' ? BASE_PRICE * 10 : BASE_PRICE;
@@ -227,18 +203,12 @@ export default function ServicePlan() {
   const discount = getAddonDiscount(plan);
   const unitPrice = addonBasePrice * (1 - discount.pct);
 
-  // Delta cost (only for new additions)
-  const deltaAddons = (['projects', 'storage', 'members'] as AddonType[])
-    .filter(t => addonDeltas[t] > 0)
-    .map(t => ({ type: t, quantity: addonDeltas[t] }));
-  const deltaTotalOriginal = deltaAddons.reduce((s, a) => s + a.quantity * addonBasePrice, 0);
-  const deltaTotalFinal = deltaAddons.reduce((s, a) => s + a.quantity * unitPrice, 0);
-  const deltaSaving = Math.round((deltaTotalOriginal - deltaTotalFinal) * 100) / 100;
-
-  // Total display cost (all addons including existing)
-  const totalAddonQty = localAddons.projects + localAddons.storage + localAddons.members;
-  const totalAddonCost = totalAddonQty * unitPrice;
-
+  // New purchase calculations
+  const newTotalQty = newAddons.projects + newAddons.storage + newAddons.members;
+  const newSubtotal = newTotalQty * addonBasePrice;
+  const newSaving = Math.round(newTotalQty * addonBasePrice * discount.pct * 100) / 100;
+  const newTotal = newTotalQty * unitPrice;
+  const hasNewAddons = newTotalQty > 0;
 
   if (isLoading) {
     return (
@@ -268,7 +238,7 @@ export default function ServicePlan() {
       icon: <FolderKanban className="w-5 h-5" />,
       iconColor: 'text-violet-500',
       baseLimitRaw: planLimits?.max_projects_per_workspace ?? null,
-      bonusRaw: localAddons.projects * 5,
+      bonusRaw: userAddons.getQuantity('projects') * 5,
       currentUsage: totalProjects,
     },
     {
@@ -278,7 +248,7 @@ export default function ServicePlan() {
       icon: <HardDrive className="w-5 h-5" />,
       iconColor: 'text-orange-500',
       baseLimitRaw: planLimits?.max_storage_mb ?? null,
-      bonusRaw: localAddons.storage * 5 * 1024,
+      bonusRaw: userAddons.getQuantity('storage') * 5 * 1024,
       currentUsage: wsUsages.reduce((s, w) => s + w.storageMb, 0),
       suffix: 'MB',
       formatVal: (v: number) => v >= 1024 ? `${(v / 1024).toFixed(1)} GB` : `${v} MB`,
@@ -290,7 +260,7 @@ export default function ServicePlan() {
       icon: <Users className="w-5 h-5" />,
       iconColor: 'text-emerald-500',
       baseLimitRaw: planLimits?.max_members_per_workspace ?? null,
-      bonusRaw: localAddons.members * 5,
+      bonusRaw: userAddons.getQuantity('members') * 5,
       currentUsage: totalMembers,
     },
   ];
@@ -666,167 +636,188 @@ export default function ServicePlan() {
               </Card>
             ) : (
               <>
-                <div className="grid gap-4">
-                  {addonCards.map(card => {
-                    const qty = localAddons[card.type];
-                    const totalLimit = card.baseLimitRaw !== null ? card.baseLimitRaw + card.bonusRaw : null;
-                    const pct = totalLimit !== null && totalLimit > 0 ? (card.currentUsage / totalLimit) * 100 : 0;
-                    const isOver = totalLimit !== null && card.currentUsage >= totalLimit;
-                    const isWarning = !isOver && totalLimit !== null && pct >= 80;
-                    const costForThis = qty * unitPrice;
+                {/* Section 1: Current Add-ons Overview */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4 text-muted-foreground" />
+                    {t.addonCurrentTitle || 'Current Add-ons'}
+                  </h3>
 
-                    return (
-                      <Card key={card.type} className={isOver ? 'border-red-500/30 bg-red-500/5' : ''}>
-                        <CardContent className="p-5">
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                            {/* Left: Icon + info */}
-                            <div className="flex items-start gap-3 flex-1 min-w-0">
-                              <div className={`p-2.5 rounded-xl bg-muted ${isOver ? 'text-red-500' : card.iconColor}`}>
-                                {card.icon}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="font-semibold text-sm">{card.label}</span>
+                  {addonCards.every(c => userAddons.getQuantity(c.type) === 0) ? (
+                    <Card className="border-dashed">
+                      <CardContent className="p-5 text-center text-sm text-muted-foreground">
+                        {t.addonNoneYet || 'No add-on packages purchased yet.'}
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid gap-3">
+                      {addonCards.filter(c => userAddons.getQuantity(c.type) > 0).map(card => {
+                        const ownedQty = userAddons.getQuantity(card.type);
+                        const totalLimit = card.baseLimitRaw !== null ? card.baseLimitRaw + card.bonusRaw : null;
+                        const pct = totalLimit !== null && totalLimit > 0 ? (card.currentUsage / totalLimit) * 100 : 0;
+                        const isOver = totalLimit !== null && card.currentUsage >= totalLimit;
+                        const isWarning = !isOver && totalLimit !== null && pct >= 80;
+
+                        return (
+                          <Card key={card.type} className={isOver ? 'border-destructive/30 bg-destructive/5' : ''}>
+                            <CardContent className="p-4">
+                              <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-xl bg-muted ${isOver ? 'text-destructive' : card.iconColor}`}>
+                                  {card.icon}
                                 </div>
-                                <p className="text-xs text-muted-foreground mt-0.5">{card.desc}</p>
-
-                                {/* Capacity breakdown */}
-                                <div className="mt-2 flex items-center gap-2 text-xs">
-                                  <span className="text-muted-foreground">
-                                    {t.addonBase || 'Base'}: <span className="font-medium text-foreground">{card.baseLimitRaw !== null ? (card.formatVal ? card.formatVal(card.baseLimitRaw) : card.baseLimitRaw) : '∞'}</span>
-                                  </span>
-                                  {card.bonusRaw > 0 && (
-                                    <>
-                                      <span className="text-muted-foreground">+</span>
-                                      <span className="text-violet-600 dark:text-violet-400 font-medium">
-                                        {t.addonBonus || 'Add-on'}: +{card.formatVal ? card.formatVal(card.bonusRaw) : card.bonusRaw}
-                                      </span>
-                                    </>
-                                  )}
-                                  <span className="text-muted-foreground">=</span>
-                                  <span className={`font-bold ${isOver ? 'text-red-600 dark:text-red-400' : ''}`}>
-                                    {totalLimit !== null ? (card.formatVal ? card.formatVal(totalLimit) : totalLimit) : '∞'}
-                                  </span>
-                                </div>
-
-                                {/* Progress */}
-                                {totalLimit !== null && (
-                                  <div className="mt-2">
-                                    <div className="flex justify-between text-[10px] text-muted-foreground mb-0.5">
-                                      <span>{card.currentUsage} {card.suffix || ''} used</span>
-                                      <span>{card.formatVal ? card.formatVal(totalLimit) : totalLimit}</span>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-semibold text-sm">{card.label}</span>
+                                    <Badge variant="secondary" className="text-xs">{ownedQty} {t.addonPackage || 'pkg'}</Badge>
+                                  </div>
+                                  <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                                    <span>{t.addonBase || 'Base'}: {card.baseLimitRaw !== null ? (card.formatVal ? card.formatVal(card.baseLimitRaw) : card.baseLimitRaw) : '∞'}</span>
+                                    <span>+</span>
+                                    <span className="text-violet-600 dark:text-violet-400 font-medium">
+                                      {t.addonBonus || 'Add-on'}: +{card.formatVal ? card.formatVal(card.bonusRaw) : card.bonusRaw}
+                                    </span>
+                                    <span>=</span>
+                                    <span className="font-bold text-foreground">{totalLimit !== null ? (card.formatVal ? card.formatVal(totalLimit) : totalLimit) : '∞'}</span>
+                                  </div>
+                                  {totalLimit !== null && (
+                                    <div className="mt-1.5">
+                                      <div className="flex justify-between text-[10px] text-muted-foreground mb-0.5">
+                                        <span>{card.currentUsage} {card.suffix || ''} used</span>
+                                        <span>{card.formatVal ? card.formatVal(totalLimit) : totalLimit}</span>
+                                      </div>
+                                      <Progress
+                                        value={Math.min(100, pct)}
+                                        className={`h-1.5 ${isOver ? '[&>div]:bg-destructive' : isWarning ? '[&>div]:bg-amber-500' : ''}`}
+                                      />
                                     </div>
-                                    <Progress
-                                      value={Math.min(100, pct)}
-                                      className={`h-1.5 ${isOver ? '[&>div]:bg-red-500' : isWarning ? '[&>div]:bg-amber-500' : ''}`}
-                                    />
+                                  )}
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Section 2: Purchase More */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold flex items-center gap-2">
+                    <Plus className="w-4 h-4 text-violet-500" />
+                    {t.addonBuyMore || 'Purchase additional packages'}
+                  </h3>
+
+                  <div className="grid gap-3">
+                    {addonCards.map(card => {
+                      const qty = newAddons[card.type];
+                      const costForThis = qty * unitPrice;
+
+                      return (
+                        <Card key={card.type}>
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className={`p-2 rounded-xl bg-muted ${card.iconColor}`}>
+                                  {card.icon}
+                                </div>
+                                <div>
+                                  <span className="font-semibold text-sm">{card.label}</span>
+                                  <p className="text-xs text-muted-foreground">{card.desc}</p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-3 shrink-0">
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-full"
+                                  onClick={() => handleNewAddonChange(card.type, -1)}
+                                  disabled={qty <= 0}
+                                >
+                                  <Minus className="w-3.5 h-3.5" />
+                                </Button>
+                                <div className="text-center min-w-[3rem]">
+                                  <div className="text-lg font-bold tabular-nums">{qty}</div>
+                                  <div className="text-[10px] text-muted-foreground">{t.addonPackage || 'pkg'}</div>
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-full"
+                                  onClick={() => handleNewAddonChange(card.type, 1)}
+                                >
+                                  <Plus className="w-3.5 h-3.5" />
+                                </Button>
+                                {qty > 0 && (
+                                  <div className="text-right min-w-[4.5rem]">
+                                    <div className="text-sm font-semibold tabular-nums">${costForThis.toFixed(2)}</div>
+                                    <div className="text-[10px] text-muted-foreground">/{billingCycle === 'yearly' ? (t.addonPerYear || 'year') : (t.addonPerMonth || 'month')}</div>
                                   </div>
                                 )}
                               </div>
                             </div>
-
-                            {/* Right: Quantity controls */}
-                            <div className="flex items-center gap-3 shrink-0">
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8 rounded-full"
-                                onClick={() => handleAddonChange(card.type, -1)}
-                                disabled={qty <= 0}
-                              >
-                                <Minus className="w-3.5 h-3.5" />
-                              </Button>
-                              <div className="text-center min-w-[3rem]">
-                                <div className="text-lg font-bold tabular-nums">{qty}</div>
-                                <div className="text-[10px] text-muted-foreground">{t.addonPackage || 'pkg'}</div>
-                              </div>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8 rounded-full"
-                                onClick={() => handleAddonChange(card.type, 1)}
-                              >
-                                <Plus className="w-3.5 h-3.5" />
-                              </Button>
-                              <div className="text-right min-w-[4.5rem]">
-                                <div className="text-sm font-semibold tabular-nums">
-                                  ${costForThis.toFixed(2)}
-                                </div>
-                                <div className="text-[10px] text-muted-foreground">/{billingCycle === 'yearly' ? (t.addonPerYear || 'year') : (t.addonPerMonth || 'month')}</div>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                {/* Total cost + checkout */}
-                <Card className="bg-muted/50">
-                  <CardContent className="p-5 space-y-4">
-                    {/* Current total */}
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                      <div>
-                        <span className="text-sm font-medium">{t.addonTotalCost || 'Total add-on cost'}:</span>
-                        <span className="text-2xl font-bold tabular-nums ml-3">
-                          ${totalAddonCost.toFixed(2)}
-                        </span>
-                        <span className="text-sm text-muted-foreground ml-1">/{billingCycle === 'yearly' ? (t.addonPerYear || 'year') : (t.addonPerMonth || 'month')}</span>
-                      </div>
-                    </div>
+                {/* Purchase Summary */}
+                {hasNewAddons && (
+                  <Card className="bg-muted/50 border-violet-500/20">
+                    <CardContent className="p-5 space-y-3">
+                      <div className="text-sm font-semibold">{t.addonNewPurchase || 'Purchase Summary'}</div>
 
-                    {discount.pct > 0 && totalAddonQty > 0 && (
-                      <div className="flex justify-between text-sm text-emerald-600 pt-1 border-t border-border">
-                        <span>{t.addonSavings || 'Add-on savings'} ({discount.pct * 100}%)</span>
-                        <span>-${(totalAddonQty * addonBasePrice * discount.pct).toFixed(2)}</span>
-                      </div>
-                    )}
-
-                    {/* Delta purchase section */}
-                    {hasAddonDelta && (
-                      <div className="pt-3 border-t border-border space-y-3">
-                        <div className="text-sm font-medium">{t.addonNewPurchase || 'New add-on purchase'}:</div>
-                        <div className="space-y-1">
-                          {deltaAddons.map(a => (
-                            <div key={a.type} className="flex justify-between text-sm">
-                              <span className="text-muted-foreground capitalize">{a.type} × {a.quantity}</span>
-                              <span className="tabular-nums">${(a.quantity * unitPrice).toFixed(2)}</span>
+                      <div className="space-y-1.5">
+                        {(['projects', 'storage', 'members'] as AddonType[])
+                          .filter(type => newAddons[type] > 0)
+                          .map(type => (
+                            <div key={type} className="flex justify-between text-sm">
+                              <span className="text-muted-foreground capitalize">{type} × {newAddons[type]}</span>
+                              <span className="tabular-nums">${(newAddons[type] * addonBasePrice).toFixed(2)}</span>
                             </div>
                           ))}
-                        </div>
-                        {deltaSaving > 0 && (
-                          <div className="flex justify-between text-sm text-emerald-600">
-                            <span>{t.addonSavings || 'Savings'} ({discount.pct * 100}%)</span>
-                            <span>-${deltaSaving.toFixed(2)}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between text-base font-bold pt-1 border-t border-border">
-                          <span>{t.addonPayTotal || 'Amount to pay'}</span>
-                          <span>${deltaTotalFinal.toFixed(2)}</span>
-                        </div>
-
-                        <Button
-                          onClick={() => {
-                            const params = new URLSearchParams();
-                            deltaAddons.forEach(a => params.set(a.type, String(a.quantity)));
-                            navigate(`/addon-checkout?${params.toString()}`);
-                          }}
-                          className="w-full bg-violet-600 hover:bg-violet-700 text-white"
-                        >
-                          <Package className="w-4 h-4 mr-2" />
-                          {t.addonCheckout || 'Proceed to Payment'}
-                        </Button>
                       </div>
-                    )}
 
-                    {!hasAddonDelta && addonDirty && (
-                      <p className="text-xs text-muted-foreground text-center pt-2">
-                        {t.addonNoIncrease || 'You can only purchase additional add-ons, not reduce existing ones from here.'}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
+                      <Separator />
+
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">{t.addonSubtotal || 'Subtotal'}</span>
+                        <span className="tabular-nums">${newSubtotal.toFixed(2)}</span>
+                      </div>
+
+                      {newSaving > 0 && (
+                        <div className="flex justify-between text-sm text-emerald-600">
+                          <span>{t.addonSavings || 'Add-on savings'} ({discount.pct * 100}%)</span>
+                          <span>-${newSaving.toFixed(2)}</span>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between text-base font-bold pt-1 border-t border-border">
+                        <span>{t.addonPayTotal || 'Total'}</span>
+                        <span>${newTotal.toFixed(2)}</span>
+                      </div>
+
+                      <Button
+                        onClick={() => {
+                          const params = new URLSearchParams();
+                          (['projects', 'storage', 'members'] as AddonType[]).forEach(type => {
+                            if (newAddons[type] > 0) params.set(type, String(newAddons[type]));
+                          });
+                          navigate(`/addon-checkout?${params.toString()}`);
+                        }}
+                        className="w-full bg-violet-600 hover:bg-violet-700 text-white"
+                      >
+                        <Package className="w-4 h-4 mr-2" />
+                        {t.addonCheckout || 'Proceed to Payment'}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
               </>
             )}
           </section>
