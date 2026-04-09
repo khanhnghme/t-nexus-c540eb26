@@ -16,6 +16,7 @@ type Plan = {
   cta: string;
   ctaStyle: 'primary' | 'outline';
   recommended?: boolean;
+  isCurrent?: boolean;
   features: string[];
 };
 
