@@ -28,6 +28,7 @@ interface ProjectInfo {
   taskCount: number;
   storageMb: number;
   workspace_id: string;
+  guestUserIds: string[];
 }
 
 interface WorkspaceInfo {
@@ -37,6 +38,7 @@ interface WorkspaceInfo {
   memberCount: number;
   storageMb: number;
   projects: ProjectInfo[];
+  memberUserIds: string[];
 }
 
 interface AccountCleanupPanelProps {
@@ -73,16 +75,21 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
       // Fetch projects, members, storage in parallel
       const [groupsRes, membersRes] = await Promise.all([
         supabase.from('groups').select('id, name, workspace_id').in('workspace_id', wsIds),
-        supabase.from('workspace_members').select('workspace_id').in('workspace_id', wsIds),
+        supabase.from('workspace_members').select('workspace_id, user_id').in('workspace_id', wsIds),
       ]);
 
       const groups = groupsRes.data || [];
       const members = membersRes.data || [];
 
-      // Member count per WS
+      // Member user_ids per WS
       const memberMap: Record<string, number> = {};
+      const memberUserIdsMap: Record<string, string[]> = {};
       members.forEach(m => {
-        if (m.workspace_id) memberMap[m.workspace_id] = (memberMap[m.workspace_id] || 0) + 1;
+        if (m.workspace_id) {
+          memberMap[m.workspace_id] = (memberMap[m.workspace_id] || 0) + 1;
+          if (!memberUserIdsMap[m.workspace_id]) memberUserIdsMap[m.workspace_id] = [];
+          if (m.user_id) memberUserIdsMap[m.workspace_id].push(m.user_id);
+        }
       });
 
       // Task count per project
@@ -146,6 +153,22 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
         projectStorageMap[k] = Math.round(projectStorageMap[k] / (1024 * 1024));
       });
 
+      // Fetch project guests (is_guest=true) per group
+      const guestUserIdsMap: Record<string, string[]> = {};
+      if (groupIds.length > 0) {
+        const { data: guests } = await supabase
+          .from('group_members')
+          .select('group_id, user_id')
+          .in('group_id', groupIds)
+          .eq('is_guest', true);
+        (guests || []).forEach(g => {
+          if (g.group_id && g.user_id) {
+            if (!guestUserIdsMap[g.group_id]) guestUserIdsMap[g.group_id] = [];
+            guestUserIdsMap[g.group_id].push(g.user_id);
+          }
+        });
+      }
+
       const infos: WorkspaceInfo[] = ownedWs.map(ws => {
         const wsGroups = groups.filter(g => g.workspace_id === ws.id);
         return {
@@ -154,12 +177,14 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
           projectCount: wsGroups.length,
           memberCount: (memberMap[ws.id] || 0) + 1, // +1 for owner
           storageMb: storageMap[ws.id] || 0,
+          memberUserIds: memberUserIdsMap[ws.id] || [],
           projects: wsGroups.map(g => ({
             id: g.id,
             name: g.name,
             taskCount: taskCountMap[g.id] || 0,
             storageMb: projectStorageMap[g.id] || 0,
             workspace_id: ws.id,
+            guestUserIds: guestUserIdsMap[g.id] || [],
           })),
         };
       });
@@ -234,20 +259,34 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
     let removedProjects = 0;
     let removedStorageMb = 0;
 
+    // Collect remaining member user_ids (unique seats) after removal
+    const remainingMemberIds = new Set<string>();
+    // Owner always remains
+    if (user) remainingMemberIds.add(user.id);
+
     wsInfos.forEach(ws => {
       if (selectedWs.has(ws.id)) {
         removedWs++;
         removedProjects += ws.projectCount;
         removedStorageMb += ws.storageMb;
+        // Entire WS removed → none of its members/guests count
       } else {
+        // WS stays → its workspace members remain
+        ws.memberUserIds.forEach(uid => remainingMemberIds.add(uid));
         ws.projects.forEach(p => {
           if (selectedProjects.has(p.id)) {
             removedProjects++;
             removedStorageMb += p.storageMb;
+            // Project removed → its guests don't count (unless they appear in other remaining contexts)
+          } else {
+            // Project stays → its guests remain
+            p.guestUserIds.forEach(uid => remainingMemberIds.add(uid));
           }
         });
       }
     });
+
+    const afterMembers = remainingMemberIds.size;
 
     const currentWs = wsInfos.length;
     const currentProjects = wsInfos.reduce((s, w) => s + w.projectCount, 0);
@@ -264,16 +303,16 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
     const wsOk = maxWs === null || afterWs <= maxWs;
     const projectsOk = maxProjects === null || afterProjects <= maxProjects;
     const storageOk = maxStorageMb === null || afterStorageMb <= maxStorageMb;
-    const membersOk = limits.maxMembers === null || limits.uniqueMembers <= limits.maxMembers;
+    const membersOk = limits.maxMembers === null || afterMembers <= limits.maxMembers;
     const allOk = wsOk && projectsOk && storageOk && membersOk;
 
     return {
       removedWs, removedProjects, removedStorageMb,
-      afterWs, afterProjects, afterStorageMb,
+      afterWs, afterProjects, afterStorageMb, afterMembers,
       wsOk, projectsOk, storageOk, membersOk, allOk,
       hasSelection: removedWs > 0 || removedProjects > 0,
     };
-  }, [wsInfos, selectedWs, selectedProjects, limits]);
+  }, [wsInfos, selectedWs, selectedProjects, limits, user]);
 
   // Delete logic
   const handleDelete = async () => {
@@ -410,7 +449,7 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
               },
               {
                 label: 'Thành viên',
-                current: limits.uniqueMembers,
+                current: preview.afterMembers,
                 max: limits.maxMembers,
                 original: limits.uniqueMembers,
                 ok: preview.membersOk,
