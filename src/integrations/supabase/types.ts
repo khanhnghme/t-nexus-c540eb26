@@ -1175,9 +1175,10 @@ export type Database = {
           created_at: string
           discount_amount: number
           id: string
+          order_type: string
           payment_method: string
           paypal_order_id: string | null
-          plan: string
+          plan: string | null
           status: string
           total_amount: number
           user_id: string
@@ -1193,9 +1194,10 @@ export type Database = {
           created_at?: string
           discount_amount?: number
           id?: string
+          order_type?: string
           payment_method?: string
           paypal_order_id?: string | null
-          plan: string
+          plan?: string | null
           status?: string
           total_amount?: number
           user_id: string
@@ -1211,9 +1213,10 @@ export type Database = {
           created_at?: string
           discount_amount?: number
           id?: string
+          order_type?: string
           payment_method?: string
           paypal_order_id?: string | null
-          plan?: string
+          plan?: string | null
           status?: string
           total_amount?: number
           user_id?: string
