@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import tNexusTextLogo from '@/assets/t-nexus-text.png';
+
 import ReactMarkdown from 'react-markdown';
 import UserAvatar from '@/components/UserAvatar';
 
