@@ -298,7 +298,7 @@ export default function Upgrade() {
         </div>
 
         {/* Comparison table */}
-        <UpgradePlansAndFeatures yearly={yearly} planCols={PLAN_COLS} comparison={COMPARISON} tp={tp} disabled={!isOwner} onSelect={handleSelectPlan} />
+        <UpgradePlansAndFeatures yearly={yearly} planCols={PLAN_COLS} comparison={COMPARISON} tp={tp} disabled={!isOwner} onSelect={handleSelectPlan} isFirstTimeBuyer={isFirstTimeBuyer} />
 
         {/* FAQ */}
         <UpgradeQuestionsAndAnswers faqData={FAQ_DATA} tp={tp} />
