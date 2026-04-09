@@ -706,7 +706,125 @@ export default function FirstTimeOnboarding({
                 </div>
               )}
 
-              {/* ===== FINISH ===== */}
+              {/* ===== PLAN SELECTION ===== */}
+              {currentStep === 'plan' && (
+                <div className="h-full flex flex-col">
+                  <div className="relative bg-gradient-to-br from-primary/5 via-accent/10 to-primary/5 px-8 pt-6 pb-2 flex justify-center">
+                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                      <Crown className="w-8 h-8 text-primary" />
+                    </div>
+                  </div>
+
+                  <div className="flex-1 px-6 md:px-10 pb-6 overflow-y-auto flex flex-col items-center">
+                    <h2 className="text-2xl md:text-3xl font-extrabold mt-3 mb-1 text-center">
+                      {t.choosePlanTitle}
+                    </h2>
+                    <p className="text-muted-foreground mb-6 text-center max-w-md text-sm">
+                      {t.choosePlanDesc}
+                    </p>
+
+                    <div className="w-full max-w-2xl grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                      {/* Free */}
+                      <button
+                        onClick={() => setSelectedPlan('plan_free')}
+                        className={cn(
+                          'relative flex flex-col rounded-2xl border-2 p-5 text-left transition-all duration-200',
+                          selectedPlan === 'plan_free'
+                            ? 'border-primary bg-primary/5 shadow-lg ring-2 ring-primary/20'
+                            : 'border-border hover:border-primary/40 hover:bg-muted/50'
+                        )}
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <Zap className="w-5 h-5 text-muted-foreground" />
+                          <span className="font-bold text-base">Free</span>
+                        </div>
+                        <p className="text-2xl font-extrabold mb-1">$0<span className="text-sm font-normal text-muted-foreground">/{t.planMonth}</span></p>
+                        <ul className="text-xs text-muted-foreground space-y-1.5 mt-3">
+                          <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-primary shrink-0" />{t.planFreeF1}</li>
+                          <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-primary shrink-0" />{t.planFreeF2}</li>
+                          <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-primary shrink-0" />{t.planFreeF3}</li>
+                        </ul>
+                        {selectedPlan === 'plan_free' && (
+                          <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                            <Check className="w-4 h-4 text-primary-foreground" />
+                          </div>
+                        )}
+                      </button>
+
+                      {/* Plus */}
+                      <button
+                        onClick={() => setSelectedPlan('plan_plus')}
+                        className={cn(
+                          'relative flex flex-col rounded-2xl border-2 p-5 text-left transition-all duration-200',
+                          selectedPlan === 'plan_plus'
+                            ? 'border-blue-500 bg-blue-500/5 shadow-lg ring-2 ring-blue-500/20'
+                            : 'border-border hover:border-blue-500/40 hover:bg-muted/50'
+                        )}
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <Zap className="w-5 h-5 text-blue-500" />
+                          <span className="font-bold text-base">Plus</span>
+                        </div>
+                        <p className="text-2xl font-extrabold mb-1">$4.8<span className="text-sm font-normal text-muted-foreground">/{t.planMonth}</span></p>
+                        <ul className="text-xs text-muted-foreground space-y-1.5 mt-3">
+                          <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-blue-500 shrink-0" />{t.planPlusF1}</li>
+                          <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-blue-500 shrink-0" />{t.planPlusF2}</li>
+                          <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-blue-500 shrink-0" />{t.planPlusF3}</li>
+                        </ul>
+                        {selectedPlan === 'plan_plus' && (
+                          <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
+                            <Check className="w-4 h-4 text-primary-foreground" />
+                          </div>
+                        )}
+                      </button>
+
+                      {/* Pro */}
+                      <button
+                        onClick={() => setSelectedPlan('plan_pro')}
+                        className={cn(
+                          'relative flex flex-col rounded-2xl border-2 p-5 text-left transition-all duration-200',
+                          selectedPlan === 'plan_pro'
+                            ? 'border-purple-500 bg-purple-500/5 shadow-lg ring-2 ring-purple-500/20'
+                            : 'border-border hover:border-purple-500/40 hover:bg-muted/50'
+                        )}
+                      >
+                        <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-purple-500 text-white border-0 text-[10px] px-2.5 py-0.5">
+                          {t.planRecommended}
+                        </Badge>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Crown className="w-5 h-5 text-purple-500" />
+                          <span className="font-bold text-base">Pro</span>
+                        </div>
+                        <p className="text-2xl font-extrabold mb-1">$12<span className="text-sm font-normal text-muted-foreground">/{t.planMonth}</span></p>
+                        <ul className="text-xs text-muted-foreground space-y-1.5 mt-3">
+                          <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-purple-500 shrink-0" />{t.planProF1}</li>
+                          <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-purple-500 shrink-0" />{t.planProF2}</li>
+                          <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-purple-500 shrink-0" />{t.planProF3}</li>
+                        </ul>
+                        {selectedPlan === 'plan_pro' && (
+                          <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center">
+                            <Check className="w-4 h-4 text-primary-foreground" />
+                          </div>
+                        )}
+                      </button>
+                    </div>
+
+                    <p className="text-[11px] text-muted-foreground text-center mb-4 max-w-md">
+                      {t.planNote}
+                    </p>
+
+                    <div className="flex gap-3 w-full max-w-xs">
+                      <Button variant="outline" onClick={goBack} className="h-12 gap-2 rounded-xl text-base flex-1">
+                        <ChevronLeft className="w-5 h-5" /> {t.goBack}
+                      </Button>
+                      <Button onClick={goNext} className="h-12 gap-2 rounded-xl text-base shadow-lg flex-[2]">
+                        {t.continueNext} <ChevronRight className="w-5 h-5" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {currentStep === 'finish' && (
                 <div className="h-full flex flex-col">
                   <div className="relative bg-gradient-to-br from-primary/5 via-accent/10 to-primary/5 px-8 pt-6 pb-2 flex justify-center overflow-hidden">
