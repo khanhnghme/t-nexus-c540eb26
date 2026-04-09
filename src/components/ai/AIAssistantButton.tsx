@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import AIAssistantPanel from './AIAssistantPanel';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Sparkles, MessageCircle } from 'lucide-react';
-import tNexusIconLogo from '@/assets/t-nexus-logo.png';
+import tNexusTextLogo from '@/assets/t-nexus-text.png';
 
 import zaloLogo from '@/assets/zalo-logo.png';
 
@@ -136,8 +136,8 @@ export default function AIAssistantButton({ projectId, projectName, zaloLink }: 
               "ring-2 ring-primary/20 hover:ring-primary/40"
             )}
           >
-            <Avatar className="h-[72px] w-[72px] transition-transform group-hover:scale-110 animate-float">
-              <AvatarImage src={tNexusIconLogo} alt="AI Assistant" className="object-cover rounded-full" />
+            <Avatar className="h-[72px] w-[72px] transition-transform group-hover:scale-110 animate-float bg-white">
+              <AvatarImage src={tNexusTextLogo} alt="AI Assistant" className="object-contain rounded-full p-2" />
               <AvatarFallback className="bg-transparent">
                 <Sparkles className="h-8 w-8 text-primary" />
               </AvatarFallback>
