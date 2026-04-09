@@ -1,45 +1,48 @@
 
 
-## Plan: Redesign hiển thị giảm giá 2 step theo mockup
+## Plan: Triển khai thanh toán Add-on mua thêm
 
-### Phân tích từ ảnh tham chiếu
+### Tổng quan
+Cho phép người dùng Premium mua thêm add-on (projects, storage, members) riêng lẻ mà không cần mua kèm gói plan. Flow: ServicePlan addon tab → chọn số lượng → thanh toán PayPal → cộng dồn add-on.
 
-**Step 1 — Order Summary (phải):**
-- Plan price hiển thị giá GỐC ($240.00)
-- Dòng riêng "🎉 Ưu đãi chào mừng" → -$21.00 (emerald)
-- Addon items hiển thị giá đã giảm × qty
-- Dòng riêng "Tiết kiệm add-on" → -$149.40 (emerald)
-- Tổng cộng bold lớn
-- Ghi chú "Thanh toán một lần mỗi năm"
+### Thay đổi cần thực hiện
 
-**Step 2 — Order Table:**
-- Plan row: giá gốc, không gạch ngang inline
-- Addon rows: giá gốc gạch ngang + giá đã giảm emerald (cùng dòng)
-- Breakdown dưới bảng: Tạm tính → Welcome → Tiết kiệm add-on (%) → Tổng cộng
-- Pay Box phải: Tổng thanh toán lớn, rồi liệt kê Plan / Welcome / Addons / Tiết kiệm
+#### 1. Database Migration
+- Thêm cột `order_type` vào bảng `orders` (default `'plan'`, values: `'plan'` | `'addon'`)
+- Cho phép cột `plan` nullable (vì addon-only order không cần plan)
 
-### So sánh với code hiện tại → cần sửa
+#### 2. Edge Function: `create-paypal-order`
+- Hỗ trợ thêm `order_type: 'addon'` từ request body
+- Khi `order_type === 'addon'`: không yêu cầu `plan`, tính giá add-on dựa trên plan hiện tại của user (để áp dụng đúng % giảm giá), `base_amount = 0`
+- Lưu order với `order_type = 'addon'`, plan = user's current plan
 
-1. **Step 1 Order Summary**: Hiện tại addon items hiển thị giá đã giảm nhưng KHÔNG có giá gốc gạch ngang → thêm giá gốc gạch ngang khi có discount (giống addon section bên trái)
-2. **Step 2 Pay Box**: Hiện tại show `addonFinal` cho Add-ons → đổi thành show `addonOriginal` (tổng addon gốc) rồi dòng riêng Tiết kiệm add-on trừ ra — giống mockup
-3. **Step 2 Order Table addon rows**: Đã đúng (gạch ngang + emerald)
-4. **Step 2 Subtotal**: Đã đúng nhưng cần đảm bảo format giống mockup — "Tiết kiệm add-on (20%)" text
+#### 3. Edge Function: `capture-paypal-order`
+- Kiểm tra `order.order_type`:
+  - Nếu `'addon'`: chỉ cập nhật `user_addons` + `payment_history` + `plan_change_logs`. **Không** thay đổi `profiles.user_plan` hay `plan_expires_at`
+  - Nếu `'plan'` (default): giữ nguyên logic hiện tại
 
-### Thay đổi cụ thể
+#### 4. Edge Function: `paypal-webhook`
+- Tương tự capture: nếu `order.order_type === 'addon'`, skip profile/plan update, chỉ update addons + history
 
-**File: `src/pages/Checkout.tsx`**
+#### 5. Frontend: `ServicePlan.tsx` — Addon Tab
+- Thay nút "Confirm Changes" bằng flow thanh toán thực:
+  - Tính toán delta (số lượng mới - số lượng cũ trong DB) cho mỗi addon type
+  - Nếu delta > 0: hiển thị tổng giá cho phần mua thêm + nút "Thanh toán"
+  - Click "Thanh toán" → gọi `create-paypal-order` với `order_type: 'addon'`
+  - Render PayPal button inline (giống Checkout)
+  - Sau thanh toán thành công → refresh addons + toast thành công
+- Nếu delta <= 0 hoặc không thay đổi: disable nút
+- Hiển thị billing_cycle từ profile (monthly/yearly) để tính giá đúng
 
-**Step 1 — Order Summary addon items (line ~460-471):**
-- Thêm giá gốc gạch ngang trước giá đã giảm khi `addonDiscountRate > 0`
-- Format: `$24.90` ~~gạch~~ `$19.92` (giống mockup)
-
-**Step 2 — Pay Box (line ~732-736):**
-- Thay `addonFinal` bằng `addonOriginal` cho dòng "Add-ons" 
-- Đảm bảo dòng "Tiết kiệm add-on" hiển thị đúng bên dưới
-
-**Cleanup nhỏ:**
-- Đảm bảo format text nhất quán giữa 2 step
+#### 6. Logic giá
+- Giá gốc addon: $2.49/tháng/gói, $24.90/năm/gói
+- Giảm giá theo plan hiện tại: Plus 10%, Pro 20%, Business 20%
+- Billing cycle theo `profile.billing_cycle`
 
 ### Files cần sửa
-- `src/pages/Checkout.tsx`
+- `supabase/functions/create-paypal-order/index.ts`
+- `supabase/functions/capture-paypal-order/index.ts`
+- `supabase/functions/paypal-webhook/index.ts`
+- `src/pages/ServicePlan.tsx`
+- Migration SQL (thêm `order_type` column)
 
