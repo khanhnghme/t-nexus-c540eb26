@@ -2270,6 +2270,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_addons: {
+        Row: {
+          addon_type: string
+          created_at: string
+          id: string
+          quantity: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          addon_type: string
+          created_at?: string
+          id?: string
+          quantity?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          addon_type?: string
+          created_at?: string
+          id?: string
+          quantity?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_login_logs: {
         Row: {
           id: string
@@ -2588,6 +2615,14 @@ export type Database = {
         Returns: {
           join_member_limit: number
           member_count: number
+        }[]
+      }
+      get_owner_addon_bonus: {
+        Args: { _owner_id: string }
+        Returns: {
+          bonus_members: number
+          bonus_projects: number
+          bonus_storage_mb: number
         }[]
       }
       get_workspace_plan: { Args: { _workspace_id: string }; Returns: string }

@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAccountLimitsCheck } from '@/hooks/useAccountLimitsCheck';
+import { useUserAddons, AddonType } from '@/hooks/useUserAddons';
 import { AccountCleanupPanel } from '@/components/cleanup/AccountCleanupPanel';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPlanName } from '@/hooks/useWorkspaceBilling';
@@ -13,10 +14,12 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { toast } from '@/hooks/use-toast';
 import {
   Crown, Zap, Building2, FolderKanban, HardDrive,
   ArrowRight, Loader2, Infinity, Receipt,
   Check, Users, Shield, Sparkles, BarChart3,
+  Plus, Minus, Package, AlertTriangle,
 } from 'lucide-react';
 
 interface WorkspaceUsage {
@@ -46,11 +49,20 @@ const MOCK_BILLING = [
   { id: 'TXN-20251201-001', date: '01/12/2025', plan: 'Free', amount: '$0.00', status: 'Free' },
 ];
 
+const BASE_PRICE = 2.49;
+
+function getAddonDiscount(plan: string): { pct: number; label: string } {
+  if (plan === 'plan_pro') return { pct: 0.10, label: '-10% Pro' };
+  if (plan === 'plan_business') return { pct: 0.20, label: '-20% Business' };
+  return { pct: 0, label: '' };
+}
+
 export default function ServicePlan() {
   const { user, profile } = useAuth();
   const { workspaces } = useWorkspace();
   const { translations: { app: { servicePlan: t, servicePlanFullFeatures: featuresMap } } } = useLanguage();
   const accountLimits = useAccountLimitsCheck();
+  const userAddons = useUserAddons();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
@@ -58,12 +70,32 @@ export default function ServicePlan() {
   const [planLimits, setPlanLimits] = useState<PlanLimitsData | null>(null);
   const [uniqueMemberCount, setUniqueMemberCount] = useState(0);
 
+  // Local addon quantities for editing
+  const [localAddons, setLocalAddons] = useState<Record<AddonType, number>>({
+    projects: 0,
+    storage: 0,
+    members: 0,
+  });
+  const [addonDirty, setAddonDirty] = useState(false);
+
   const currentTab = searchParams.get('tab') || 'plan';
 
   const plan = profile?.user_plan || 'plan_free';
   const planName = formatPlanName(plan);
   const isPremium = plan !== 'plan_free';
   const features = featuresMap[plan] || featuresMap.plan_free;
+
+  // Sync local addons from DB
+  useEffect(() => {
+    if (!userAddons.isLoading) {
+      setLocalAddons({
+        projects: userAddons.getQuantity('projects'),
+        storage: userAddons.getQuantity('storage'),
+        members: userAddons.getQuantity('members'),
+      });
+      setAddonDirty(false);
+    }
+  }, [userAddons.isLoading, userAddons.addons]);
 
   useEffect(() => {
     if (!user) return;
@@ -151,6 +183,31 @@ export default function ServicePlan() {
     setSearchParams({ tab: value }, { replace: true });
   };
 
+  const handleAddonChange = (type: AddonType, delta: number) => {
+    setLocalAddons(prev => {
+      const newVal = Math.max(0, (prev[type] || 0) + delta);
+      return { ...prev, [type]: newVal };
+    });
+    setAddonDirty(true);
+  };
+
+  const handleAddonConfirm = async () => {
+    for (const type of ['projects', 'storage', 'members'] as AddonType[]) {
+      await userAddons.updateAddon(type, localAddons[type]);
+    }
+    setAddonDirty(false);
+    accountLimits.refresh();
+    toast({
+      title: '🧩 Add-on',
+      description: t.addonComingSoon || 'Payment for add-ons is coming soon.',
+    });
+  };
+
+  const discount = getAddonDiscount(plan);
+  const unitPrice = BASE_PRICE * (1 - discount.pct);
+  const totalAddonQty = localAddons.projects + localAddons.storage + localAddons.members;
+  const totalAddonCost = totalAddonQty * unitPrice;
+
   if (isLoading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-8 flex items-center justify-center min-h-[400px]">
@@ -158,6 +215,53 @@ export default function ServicePlan() {
       </div>
     );
   }
+
+  // Addon card config
+  const addonCards: {
+    type: AddonType;
+    label: string;
+    desc: string;
+    icon: React.ReactNode;
+    iconColor: string;
+    baseLimitRaw: number | null;
+    bonusRaw: number;
+    currentUsage: number;
+    suffix?: string;
+    formatVal?: (v: number) => string;
+  }[] = [
+    {
+      type: 'projects',
+      label: t.addonProjects || 'Extra Projects',
+      desc: t.addonProjectsDesc || '+5 projects per package',
+      icon: <FolderKanban className="w-5 h-5" />,
+      iconColor: 'text-violet-500',
+      baseLimitRaw: planLimits?.max_projects_per_workspace ?? null,
+      bonusRaw: localAddons.projects * 5,
+      currentUsage: totalProjects,
+    },
+    {
+      type: 'storage',
+      label: t.addonStorage || 'Extra Storage',
+      desc: t.addonStorageDesc || '+5 GB per package',
+      icon: <HardDrive className="w-5 h-5" />,
+      iconColor: 'text-orange-500',
+      baseLimitRaw: planLimits?.max_storage_mb ?? null,
+      bonusRaw: localAddons.storage * 5 * 1024,
+      currentUsage: wsUsages.reduce((s, w) => s + w.storageMb, 0),
+      suffix: 'MB',
+      formatVal: (v: number) => v >= 1024 ? `${(v / 1024).toFixed(1)} GB` : `${v} MB`,
+    },
+    {
+      type: 'members',
+      label: t.addonMembers || 'Extra Member Seats',
+      desc: t.addonMembersDesc || '+5 member seats per package',
+      icon: <Users className="w-5 h-5" />,
+      iconColor: 'text-emerald-500',
+      baseLimitRaw: planLimits?.max_members_per_workspace ?? null,
+      bonusRaw: localAddons.members * 5,
+      currentUsage: totalMembers,
+    },
+  ];
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
@@ -181,9 +285,8 @@ export default function ServicePlan() {
         <TabsList>
           <TabsTrigger value="plan">{t.currentPlanTab}</TabsTrigger>
           <TabsTrigger value="usage">{t.usageTab}</TabsTrigger>
-          <TabsTrigger value="cleanup">
-            {t.cleanupTab}
-          </TabsTrigger>
+          <TabsTrigger value="addon">{t.addonTab || '🧩 Add-ons'}</TabsTrigger>
+          <TabsTrigger value="cleanup">{t.cleanupTab}</TabsTrigger>
           <TabsTrigger value="billing">{t.billingTab}</TabsTrigger>
         </TabsList>
 
@@ -305,6 +408,8 @@ export default function ServicePlan() {
                   icon: React.ReactNode;
                   current: number;
                   max: number | null;
+                  baseMax: number | null;
+                  bonus: number;
                   suffix?: string;
                   note?: string;
                   iconColor: string;
@@ -314,21 +419,27 @@ export default function ServicePlan() {
                     label: t.workspace,
                     icon: <Building2 className="w-4 h-4" />,
                     current: wsUsages.length,
-                    max: planLimits?.max_workspaces ?? null,
+                    max: accountLimits.maxWorkspaces,
+                    baseMax: accountLimits.maxWorkspaces,
+                    bonus: 0,
                     iconColor: 'text-blue-500',
                   },
                   {
                     label: t.projects,
                     icon: <FolderKanban className="w-4 h-4" />,
                     current: totalProjects,
-                    max: planLimits?.max_projects_per_workspace ?? null,
+                    max: accountLimits.maxProjects,
+                    baseMax: accountLimits.baseProjects,
+                    bonus: accountLimits.bonusProjects,
                     iconColor: 'text-violet-500',
                   },
                   {
                     label: t.memberSeats,
                     icon: <Users className="w-4 h-4" />,
                     current: totalMembers,
-                    max: planLimits?.max_members_per_workspace ?? null,
+                    max: accountLimits.maxMembers,
+                    baseMax: accountLimits.baseMembers,
+                    bonus: accountLimits.bonusMembers,
                     iconColor: 'text-emerald-500',
                     note: t.memberSeatsNote,
                   },
@@ -336,7 +447,9 @@ export default function ServicePlan() {
                     label: t.storage,
                     icon: <HardDrive className="w-4 h-4" />,
                     current: totalStorage,
-                    max: planLimits?.max_storage_mb ?? null,
+                    max: accountLimits.maxStorageMb,
+                    baseMax: accountLimits.baseStorageMb,
+                    bonus: accountLimits.bonusStorageMb,
                     suffix: 'MB',
                     iconColor: 'text-orange-500',
                     formatMax: (v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)} GB` : `${v} MB`,
@@ -365,6 +478,12 @@ export default function ServicePlan() {
                               : <Infinity className="w-3.5 h-3.5 inline" />}
                           </span>
                         </div>
+                        {/* Show base + addon breakdown if bonus > 0 */}
+                        {card.bonus > 0 && card.baseMax !== null && (
+                          <p className="text-[10px] text-muted-foreground">
+                            {card.formatMax ? card.formatMax(card.baseMax) : card.baseMax} ({t.addonBase || 'Base'}) + {card.formatMax ? card.formatMax(card.bonus) : card.bonus} ({t.addonBonus || 'Add-on'})
+                          </p>
+                        )}
                         {card.max !== null && (
                           <Progress
                             value={Math.min(100, pct)}
@@ -483,12 +602,175 @@ export default function ServicePlan() {
           </div>
         </TabsContent>
 
+        {/* TAB: Add-on */}
+        <TabsContent value="addon" className="space-y-6">
+          <section className="space-y-4">
+            <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
+              <Package className="w-5 h-5 text-violet-500" />
+              {t.addonTitle || 'Add-on Packages'}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {t.addonDesc || 'Expand your resource limits with additional packages.'}
+            </p>
+
+            {!isPremium ? (
+              <Card className="border-amber-500/20 bg-amber-500/5">
+                <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-4">
+                  <div className="p-3 rounded-2xl bg-amber-500/10">
+                    <AlertTriangle className="w-6 h-6 text-amber-500" />
+                  </div>
+                  <div className="flex-1 text-center sm:text-left">
+                    <h3 className="font-semibold text-sm">{t.addonFreeNotice || 'Add-ons require Plus plan or above.'}</h3>
+                  </div>
+                  <Button
+                    onClick={() => navigate('/upgrade?from=personal')}
+                    className="bg-amber-500 hover:bg-amber-600 text-white shrink-0"
+                    size="sm"
+                  >
+                    <Zap className="w-4 h-4 mr-1" />
+                    {t.addonUpgradeBtn || 'Upgrade to use Add-ons'}
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <div className="grid gap-4">
+                  {addonCards.map(card => {
+                    const qty = localAddons[card.type];
+                    const totalLimit = card.baseLimitRaw !== null ? card.baseLimitRaw + card.bonusRaw : null;
+                    const pct = totalLimit !== null && totalLimit > 0 ? (card.currentUsage / totalLimit) * 100 : 0;
+                    const isOver = totalLimit !== null && card.currentUsage >= totalLimit;
+                    const isWarning = !isOver && totalLimit !== null && pct >= 80;
+                    const costForThis = qty * unitPrice;
+
+                    return (
+                      <Card key={card.type} className={isOver ? 'border-red-500/30 bg-red-500/5' : ''}>
+                        <CardContent className="p-5">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                            {/* Left: Icon + info */}
+                            <div className="flex items-start gap-3 flex-1 min-w-0">
+                              <div className={`p-2.5 rounded-xl bg-muted ${isOver ? 'text-red-500' : card.iconColor}`}>
+                                {card.icon}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-semibold text-sm">{card.label}</span>
+                                  {discount.pct > 0 && (
+                                    <Badge variant="secondary" className="text-[10px] bg-emerald-500/15 text-emerald-600 border-none">
+                                      {discount.label}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-0.5">{card.desc}</p>
+
+                                {/* Capacity breakdown */}
+                                <div className="mt-2 flex items-center gap-2 text-xs">
+                                  <span className="text-muted-foreground">
+                                    {t.addonBase || 'Base'}: <span className="font-medium text-foreground">{card.baseLimitRaw !== null ? (card.formatVal ? card.formatVal(card.baseLimitRaw) : card.baseLimitRaw) : '∞'}</span>
+                                  </span>
+                                  {card.bonusRaw > 0 && (
+                                    <>
+                                      <span className="text-muted-foreground">+</span>
+                                      <span className="text-violet-600 dark:text-violet-400 font-medium">
+                                        {t.addonBonus || 'Add-on'}: +{card.formatVal ? card.formatVal(card.bonusRaw) : card.bonusRaw}
+                                      </span>
+                                    </>
+                                  )}
+                                  <span className="text-muted-foreground">=</span>
+                                  <span className={`font-bold ${isOver ? 'text-red-600 dark:text-red-400' : ''}`}>
+                                    {totalLimit !== null ? (card.formatVal ? card.formatVal(totalLimit) : totalLimit) : '∞'}
+                                  </span>
+                                </div>
+
+                                {/* Progress */}
+                                {totalLimit !== null && (
+                                  <div className="mt-2">
+                                    <div className="flex justify-between text-[10px] text-muted-foreground mb-0.5">
+                                      <span>{card.currentUsage} {card.suffix || ''} used</span>
+                                      <span>{card.formatVal ? card.formatVal(totalLimit) : totalLimit}</span>
+                                    </div>
+                                    <Progress
+                                      value={Math.min(100, pct)}
+                                      className={`h-1.5 ${isOver ? '[&>div]:bg-red-500' : isWarning ? '[&>div]:bg-amber-500' : ''}`}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Right: Quantity controls */}
+                            <div className="flex items-center gap-3 shrink-0">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8 rounded-full"
+                                onClick={() => handleAddonChange(card.type, -1)}
+                                disabled={qty <= 0}
+                              >
+                                <Minus className="w-3.5 h-3.5" />
+                              </Button>
+                              <div className="text-center min-w-[3rem]">
+                                <div className="text-lg font-bold tabular-nums">{qty}</div>
+                                <div className="text-[10px] text-muted-foreground">{t.addonPackage || 'pkg'}</div>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8 rounded-full"
+                                onClick={() => handleAddonChange(card.type, 1)}
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                              </Button>
+                              <div className="text-right min-w-[4.5rem]">
+                                <div className="text-sm font-semibold tabular-nums">
+                                  ${costForThis.toFixed(2)}
+                                </div>
+                                <div className="text-[10px] text-muted-foreground">{t.addonPerMonth || '/month'}</div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+
+                {/* Total cost + confirm */}
+                <Card className="bg-muted/50">
+                  <CardContent className="p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div>
+                      <span className="text-sm font-medium">{t.addonTotalCost || 'Total add-on cost'}:</span>
+                      <span className="text-2xl font-bold tabular-nums ml-3">
+                        ${totalAddonCost.toFixed(2)}
+                      </span>
+                      <span className="text-sm text-muted-foreground ml-1">{t.addonPerMonth || '/month'}</span>
+                      {discount.pct > 0 && (
+                        <Badge variant="secondary" className="ml-2 text-[10px] bg-emerald-500/15 text-emerald-600 border-none">
+                          {discount.label}
+                        </Badge>
+                      )}
+                    </div>
+                    <Button
+                      onClick={handleAddonConfirm}
+                      disabled={!addonDirty}
+                      className="bg-violet-600 hover:bg-violet-700 text-white"
+                    >
+                      <Package className="w-4 h-4 mr-2" />
+                      {t.addonConfirm || 'Confirm Changes'}
+                    </Button>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          </section>
+        </TabsContent>
+
         {/* TAB: Cleanup */}
         <TabsContent value="cleanup" className="space-y-6">
           <AccountCleanupPanel onCleanupComplete={fetchUsages} />
         </TabsContent>
 
-        {/* TAB 3: Billing history */}
+        {/* TAB: Billing history */}
         <TabsContent value="billing" className="space-y-4">
           <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
             <Receipt className="w-5 h-5 text-muted-foreground" />
