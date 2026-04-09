@@ -92,8 +92,5 @@ export function useWorkspaceBilling(): WorkspaceBilling {
   return billing;
 }
 
-/** Format plan name for display: 'plan_pro' → 'Pro' */
-export function formatPlanName(plan: string | null): string {
-  if (!plan) return 'Free';
-  return plan.replace(/^plan_/, '').replace(/^\w/, c => c.toUpperCase());
-}
+// Re-export from central config for backward compatibility
+export { getPlanLabel as formatPlanName } from '@/lib/planConfig';

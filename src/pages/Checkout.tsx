@@ -13,13 +13,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
+import { PLAN_CONFIG, getPlanLabel, type PlanKey, PLAN_ORDER } from '@/lib/planConfig';
+
 /* ═══ Constants ═══ */
 
-const PLANS = [
-  { key: 'plan_plus', label: 'Plus', monthly: 4.8, yearly: 48, addonDiscount: 0.10 },
-  { key: 'plan_pro', label: 'Pro', monthly: 12, yearly: 120, addonDiscount: 0.20, popular: true },
-  { key: 'plan_business', label: 'Business', monthly: 24, yearly: 240, addonDiscount: 0.20 },
-];
+const PLANS = (['plan_plus', 'plan_pro', 'plan_business'] as const).map(key => {
+  const cfg = PLAN_CONFIG[key];
+  return { key, label: cfg.label, monthly: cfg.monthlyPrice!, yearly: cfg.yearlyPrice!, addonDiscount: cfg.addonDiscount, popular: key === 'plan_pro' };
+});
 
 const PLAN_PRICES: Record<string, { monthly: number; yearly: number }> = {};
 const ADDON_DISCOUNT_RATE: Record<string, number> = {};
@@ -27,12 +28,6 @@ PLANS.forEach(p => {
   PLAN_PRICES[p.key] = { monthly: p.monthly, yearly: p.yearly };
   ADDON_DISCOUNT_RATE[p.key] = p.addonDiscount;
 });
-
-const PLAN_LABELS: Record<string, string> = {
-  plan_plus: 'Plus',
-  plan_pro: 'Pro',
-  plan_business: 'Business',
-};
 
 const ADDON_TYPES = [
   { type: 'projects', emoji: '📁', unitLabel: '+5 projects', unitLabelVi: '+5 dự án' },
@@ -329,7 +324,7 @@ export default function Checkout() {
                   </h3>
                   {addonDiscountRate > 0 && (
                     <Badge variant="secondary" className="text-emerald-600 text-[11px]">
-                      -{addonDiscountRate * 100}% {isVi ? 'với' : 'with'} {PLAN_LABELS[plan]}
+                      -{addonDiscountRate * 100}% {isVi ? 'với' : 'with'} {getPlanLabel(plan)}
                     </Badge>
                   )}
                 </div>
@@ -418,7 +413,7 @@ export default function Checkout() {
                 {/* Plan */}
                 <div className="flex justify-between items-start text-sm">
                   <div>
-                    <p className="font-medium">{PLAN_LABELS[plan]} Plan</p>
+                    <p className="font-medium">{getPlanLabel(plan)} Plan</p>
                     <p className="text-[11px] text-muted-foreground">
                       {cycle === 'yearly' ? (t?.billedYearly || 'Billed yearly') : (t?.billedMonthly || 'Billed monthly')}
                     </p>
@@ -531,7 +526,7 @@ export default function Checkout() {
           {/* Plan row */}
           <div className="grid grid-cols-12 gap-2 items-center py-3 text-sm border-b border-dashed">
             <div className="col-span-6">
-              <p className="font-medium">{PLAN_LABELS[plan]} Plan</p>
+              <p className="font-medium">{getPlanLabel(plan)} Plan</p>
               <p className="text-[11px] text-muted-foreground">
                 {cycle === 'yearly' ? (t?.billedYearly || 'Billed yearly') : (t?.billedMonthly || 'Billed monthly')}
               </p>
@@ -682,7 +677,7 @@ export default function Checkout() {
 
               <div className="space-y-1.5 text-xs text-muted-foreground">
                 <div className="flex justify-between">
-                  <span>{PLAN_LABELS[plan]} Plan</span>
+                  <span>{getPlanLabel(plan)} Plan</span>
                   <span>${baseAmount.toFixed(2)}</span>
                 </div>
                 {addonFinal > 0 && (

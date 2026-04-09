@@ -5,12 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Layers, Users, FolderOpen, HardDrive, Building2 } from 'lucide-react';
 
-const PLAN_META: Record<string, { label: string; price: string; color: string; badgeClass: string }> = {
-  plan_free: { label: 'Free', price: '$0', color: 'text-muted-foreground', badgeClass: 'bg-muted text-muted-foreground' },
-  plan_plus: { label: 'Plus', price: '$4.99/mo', color: 'text-blue-500', badgeClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
-  plan_pro: { label: 'Pro', price: '$9.99/mo', color: 'text-violet-500', badgeClass: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300' },
-  plan_business: { label: 'Business', price: '$19.99/mo', color: 'text-amber-500', badgeClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' },
-  plan_custom: { label: 'Custom', price: 'Custom', color: 'text-emerald-500', badgeClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' },
+import { PLAN_CONFIG, getPlanLabel, getPlanBadgeClass, getPlanColor, type PlanKey } from '@/lib/planConfig';
+
+const getPlanMeta = (plan: string) => {
+  const cfg = PLAN_CONFIG[plan as PlanKey];
+  if (!cfg) return { label: plan, price: '—', color: 'text-foreground', badgeClass: '' };
+  const price = cfg.monthlyPrice === null ? 'Custom' : cfg.monthlyPrice === 0 ? '$0' : `$${cfg.monthlyPrice}/mo`;
+  return { label: cfg.label, price, color: cfg.color, badgeClass: cfg.badgeClass };
 };
 
 export function AdminPlansTab() {
@@ -43,7 +44,7 @@ export function AdminPlansTab() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       {sorted.map((pl: any) => {
-        const meta = PLAN_META[pl.plan] || { label: pl.plan, price: '—', color: 'text-foreground', badgeClass: '' };
+        const meta = getPlanMeta(pl.plan);
         const count = (userCounts as any)[pl.plan] || 0;
         const pct = totalUsers > 0 ? ((count / totalUsers) * 100).toFixed(1) : '0';
 

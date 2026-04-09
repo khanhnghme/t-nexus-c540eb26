@@ -52,14 +52,5 @@ export function getProjectRoleLabel(role: string, isCreator: boolean = false): s
   }
 }
 
-/** Get display label for a user plan */
-export function getUserPlanLabel(plan: string): string {
-  switch (plan) {
-    case 'plan_free': return 'Free';
-    case 'plan_plus': return 'Plus';
-    case 'plan_pro': return 'Pro';
-    case 'plan_business': return 'Business';
-    case 'plan_custom': return 'Custom';
-    default: return plan;
-  }
-}
+// Re-export from central config
+export { getPlanLabel as getUserPlanLabel } from '@/lib/planConfig';

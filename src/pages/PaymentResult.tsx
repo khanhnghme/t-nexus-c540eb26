@@ -21,11 +21,7 @@ interface OrderData {
   completed_at: string | null;
 }
 
-const PLAN_LABELS: Record<string, string> = {
-  plan_plus: 'Plus',
-  plan_pro: 'Pro',
-  plan_business: 'Business',
-};
+import { getPlanLabel } from '@/lib/planConfig';
 
 export default function PaymentResult() {
   const [searchParams] = useSearchParams();
@@ -95,7 +91,7 @@ export default function PaymentResult() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t?.plan || 'Plan'}</span>
-                <span className="font-medium">{PLAN_LABELS[order.plan] || order.plan}</span>
+                <span className="font-medium">{getPlanLabel(order.plan)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t?.cycle || 'Billing Cycle'}</span>

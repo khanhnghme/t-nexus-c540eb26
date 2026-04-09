@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { getPlanLabel } from '@/lib/planConfig';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -70,9 +71,7 @@ export function UserPaymentsTab({ userId }: UserPaymentsTabProps) {
     URL.revokeObjectURL(url);
   };
 
-  const PLAN_LABELS: Record<string, string> = {
-    plan_free: 'Free', plan_plus: 'Plus', plan_pro: 'Pro', plan_business: 'Business', plan_custom: 'Custom',
-  };
+  const planLabelFn = (p: string) => getPlanLabel(p);
 
   if (isLoading) return <div className="py-8 text-center text-muted-foreground">Loading...</div>;
 
@@ -133,7 +132,7 @@ export function UserPaymentsTab({ userId }: UserPaymentsTabProps) {
                 <TableRow key={p.id} className="cursor-pointer" onClick={() => setSelectedPayment(p)}>
                   <TableCell className="font-mono text-xs">{p.transaction_id?.slice(0, 12) || '—'}...</TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{PLAN_LABELS[p.plan_purchased] || p.plan_purchased}</Badge>
+                    <Badge variant="secondary">{planLabelFn(p.plan_purchased)}</Badge>
                   </TableCell>
                   <TableCell className="font-medium">
                     {(p.final_amount ?? p.amount).toLocaleString()} {p.currency}

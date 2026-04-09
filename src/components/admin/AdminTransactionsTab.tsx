@@ -17,9 +17,7 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: 'bg-muted text-muted-foreground',
   refunded: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
 };
-const PLAN_LABELS: Record<string, string> = {
-  plan_free: 'Free', plan_plus: 'Plus', plan_pro: 'Pro', plan_business: 'Business', plan_custom: 'Custom',
-};
+import { getPlanLabel } from '@/lib/planConfig';
 
 export function AdminTransactionsTab() {
   const { translations } = useLanguage();
@@ -95,7 +93,7 @@ export function AdminTransactionsTab() {
                 <TableRow key={tx.id} className="cursor-pointer" onClick={() => setSelected(tx)}>
                   <TableCell className="text-sm">{profile?.full_name || '—'}</TableCell>
                   <TableCell className="text-sm font-mono text-muted-foreground">{tx.transaction_id || '—'}</TableCell>
-                  <TableCell><Badge variant="secondary">{PLAN_LABELS[tx.plan_purchased] || tx.plan_purchased}</Badge></TableCell>
+                  <TableCell><Badge variant="secondary">{getPlanLabel(tx.plan_purchased)}</Badge></TableCell>
                   <TableCell className="text-sm font-medium">${Number(tx.final_amount || tx.amount || 0).toFixed(2)}</TableCell>
                   <TableCell><Badge className={STATUS_COLORS[tx.status] || ''} variant="secondary">{pt?.status?.[tx.status] || tx.status}</Badge></TableCell>
                   <TableCell className="text-sm text-muted-foreground">{tx.paid_at ? format(new Date(tx.paid_at), 'dd/MM/yyyy HH:mm') : format(new Date(tx.created_at), 'dd/MM/yyyy HH:mm')}</TableCell>

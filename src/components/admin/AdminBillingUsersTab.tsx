@@ -12,16 +12,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Search, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 
-const PLAN_LABELS: Record<string, string> = {
-  plan_free: 'Free', plan_plus: 'Plus', plan_pro: 'Pro', plan_business: 'Business', plan_custom: 'Custom',
-};
-const PLAN_COLORS: Record<string, string> = {
-  plan_free: 'bg-muted text-muted-foreground',
-  plan_plus: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-  plan_pro: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
-  plan_business: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-  plan_custom: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
-};
+import { getPlanLabel, getPlanBadgeClass } from '@/lib/planConfig';
 const STATUS_COLORS: Record<string, string> = {
   active: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
   expired: 'bg-destructive/10 text-destructive',
@@ -61,7 +52,7 @@ export function AdminBillingUsersTab() {
   }, [users, search, planFilter, statusFilter]);
 
   const statusLabel = (s: string) => t?.planStatus?.[s] || s;
-  const planLabel = (p: string) => PLAN_LABELS[p] || p;
+  const planLabel = (p: string) => getPlanLabel(p);
 
   return (
     <div className="space-y-4">
@@ -74,7 +65,7 @@ export function AdminBillingUsersTab() {
           <SelectTrigger className="w-[150px]"><SelectValue placeholder={t?.filterByPlan || 'All Plans'} /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t?.filterByPlan || 'All Plans'}</SelectItem>
-            {Object.keys(PLAN_LABELS).map(k => <SelectItem key={k} value={k}>{PLAN_LABELS[k]}</SelectItem>)}
+            {['plan_free', 'plan_plus', 'plan_pro', 'plan_business', 'plan_custom'].map(k => <SelectItem key={k} value={k}>{getPlanLabel(k)}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -118,7 +109,7 @@ export function AdminBillingUsersTab() {
                     </div>
                   </div>
                 </TableCell>
-                <TableCell><Badge className={PLAN_COLORS[user.user_plan] || ''} variant="secondary">{planLabel(user.user_plan)}</Badge></TableCell>
+                <TableCell><Badge className={getPlanBadgeClass(user.user_plan)} variant="secondary">{planLabel(user.user_plan)}</Badge></TableCell>
                 <TableCell><Badge className={STATUS_COLORS[user.plan_status] || ''} variant="secondary">{statusLabel(user.plan_status)}</Badge></TableCell>
                 <TableCell className="text-sm text-muted-foreground">{t?.planSource?.[user.plan_source] || user.plan_source}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">{t?.billingCycle?.[user.billing_cycle] || user.billing_cycle}</TableCell>

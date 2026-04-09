@@ -126,7 +126,7 @@ export default function FirstTimeOnboarding({
   const getPlanColor = () => {
     switch (userPlan) {
       case 'plan_plus': return 'bg-blue-500/10 text-blue-600 border-blue-200';
-      case 'plan_pro': return 'bg-purple-500/10 text-purple-600 border-purple-200';
+      case 'plan_pro': return 'bg-violet-500/10 text-purple-600 border-purple-200';
       case 'plan_enterprise': return 'bg-amber-500/10 text-amber-600 border-amber-200';
       default: return 'bg-secondary text-secondary-foreground border-secondary';
     }
@@ -834,25 +834,25 @@ export default function FirstTimeOnboarding({
                       className={cn(
                         'relative flex flex-col rounded-2xl border-2 p-4 text-left transition-all duration-200',
                         selectedPlan === 'plan_pro'
-                          ? 'border-purple-500 bg-purple-500/5 shadow-lg ring-2 ring-purple-500/20'
-                          : 'border-border hover:border-purple-500/40 hover:bg-muted/50'
+                          ? 'border-violet-500 bg-violet-500/5 shadow-lg ring-2 ring-violet-500/20'
+                          : 'border-border hover:border-violet-500/40 hover:bg-muted/50'
                       )}
                     >
-                      <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-purple-500 text-white border-0 text-[10px] px-2 py-0.5">
+                      <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-violet-500 text-white border-0 text-[10px] px-2 py-0.5">
                         {t.planRecommended}
                       </Badge>
                       <div className="flex items-center gap-2 mb-1.5">
-                        <Crown className="w-4 h-4 text-purple-500" />
+                        <Crown className="w-4 h-4 text-violet-500" />
                         <span className="font-bold text-sm">Pro</span>
                       </div>
                       <p className="text-xl font-extrabold mb-1">$12<span className="text-xs font-normal text-muted-foreground">/{t.planMonth}</span></p>
                       <ul className="text-[11px] text-muted-foreground space-y-1 mt-2">
-                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-purple-500 shrink-0 mt-0.5" />{t.planProF1}</li>
-                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-purple-500 shrink-0 mt-0.5" />{t.planProF2}</li>
-                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-purple-500 shrink-0 mt-0.5" />{t.planProF3}</li>
+                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-violet-500 shrink-0 mt-0.5" />{t.planProF1}</li>
+                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-violet-500 shrink-0 mt-0.5" />{t.planProF2}</li>
+                        <li className="flex items-start gap-1.5"><Check className="w-3 h-3 text-violet-500 shrink-0 mt-0.5" />{t.planProF3}</li>
                       </ul>
                       {selectedPlan === 'plan_pro' && (
-                        <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center">
+                        <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center">
                           <Check className="w-3 h-3 text-primary-foreground" />
                         </div>
                       )}
