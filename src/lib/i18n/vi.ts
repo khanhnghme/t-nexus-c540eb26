@@ -573,6 +573,7 @@ export const vi: Translations = {
     adminApprovalNote: 'Sau khi tạo, tài khoản cần được Admin duyệt trước khi sử dụng.',
     captchaRequired: 'Vui lòng hoàn thành xác minh CAPTCHA',
     captchaFailed: 'Xác minh CAPTCHA thất bại. Vui lòng thử lại.',
+    captchaVerifying: 'Đang xác minh bảo mật, vui lòng thử lại sau giây lát.',
     forgotEnterDesc: 'Nhập MSSV và email đã đăng ký. Hệ thống sẽ gửi mã OTP 6 số đến email của bạn.',
     forgotNewPassForAccount: 'Nhập mật khẩu mới cho tài khoản',
     forgotNewPassPlaceholder: 'Tối thiểu 6 ký tự',

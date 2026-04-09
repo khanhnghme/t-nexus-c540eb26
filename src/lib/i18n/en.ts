@@ -584,6 +584,7 @@ export const en = {
     adminApprovalNote: 'After creating, the account needs Admin approval before use.',
     captchaRequired: 'Please complete the CAPTCHA verification',
     captchaFailed: 'CAPTCHA verification failed. Please try again.',
+    captchaVerifying: 'Verifying security, please try again shortly.',
     forgotEnterDesc: 'Enter the Student ID and email you registered. The system will send a 6-digit OTP to your email.',
     forgotNewPassForAccount: 'Enter a new password for the account',
     forgotNewPassPlaceholder: 'Min. 6 characters',

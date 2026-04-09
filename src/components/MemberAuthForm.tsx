@@ -238,7 +238,7 @@ export function MemberAuthForm() {
     }
 
     if (!turnstileToken) {
-      toast({ title: ta.captchaVerifying || 'Đang xác minh bảo mật, vui lòng thử lại sau giây lát.', variant: 'destructive' });
+      toast({ title: ta.captchaVerifying, variant: 'destructive' });
       return;
     }
 
