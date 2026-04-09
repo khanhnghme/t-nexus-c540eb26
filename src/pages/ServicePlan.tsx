@@ -102,6 +102,22 @@ export default function ServicePlan() {
     }
   }, [userAddons.isLoading, userAddons.addons]);
 
+  // Fetch billing history
+  useEffect(() => {
+    if (!user) return;
+    setBillingLoading(true);
+    supabase
+      .from('payment_history')
+      .select('id, transaction_id, created_at, plan_purchased, amount, final_amount, status, payment_method')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20)
+      .then(({ data }) => {
+        setBillingHistory((data as PaymentRecord[]) || []);
+        setBillingLoading(false);
+      });
+  }, [user]);
+
   useEffect(() => {
     if (!user) return;
     fetchUsages();
