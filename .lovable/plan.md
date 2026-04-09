@@ -1,97 +1,74 @@
 
 
-## Plan: Triển khai chức năng Add-on — DB, logic giới hạn, UI quản lý
+## Plan: Đợt 1 — Database Foundation + Module 1 (Admin Billing Overview)
 
-### Hiện trạng
-- Add-on hiện chỉ là thông tin tĩnh hiển thị trên trang Pricing/Upgrade (3 loại: Projects, Storage, Members — $2.49/+5 đơn vị/tháng)
-- Chưa có bảng DB lưu add-on đã mua
-- `usePlanLimits` và `useAccountLimitsCheck` chỉ đọc giới hạn từ `plan_limits`, chưa cộng add-on
-- Trang Service Plan chưa có tab/section quản lý add-on
+### Scope
 
-### Thay đổi
+Tạo nền tảng DB (3 bảng mới + mở rộng profiles) và trang Admin Billing với danh sách users + tab Overview chi tiết gói.
 
-**1. Migration — tạo bảng `user_addons`**
+### 1. Migration SQL
+
+**Mở rộng `profiles`** — thêm 5 cột:
 ```sql
-CREATE TABLE public.user_addons (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  addon_type text NOT NULL CHECK (addon_type IN ('projects', 'storage', 'members')),
-  quantity integer NOT NULL DEFAULT 1,  -- số gói (mỗi gói = +5 đơn vị)
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (user_id, addon_type)
-);
-
-ALTER TABLE public.user_addons ENABLE ROW LEVEL SECURITY;
-
--- Owner can manage own add-ons
-CREATE POLICY "Users can view own addons" ON public.user_addons
-  FOR SELECT TO authenticated USING (user_id = auth.uid());
-
-CREATE POLICY "Users can upsert own addons" ON public.user_addons
-  FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
-
-CREATE POLICY "Users can update own addons" ON public.user_addons
-  FOR UPDATE TO authenticated USING (user_id = auth.uid());
+ALTER TABLE profiles ADD COLUMN plan_status text NOT NULL DEFAULT 'active';
+ALTER TABLE profiles ADD COLUMN plan_source text NOT NULL DEFAULT 'self_paid';
+ALTER TABLE profiles ADD COLUMN plan_started_at timestamptz DEFAULT now();
+ALTER TABLE profiles ADD COLUMN plan_expires_at timestamptz;
+ALTER TABLE profiles ADD COLUMN billing_cycle text NOT NULL DEFAULT 'monthly';
+ALTER TABLE profiles ADD COLUMN auto_renew boolean NOT NULL DEFAULT false;
 ```
 
-**2. DB function — `get_owner_addon_bonus`**
-```sql
-CREATE FUNCTION public.get_owner_addon_bonus(_owner_id uuid)
-RETURNS TABLE(bonus_projects int, bonus_storage_mb int, bonus_members int)
--- Trả về tổng bonus từ add-on: quantity * 5 (projects/members), quantity * 5 * 1024 (storage GB→MB)
-```
+**Tạo `plan_change_logs`**:
+- Columns: id, user_id, action_type, old_plan, new_plan, old_expires_at, new_expires_at, change_source, reason, internal_note, effective_mode, performed_by, metadata (jsonb), created_at
+- RLS: chỉ system_admin SELECT/INSERT
 
-**3. Hook mới — `useUserAddons.ts`**
-- Fetch add-on data từ `user_addons` cho user hiện tại
-- CRUD: thêm/bớt quantity
-- Trả về `{ addons, updateAddon, isLoading }`
+**Tạo `admin_notes`**:
+- Columns: id, user_id, note_type (general/support/warning/vip/abuse/partner), content, created_by, created_at
+- RLS: chỉ system_admin CRUD
 
-**4. Cập nhật `usePlanLimits.ts` — cộng add-on vào limit**
-- Sau khi fetch `plan_limits`, query thêm `user_addons` của workspace owner
-- Cộng bonus vào `maxTotalProjects`, `maxTotalMembers`, `maxStorageMb`
-- Tương tự cho `useAccountLimitsCheck` / `useWorkspaceBilling`
+**Tạo `payment_history`**:
+- Columns: id, user_id, transaction_id, order_id, invoice_id, plan_purchased, amount, currency, original_amount, discount_amount, final_amount, payment_method, status, coupon_code, description, system_note, paid_at, created_at
+- RLS: chỉ system_admin SELECT/INSERT
 
-**5. UI — Tab "Add-on" mới trên ServicePlan.tsx**
+### 2. AdminSidebarNav — thêm mục "Billing"
+- Icon: `CreditCard` từ lucide-react
+- Route: `/admin/billing`
+- i18n key: `sidebar.billing` → "Billing" / "Thanh toán"
 
-Thiết kế trực quan:
-- Thêm tab `addon` vào TabsList (giữa Usage và Cleanup)
-- Mỗi add-on type hiển thị dạng card ngang:
-  - Icon + tên (Dự án / Lưu trữ / Thành viên)
-  - Thanh hiển thị: `Gói cơ bản: X` + `Add-on: +Y` = `Tổng: Z`
-  - Progress bar tổng hợp (base + addon vs usage hiện tại)
-  - Nút `+` / `−` để tăng/giảm số gói add-on
-  - Giá tính: `quantity × $2.49/tháng`
-  - Badge giảm giá nếu plan Pro (-10%) hoặc Business (-20%)
-- Dưới cùng: tổng chi phí add-on hàng tháng
-- Nút "Xác nhận thay đổi" → toast "Coming Soon" (thanh toán chưa triển khai)
-- Gói Free: hiển thị thông báo cần nâng cấp lên Plus+ để mua add-on
+### 3. Route — `/admin/billing` + `/admin/billing/:userId`
+- Thêm vào `App.tsx` trong admin route group
+- Import lazy: `AdminBilling` page
 
-**6. UI — Cập nhật Usage tab (ServicePlan.tsx)**
-- Mỗi card usage hiển thị rõ phần base limit vs add-on bonus
-- Ví dụ: "15 (gói) + 10 (add-on) = 25 dự án"
+### 4. Trang `AdminBilling.tsx` — Danh sách users
+- Fetch tất cả profiles (system_admin only)
+- Bảng hiển thị: Avatar, Name, Email, Current Plan (badge màu), Plan Status (badge), Expiry Date, Actions
+- Bộ lọc: search by name/email, filter by plan, filter by status
+- Click row → navigate `/admin/billing/:userId`
 
-**7. i18n — thêm chuỗi**
-- Tab label, card titles, giải thích, CTA, discount badge, Coming Soon message
+### 5. Trang `AdminUserBilling.tsx` — Chi tiết user (4 tabs)
+- **Tab Overview** (Đợt 1 — implement đầy đủ):
+  - User info: avatar, name, email, user_id
+  - Plan card: gói hiện tại, status badge, source badge, billing_cycle, auto_renew toggle (display only)
+  - Dates: started_at, expires_at
+  - Current limits: workspace/project/member/storage từ plan_limits
+  - Current usage: đếm thực tế từ DB
+  - Quick action buttons (placeholder): Upgrade, Downgrade, Extend, Suspend, Restore, Add Note
+- **Tab Payments** — placeholder "Coming in Phase 2"
+- **Tab Plan History** — placeholder "Coming in Phase 2"
+- **Tab Notes** — placeholder "Coming in Phase 2"
 
-### Luồng hoạt động
-```text
-User → Service Plan → Tab Add-on
-  → Thấy 3 card (Projects/Storage/Members)
-  → Mỗi card hiển thị: usage hiện tại / (base + addon)
-  → Bấm +/− để điều chỉnh số gói
-  → Xem tổng chi phí → Bấm "Xác nhận" → Toast Coming Soon
-```
+### 6. i18n
+- `en.ts` + `vi.ts`: thêm block `adminBilling` với ~30 chuỗi (sidebar label, table headers, tab names, status labels, source labels, cycle labels, placeholder messages)
 
 ### Files
 
 | File | Thay đổi |
 |------|----------|
-| Migration SQL | Tạo bảng `user_addons` + RLS + function `get_owner_addon_bonus` |
-| `src/hooks/useUserAddons.ts` | Hook mới: fetch/update add-on |
-| `src/hooks/usePlanLimits.ts` | Cộng addon bonus vào limits |
-| `src/hooks/useAccountLimitsCheck.ts` | Cộng addon bonus vào account limits |
-| `src/pages/ServicePlan.tsx` | Thêm tab Add-on với UI quản lý trực quan |
-| `src/lib/i18n/en.ts` | Thêm chuỗi add-on management |
-| `src/lib/i18n/vi.ts` | Thêm chuỗi add-on management |
+| Migration SQL | 5 cột profiles + 3 bảng mới + RLS |
+| `src/components/AdminSidebarNav.tsx` | Thêm Billing item |
+| `src/App.tsx` | Thêm 2 route admin/billing |
+| `src/pages/AdminBilling.tsx` | Trang mới: danh sách users + filters |
+| `src/pages/AdminUserBilling.tsx` | Trang mới: chi tiết user 4 tabs (Overview full, 3 tabs placeholder) |
+| `src/lib/i18n/en.ts` | Thêm block adminBilling |
+| `src/lib/i18n/vi.ts` | Thêm block adminBilling |
 
