@@ -1252,6 +1252,8 @@ export const en = {
       stepInfoDesc: 'Fill personal info',
       stepPlan: 'Choose Plan',
       stepPlanDesc: 'Select your plan',
+      stepCheckout: 'Payment',
+      stepCheckoutDesc: 'Complete payment',
       stepFinish: 'Complete',
       stepFinishDesc: 'Confirm & start',
       choosePlanTitle: 'Choose your plan',
