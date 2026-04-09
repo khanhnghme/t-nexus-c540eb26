@@ -414,7 +414,7 @@ function UpgradePlansAndFeatures({ yearly, planCols, comparison, tp, disabled, o
                     {isCustom ? tp.contactUs : <>{price}<span className="font-normal"> / {tp.mo}</span></>}
                   </div>
                   <button
-                    onClick={onSelect}
+                    onClick={() => onSelect(col.key)}
                     disabled={disabled || col.isCurrent}
                     className={`w-full py-1 px-2.5 text-xs font-medium rounded-md cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ${col.isCurrent
                       ? 'bg-primary/10 text-primary border border-primary/30'
