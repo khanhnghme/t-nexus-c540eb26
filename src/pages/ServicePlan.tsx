@@ -239,7 +239,7 @@ export default function ServicePlan() {
       icon: <FolderKanban className="w-5 h-5" />,
       iconColor: 'text-violet-500',
       baseLimitRaw: planLimits?.max_projects_per_workspace ?? null,
-      bonusRaw: localAddons.projects * 5,
+      bonusRaw: userAddons.getQuantity('projects') * 5,
       currentUsage: totalProjects,
     },
     {
@@ -249,7 +249,7 @@ export default function ServicePlan() {
       icon: <HardDrive className="w-5 h-5" />,
       iconColor: 'text-orange-500',
       baseLimitRaw: planLimits?.max_storage_mb ?? null,
-      bonusRaw: localAddons.storage * 5 * 1024,
+      bonusRaw: userAddons.getQuantity('storage') * 5 * 1024,
       currentUsage: wsUsages.reduce((s, w) => s + w.storageMb, 0),
       suffix: 'MB',
       formatVal: (v: number) => v >= 1024 ? `${(v / 1024).toFixed(1)} GB` : `${v} MB`,
@@ -261,7 +261,7 @@ export default function ServicePlan() {
       icon: <Users className="w-5 h-5" />,
       iconColor: 'text-emerald-500',
       baseLimitRaw: planLimits?.max_members_per_workspace ?? null,
-      bonusRaw: localAddons.members * 5,
+      bonusRaw: userAddons.getQuantity('members') * 5,
       currentUsage: totalMembers,
     },
   ];
