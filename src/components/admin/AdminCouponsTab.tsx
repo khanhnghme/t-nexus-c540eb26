@@ -11,9 +11,7 @@ import { format } from 'date-fns';
 import { CouponFormDialog } from './CouponFormDialog';
 import { toast } from 'sonner';
 
-const PLAN_LABELS: Record<string, string> = {
-  plan_free: 'Free', plan_plus: 'Plus', plan_pro: 'Pro', plan_business: 'Business', plan_custom: 'Custom',
-};
+import { getPlanLabel } from '@/lib/planConfig';
 
 export function AdminCouponsTab() {
   const { translations } = useLanguage();

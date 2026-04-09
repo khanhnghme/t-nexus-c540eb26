@@ -21,11 +21,7 @@ interface OrderData {
   completed_at: string | null;
 }
 
-const PLAN_LABELS: Record<string, string> = {
-  plan_plus: 'Plus',
-  plan_pro: 'Pro',
-  plan_business: 'Business',
-};
+import { getPlanLabel } from '@/lib/planConfig';
 
 export default function PaymentResult() {
   const [searchParams] = useSearchParams();

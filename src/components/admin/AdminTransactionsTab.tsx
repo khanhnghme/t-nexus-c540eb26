@@ -17,9 +17,7 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: 'bg-muted text-muted-foreground',
   refunded: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
 };
-const PLAN_LABELS: Record<string, string> = {
-  plan_free: 'Free', plan_plus: 'Plus', plan_pro: 'Pro', plan_business: 'Business', plan_custom: 'Custom',
-};
+import { getPlanLabel } from '@/lib/planConfig';
 
 export function AdminTransactionsTab() {
   const { translations } = useLanguage();

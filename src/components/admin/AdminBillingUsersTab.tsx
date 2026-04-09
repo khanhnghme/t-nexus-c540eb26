@@ -12,16 +12,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Search, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 
-const PLAN_LABELS: Record<string, string> = {
-  plan_free: 'Free', plan_plus: 'Plus', plan_pro: 'Pro', plan_business: 'Business', plan_custom: 'Custom',
-};
-const PLAN_COLORS: Record<string, string> = {
-  plan_free: 'bg-muted text-muted-foreground',
-  plan_plus: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-  plan_pro: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
-  plan_business: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-  plan_custom: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
-};
+import { getPlanLabel, getPlanBadgeClass } from '@/lib/planConfig';
 const STATUS_COLORS: Record<string, string> = {
   active: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
   expired: 'bg-destructive/10 text-destructive',
