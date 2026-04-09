@@ -286,14 +286,6 @@ export default function AdminUsers() {
     fetchProfiles();
   };
 
-  const handleGrantLeader = async (userId: string) => {
-    const { error } = await supabase.from('user_roles').upsert({ user_id: userId, role: 'system_admin' } as any);
-    if (error) {
-      toast({ title: 'Lỗi', description: error.message, variant: 'destructive' });
-      return;
-    }
-    toast({ title: t.grantedLeader, description: t.grantedLeaderDesc });
-  };
 
   const handleRemoveMember = async (memberId: string) => {
     deleteWithUndo({
@@ -784,9 +776,6 @@ export default function AdminUsers() {
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                        <Button size="sm" variant="outline" onClick={() => handleGrantLeader(u.id)}>
-                          <UserCog className="w-4 h-4 mr-1" /> Cấp Leader
-                        </Button>
                       </div>
                     </div>
                   ))}
