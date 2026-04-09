@@ -27,6 +27,7 @@ export function usePlanLimits(): PlanLimits {
     maxTotalProjects: null,
     maxTotalMembers: null,
     maxStorageMb: null,
+    maxMeetingDurationMinutes: null,
     isLoading: true,
   });
 
@@ -58,6 +59,7 @@ export function usePlanLimits(): PlanLimits {
           maxTotalProjects: planData?.max_projects_per_workspace ?? null,
           maxTotalMembers: planData?.max_members_per_workspace ?? null,
           maxStorageMb: planData?.max_storage_mb ?? null,
+          maxMeetingDurationMinutes: (planData as any)?.max_meeting_duration_minutes ?? null,
           isLoading: false,
         });
       } catch (err) {
