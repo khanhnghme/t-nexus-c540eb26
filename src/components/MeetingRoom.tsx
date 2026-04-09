@@ -68,17 +68,36 @@ export default function MeetingRoom({ meeting, members, isLeader, groupId, onBac
   // Elapsed timer
   useEffect(() => {
     if (localStatus !== 'in_progress' || !startedAt) return;
+    const maxDuration = planLimits.maxMeetingDurationMinutes;
+    
     const tick = () => {
       const diff = Math.floor((Date.now() - startedAt.getTime()) / 1000);
       const h = String(Math.floor(diff / 3600)).padStart(2, '0');
       const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
       const s = String(diff % 60).padStart(2, '0');
       setElapsed(`${h}:${m}:${s}`);
+
+      // Countdown remaining
+      if (maxDuration !== null) {
+        const limitSec = maxDuration * 60;
+        const rem = limitSec - diff;
+        setRemainingSeconds(rem);
+        if (rem <= 0) {
+          setRemaining('00:00');
+        } else {
+          const rm = String(Math.floor(rem / 60)).padStart(2, '0');
+          const rs = String(rem % 60).padStart(2, '0');
+          setRemaining(`${rm}:${rs}`);
+        }
+      } else {
+        setRemaining(null);
+        setRemainingSeconds(null);
+      }
     };
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [localStatus, startedAt]);
+  }, [localStatus, startedAt, planLimits.maxMeetingDurationMinutes]);
 
   useEffect(() => {
     fetchAttendance().then(() => {
