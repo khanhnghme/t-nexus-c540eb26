@@ -170,7 +170,7 @@ export default function WorkspaceSettings() {
     setTimeout(() => setCopiedSlug(false), 2000);
   };
 
-  const deleteNameMatches = deleteConfirmName.trim() === activeWorkspace.name.trim();
+  const deleteNameMatches = deleteConfirmName.trim() === 'đồng ý' || deleteConfirmName.trim() === 'agree';
 
   // Build subtitle strings
   const locale = t === (t as any) ? 'en' : 'en'; // fallback
@@ -310,13 +310,13 @@ export default function WorkspaceSettings() {
                           <p>{tw.deleteConfirmDesc}</p>
                           <div className="space-y-2">
                             <Label className="text-foreground font-medium">
-                              {tw.deleteConfirmLabel.replace('{name}', activeWorkspace.name)}
+                              {tw.deleteConfirmLabel}
                             </Label>
                             <Input
                               value={deleteConfirmName}
                               onChange={(e) => setDeleteConfirmName(e.target.value)}
-                              placeholder={activeWorkspace.name}
-                              className="border-destructive/50 focus-visible:ring-destructive"
+                              placeholder={isVi ? 'đồng ý' : 'agree'}
+                              className="border-destructive/50 focus-visible:ring-destructive font-mono"
                             />
                           </div>
                         </div>

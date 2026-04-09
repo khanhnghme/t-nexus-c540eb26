@@ -277,7 +277,7 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
 
   // Delete logic
   const handleDelete = async () => {
-    if (confirmText !== 'pricing') return;
+    if (confirmText !== 'đồng ý' && confirmText !== 'agree') return;
     setDeleting(true);
     try {
       // 1. Delete individual projects (not part of deleted workspaces)
@@ -380,11 +380,11 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
-        <Shield className="w-5 h-5 text-destructive" />
-        Dọn dẹp tài khoản
+        <Shield className="w-5 h-5 text-primary" />
+        Quản lý & Dọn dẹp dữ liệu
       </h2>
       <p className="text-sm text-muted-foreground">
-        Chọn workspace hoặc project cần xóa để giảm mức sử dụng xuống dưới hạn mức gói Free.
+        Chọn workspace hoặc project muốn xóa để chủ động quản lý tài nguyên và giải phóng dung lượng tài khoản.
       </p>
 
       {/* Summary of limits */}
@@ -568,16 +568,16 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
         </div>
       )}
 
-      {/* Step 1: Review what will be deleted */}
+      {/* Step 1: Xác nhận phạm vi xóa */}
       <AlertDialog open={confirmStep === 1} onOpenChange={(open) => { if (!open) setConfirmStep(0); }}>
         <AlertDialogContent className="bg-background border shadow-lg max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-base font-semibold">
-              Xem lại danh sách xóa
+              Xác nhận phạm vi xóa
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3 text-sm text-foreground">
-                <p className="text-muted-foreground">Các mục sau sẽ bị xóa vĩnh viễn:</p>
+                <p className="text-muted-foreground">Vui lòng xem lại danh sách tài nguyên sẽ bị xóa vĩnh viễn khỏi hệ thống:</p>
                 <div className="rounded-lg border bg-muted/30 p-3 space-y-1.5 max-h-[200px] overflow-y-auto">
                   {Array.from(selectedWs).map(wsId => {
                     const ws = wsInfos.find(w => w.id === wsId);
@@ -600,43 +600,43 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
                       );
                     })}
                 </div>
-                <p className="text-destructive text-xs">Không thể hoàn tác sau khi xóa.</p>
+                <p className="text-destructive text-xs font-medium">⚠ Thao tác này không thể hoàn tác. Mọi dữ liệu liên quan sẽ bị xóa triệt để.</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="text-sm">Hủy</AlertDialogCancel>
+            <AlertDialogCancel className="text-sm">Hủy bỏ</AlertDialogCancel>
             <Button
               variant="outline"
               className="border-destructive/30 text-destructive hover:bg-destructive/10"
               onClick={() => setConfirmStep(2)}
             >
-              Tiếp tục →
+              Tiếp tục xác nhận →
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Step 2: Confirm pricing policy */}
+      {/* Step 2: Xác nhận lần cuối — nhập "đồng ý" */}
       <AlertDialog open={confirmStep === 2} onOpenChange={(open) => { if (!open) setConfirmStep(0); }}>
         <AlertDialogContent className="bg-background border shadow-lg max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-base font-semibold">
-              Xác nhận lần cuối
+              Xác nhận xóa dữ liệu
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-4 text-sm text-foreground">
                 <p className="text-muted-foreground">
-                  Tôi đã đọc và hiểu <a href="/pricing" target="_blank" className="text-primary underline underline-offset-2 hover:text-primary/80">chính sách giá</a> của T-Nexus. Dữ liệu bị xóa sẽ không thể khôi phục.
+                  Bằng việc tiếp tục, tôi xác nhận đã kiểm tra kỹ danh sách tài nguyên và chấp nhận rằng toàn bộ dữ liệu đã chọn sẽ bị xóa vĩnh viễn, không thể khôi phục.
                 </p>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1.5 block">
-                    Nhập <span className="text-destructive font-semibold">pricing</span> để xác nhận:
+                    Nhập <span className="text-destructive font-semibold">đồng ý</span> để xác nhận:
                   </label>
                   <Input
                     value={confirmText}
                     onChange={e => setConfirmText(e.target.value)}
-                    placeholder="pricing"
+                    placeholder="đồng ý"
                     className="font-mono text-sm"
                     autoFocus
                   />
@@ -651,7 +651,7 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
             <Button
               variant="outline"
               className="border-destructive/30 text-destructive hover:bg-destructive/10 disabled:opacity-40"
-              disabled={confirmText !== 'pricing' || deleting}
+              disabled={(confirmText !== 'đồng ý' && confirmText !== 'agree') || deleting}
               onClick={handleDelete}
             >
               {deleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
