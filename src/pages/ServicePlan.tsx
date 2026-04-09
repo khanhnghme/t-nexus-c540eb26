@@ -216,22 +216,87 @@ export default function ServicePlan() {
     setAddonDirty(true);
   };
 
-  const handleAddonConfirm = async () => {
-    for (const type of ['projects', 'storage', 'members'] as AddonType[]) {
-      await userAddons.updateAddon(type, localAddons[type]);
+  // Fetch PayPal client ID for addon payments
+  useEffect(() => {
+    if (isPremium && !paypalClientId) {
+      supabase.functions.invoke('get-paypal-config').then(({ data }) => {
+        if (data?.clientId) setPaypalClientId(data.clientId);
+      });
     }
-    setAddonDirty(false);
-    accountLimits.refresh();
-    toast({
-      title: '🧩 Add-on',
-      description: t.addonComingSoon || 'Payment for add-ons is coming soon.',
-    });
+  }, [isPremium, paypalClientId]);
+
+  // Calculate addon deltas (new - existing in DB)
+  const addonDeltas = {
+    projects: localAddons.projects - userAddons.getQuantity('projects'),
+    storage: localAddons.storage - userAddons.getQuantity('storage'),
+    members: localAddons.members - userAddons.getQuantity('members'),
   };
+  const hasAddonDelta = addonDeltas.projects > 0 || addonDeltas.storage > 0 || addonDeltas.members > 0;
+
+  const billingCycle = profile?.billing_cycle || 'monthly';
+  const addonBasePrice = billingCycle === 'yearly' ? ADDON_PRICE * 10 : ADDON_PRICE;
 
   const discount = getAddonDiscount(plan);
-  const unitPrice = BASE_PRICE * (1 - discount.pct);
+  const unitPrice = addonBasePrice * (1 - discount.pct);
+
+  // Delta cost (only for new additions)
+  const deltaAddons = (['projects', 'storage', 'members'] as AddonType[])
+    .filter(t => addonDeltas[t] > 0)
+    .map(t => ({ type: t, quantity: addonDeltas[t] }));
+  const deltaTotalOriginal = deltaAddons.reduce((s, a) => s + a.quantity * addonBasePrice, 0);
+  const deltaTotalFinal = deltaAddons.reduce((s, a) => s + a.quantity * unitPrice, 0);
+  const deltaSaving = Math.round((deltaTotalOriginal - deltaTotalFinal) * 100) / 100;
+
+  // Total display cost (all addons including existing)
   const totalAddonQty = localAddons.projects + localAddons.storage + localAddons.members;
   const totalAddonCost = totalAddonQty * unitPrice;
+
+  const createAddonOrder = useCallback(async (): Promise<string> => {
+    const addonsPayload = deltaAddons.map(a => ({ type: a.type, quantity: a.quantity }));
+
+    const { data, error } = await supabase.functions.invoke('create-paypal-order', {
+      body: {
+        order_type: 'addon',
+        billing_cycle: billingCycle,
+        addons: addonsPayload,
+      },
+    });
+
+    if (error || !data?.orderID) {
+      throw new Error(error?.message || 'Failed to create order');
+    }
+    return data.orderID;
+  }, [deltaAddons, billingCycle]);
+
+  const captureAddonOrder = useCallback(async (orderID: string) => {
+    setAddonPaymentLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('capture-paypal-order', {
+        body: { orderID },
+      });
+
+      if (error || !data?.success) {
+        throw new Error(error?.message || 'Capture failed');
+      }
+
+      userAddons.refresh();
+      accountLimits.refresh();
+      setShowAddonPaypal(false);
+      setAddonDirty(false);
+      toast({
+        title: '✅ Add-on',
+        description: t.addonPurchaseSuccess || 'Add-on purchased successfully!',
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Error',
+        description: err.message || 'Payment failed',
+        variant: 'destructive',
+      });
+    } finally {
+      setAddonPaymentLoading(false);
+    }
+  }, [userAddons, accountLimits, t]);
 
   if (isLoading) {
     return (
