@@ -265,9 +265,13 @@ export function MemberAuthForm() {
       if (captchaError || !captchaResult?.success) {
         setIsLoading(false);
         setTurnstileToken(null);
+        turnstileRef.current?.reset();
         toast({ title: ta.captchaFailed, variant: 'destructive' });
         return;
       }
+      // Token consumed, reset for next attempt
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
 
       let loginEmail = input;
       let profileQuery: 'email' | 'student_id' = isEmail ? 'email' : 'student_id';
