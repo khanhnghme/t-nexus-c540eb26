@@ -1185,6 +1185,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          max_activity_log_days: number | null
           max_file_size_mb: number
           max_meeting_duration_minutes: number | null
           max_members_per_workspace: number
@@ -1197,6 +1198,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          max_activity_log_days?: number | null
           max_file_size_mb?: number
           max_meeting_duration_minutes?: number | null
           max_members_per_workspace?: number
@@ -1209,6 +1211,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          max_activity_log_days?: number | null
           max_file_size_mb?: number
           max_meeting_duration_minutes?: number | null
           max_members_per_workspace?: number
