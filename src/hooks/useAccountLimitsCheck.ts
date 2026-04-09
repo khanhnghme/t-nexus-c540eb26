@@ -9,25 +9,36 @@ interface AccountLimits {
   uniqueMembers: number;
   storageMb: number;
 
-  // Plan limits (null = unlimited)
+  // Plan limits (null = unlimited) — already includes addon bonus
   maxWorkspaces: number | null;
   maxProjects: number | null;
   maxMembers: number | null;
   maxStorageMb: number | null;
   maxFileSizeMb: number | null;
 
+  // Base limits (before addon)
+  baseProjects: number | null;
+  baseMembers: number | null;
+  baseStorageMb: number | null;
+
+  // Addon bonuses
+  bonusProjects: number;
+  bonusMembers: number;
+  bonusStorageMb: number;
+
   // Helpers
   isLoading: boolean;
   canCreateWorkspace: boolean;
   canCreateProject: boolean;
   canInviteMember: (isExistingMember: boolean) => boolean;
-  isOverLimits: boolean; // for read-only check
+  isOverLimits: boolean;
   refresh: () => void;
 }
 
 /**
  * Central hook for checking account-wide resource limits.
  * All limits are Global Pool (account-wide), not per-workspace.
+ * Addon bonuses are included in the max* fields.
  */
 export function useAccountLimitsCheck(): AccountLimits {
   const { user, profile } = useAuth();
@@ -41,6 +52,12 @@ export function useAccountLimitsCheck(): AccountLimits {
     maxMembers: null as number | null,
     maxStorageMb: null as number | null,
     maxFileSizeMb: null as number | null,
+    baseProjects: null as number | null,
+    baseMembers: null as number | null,
+    baseStorageMb: null as number | null,
+    bonusProjects: 0,
+    bonusMembers: 0,
+    bonusStorageMb: 0,
     isLoading: true,
   });
 
@@ -50,17 +67,18 @@ export function useAccountLimitsCheck(): AccountLimits {
     try {
       const plan = profile?.user_plan || 'plan_free';
 
-      // Fetch limits + counts in parallel
       const [
         limitsRes,
         wsCountRes,
         storageRes,
         uniqueMembersRes,
+        addonRes,
       ] = await Promise.all([
         supabase.from('plan_limits').select('*').eq('plan', plan as any).maybeSingle(),
         supabase.from('workspaces').select('id', { count: 'exact', head: true }).eq('owner_id', user.id),
         supabase.rpc('get_account_storage_usage', { _owner_id: user.id }),
         supabase.rpc('get_account_unique_members', { _owner_id: user.id }),
+        supabase.rpc('get_owner_addon_bonus', { _owner_id: user.id }),
       ]);
 
       // Count total projects across all owned workspaces
@@ -79,6 +97,14 @@ export function useAccountLimitsCheck(): AccountLimits {
       }
 
       const limits = limitsRes.data;
+      const addonData = Array.isArray(addonRes.data) ? addonRes.data[0] : addonRes.data;
+      const bonusProjects = addonData?.bonus_projects ?? 0;
+      const bonusMembers = addonData?.bonus_members ?? 0;
+      const bonusStorageMb = addonData?.bonus_storage_mb ?? 0;
+
+      const baseProjects = limits?.max_projects_per_workspace ?? null;
+      const baseMembers = limits?.max_members_per_workspace ?? null;
+      const baseStorage = limits?.max_storage_mb ?? null;
 
       setState({
         workspaceCount: wsCountRes.count ?? 0,
@@ -86,10 +112,16 @@ export function useAccountLimitsCheck(): AccountLimits {
         uniqueMembers: (uniqueMembersRes.data as number) ?? 0,
         storageMb: Math.round(Number(storageRes.data) || 0),
         maxWorkspaces: limits?.max_workspaces ?? null,
-        maxProjects: limits?.max_projects_per_workspace ?? null,
-        maxMembers: limits?.max_members_per_workspace ?? null,
-        maxStorageMb: limits?.max_storage_mb ?? null,
+        maxProjects: baseProjects !== null ? baseProjects + bonusProjects : null,
+        maxMembers: baseMembers !== null ? baseMembers + bonusMembers : null,
+        maxStorageMb: baseStorage !== null ? baseStorage + bonusStorageMb : null,
         maxFileSizeMb: (limits as any)?.max_file_size_mb ?? null,
+        baseProjects,
+        baseMembers,
+        baseStorageMb: baseStorage,
+        bonusProjects,
+        bonusMembers,
+        bonusStorageMb,
         isLoading: false,
       });
     } catch (err) {
@@ -106,12 +138,11 @@ export function useAccountLimitsCheck(): AccountLimits {
   const canCreateProject = state.maxProjects === null || state.totalProjects < state.maxProjects;
   
   const canInviteMember = (isExistingMember: boolean) => {
-    if (isExistingMember) return true; // Existing unique seat, no additional cost
-    if (state.maxMembers === null) return true; // Unlimited
+    if (isExistingMember) return true;
+    if (state.maxMembers === null) return true;
     return state.uniqueMembers < state.maxMembers;
   };
 
-  // Check if current usage exceeds Free plan limits (for read-only enforcement after downgrade)
   const isOverLimits = (() => {
     if (state.maxWorkspaces !== null && state.workspaceCount > state.maxWorkspaces) return true;
     if (state.maxProjects !== null && state.totalProjects > state.maxProjects) return true;
