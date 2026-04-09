@@ -170,7 +170,7 @@ export default function WorkspaceSettings() {
     setTimeout(() => setCopiedSlug(false), 2000);
   };
 
-  const deleteNameMatches = deleteConfirmName.trim() === activeWorkspace.name.trim();
+  const deleteNameMatches = deleteConfirmName.trim() === 'đồng ý' || deleteConfirmName.trim() === 'agree';
 
   // Build subtitle strings
   const locale = t === (t as any) ? 'en' : 'en'; // fallback

@@ -188,11 +188,9 @@ export default function ServicePlan() {
         <TabsList>
           <TabsTrigger value="plan">{t.currentPlanTab}</TabsTrigger>
           <TabsTrigger value="usage">{t.usageTab}</TabsTrigger>
-          {accountLimits.isOverLimits && (
-            <TabsTrigger value="cleanup" className="text-destructive data-[state=active]:text-destructive">
-              {t.cleanupTab}
-            </TabsTrigger>
-          )}
+          <TabsTrigger value="cleanup">
+            {t.cleanupTab}
+          </TabsTrigger>
           <TabsTrigger value="billing">{t.billingTab}</TabsTrigger>
         </TabsList>
 
@@ -481,21 +479,17 @@ export default function ServicePlan() {
             )}
           </section>
 
-          {accountLimits.isOverLimits && (
-            <div className="text-center">
-              <Button variant="outline" size="sm" onClick={() => handleTabChange('cleanup')} className="text-destructive border-destructive/30">
-                {t.openCleanupTool}
-              </Button>
-            </div>
-          )}
+          <div className="text-center">
+            <Button variant="outline" size="sm" onClick={() => handleTabChange('cleanup')}>
+              {t.openCleanupTool}
+            </Button>
+          </div>
         </TabsContent>
 
         {/* TAB: Cleanup */}
-        {accountLimits.isOverLimits && (
-          <TabsContent value="cleanup" className="space-y-6">
-            <AccountCleanupPanel onCleanupComplete={fetchUsages} />
-          </TabsContent>
-        )}
+        <TabsContent value="cleanup" className="space-y-6">
+          <AccountCleanupPanel onCleanupComplete={fetchUsages} />
+        </TabsContent>
 
         {/* TAB 3: Billing history */}
         <TabsContent value="billing" className="space-y-4">
