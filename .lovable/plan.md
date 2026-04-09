@@ -1,43 +1,44 @@
 
 
-## Plan: Hiển thị rõ phần giảm giá welcome + gọn UI Step 2
+## Plan: Redesign hiển thị giảm giá 2 step theo mockup
 
-### Vấn đề
-- Step 1 & Step 2: Mỗi plan card/row hiển thị giá gốc gạch ngang + giá welcome riêng lẻ → rối mắt
-- Step 2: Không hiển thị rõ tổng giá gốc - tổng giảm = tổng thanh toán
+### Phân tích từ ảnh tham chiếu
 
-### Giải pháp
+**Step 1 — Order Summary (phải):**
+- Plan price hiển thị giá GỐC ($240.00)
+- Dòng riêng "🎉 Ưu đãi chào mừng" → -$21.00 (emerald)
+- Addon items hiển thị giá đã giảm × qty
+- Dòng riêng "Tiết kiệm add-on" → -$149.40 (emerald)
+- Tổng cộng bold lớn
+- Ghi chú "Thanh toán một lần mỗi năm"
+
+**Step 2 — Order Table:**
+- Plan row: giá gốc, không gạch ngang inline
+- Addon rows: giá gốc gạch ngang + giá đã giảm emerald (cùng dòng)
+- Breakdown dưới bảng: Tạm tính → Welcome → Tiết kiệm add-on (%) → Tổng cộng
+- Pay Box phải: Tổng thanh toán lớn, rồi liệt kê Plan / Welcome / Addons / Tiết kiệm
+
+### So sánh với code hiện tại → cần sửa
+
+1. **Step 1 Order Summary**: Hiện tại addon items hiển thị giá đã giảm nhưng KHÔNG có giá gốc gạch ngang → thêm giá gốc gạch ngang khi có discount (giống addon section bên trái)
+2. **Step 2 Pay Box**: Hiện tại show `addonFinal` cho Add-ons → đổi thành show `addonOriginal` (tổng addon gốc) rồi dòng riêng Tiết kiệm add-on trừ ra — giống mockup
+3. **Step 2 Order Table addon rows**: Đã đúng (gạch ngang + emerald)
+4. **Step 2 Subtotal**: Đã đúng nhưng cần đảm bảo format giống mockup — "Tiết kiệm add-on (20%)" text
+
+### Thay đổi cụ thể
 
 **File: `src/pages/Checkout.tsx`**
 
-#### Step 1 — Plan cards (line ~322-328)
-- Xoá dòng giá gốc gạch ngang riêng trên mỗi card
-- Chỉ hiển thị giá welcome (đã giảm) làm giá chính
-- Không ghi chi tiết giảm bao nhiêu trên từng card (banner chung đã nói "~20%")
+**Step 1 — Order Summary addon items (line ~460-471):**
+- Thêm giá gốc gạch ngang trước giá đã giảm khi `addonDiscountRate > 0`
+- Format: `$24.90` ~~gạch~~ `$19.92` (giống mockup)
 
-#### Step 1 — Order Summary bên phải (line ~436-448)
-- Plan price chỉ hiển thị giá welcome `$baseAmount`
-- Nếu `welcomeDiscount > 0`, thêm 1 dòng riêng "🎉 Ưu đãi chào mừng" hiển thị `-$welcomeDiscount` màu emerald (giống dòng coupon)
+**Step 2 — Pay Box (line ~732-736):**
+- Thay `addonFinal` bằng `addonOriginal` cho dòng "Add-ons" 
+- Đảm bảo dòng "Tiết kiệm add-on" hiển thị đúng bên dưới
 
-#### Step 2 — Order Table (line ~552-620)
-- Plan row: chỉ hiển thị giá gốc `$originalBaseAmount` (không gạch ngang + giá welcome xen kẽ)
-- Bỏ hiển thị giá welcome trên dòng plan
-- Phần Subtotal/Discount/Total ở dưới bảng:
-  - Tạm tính: `$originalBaseAmount + $addonOriginal` (tổng giá gốc)
-  - Dòng "Ưu đãi chào mừng": `-$welcomeDiscount` (nếu có)
-  - Dòng "Add-on savings": `-$addonSaving` (nếu có)
-  - Dòng "Coupon": `-$discountAmount` (nếu có)
-  - Tổng: `$totalAmount`
-
-#### Step 2 — Pay Box bên phải (line ~708-724)
-- Plan hiển thị giá gốc `$originalBaseAmount`
-- Thêm dòng "Ưu đãi chào mừng" `-$welcomeDiscount` nếu có
-- Giữ nguyên dòng Add-ons, Discount
-
-### Tóm tắt logic
-- Không ghi chi tiết % giảm trên từng gói
-- Tách rõ: giá gốc → các dòng giảm giá → tổng cuối
-- UI sạch, dễ hiểu
+**Cleanup nhỏ:**
+- Đảm bảo format text nhất quán giữa 2 step
 
 ### Files cần sửa
 - `src/pages/Checkout.tsx`
