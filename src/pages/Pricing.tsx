@@ -235,7 +235,7 @@ export default function Pricing() {
         {/* ── Pricing docs CTA ── */}
         <div style={{ textAlign: 'center', padding: '24px 0 48px', borderTop: '1px solid rgba(55,53,47,0.09)' }}>
           <p style={{ fontSize: 15, color: '#787774', marginBottom: 8 }}>
-            {'💡 '}{t.pricingDocs?.pricingCta}
+            {'📋 '}{t.pricingDocs?.pricingCta}
           </p>
           <Link to={lp('/guide/pricing')} style={{ fontSize: 15, color: '#2383e2', textDecoration: 'underline', fontWeight: 500 }}>
             {t.pricingDocs?.pricingCtaLink}{' →'}
