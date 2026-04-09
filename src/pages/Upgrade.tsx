@@ -1,6 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Check, ArrowLeft, Plus, Minus, AlertTriangle, Zap } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { getWelcomePrice } from '@/lib/planConfig';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
@@ -44,6 +46,7 @@ function formatPrice(monthly: number | null, yearly: boolean): string {
 
 export default function Upgrade() {
   const [yearly, setYearly] = useState(false);
+  const [isFirstTimeBuyer, setIsFirstTimeBuyer] = useState(false);
   const { translations: t, translations: { pricing: tp, common: tc } } = useLanguage();
   const { user, profile } = useAuth();
   const { activeWorkspace } = useWorkspace();
@@ -56,6 +59,21 @@ export default function Upgrade() {
   // When from personal, always use user's own plan & treat them as owner
   const effectivePlan = isFromPersonal ? (profile?.user_plan || 'plan_free') : ownerPlan;
   const isOwner = isFromPersonal ? true : (user?.id === ownerId);
+  const isVi = tc?.language === 'vi' || document.documentElement.lang === 'vi';
+
+  // Check first-time buyer
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from('orders')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('status', 'completed')
+      .limit(1)
+      .then(({ data }) => {
+        setIsFirstTimeBuyer(!data || data.length === 0);
+      });
+  }, [user?.id]);
 
   const handleSelectPlan = (planKey?: string) => {
     if (!isOwner) return;
@@ -69,7 +87,6 @@ export default function Upgrade() {
   };
 
   const currentPlanKey: string = effectivePlan ? effectivePlan.replace(/^plan_/, '') : 'free';
-  const isVi = tc?.language === 'vi' || document.documentElement.lang === 'vi';
   const upgradeCta = isVi ? 'Nâng cấp' : 'Upgrade';
   const currentPlanCta = isVi ? 'Gói hiện tại' : 'Current plan';
   const downgradeCta = isVi ? 'Hạ cấp' : 'Downgrade';
@@ -173,6 +190,26 @@ export default function Upgrade() {
           {tp.heroTitle}
         </h1>
 
+        {/* Welcome Offer Banner */}
+        {isFirstTimeBuyer && (
+          <div className="mb-6 p-4 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-lg">🎉</span>
+              <span className="font-semibold text-foreground text-sm">
+                {isVi ? 'Ưu đãi chào mừng dành riêng cho bạn' : 'Welcome offer just for you'}
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground ml-7">
+              {isVi
+                ? 'Giảm tối đa lên đến gần 20% cho gói đăng ký đầu tiên'
+                : 'Save up to nearly 20% on your first subscription'}
+            </p>
+            <p className="text-xs text-muted-foreground/70 ml-7 mt-0.5 italic">
+              {isVi ? '(Không áp dụng cho tiện ích bổ sung)' : '(Does not apply to add-ons)'}
+            </p>
+          </div>
+        )}
+
         {/* Toggle row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -204,7 +241,7 @@ export default function Upgrade() {
               padding: '24px 22px 28px',
               borderRight: idx < LEFT_PLANS.length - 1 ? '1px solid hsl(var(--border))' : 'none',
             }}>
-              <PlanColumn plan={plan} yearly={yearly} tp={tp} disabled={!isOwner} onSelect={handleSelectPlan} />
+              <PlanColumn plan={plan} yearly={yearly} tp={tp} disabled={!isOwner} onSelect={handleSelectPlan} isFirstTimeBuyer={isFirstTimeBuyer} />
             </div>
           ))}
         </div>
@@ -228,7 +265,7 @@ export default function Upgrade() {
               padding: '24px 22px 28px',
               borderRight: idx < RIGHT_PLANS.length - 1 ? '1px solid hsl(var(--border))' : 'none',
             }}>
-              <PlanColumn plan={plan} yearly={yearly} tp={tp} disabled={!isOwner} onSelect={handleSelectPlan} />
+              <PlanColumn plan={plan} yearly={yearly} tp={tp} disabled={!isOwner} onSelect={handleSelectPlan} isFirstTimeBuyer={isFirstTimeBuyer} />
             </div>
           ))}
         </div>
@@ -261,7 +298,7 @@ export default function Upgrade() {
         </div>
 
         {/* Comparison table */}
-        <UpgradePlansAndFeatures yearly={yearly} planCols={PLAN_COLS} comparison={COMPARISON} tp={tp} disabled={!isOwner} onSelect={handleSelectPlan} />
+        <UpgradePlansAndFeatures yearly={yearly} planCols={PLAN_COLS} comparison={COMPARISON} tp={tp} disabled={!isOwner} onSelect={handleSelectPlan} isFirstTimeBuyer={isFirstTimeBuyer} />
 
         {/* FAQ */}
         <UpgradeQuestionsAndAnswers faqData={FAQ_DATA} tp={tp} />
@@ -319,9 +356,12 @@ function ToggleBtn({ active, onClick, label }: { active: boolean; onClick: () =>
 
 /* ═══════════════════════ Plan Column ═══════════════════════ */
 
-function PlanColumn({ plan, yearly, tp, disabled, onSelect }: { plan: Plan; yearly: boolean; tp: any; disabled: boolean; onSelect: (planKey?: string) => void }) {
+function PlanColumn({ plan, yearly, tp, disabled, onSelect, isFirstTimeBuyer = false }: { plan: Plan; yearly: boolean; tp: any; disabled: boolean; onSelect: (planKey?: string) => void; isFirstTimeBuyer?: boolean }) {
   const price = formatPrice(plan.monthlyPrice, yearly);
   const isCustom = plan.monthlyPrice === null;
+  const planKey = `plan_${plan.key}`;
+  const welcomePrice = isFirstTimeBuyer ? getWelcomePrice(planKey, yearly ? 'yearly' : 'monthly') : null;
+  const hasWelcome = welcomePrice !== null && welcomePrice > 0;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -334,15 +374,24 @@ function PlanColumn({ plan, yearly, tp, disabled, onSelect }: { plan: Plan; year
         )}
       </div>
 
-      <div className="min-h-[56px] mb-2 flex items-baseline flex-wrap">
-        <span className="text-3xl font-bold text-foreground tracking-tight leading-none">{price}</span>
+      <div className="min-h-[56px] mb-2 flex items-baseline flex-wrap gap-1.5">
+        {hasWelcome ? (
+          <>
+            <span className="text-lg text-muted-foreground line-through">{price}</span>
+            <span className="text-3xl font-bold text-green-600 tracking-tight leading-none">
+              ${yearly ? welcomePrice.toFixed(0) : welcomePrice % 1 === 0 ? welcomePrice.toFixed(0) : welcomePrice.toFixed(1)}
+            </span>
+          </>
+        ) : (
+          <span className="text-3xl font-bold text-foreground tracking-tight leading-none">{price}</span>
+        )}
         {!isCustom && (
-          <span className="text-xs text-muted-foreground ml-1.5">
+          <span className="text-xs text-muted-foreground">
             {tp.perWorkspace} / {yearly ? tp.mo : tp.month}
           </span>
         )}
         {isCustom && (
-          <span className="text-xs text-muted-foreground ml-1.5">{tp.customPricing}</span>
+          <span className="text-xs text-muted-foreground">{tp.customPricing}</span>
         )}
       </div>
 
@@ -387,7 +436,7 @@ function CellContent({ value }: { value: CellValue }) {
   return <span className="text-[13px] text-foreground leading-relaxed">{value}</span>;
 }
 
-function UpgradePlansAndFeatures({ yearly, planCols, comparison, tp, disabled, onSelect }: { yearly: boolean; planCols: any[]; comparison: FeatureCategory[]; tp: any; disabled: boolean; onSelect: (planKey?: string) => void }) {
+function UpgradePlansAndFeatures({ yearly, planCols, comparison, tp, disabled, onSelect, isFirstTimeBuyer = false }: { yearly: boolean; planCols: any[]; comparison: FeatureCategory[]; tp: any; disabled: boolean; onSelect: (planKey?: string) => void; isFirstTimeBuyer?: boolean }) {
   return (
     <div style={{ marginTop: 72, paddingBottom: 48 }}>
       <h2 className="text-2xl font-bold text-foreground mb-8">{tp.comparisonTitle}</h2>
@@ -404,6 +453,9 @@ function UpgradePlansAndFeatures({ yearly, planCols, comparison, tp, disabled, o
             {planCols.map((col: any) => {
               const price = formatPrice(col.monthlyPrice, yearly);
               const isCustom = col.monthlyPrice === null;
+              const colPlanKey = `plan_${col.key}`;
+              const welcomePrice = isFirstTimeBuyer ? getWelcomePrice(colPlanKey, yearly ? 'yearly' : 'monthly') : null;
+              const hasWelcome = welcomePrice !== null && welcomePrice > 0;
               return (
                 <th key={col.key} className={`p-4 text-left align-bottom border-b-2 border-border sticky top-0 z-10 ${col.isCurrent ? 'bg-primary/5' : 'bg-background'}`}>
                   <div className="text-sm font-bold text-foreground mb-0.5">
@@ -411,7 +463,13 @@ function UpgradePlansAndFeatures({ yearly, planCols, comparison, tp, disabled, o
                     {col.isCurrent && <span className="ml-1.5 text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">✓</span>}
                   </div>
                   <div className="text-xs text-muted-foreground mb-2">
-                    {isCustom ? tp.contactUs : <>{price}<span className="font-normal"> / {tp.mo}</span></>}
+                    {isCustom ? tp.contactUs : hasWelcome ? (
+                      <>
+                        <span className="line-through">{price}</span>{' '}
+                        <span className="text-green-600 font-semibold">${welcomePrice % 1 === 0 ? welcomePrice.toFixed(0) : welcomePrice.toFixed(1)}</span>
+                        <span className="font-normal"> / {tp.mo}</span>
+                      </>
+                    ) : <>{price}<span className="font-normal"> / {tp.mo}</span></>}
                   </div>
                   <button
                     onClick={() => onSelect(col.key)}
