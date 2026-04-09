@@ -1183,6 +1183,7 @@ export type Database = {
       }
       plan_limits: {
         Row: {
+          can_export_data: boolean
           created_at: string
           id: string
           max_activity_log_days: number | null
@@ -1196,6 +1197,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          can_export_data?: boolean
           created_at?: string
           id?: string
           max_activity_log_days?: number | null
@@ -1209,6 +1211,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          can_export_data?: boolean
           created_at?: string
           id?: string
           max_activity_log_days?: number | null
