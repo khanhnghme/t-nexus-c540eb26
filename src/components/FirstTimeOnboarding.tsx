@@ -952,13 +952,53 @@ export default function FirstTimeOnboarding({
                 </div>
 
                 <div className="flex-1 px-4 md:px-8 pb-6 overflow-y-auto">
-                  <div className="w-full max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4 mt-4">
+                  {/* Billing Cycle Toggle */}
+                  <div className="flex justify-center mt-3 mb-3">
+                    <div className="flex items-center gap-1 text-xs bg-muted rounded-full p-0.5">
+                      <button
+                        onClick={() => setCycle('monthly')}
+                        className={cn(
+                          "px-4 py-1.5 rounded-full transition-colors font-medium",
+                          cycle === 'monthly' ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        {isVi ? 'Tháng' : 'Monthly'}
+                      </button>
+                      <button
+                        onClick={() => setCycle('yearly')}
+                        className={cn(
+                          "px-4 py-1.5 rounded-full transition-colors font-medium",
+                          cycle === 'yearly' ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        {isVi ? 'Năm' : 'Yearly'}
+                        <span className="ml-1 opacity-75">-17%</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Welcome Offer Banner */}
+                  {isFirstTimeBuyer && (
+                    <div className="max-w-5xl mx-auto mb-4 p-3 rounded-xl bg-gradient-to-r from-emerald-500/10 via-primary/10 to-violet-500/10 border border-emerald-500/20">
+                      <div className="text-center">
+                        <p className="font-bold text-sm">{t.welcomeBannerTitle}</p>
+                        <p className="text-sm">{t.welcomeBannerDesc}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{t.welcomeBannerNote}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="w-full max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
                     {planCards.map(card => {
                       const cfg = PLAN_CONFIG[card.key];
                       const features = getPlanFeatures(card.key);
                       const desc = getPlanDescription(card.key);
                       const isSelected = selectedPlan === card.key;
-                      const price = cfg.monthlyPrice;
+                      const originalPrice = cycle === 'yearly' ? cfg.yearlyPrice : cfg.monthlyPrice;
+                      const welcomePrice = isFirstTimeBuyer ? getWelcomePrice(card.key, cycle) : null;
+                      const showWelcome = welcomePrice !== null && welcomePrice !== originalPrice && card.key !== 'plan_free';
+                      const displayPrice = showWelcome ? welcomePrice : originalPrice;
+                      const cycleLabel = cycle === 'yearly' ? t.planYear : t.planMonth;
 
                       return (
                         <button
@@ -982,25 +1022,28 @@ export default function FirstTimeOnboarding({
                             <span className="font-bold text-sm">{cfg.label}</span>
                           </div>
 
-                          <p className="text-xl font-extrabold mb-0.5">
-                            {price !== null ? `$${price}` : isVi ? 'Tùy chỉnh' : 'Custom'}
-                            {price !== null && <span className="text-xs font-normal text-muted-foreground">/{t.planMonth}</span>}
-                          </p>
+                          <div className="mb-0.5">
+                            {showWelcome && (
+                              <span className="text-sm text-muted-foreground line-through mr-1.5">${originalPrice}</span>
+                            )}
+                            <span className="text-xl font-extrabold">
+                              {displayPrice !== null ? `$${displayPrice}` : isVi ? 'Tùy chỉnh' : 'Custom'}
+                            </span>
+                            {displayPrice !== null && <span className="text-xs font-normal text-muted-foreground">/{cycleLabel}</span>}
+                          </div>
 
                           {desc && (
                             <p className="text-[10px] text-muted-foreground mb-2 leading-relaxed">{desc}</p>
                           )}
 
-                          <ScrollArea className="flex-1 max-h-[180px]">
-                            <ul className="text-[11px] text-muted-foreground space-y-1">
-                              {features.map((f, i) => (
-                                <li key={i} className="flex items-start gap-1.5">
-                                  <Check className={cn('w-3 h-3 shrink-0 mt-0.5', card.color)} />
-                                  <span>{f}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </ScrollArea>
+                          <ul className="text-[11px] text-muted-foreground space-y-1">
+                            {features.map((f, i) => (
+                              <li key={i} className="flex items-start gap-1.5">
+                                <Check className={cn('w-3 h-3 shrink-0 mt-0.5', card.color)} />
+                                <span>{f}</span>
+                              </li>
+                            ))}
+                          </ul>
 
                           {isSelected && (
                             <div className={cn('absolute top-2.5 right-2.5 w-5 h-5 rounded-full flex items-center justify-center', card.checkColor)}>
@@ -1012,9 +1055,16 @@ export default function FirstTimeOnboarding({
                     })}
                   </div>
 
-                  <p className="text-[11px] text-muted-foreground text-center mb-2 max-w-md mx-auto">
+                  <p className="text-[11px] text-muted-foreground text-center mb-1 max-w-md mx-auto">
                     {t.planNote}
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/guide/pricing')}
+                    className="text-[11px] text-primary hover:underline text-center block mx-auto mb-2"
+                  >
+                    {t.planGuideLink}
+                  </button>
                   <p className="text-[10px] text-muted-foreground text-center mb-4 max-w-md mx-auto">
                     {t.planContactEnterprise}
                   </p>
