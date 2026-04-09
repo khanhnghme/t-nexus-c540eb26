@@ -41,13 +41,16 @@ interface PlanLimitsData {
   max_storage_mb: number;
 }
 
-const MOCK_BILLING = [
-  { id: 'TXN-20260301-001', date: '01/03/2026', plan: 'Pro', amount: '$12.00', status: 'Paid' },
-  { id: 'TXN-20260201-001', date: '01/02/2026', plan: 'Pro', amount: '$12.00', status: 'Paid' },
-  { id: 'TXN-20260115-002', date: '15/01/2026', plan: 'Pro (Upgrade)', amount: '$7.20', status: 'Paid' },
-  { id: 'TXN-20260101-001', date: '01/01/2026', plan: 'Plus', amount: '$4.80', status: 'Paid' },
-  { id: 'TXN-20251201-001', date: '01/12/2025', plan: 'Free', amount: '$0.00', status: 'Free' },
-];
+interface PaymentRecord {
+  id: string;
+  transaction_id: string | null;
+  created_at: string;
+  plan_purchased: string;
+  amount: number;
+  final_amount: number | null;
+  status: string;
+  payment_method: string | null;
+}
 
 const BASE_PRICE = 2.49;
 
@@ -69,6 +72,8 @@ export default function ServicePlan() {
   const [wsUsages, setWsUsages] = useState<WorkspaceUsage[]>([]);
   const [planLimits, setPlanLimits] = useState<PlanLimitsData | null>(null);
   const [uniqueMemberCount, setUniqueMemberCount] = useState(0);
+  const [billingHistory, setBillingHistory] = useState<PaymentRecord[]>([]);
+  const [billingLoading, setBillingLoading] = useState(false);
 
   // Local addon quantities for editing
   const [localAddons, setLocalAddons] = useState<Record<AddonType, number>>({
