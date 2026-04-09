@@ -462,10 +462,17 @@ export default function Checkout() {
                       if (qty === 0) return null;
                       const unitOriginal = cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
                       const unitFinal = Math.round(unitOriginal * (1 - addonDiscountRate) * 100) / 100;
+                      const totalOriginal = unitOriginal * qty;
+                      const totalFinal = unitFinal * qty;
                       return (
                         <div key={addon.type} className="flex justify-between text-sm text-muted-foreground">
                           <span>{addon.emoji} {isVi ? addon.unitLabelVi : addon.unitLabel} ×{qty}</span>
-                          <span>${(unitFinal * qty).toFixed(2)}</span>
+                          <span className="flex items-center gap-1.5">
+                            {addonDiscountRate > 0 && (
+                              <span className="line-through text-muted-foreground/60 text-xs">${totalOriginal.toFixed(2)}</span>
+                            )}
+                            <span className={addonDiscountRate > 0 ? "text-emerald-600 font-medium" : ""}>${totalFinal.toFixed(2)}</span>
+                          </span>
                         </div>
                       );
                     })}
@@ -729,10 +736,10 @@ export default function Checkout() {
                     <span>-${welcomeDiscount.toFixed(2)}</span>
                   </div>
                 )}
-                {addonFinal > 0 && (
+                {addonOriginal > 0 && (
                   <div className="flex justify-between">
                     <span>Add-ons</span>
-                    <span>${addonFinal.toFixed(2)}</span>
+                    <span>${addonOriginal.toFixed(2)}</span>
                   </div>
                 )}
                 {addonSaving > 0 && (
