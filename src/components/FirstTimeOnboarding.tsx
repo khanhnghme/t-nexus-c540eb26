@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { r2Storage } from '@/lib/r2Storage';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { PLAN_CONFIG, getPlanLabel as getPlanLabelFromConfig, type PlanKey } from '@/lib/planConfig';
+import { PLAN_CONFIG, getPlanLabel as getPlanLabelFromConfig, getWelcomePrice, type PlanKey } from '@/lib/planConfig';
 import tNexusTextWhite from '@/assets/t-nexus-text-white.png';
 import welcomeImg from '@/assets/onboarding-welcome.png';
 import securityImg from '@/assets/onboarding-security.png';
