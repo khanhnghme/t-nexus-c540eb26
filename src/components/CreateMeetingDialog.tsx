@@ -201,13 +201,25 @@ export default function CreateMeetingDialog({
               <Select value={String(durationMinutes)} onValueChange={v => setDurationMinutes(Number(v))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="30">30 phút</SelectItem>
-                  <SelectItem value="45">45 phút</SelectItem>
-                  <SelectItem value="60">60 phút</SelectItem>
-                  <SelectItem value="90">90 phút</SelectItem>
-                  <SelectItem value="120">120 phút</SelectItem>
+                  {filteredDurationOptions.map(mins => (
+                    <SelectItem key={mins} value={String(mins)}>{mins} phút</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              {maxDuration !== null && (
+                <div className="flex items-start gap-1.5 mt-1.5 p-2 rounded-md bg-warning/10 border border-warning/20">
+                  <AlertTriangle className="w-3.5 h-3.5 text-warning mt-0.5 shrink-0" />
+                  <p className="text-[11px] text-warning">
+                    {(t as any).meeting?.durationLimitWarning
+                      ? (t as any).meeting.durationLimitWarning.replace('{limit}', String(maxDuration))
+                      : `Gói hiện tại giới hạn tối đa ${maxDuration} phút/cuộc họp.`}
+                    {' '}
+                    <a href="/upgrade" className="underline font-medium hover:text-warning/80">
+                      {(t as any).meeting?.upgradeCta || 'Nâng cấp'}
+                    </a>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
