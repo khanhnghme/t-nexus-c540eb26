@@ -319,9 +319,8 @@ export default function Checkout() {
                           <span className="font-semibold text-sm">{p.label}</span>
                           {isSelected && <Check className="h-3.5 w-3.5 text-primary" />}
                         </div>
-                        {showWelcome && <span className="text-sm text-muted-foreground line-through">${originalPrice.toFixed(2)}</span>}
                         <div className="flex items-baseline gap-0.5 flex-nowrap">
-                          <span className="text-lg font-bold">${wPrice.toFixed(2)}</span>
+                          <span className={cn("text-lg font-bold", showWelcome && "text-emerald-600")}>${wPrice.toFixed(2)}</span>
                           <span className="text-[11px] text-muted-foreground whitespace-nowrap">
                             /{cycle === 'yearly' ? (isVi ? 'năm' : 'yr') : (isVi ? 'tháng' : 'mo')}
                           </span>
@@ -444,8 +443,16 @@ export default function Checkout() {
                       </span>
                     </p>
                   </div>
-                  <span className="font-semibold">${baseAmount.toFixed(2)}</span>
+                  <span className="font-semibold">${originalBaseAmount.toFixed(2)}</span>
                 </div>
+
+                {/* Welcome Offer discount line */}
+                {welcomeDiscount > 0 && (
+                  <div className="flex justify-between text-sm text-emerald-600">
+                    <span>🎉 {isVi ? 'Ưu đãi chào mừng' : 'Welcome Offer'}</span>
+                    <span>-${welcomeDiscount.toFixed(2)}</span>
+                  </div>
+                )}
 
                 {/* Addons */}
                 {hasAddons && (
@@ -549,7 +556,7 @@ export default function Checkout() {
             <div className="col-span-2 text-right">{isVi ? 'Thành tiền' : 'Total'}</div>
           </div>
 
-          {/* Plan row */}
+          {/* Plan row — show original price */}
           <div className="grid grid-cols-12 gap-2 items-center py-3 text-sm border-b border-dashed">
             <div className="col-span-6">
               <p className="font-medium">{getPlanLabel(plan)} Plan</p>
@@ -561,9 +568,9 @@ export default function Checkout() {
                 </span>
               </p>
             </div>
-            <div className="col-span-2 text-right text-muted-foreground">${baseAmount.toFixed(2)}</div>
+            <div className="col-span-2 text-right text-muted-foreground">${originalBaseAmount.toFixed(2)}</div>
             <div className="col-span-2 text-center text-muted-foreground">1</div>
-            <div className="col-span-2 text-right font-medium">${baseAmount.toFixed(2)}</div>
+            <div className="col-span-2 text-right font-medium">${originalBaseAmount.toFixed(2)}</div>
           </div>
 
           {/* Addon rows */}
@@ -591,12 +598,18 @@ export default function Checkout() {
             );
           })}
 
-          {/* Subtotal / Discount / Total */}
+          {/* Subtotal / Discounts / Total */}
           <div className="pt-3 space-y-1.5">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">{isVi ? 'Tạm tính' : 'Subtotal'}</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>${(originalBaseAmount + addonOriginal).toFixed(2)}</span>
             </div>
+            {welcomeDiscount > 0 && (
+              <div className="flex justify-between text-sm text-emerald-600">
+                <span>🎉 {isVi ? 'Ưu đãi chào mừng' : 'Welcome Offer'}</span>
+                <span>-${welcomeDiscount.toFixed(2)}</span>
+              </div>
+            )}
             {addonSaving > 0 && (
               <div className="flex justify-between text-sm text-emerald-600">
                 <span>{isVi ? `Tiết kiệm add-on (${addonDiscountRate * 100}%)` : `Add-on savings (${addonDiscountRate * 100}%)`}</span>
@@ -708,17 +721,29 @@ export default function Checkout() {
               <div className="space-y-1.5 text-xs text-muted-foreground">
                 <div className="flex justify-between">
                   <span>{getPlanLabel(plan)} Plan</span>
-                  <span>${baseAmount.toFixed(2)}</span>
+                  <span>${originalBaseAmount.toFixed(2)}</span>
                 </div>
+                {welcomeDiscount > 0 && (
+                  <div className="flex justify-between text-emerald-600">
+                    <span>🎉 {isVi ? 'Ưu đãi chào mừng' : 'Welcome Offer'}</span>
+                    <span>-${welcomeDiscount.toFixed(2)}</span>
+                  </div>
+                )}
                 {addonFinal > 0 && (
                   <div className="flex justify-between">
                     <span>Add-ons</span>
                     <span>${addonFinal.toFixed(2)}</span>
                   </div>
                 )}
+                {addonSaving > 0 && (
+                  <div className="flex justify-between text-emerald-600">
+                    <span>{isVi ? 'Tiết kiệm add-on' : 'Add-on savings'}</span>
+                    <span>-${addonSaving.toFixed(2)}</span>
+                  </div>
+                )}
                 {discountAmount > 0 && (
                   <div className="flex justify-between text-emerald-600">
-                    <span>{isVi ? 'Giảm giá' : 'Discount'}</span>
+                    <span>{isVi ? 'Mã giảm giá' : 'Coupon'}</span>
                     <span>-${discountAmount.toFixed(2)}</span>
                   </div>
                 )}
