@@ -99,6 +99,19 @@ export default function MeetingRoom({ meeting, members, isLeader, groupId, onBac
     return () => clearInterval(interval);
   }, [localStatus, startedAt, planLimits.maxMeetingDurationMinutes]);
 
+  // Auto-end meeting when duration limit is reached
+  useEffect(() => {
+    if (remainingSeconds === null || remainingSeconds > 0 || autoEndTriggered.current) return;
+    if (localStatus !== 'in_progress') return;
+    autoEndTriggered.current = true;
+    toast({
+      title: 'Hết thời lượng',
+      description: `Cuộc họp đã tự động kết thúc do hết giới hạn ${planLimits.maxMeetingDurationMinutes} phút của gói cước.`,
+      variant: 'destructive',
+    });
+    handleEndMeeting();
+  }, [remainingSeconds, localStatus]);
+
   useEffect(() => {
     fetchAttendance().then(() => {
       if (user && (localStatus === 'in_progress' || localStatus === 'scheduled')) {
