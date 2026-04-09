@@ -5,10 +5,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { FileText, Download, Loader2, ChevronDown, Filter } from 'lucide-react';
+import { FileText, Download, Loader2, ChevronDown, Filter, Lock, ArrowUpRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { exportProjectEvidencePdf, ExportData, ExportOptions } from '@/lib/projectEvidencePdf';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { useNavigate } from 'react-router-dom';
 import type { Group, GroupMember, Task, Stage } from '@/types/database';
 
 interface ProjectEvidenceExportProps {
@@ -18,6 +20,8 @@ interface ProjectEvidenceExportProps {
 
 export default function ProjectEvidenceExport({ groupId, project }: ProjectEvidenceExportProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { canExportData, isLoading: limitsLoading } = usePlanLimits();
   const [isExporting, setIsExporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressMessage, setProgressMessage] = useState('');
@@ -268,6 +272,28 @@ export default function ProjectEvidenceExport({ groupId, project }: ProjectEvide
   ];
 
   const selectedCount = Object.values(options).filter(v => v).length;
+
+  if (!canExportData && !limitsLoading) {
+    return (
+      <Card className="border-amber-500/30">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Lock className="w-4 h-4 text-amber-500" />
+            Xuất Minh chứng
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Tính năng xuất dữ liệu chỉ dành cho gói Plus trở lên
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => navigate('/pricing')}>
+            <ArrowUpRight className="w-4 h-4" />
+            Nâng cấp để xuất dữ liệu
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

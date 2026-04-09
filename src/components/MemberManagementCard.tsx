@@ -63,10 +63,12 @@ import {
   LogOut,
   Clock,
   ChevronDown,
+  Lock,
 } from 'lucide-react';
 import { exportMembersToExcel, getRoleDisplayName } from '@/lib/excelExport';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { useAuth } from '@/contexts/AuthContext';
 import UserAvatar from '@/components/UserAvatar';
 import ProfileViewDialog from '@/components/ProfileViewDialog';
@@ -94,6 +96,7 @@ export default function MemberManagementCard({
   onRefresh,
 }: MemberManagementCardProps) {
   const { toast } = useToast();
+  const { canExportData } = usePlanLimits();
   const { user, profile } = useAuth();
   const { guardAction: guardReadOnly } = useReadOnlyGuard();
   const navigate = useNavigate();
@@ -798,6 +801,8 @@ export default function MemberManagementCard({
                   size="sm" 
                   variant="outline" 
                   className="gap-2"
+                  disabled={!canExportData}
+                  title={!canExportData ? 'Tính năng xuất dữ liệu chỉ dành cho gói Plus trở lên' : undefined}
                   onClick={() => {
                     const exportData = members.map(m => ({
                       fullName: m.profiles?.full_name || '',
@@ -808,6 +813,7 @@ export default function MemberManagementCard({
                     exportMembersToExcel(exportData, `danh-sach-thanh-vien-project`);
                   }}
                 >
+                  {!canExportData && <Lock className="w-3.5 h-3.5" />}
                   <Download className="w-4 h-4" />
                   <span className="hidden sm:inline">Xuất Excel</span>
                 </Button>

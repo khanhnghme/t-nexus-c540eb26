@@ -9,6 +9,7 @@ interface PlanLimits {
   maxStorageMb: number | null;
   maxMeetingDurationMinutes: number | null;
   maxActivityLogDays: number | null;
+  canExportData: boolean;
   isLoading: boolean;
 }
 
@@ -30,6 +31,7 @@ export function usePlanLimits(): PlanLimits {
     maxStorageMb: null,
     maxMeetingDurationMinutes: null,
     maxActivityLogDays: null,
+    canExportData: false,
     isLoading: true,
   });
 
@@ -61,8 +63,9 @@ export function usePlanLimits(): PlanLimits {
           maxTotalProjects: planData?.max_projects_per_workspace ?? null,
           maxTotalMembers: planData?.max_members_per_workspace ?? null,
           maxStorageMb: planData?.max_storage_mb ?? null,
-          maxMeetingDurationMinutes: (planData as any)?.max_meeting_duration_minutes ?? null,
-          maxActivityLogDays: (planData as any)?.max_activity_log_days ?? null,
+          maxMeetingDurationMinutes: planData?.max_meeting_duration_minutes ?? null,
+          maxActivityLogDays: planData?.max_activity_log_days ?? null,
+          canExportData: planData?.can_export_data ?? false,
           isLoading: false,
         });
       } catch (err) {
