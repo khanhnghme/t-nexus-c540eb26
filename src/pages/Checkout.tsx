@@ -363,8 +363,8 @@ export default function Checkout() {
                     <Loader2 className="h-5 w-5 animate-spin" />
                     <span className="text-sm text-muted-foreground">{t?.processing || 'Processing payment...'}</span>
                   </div>
-                ) : PAYPAL_CLIENT_ID ? (
-                  <PayPalScriptProvider options={{ clientId: PAYPAL_CLIENT_ID, currency: 'USD' }}>
+                ) : paypalClientId ? (
+                  <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD' }}>
                     <PayPalButtons
                       style={{ layout: 'vertical', shape: 'rect', label: 'pay' }}
                       createOrder={async () => createOrder()}
