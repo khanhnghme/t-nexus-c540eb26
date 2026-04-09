@@ -42,6 +42,7 @@ import {
   Check,
   Plus,
   ChevronsUpDown,
+  ArrowLeft,
 } from 'lucide-react';
 import SidebarTreeNav from '@/components/SidebarTreeNav';
 import AdminSidebarNav from '@/components/AdminSidebarNav';
@@ -57,6 +58,44 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useWorkspaceBilling, formatPlanName } from '@/hooks/useWorkspaceBilling';
 import TopBar from '@/components/layout/TopBar';
+
+/* ------------------------------------------------------------------ */
+/*  Admin Back Cell (top-left when in /admin)                           */
+/* ------------------------------------------------------------------ */
+function AdminBackCell({ collapsed }: { collapsed: boolean }) {
+  const navigate = useNavigate();
+  const { translations } = useLanguage();
+  const t = translations.app?.sidebar;
+
+  if (collapsed) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="ws-switcher-compact ws-switcher-collapsed"
+          >
+            <ArrowLeft className="w-4 h-4" style={{ color: 'var(--_sb-fg)' }} />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="right" sideOffset={12}>
+          <p className="font-medium">{t?.backToDashboard || 'Back to Dashboard'}</p>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => navigate('/dashboard')}
+      className="ws-switcher-compact"
+      style={{ gap: '8px' }}
+    >
+      <ArrowLeft className="w-4 h-4 shrink-0" style={{ color: 'var(--_sb-fg)' }} />
+      <span className="ws-name-compact">{t?.backToDashboard || 'Back to Dashboard'}</span>
+    </button>
+  );
+}
 
 /* ------------------------------------------------------------------ */
 /*  Workspace Switcher Cell (top-left)                                 */
@@ -338,9 +377,13 @@ export default function DashboardLayout({
           sidebarCollapsed && 'sidebar-collapsed',
           isMobileOpen && 'mobile-sidebar-open'
         )}>
-          {/* Cell 1: Top-left — Workspace Switcher */}
+          {/* Cell 1: Top-left — Workspace Switcher or Admin Back */}
           <div className="grid-cell-logo">
-            <WorkspaceSwitcherCell collapsed={sidebarCollapsed} />
+            {location.pathname.startsWith('/admin') ? (
+              <AdminBackCell collapsed={sidebarCollapsed} />
+            ) : (
+              <WorkspaceSwitcherCell collapsed={sidebarCollapsed} />
+            )}
 
             {/* Desktop toggle — tiny pill at right edge */}
             <button
