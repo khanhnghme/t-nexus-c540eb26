@@ -295,7 +295,9 @@ export default function Checkout() {
                 {/* Plan cards - horizontal */}
                 <div className="grid grid-cols-3 gap-2.5">
                   {PLANS.map(p => {
-                    const price = cycle === 'yearly' ? p.yearly : p.monthly;
+                    const originalPrice = cycle === 'yearly' ? p.yearly : p.monthly;
+                    const wPrice = isFirstTimeBuyer ? (getWelcomePrice(p.key, cycle) ?? originalPrice) : originalPrice;
+                    const showWelcome = wPrice !== originalPrice;
                     const isSelected = plan === p.key;
                     return (
                       <button
@@ -317,7 +319,8 @@ export default function Checkout() {
                           <span className="font-semibold text-sm">{p.label}</span>
                           {isSelected && <Check className="h-3.5 w-3.5 text-primary" />}
                         </div>
-                        <div className="text-lg font-bold">${price.toFixed(2)}</div>
+                        {showWelcome && <span className="text-sm text-muted-foreground line-through">${originalPrice.toFixed(2)}</span>}
+                        <div className="text-lg font-bold">${wPrice.toFixed(2)}</div>
                         <div className="text-[11px] text-muted-foreground">
                           /{cycle === 'yearly' ? (isVi ? 'năm' : 'yr') : (isVi ? 'tháng' : 'mo')}
                         </div>
