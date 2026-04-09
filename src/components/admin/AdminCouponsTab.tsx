@@ -95,7 +95,7 @@ export function AdminCouponsTab() {
                       <span className="text-xs text-muted-foreground">{t?.allPlans || 'All plans'}</span>
                     ) : (
                       c.applicable_plans.map((p: string) => (
-                        <Badge key={p} variant="secondary" className="text-xs">{PLAN_LABELS[p] || p}</Badge>
+                        <Badge key={p} variant="secondary" className="text-xs">{getPlanLabel(p)}</Badge>
                       ))
                     )}
                   </div>

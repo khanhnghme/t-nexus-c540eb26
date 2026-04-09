@@ -52,7 +52,7 @@ export function AdminBillingUsersTab() {
   }, [users, search, planFilter, statusFilter]);
 
   const statusLabel = (s: string) => t?.planStatus?.[s] || s;
-  const planLabel = (p: string) => PLAN_LABELS[p] || p;
+  const planLabel = (p: string) => getPlanLabel(p);
 
   return (
     <div className="space-y-4">
@@ -65,7 +65,7 @@ export function AdminBillingUsersTab() {
           <SelectTrigger className="w-[150px]"><SelectValue placeholder={t?.filterByPlan || 'All Plans'} /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t?.filterByPlan || 'All Plans'}</SelectItem>
-            {Object.keys(PLAN_LABELS).map(k => <SelectItem key={k} value={k}>{PLAN_LABELS[k]}</SelectItem>)}
+            {['plan_free', 'plan_plus', 'plan_pro', 'plan_business', 'plan_custom'].map(k => <SelectItem key={k} value={k}>{getPlanLabel(k)}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -109,7 +109,7 @@ export function AdminBillingUsersTab() {
                     </div>
                   </div>
                 </TableCell>
-                <TableCell><Badge className={PLAN_COLORS[user.user_plan] || ''} variant="secondary">{planLabel(user.user_plan)}</Badge></TableCell>
+                <TableCell><Badge className={getPlanBadgeClass(user.user_plan)} variant="secondary">{planLabel(user.user_plan)}</Badge></TableCell>
                 <TableCell><Badge className={STATUS_COLORS[user.plan_status] || ''} variant="secondary">{statusLabel(user.plan_status)}</Badge></TableCell>
                 <TableCell className="text-sm text-muted-foreground">{t?.planSource?.[user.plan_source] || user.plan_source}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">{t?.billingCycle?.[user.billing_cycle] || user.billing_cycle}</TableCell>
