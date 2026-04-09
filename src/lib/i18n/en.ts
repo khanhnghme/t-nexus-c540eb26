@@ -2710,6 +2710,14 @@ export const en = {
     settings: 'Settings',
     },
   },
+
+  meeting: {
+    durationLimitWarning: 'Your current plan limits meetings to {limit} minutes.',
+    upgradeCta: 'Upgrade',
+    autoEndTitle: 'Time limit reached',
+    autoEndDescription: 'Meeting auto-ended due to {limit}-minute plan limit.',
+    remaining: 'Left',
+  },
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

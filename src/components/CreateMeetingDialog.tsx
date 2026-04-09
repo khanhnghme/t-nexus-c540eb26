@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,10 +9,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { logActivity } from '@/lib/activityLogger';
-import { Loader2, Video, Calendar, Clock, Layers, Link2 } from 'lucide-react';
+import { Loader2, Video, Calendar, Clock, Layers, Link2, AlertTriangle } from 'lucide-react';
 import { DeadlineHourPicker } from '@/components/DeadlineHourPicker';
 import type { Stage, GroupMember } from '@/types/database';
 import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface CreateMeetingDialogProps {
   open: boolean;
@@ -29,6 +31,8 @@ export default function CreateMeetingDialog({
 }: CreateMeetingDialogProps) {
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const { translations: t } = useLanguage();
+  const planLimits = usePlanLimits();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [scheduledAt, setScheduledAt] = useState('');
@@ -38,6 +42,20 @@ export default function CreateMeetingDialog({
   const [isCreating, setIsCreating] = useState(false);
 
   const { guardAction: guardReadOnly } = useReadOnlyGuard();
+
+  const maxDuration = planLimits.maxMeetingDurationMinutes;
+  const allDurationOptions = [15, 30, 45, 60, 90, 120];
+  const filteredDurationOptions = useMemo(() => {
+    if (maxDuration === null) return allDurationOptions;
+    return allDurationOptions.filter(m => m <= maxDuration);
+  }, [maxDuration]);
+
+  // Auto-correct if current selection exceeds limit
+  useState(() => {
+    if (maxDuration !== null && durationMinutes > maxDuration && filteredDurationOptions.length > 0) {
+      setDurationMinutes(filteredDurationOptions[filteredDurationOptions.length - 1]);
+    }
+  });
 
   const handleCreate = async () => {
     if (guardReadOnly()) return;
@@ -183,13 +201,25 @@ export default function CreateMeetingDialog({
               <Select value={String(durationMinutes)} onValueChange={v => setDurationMinutes(Number(v))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="30">30 phút</SelectItem>
-                  <SelectItem value="45">45 phút</SelectItem>
-                  <SelectItem value="60">60 phút</SelectItem>
-                  <SelectItem value="90">90 phút</SelectItem>
-                  <SelectItem value="120">120 phút</SelectItem>
+                  {filteredDurationOptions.map(mins => (
+                    <SelectItem key={mins} value={String(mins)}>{mins} phút</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              {maxDuration !== null && (
+                <div className="flex items-start gap-1.5 mt-1.5 p-2 rounded-md bg-warning/10 border border-warning/20">
+                  <AlertTriangle className="w-3.5 h-3.5 text-warning mt-0.5 shrink-0" />
+                  <p className="text-[11px] text-warning">
+                    {(t as any).meeting?.durationLimitWarning
+                      ? (t as any).meeting.durationLimitWarning.replace('{limit}', String(maxDuration))
+                      : `Gói hiện tại giới hạn tối đa ${maxDuration} phút/cuộc họp.`}
+                    {' '}
+                    <a href="/upgrade" className="underline font-medium hover:text-warning/80">
+                      {(t as any).meeting?.upgradeCta || 'Nâng cấp'}
+                    </a>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

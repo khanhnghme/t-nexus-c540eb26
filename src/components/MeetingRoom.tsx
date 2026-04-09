@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { useToast } from '@/hooks/use-toast';
 import { logActivity } from '@/lib/activityLogger';
 import { formatDeadlineShortVN } from '@/lib/datetime';
@@ -35,6 +36,7 @@ interface MeetingRoomProps {
 export default function MeetingRoom({ meeting, members, isLeader, groupId, onBack, onRefresh }: MeetingRoomProps) {
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const planLimits = usePlanLimits();
   const [attendance, setAttendance] = useState<any[]>([]);
   const [isEnding, setIsEnding] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
@@ -49,6 +51,9 @@ export default function MeetingRoom({ meeting, members, isLeader, groupId, onBac
     meeting.status === 'in_progress' ? new Date(meeting.updated_at || meeting.scheduled_at) : null
   );
   const [elapsed, setElapsed] = useState('00:00:00');
+  const [remaining, setRemaining] = useState<string | null>(null);
+  const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
+  const autoEndTriggered = useRef(false);
   const notesTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -63,17 +68,49 @@ export default function MeetingRoom({ meeting, members, isLeader, groupId, onBac
   // Elapsed timer
   useEffect(() => {
     if (localStatus !== 'in_progress' || !startedAt) return;
+    const maxDuration = planLimits.maxMeetingDurationMinutes;
+    
     const tick = () => {
       const diff = Math.floor((Date.now() - startedAt.getTime()) / 1000);
       const h = String(Math.floor(diff / 3600)).padStart(2, '0');
       const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
       const s = String(diff % 60).padStart(2, '0');
       setElapsed(`${h}:${m}:${s}`);
+
+      // Countdown remaining
+      if (maxDuration !== null) {
+        const limitSec = maxDuration * 60;
+        const rem = limitSec - diff;
+        setRemainingSeconds(rem);
+        if (rem <= 0) {
+          setRemaining('00:00');
+        } else {
+          const rm = String(Math.floor(rem / 60)).padStart(2, '0');
+          const rs = String(rem % 60).padStart(2, '0');
+          setRemaining(`${rm}:${rs}`);
+        }
+      } else {
+        setRemaining(null);
+        setRemainingSeconds(null);
+      }
     };
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [localStatus, startedAt]);
+  }, [localStatus, startedAt, planLimits.maxMeetingDurationMinutes]);
+
+  // Auto-end meeting when duration limit is reached
+  useEffect(() => {
+    if (remainingSeconds === null || remainingSeconds > 0 || autoEndTriggered.current) return;
+    if (localStatus !== 'in_progress') return;
+    autoEndTriggered.current = true;
+    toast({
+      title: 'Hết thời lượng',
+      description: `Cuộc họp đã tự động kết thúc do hết giới hạn ${planLimits.maxMeetingDurationMinutes} phút của gói cước.`,
+      variant: 'destructive',
+    });
+    handleEndMeeting();
+  }, [remainingSeconds, localStatus]);
 
   useEffect(() => {
     fetchAttendance().then(() => {
@@ -275,6 +312,21 @@ export default function MeetingRoom({ meeting, members, isLeader, groupId, onBac
               <Badge variant="outline" className="text-[10px] px-2 py-0.5 font-mono tabular-nums tracking-wider">
                 {elapsed}
               </Badge>
+              {remaining !== null && (
+                <Badge 
+                  variant="outline" 
+                  className={`text-[10px] px-2 py-0.5 font-mono tabular-nums tracking-wider gap-1 ${
+                    remainingSeconds !== null && remainingSeconds <= 300 
+                      ? 'border-destructive text-destructive animate-pulse' 
+                      : remainingSeconds !== null && remainingSeconds <= 600
+                        ? 'border-warning text-warning'
+                        : 'border-muted-foreground/50'
+                  }`}
+                >
+                  <Clock className="w-3 h-3" />
+                  Còn {remaining}
+                </Badge>
+              )}
             </div>
           ) : localStatus === 'completed' ? (
             <Badge variant="secondary" className="text-[10px] shrink-0">Đã xong</Badge>

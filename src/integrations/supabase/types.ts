@@ -1186,6 +1186,7 @@ export type Database = {
           created_at: string
           id: string
           max_file_size_mb: number
+          max_meeting_duration_minutes: number | null
           max_members_per_workspace: number
           max_projects_per_workspace: number
           max_storage_mb: number
@@ -1197,6 +1198,7 @@ export type Database = {
           created_at?: string
           id?: string
           max_file_size_mb?: number
+          max_meeting_duration_minutes?: number | null
           max_members_per_workspace?: number
           max_projects_per_workspace?: number
           max_storage_mb?: number
@@ -1208,6 +1210,7 @@ export type Database = {
           created_at?: string
           id?: string
           max_file_size_mb?: number
+          max_meeting_duration_minutes?: number | null
           max_members_per_workspace?: number
           max_projects_per_workspace?: number
           max_storage_mb?: number
