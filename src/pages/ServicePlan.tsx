@@ -811,26 +811,36 @@ export default function ServicePlan() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {MOCK_BILLING.map(row => (
-                    <tr key={row.id} className="hover:bg-muted/50 transition-colors">
-                      <td className="px-5 py-3 text-sm">{row.date}</td>
-                      <td className="px-5 py-3 text-sm font-mono text-xs text-muted-foreground">{row.id}</td>
-                      <td className="px-5 py-3 text-sm font-medium">{row.plan}</td>
-                      <td className="px-5 py-3 text-sm text-right tabular-nums">{row.amount}</td>
-                      <td className="px-5 py-3 text-right">
-                        <Badge
-                          variant={row.status === 'Paid' ? 'default' : 'secondary'}
-                          className={`text-[10px] ${
-                            row.status === 'Paid' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-none' :
-                            row.status === 'Free' ? 'bg-muted text-muted-foreground border-none' :
-                            'bg-amber-500/15 text-amber-600'
-                          }`}
-                        >
-                          {row.status}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
+                  {billingLoading ? (
+                    <tr><td colSpan={5} className="text-center py-8"><Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" /></td></tr>
+                  ) : billingHistory.length === 0 ? (
+                    <tr><td colSpan={5} className="text-center py-8 text-sm text-muted-foreground">{t.noTransactions || 'No transactions yet'}</td></tr>
+                  ) : billingHistory.map(row => {
+                    const date = new Date(row.created_at);
+                    const formattedDate = `${date.getDate().toString().padStart(2,'0')}/${(date.getMonth()+1).toString().padStart(2,'0')}/${date.getFullYear()}`;
+                    const displayAmount = row.final_amount ?? row.amount;
+                    const statusLabel = row.status === 'completed' ? 'Paid' : row.status === 'pending' ? 'Pending' : row.status;
+                    return (
+                      <tr key={row.id} className="hover:bg-muted/50 transition-colors">
+                        <td className="px-5 py-3 text-sm">{formattedDate}</td>
+                        <td className="px-5 py-3 text-sm font-mono text-xs text-muted-foreground">{row.transaction_id || row.id.slice(0,13)}</td>
+                        <td className="px-5 py-3 text-sm font-medium">{formatPlanName(row.plan_purchased)}</td>
+                        <td className="px-5 py-3 text-sm text-right tabular-nums">${displayAmount.toFixed(2)}</td>
+                        <td className="px-5 py-3 text-right">
+                          <Badge
+                            variant={statusLabel === 'Paid' ? 'default' : 'secondary'}
+                            className={`text-[10px] ${
+                              statusLabel === 'Paid' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-none' :
+                              statusLabel === 'Pending' ? 'bg-amber-500/15 text-amber-600 border-none' :
+                              'bg-muted text-muted-foreground border-none'
+                            }`}
+                          >
+                            {statusLabel}
+                          </Badge>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
