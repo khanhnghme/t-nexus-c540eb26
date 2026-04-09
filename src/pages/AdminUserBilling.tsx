@@ -9,6 +9,8 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { ArrowLeft, ArrowUpCircle, ArrowDownCircle, CalendarPlus, ShieldOff, ShieldCheck, StickyNote, History, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { UserPaymentsTab } from '@/components/admin/UserPaymentsTab';
+import { UserPlanHistoryTab } from '@/components/admin/UserPlanHistoryTab';
 
 const PLAN_LABELS: Record<string, string> = {
   plan_free: 'Free', plan_plus: 'Plus', plan_pro: 'Pro', plan_business: 'Business', plan_custom: 'Custom',
@@ -241,10 +243,10 @@ export default function AdminUserBilling() {
 
         {/* ═══ Placeholder Tabs ═══ */}
         <TabsContent value="payments">
-          <div className="text-center py-16 text-muted-foreground">{t?.comingSoon || 'Coming in the next phase'}</div>
+          <UserPaymentsTab userId={userId!} />
         </TabsContent>
         <TabsContent value="history">
-          <div className="text-center py-16 text-muted-foreground">{t?.comingSoon || 'Coming in the next phase'}</div>
+          <UserPlanHistoryTab userId={userId!} />
         </TabsContent>
         <TabsContent value="notes">
           <div className="text-center py-16 text-muted-foreground">{t?.comingSoon || 'Coming in the next phase'}</div>
