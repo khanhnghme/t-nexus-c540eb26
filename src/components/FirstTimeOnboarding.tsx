@@ -157,9 +157,12 @@ export default function FirstTimeOnboarding({
     setCouponError('');
   }, [selectedPlan]);
 
-  // Price calculations
+  // Price calculations — use welcome price if first-time buyer
   const planConfig = PLAN_CONFIG[selectedPlan as PlanKey];
-  const baseAmount = planConfig ? (cycle === 'yearly' ? (planConfig.yearlyPrice ?? 0) : (planConfig.monthlyPrice ?? 0)) : 0;
+  const originalBaseAmount = planConfig ? (cycle === 'yearly' ? (planConfig.yearlyPrice ?? 0) : (planConfig.monthlyPrice ?? 0)) : 0;
+  const welcomeBaseAmount = isFirstTimeBuyer ? (getWelcomePrice(selectedPlan, cycle) ?? originalBaseAmount) : originalBaseAmount;
+  const baseAmount = welcomeBaseAmount;
+  const welcomeDiscount = originalBaseAmount - welcomeBaseAmount;
   const addonDiscountRate = planConfig?.addonDiscount ?? 0;
 
   const { addonOriginal, addonFinal } = useMemo(() => {
