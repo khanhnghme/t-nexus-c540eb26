@@ -56,14 +56,15 @@ export default function Upgrade() {
   const effectivePlan = isFromPersonal ? (profile?.user_plan || 'plan_free') : ownerPlan;
   const isOwner = isFromPersonal ? true : (user?.id === ownerId);
 
-  const handleSelectPlan = () => {
+  const handleSelectPlan = (planKey?: string) => {
     if (!isOwner) return;
-    toast.info(
-      tc?.language === 'vi' || document.documentElement.lang === 'vi'
-        ? 'Tính năng thanh toán đang được phát triển. Vui lòng quay lại sau!'
-        : 'Payment feature is under development. Please come back later!',
-      { duration: 4000 }
-    );
+    const selectedPlan = planKey || 'plan_pro';
+    if (selectedPlan === 'enterprise') {
+      window.open('mailto:support@t-nexus.app?subject=Enterprise Plan Inquiry', '_blank');
+      return;
+    }
+    if (selectedPlan === currentPlanKey) return;
+    navigate(`/checkout?plan=plan_${selectedPlan}&cycle=${yearly ? 'yearly' : 'monthly'}`);
   };
 
   const currentPlanKey: string = effectivePlan ? effectivePlan.replace(/^plan_/, '') : 'free';
