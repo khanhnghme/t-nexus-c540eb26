@@ -212,14 +212,6 @@ export default function ServicePlan() {
     setAddonDirty(true);
   };
 
-  // Fetch PayPal client ID for addon payments
-  useEffect(() => {
-    if (isPremium && !paypalClientId) {
-      supabase.functions.invoke('get-paypal-config').then(({ data }) => {
-        if (data?.clientId) setPaypalClientId(data.clientId);
-      });
-    }
-  }, [isPremium, paypalClientId]);
 
   // Calculate addon deltas (new - existing in DB)
   const addonDeltas = {
