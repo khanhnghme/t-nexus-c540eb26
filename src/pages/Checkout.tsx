@@ -13,13 +13,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
+import { PLAN_CONFIG, getPlanLabel, type PlanKey, PLAN_ORDER } from '@/lib/planConfig';
+
 /* ═══ Constants ═══ */
 
-const PLANS = [
-  { key: 'plan_plus', label: 'Plus', monthly: 4.8, yearly: 48, addonDiscount: 0.10 },
-  { key: 'plan_pro', label: 'Pro', monthly: 12, yearly: 120, addonDiscount: 0.20, popular: true },
-  { key: 'plan_business', label: 'Business', monthly: 24, yearly: 240, addonDiscount: 0.20 },
-];
+const PLANS = (['plan_plus', 'plan_pro', 'plan_business'] as const).map(key => {
+  const cfg = PLAN_CONFIG[key];
+  return { key, label: cfg.label, monthly: cfg.monthlyPrice!, yearly: cfg.yearlyPrice!, addonDiscount: cfg.addonDiscount, popular: key === 'plan_pro' };
+});
 
 const PLAN_PRICES: Record<string, { monthly: number; yearly: number }> = {};
 const ADDON_DISCOUNT_RATE: Record<string, number> = {};
@@ -27,12 +28,6 @@ PLANS.forEach(p => {
   PLAN_PRICES[p.key] = { monthly: p.monthly, yearly: p.yearly };
   ADDON_DISCOUNT_RATE[p.key] = p.addonDiscount;
 });
-
-const PLAN_LABELS: Record<string, string> = {
-  plan_plus: 'Plus',
-  plan_pro: 'Pro',
-  plan_business: 'Business',
-};
 
 const ADDON_TYPES = [
   { type: 'projects', emoji: '📁', unitLabel: '+5 projects', unitLabelVi: '+5 dự án' },
