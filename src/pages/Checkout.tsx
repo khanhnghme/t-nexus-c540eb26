@@ -343,11 +343,6 @@ export default function Checkout() {
                     <Package className="h-4 w-4" />
                     {t?.addons || 'Add-ons'}
                   </h3>
-                  {addonDiscountRate > 0 && (
-                    <Badge variant="secondary" className="text-emerald-600 text-[11px]">
-                      -{addonDiscountRate * 100}% {isVi ? 'với' : 'with'} {getPlanLabel(plan)}
-                    </Badge>
-                  )}
                 </div>
 
                 <div className="space-y-2">
