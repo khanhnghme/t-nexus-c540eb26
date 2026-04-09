@@ -1,74 +1,54 @@
 
 
-## Plan: Đợt 1 — Database Foundation + Module 1 (Admin Billing Overview)
+## Plan: Đợt 2 — Module 2 (Lịch sử thanh toán) + Module 3 (Lịch sử thay đổi gói)
 
 ### Scope
+Thay thế 2 tab placeholder (Payments + Plan History) trong `AdminUserBilling.tsx` bằng UI đầy đủ. DB đã sẵn sàng từ Đợt 1.
 
-Tạo nền tảng DB (3 bảng mới + mở rộng profiles) và trang Admin Billing với danh sách users + tab Overview chi tiết gói.
+### 1. Component `UserPaymentsTab.tsx`
+- Query `payment_history` WHERE `user_id = userId`, sắp xếp theo `created_at DESC`
+- Bộ lọc: search (transaction_id/order_id), filter by status, filter by payment_method, date range
+- Bảng hiển thị: Transaction ID, Plan, Amount (final_amount), Method, Status (badge màu), Paid At
+- Click row → mở `PaymentDetailDialog` hiện đầy đủ thông tin: order_id, invoice_id, original_amount, discount_amount, coupon_code, description, system_note
+- Nút xuất CSV toàn bộ giao dịch
+- Empty state khi chưa có giao dịch
 
-### 1. Migration SQL
+### 2. Component `PaymentDetailDialog.tsx`
+- Dialog hiển thị chi tiết 1 giao dịch
+- Layout 2 cột: thông tin giao dịch (IDs, amounts, method, status) + thông tin bổ sung (coupon, description, system_note)
+- Badge màu cho status: paid (green), pending (amber), failed/cancelled (red), refunded (violet), chargeback (destructive)
 
-**Mở rộng `profiles`** — thêm 5 cột:
-```sql
-ALTER TABLE profiles ADD COLUMN plan_status text NOT NULL DEFAULT 'active';
-ALTER TABLE profiles ADD COLUMN plan_source text NOT NULL DEFAULT 'self_paid';
-ALTER TABLE profiles ADD COLUMN plan_started_at timestamptz DEFAULT now();
-ALTER TABLE profiles ADD COLUMN plan_expires_at timestamptz;
-ALTER TABLE profiles ADD COLUMN billing_cycle text NOT NULL DEFAULT 'monthly';
-ALTER TABLE profiles ADD COLUMN auto_renew boolean NOT NULL DEFAULT false;
-```
+### 3. Component `UserPlanHistoryTab.tsx`
+- Query `plan_change_logs` WHERE `user_id = userId`, sắp xếp theo `created_at DESC`
+- Hiển thị dạng **timeline dọc** với:
+  - Icon theo action_type (ArrowUpCircle=upgrade, ArrowDownCircle=downgrade, Calendar=renew, ShieldOff=suspend, ShieldCheck=restore, etc.)
+  - Màu theo action_type
+  - Nội dung: "Upgraded from Free → Plus" (dùng old_plan/new_plan)
+  - Performed by: fetch profile name từ performed_by UUID, hoặc "System"
+  - Change source badge
+  - Reason + internal_note (collapsible)
+  - Effective mode badge (immediate / next_cycle)
+  - Thời gian: format relative + absolute
+- Bộ lọc: action_type, change_source, date range
+- Empty state
 
-**Tạo `plan_change_logs`**:
-- Columns: id, user_id, action_type, old_plan, new_plan, old_expires_at, new_expires_at, change_source, reason, internal_note, effective_mode, performed_by, metadata (jsonb), created_at
-- RLS: chỉ system_admin SELECT/INSERT
+### 4. Cập nhật `AdminUserBilling.tsx`
+- Import 2 component mới
+- Thay placeholder của tab `payments` → `<UserPaymentsTab userId={userId} />`
+- Thay placeholder của tab `history` → `<UserPlanHistoryTab userId={userId} />`
 
-**Tạo `admin_notes`**:
-- Columns: id, user_id, note_type (general/support/warning/vip/abuse/partner), content, created_by, created_at
-- RLS: chỉ system_admin CRUD
-
-**Tạo `payment_history`**:
-- Columns: id, user_id, transaction_id, order_id, invoice_id, plan_purchased, amount, currency, original_amount, discount_amount, final_amount, payment_method, status, coupon_code, description, system_note, paid_at, created_at
-- RLS: chỉ system_admin SELECT/INSERT
-
-### 2. AdminSidebarNav — thêm mục "Billing"
-- Icon: `CreditCard` từ lucide-react
-- Route: `/admin/billing`
-- i18n key: `sidebar.billing` → "Billing" / "Thanh toán"
-
-### 3. Route — `/admin/billing` + `/admin/billing/:userId`
-- Thêm vào `App.tsx` trong admin route group
-- Import lazy: `AdminBilling` page
-
-### 4. Trang `AdminBilling.tsx` — Danh sách users
-- Fetch tất cả profiles (system_admin only)
-- Bảng hiển thị: Avatar, Name, Email, Current Plan (badge màu), Plan Status (badge), Expiry Date, Actions
-- Bộ lọc: search by name/email, filter by plan, filter by status
-- Click row → navigate `/admin/billing/:userId`
-
-### 5. Trang `AdminUserBilling.tsx` — Chi tiết user (4 tabs)
-- **Tab Overview** (Đợt 1 — implement đầy đủ):
-  - User info: avatar, name, email, user_id
-  - Plan card: gói hiện tại, status badge, source badge, billing_cycle, auto_renew toggle (display only)
-  - Dates: started_at, expires_at
-  - Current limits: workspace/project/member/storage từ plan_limits
-  - Current usage: đếm thực tế từ DB
-  - Quick action buttons (placeholder): Upgrade, Downgrade, Extend, Suspend, Restore, Add Note
-- **Tab Payments** — placeholder "Coming in Phase 2"
-- **Tab Plan History** — placeholder "Coming in Phase 2"
-- **Tab Notes** — placeholder "Coming in Phase 2"
-
-### 6. i18n
-- `en.ts` + `vi.ts`: thêm block `adminBilling` với ~30 chuỗi (sidebar label, table headers, tab names, status labels, source labels, cycle labels, placeholder messages)
+### 5. i18n — thêm chuỗi
+- `en.ts` + `vi.ts`: block `adminBilling.payments` (~20 chuỗi: table headers, filter labels, status labels, detail dialog labels, empty state, export button)
+- `en.ts` + `vi.ts`: block `adminBilling.planHistory` (~15 chuỗi: action type labels, source labels, effective mode labels, empty state, filter labels)
 
 ### Files
 
 | File | Thay đổi |
 |------|----------|
-| Migration SQL | 5 cột profiles + 3 bảng mới + RLS |
-| `src/components/AdminSidebarNav.tsx` | Thêm Billing item |
-| `src/App.tsx` | Thêm 2 route admin/billing |
-| `src/pages/AdminBilling.tsx` | Trang mới: danh sách users + filters |
-| `src/pages/AdminUserBilling.tsx` | Trang mới: chi tiết user 4 tabs (Overview full, 3 tabs placeholder) |
-| `src/lib/i18n/en.ts` | Thêm block adminBilling |
-| `src/lib/i18n/vi.ts` | Thêm block adminBilling |
+| `src/components/admin/UserPaymentsTab.tsx` | Component mới: bảng giao dịch + filters + CSV export |
+| `src/components/admin/PaymentDetailDialog.tsx` | Component mới: dialog chi tiết giao dịch |
+| `src/components/admin/UserPlanHistoryTab.tsx` | Component mới: timeline thay đổi gói |
+| `src/pages/AdminUserBilling.tsx` | Import + sử dụng 2 tab mới |
+| `src/lib/i18n/en.ts` | Thêm chuỗi payments + planHistory |
+| `src/lib/i18n/vi.ts` | Thêm chuỗi payments + planHistory |
 
