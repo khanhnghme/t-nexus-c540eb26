@@ -1,6 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Check, ArrowLeft, Plus, Minus, AlertTriangle, Zap } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { getWelcomePrice } from '@/lib/planConfig';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
