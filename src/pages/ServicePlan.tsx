@@ -18,7 +18,6 @@ import { toast } from '@/hooks/use-toast';
 import {
   Crown, Zap, Building2, FolderKanban, HardDrive,
   ArrowRight, Loader2, Infinity, Receipt,
-  Check, Users, Shield, Sparkles, BarChart3,
   Check, Users, Shield, Sparkles, BarChart3, Package, AlertTriangle,
 } from 'lucide-react';
 
