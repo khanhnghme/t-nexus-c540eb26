@@ -106,6 +106,13 @@ export const isPremiumPlan = (plan: string | null): boolean =>
 export const getPlanMonthlyPrice = (plan: string | null): number | null =>
   PLAN_CONFIG[plan as PlanKey]?.monthlyPrice ?? null;
 
+/** Get welcome (first-time) price for a plan */
+export const getWelcomePrice = (plan: string | null, cycle: 'monthly' | 'yearly'): number | null => {
+  const cfg = PLAN_CONFIG[plan as PlanKey];
+  if (!cfg) return null;
+  return cycle === 'yearly' ? cfg.welcomeYearlyPrice : cfg.welcomeMonthlyPrice;
+};
+
 /**
  * @deprecated Use getPlanLabel from '@/lib/planConfig' instead
  */
