@@ -53,6 +53,8 @@ import Notifications from "./pages/Notifications";
 import Upgrade from "./pages/Upgrade";
 import ServicePlan from "./pages/ServicePlan";
 import AdminLayout from "./components/layout/AdminLayout";
+import AdminBilling from "./pages/AdminBilling";
+import AdminUserBilling from "./pages/AdminUserBilling";
 
 const queryClient = new QueryClient();
 
@@ -170,6 +172,8 @@ function AppRoutes() {
           {/* ═══ Admin routes (nested with secondary sidebar) ═══ */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="members" element={<MemberManagement />} />
+            <Route path="billing" element={<AdminBilling />} />
+            <Route path="billing/:userId" element={<AdminUserBilling />} />
             <Route path="activity" element={<AdminActivity />} />
             <Route path="backup" element={<AdminBackup />} />
             <Route path="system" element={<AdminSystem />} />
