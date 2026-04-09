@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 /* ═══════════════════════ Types ═══════════════════════ */
 
 type Plan = {
+  key: string;
   name: string;
   monthlyPrice: number | null;
   description: string;
@@ -56,14 +57,15 @@ export default function Upgrade() {
   const effectivePlan = isFromPersonal ? (profile?.user_plan || 'plan_free') : ownerPlan;
   const isOwner = isFromPersonal ? true : (user?.id === ownerId);
 
-  const handleSelectPlan = () => {
+  const handleSelectPlan = (planKey?: string) => {
     if (!isOwner) return;
-    toast.info(
-      tc?.language === 'vi' || document.documentElement.lang === 'vi'
-        ? 'Tính năng thanh toán đang được phát triển. Vui lòng quay lại sau!'
-        : 'Payment feature is under development. Please come back later!',
-      { duration: 4000 }
-    );
+    const selectedPlan = planKey || 'plan_pro';
+    if (selectedPlan === 'enterprise') {
+      window.open('mailto:support@t-nexus.app?subject=Enterprise Plan Inquiry', '_blank');
+      return;
+    }
+    if (selectedPlan === currentPlanKey) return;
+    navigate(`/checkout?plan=plan_${selectedPlan}&cycle=${yearly ? 'yearly' : 'monthly'}`);
   };
 
   const currentPlanKey: string = effectivePlan ? effectivePlan.replace(/^plan_/, '') : 'free';
@@ -91,14 +93,14 @@ export default function Upgrade() {
   };
 
   const LEFT_PLANS: Plan[] = useMemo(() => [
-    { name: tp.plans.free.name, monthlyPrice: 0, description: tp.plans.free.description, cta: getCta('free'), ctaStyle: getCtaStyle('free'), isCurrent: currentPlanKey === 'free', features: tp.plans.free.features },
-    { name: tp.plans.plus.name, monthlyPrice: 4.8, description: tp.plans.plus.description, cta: getCta('plus'), ctaStyle: getCtaStyle('plus'), isCurrent: currentPlanKey === 'plus', features: tp.plans.plus.features },
-    { name: tp.plans.pro.name, monthlyPrice: 12.0, description: tp.plans.pro.description, cta: getCta('pro'), ctaStyle: getCtaStyle('pro'), recommended: currentPlanKey !== 'pro', isCurrent: currentPlanKey === 'pro', features: tp.plans.pro.features },
+    { key: 'free', name: tp.plans.free.name, monthlyPrice: 0, description: tp.plans.free.description, cta: getCta('free'), ctaStyle: getCtaStyle('free'), isCurrent: currentPlanKey === 'free', features: tp.plans.free.features },
+    { key: 'plus', name: tp.plans.plus.name, monthlyPrice: 4.8, description: tp.plans.plus.description, cta: getCta('plus'), ctaStyle: getCtaStyle('plus'), isCurrent: currentPlanKey === 'plus', features: tp.plans.plus.features },
+    { key: 'pro', name: tp.plans.pro.name, monthlyPrice: 12.0, description: tp.plans.pro.description, cta: getCta('pro'), ctaStyle: getCtaStyle('pro'), recommended: currentPlanKey !== 'pro', isCurrent: currentPlanKey === 'pro', features: tp.plans.pro.features },
   ], [tp, currentPlanKey, currentRank]);
 
   const RIGHT_PLANS: Plan[] = useMemo(() => [
-    { name: tp.plans.business.name, monthlyPrice: 24.0, description: tp.plans.business.description, cta: getCta('business'), ctaStyle: getCtaStyle('business'), isCurrent: currentPlanKey === 'business', features: tp.plans.business.features },
-    { name: tp.plans.enterprise.name, monthlyPrice: null, description: tp.plans.enterprise.description, cta: getCta('enterprise'), ctaStyle: getCtaStyle('enterprise'), isCurrent: currentPlanKey === 'enterprise', features: tp.plans.enterprise.features },
+    { key: 'business', name: tp.plans.business.name, monthlyPrice: 24.0, description: tp.plans.business.description, cta: getCta('business'), ctaStyle: getCtaStyle('business'), isCurrent: currentPlanKey === 'business', features: tp.plans.business.features },
+    { key: 'enterprise', name: tp.plans.enterprise.name, monthlyPrice: null, description: tp.plans.enterprise.description, cta: getCta('enterprise'), ctaStyle: getCtaStyle('enterprise'), isCurrent: currentPlanKey === 'enterprise', features: tp.plans.enterprise.features },
   ], [tp, currentPlanKey, currentRank]);
 
   const ADDONS: AddOn[] = useMemo(() => tp.addOns, [tp]);
@@ -317,7 +319,7 @@ function ToggleBtn({ active, onClick, label }: { active: boolean; onClick: () =>
 
 /* ═══════════════════════ Plan Column ═══════════════════════ */
 
-function PlanColumn({ plan, yearly, tp, disabled, onSelect }: { plan: Plan; yearly: boolean; tp: any; disabled: boolean; onSelect: () => void }) {
+function PlanColumn({ plan, yearly, tp, disabled, onSelect }: { plan: Plan; yearly: boolean; tp: any; disabled: boolean; onSelect: (planKey?: string) => void }) {
   const price = formatPrice(plan.monthlyPrice, yearly);
   const isCustom = plan.monthlyPrice === null;
 
@@ -350,7 +352,7 @@ function PlanColumn({ plan, yearly, tp, disabled, onSelect }: { plan: Plan; year
 
       <div className="mb-5">
         <button
-          onClick={onSelect}
+          onClick={() => onSelect(plan.key)}
           disabled={disabled || plan.isCurrent}
           className={`w-full py-1.5 px-3.5 text-sm font-medium rounded-lg cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed ${plan.isCurrent
             ? 'bg-primary/10 text-primary border border-primary/30'
@@ -385,7 +387,7 @@ function CellContent({ value }: { value: CellValue }) {
   return <span className="text-[13px] text-foreground leading-relaxed">{value}</span>;
 }
 
-function UpgradePlansAndFeatures({ yearly, planCols, comparison, tp, disabled, onSelect }: { yearly: boolean; planCols: any[]; comparison: FeatureCategory[]; tp: any; disabled: boolean; onSelect: () => void }) {
+function UpgradePlansAndFeatures({ yearly, planCols, comparison, tp, disabled, onSelect }: { yearly: boolean; planCols: any[]; comparison: FeatureCategory[]; tp: any; disabled: boolean; onSelect: (planKey?: string) => void }) {
   return (
     <div style={{ marginTop: 72, paddingBottom: 48 }}>
       <h2 className="text-2xl font-bold text-foreground mb-8">{tp.comparisonTitle}</h2>
@@ -412,7 +414,7 @@ function UpgradePlansAndFeatures({ yearly, planCols, comparison, tp, disabled, o
                     {isCustom ? tp.contactUs : <>{price}<span className="font-normal"> / {tp.mo}</span></>}
                   </div>
                   <button
-                    onClick={onSelect}
+                    onClick={() => onSelect(col.key)}
                     disabled={disabled || col.isCurrent}
                     className={`w-full py-1 px-2.5 text-xs font-medium rounded-md cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ${col.isCurrent
                       ? 'bg-primary/10 text-primary border border-primary/30'
