@@ -16,6 +16,7 @@ type Plan = {
   cta: string;
   ctaStyle: 'primary' | 'outline';
   recommended?: boolean;
+  isCurrent?: boolean;
   features: string[];
 };
 
@@ -65,38 +66,56 @@ export default function Upgrade() {
     );
   };
 
+  const currentPlanKey: string = effectivePlan ? effectivePlan.replace(/^plan_/, '') : 'free';
   const isVi = tc?.language === 'vi' || document.documentElement.lang === 'vi';
   const upgradeCta = isVi ? 'Nâng cấp' : 'Upgrade';
   const currentPlanCta = isVi ? 'Gói hiện tại' : 'Current plan';
+  const downgradeCta = isVi ? 'Hạ cấp' : 'Downgrade';
   const contactCta = isVi ? 'Liên hệ Sales' : 'Contact Sales';
 
+  // Map plan key to rank for comparison
+  const PLAN_RANK: Record<string, number> = { free: 0, plus: 1, pro: 2, business: 3, enterprise: 4 };
+  const currentRank = PLAN_RANK[currentPlanKey] ?? 0;
+
+  const getCta = (planKey: string) => {
+    if (planKey === currentPlanKey) return currentPlanCta;
+    if (planKey === 'enterprise') return contactCta;
+    const rank = PLAN_RANK[planKey] ?? 0;
+    return rank > currentRank ? upgradeCta : downgradeCta;
+  };
+
+  const getCtaStyle = (planKey: string): 'primary' | 'outline' => {
+    if (planKey === currentPlanKey) return 'outline';
+    if (planKey === 'pro' && currentRank < 2) return 'primary';
+    return 'outline';
+  };
+
   const LEFT_PLANS: Plan[] = useMemo(() => [
-    { name: tp.plans.free.name, monthlyPrice: 0, description: tp.plans.free.description, cta: currentPlanCta, ctaStyle: 'outline', features: tp.plans.free.features },
-    { name: tp.plans.plus.name, monthlyPrice: 4.8, description: tp.plans.plus.description, cta: upgradeCta, ctaStyle: 'outline', features: tp.plans.plus.features },
-    { name: tp.plans.pro.name, monthlyPrice: 12.0, description: tp.plans.pro.description, cta: upgradeCta, ctaStyle: 'primary', recommended: true, features: tp.plans.pro.features },
-  ], [tp, upgradeCta, currentPlanCta]);
+    { name: tp.plans.free.name, monthlyPrice: 0, description: tp.plans.free.description, cta: getCta('free'), ctaStyle: getCtaStyle('free'), isCurrent: currentPlanKey === 'free', features: tp.plans.free.features },
+    { name: tp.plans.plus.name, monthlyPrice: 4.8, description: tp.plans.plus.description, cta: getCta('plus'), ctaStyle: getCtaStyle('plus'), isCurrent: currentPlanKey === 'plus', features: tp.plans.plus.features },
+    { name: tp.plans.pro.name, monthlyPrice: 12.0, description: tp.plans.pro.description, cta: getCta('pro'), ctaStyle: getCtaStyle('pro'), recommended: currentPlanKey !== 'pro', isCurrent: currentPlanKey === 'pro', features: tp.plans.pro.features },
+  ], [tp, currentPlanKey, currentRank]);
 
   const RIGHT_PLANS: Plan[] = useMemo(() => [
-    { name: tp.plans.business.name, monthlyPrice: 24.0, description: tp.plans.business.description, cta: upgradeCta, ctaStyle: 'outline', features: tp.plans.business.features },
-    { name: tp.plans.enterprise.name, monthlyPrice: null, description: tp.plans.enterprise.description, cta: contactCta, ctaStyle: 'outline', features: tp.plans.enterprise.features },
-  ], [tp, upgradeCta, contactCta]);
+    { name: tp.plans.business.name, monthlyPrice: 24.0, description: tp.plans.business.description, cta: getCta('business'), ctaStyle: getCtaStyle('business'), isCurrent: currentPlanKey === 'business', features: tp.plans.business.features },
+    { name: tp.plans.enterprise.name, monthlyPrice: null, description: tp.plans.enterprise.description, cta: getCta('enterprise'), ctaStyle: getCtaStyle('enterprise'), isCurrent: currentPlanKey === 'enterprise', features: tp.plans.enterprise.features },
+  ], [tp, currentPlanKey, currentRank]);
 
   const ADDONS: AddOn[] = useMemo(() => tp.addOns, [tp]);
   const COMPARISON: FeatureCategory[] = useMemo(() => tp.comparisonCategories, [tp]);
   const FAQ_DATA: FAQItem[] = useMemo(() => tp.faqItems, [tp]);
 
   const PLAN_COLS = useMemo(() => [
-    { key: 'free' as const, name: tp.plans.free.name, monthlyPrice: 0, cta: currentPlanCta },
-    { key: 'plus' as const, name: tp.plans.plus.name, monthlyPrice: 4.8, cta: upgradeCta },
-    { key: 'pro' as const, name: tp.plans.pro.name, monthlyPrice: 12.0, cta: upgradeCta, primary: true },
-    { key: 'business' as const, name: tp.plans.business.name, monthlyPrice: 24.0, cta: upgradeCta },
-    { key: 'enterprise' as const, name: tp.plans.enterprise.name, monthlyPrice: null as number | null, cta: contactCta },
-  ], [tp, upgradeCta, currentPlanCta, contactCta]);
+    { key: 'free' as const, name: tp.plans.free.name, monthlyPrice: 0, cta: getCta('free'), isCurrent: currentPlanKey === 'free' },
+    { key: 'plus' as const, name: tp.plans.plus.name, monthlyPrice: 4.8, cta: getCta('plus'), isCurrent: currentPlanKey === 'plus' },
+    { key: 'pro' as const, name: tp.plans.pro.name, monthlyPrice: 12.0, cta: getCta('pro'), primary: currentPlanKey !== 'pro' && currentRank < 2, isCurrent: currentPlanKey === 'pro' },
+    { key: 'business' as const, name: tp.plans.business.name, monthlyPrice: 24.0, cta: getCta('business'), isCurrent: currentPlanKey === 'business' },
+    { key: 'enterprise' as const, name: tp.plans.enterprise.name, monthlyPrice: null as number | null, cta: getCta('enterprise'), isCurrent: currentPlanKey === 'enterprise' },
+  ], [tp, currentPlanKey, currentRank]);
 
   const essentialsLines = (tp.essentialsLabel as string).split('\n');
   const teamLines = (tp.teamLabel as string).split('\n');
 
-  const currentPlanKey: string = effectivePlan ? effectivePlan.replace(/^plan_/, '') : 'free';
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
@@ -332,10 +351,12 @@ function PlanColumn({ plan, yearly, tp, disabled, onSelect }: { plan: Plan; year
       <div className="mb-5">
         <button
           onClick={onSelect}
-          disabled={disabled}
-          className={`w-full py-1.5 px-3.5 text-sm font-medium rounded-lg cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed ${plan.ctaStyle === 'primary'
-            ? 'bg-primary text-primary-foreground hover:bg-primary/90 border-none'
-            : 'bg-background text-foreground border border-border hover:bg-accent'
+          disabled={disabled || plan.isCurrent}
+          className={`w-full py-1.5 px-3.5 text-sm font-medium rounded-lg cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed ${plan.isCurrent
+            ? 'bg-primary/10 text-primary border border-primary/30'
+            : plan.ctaStyle === 'primary'
+              ? 'bg-primary text-primary-foreground hover:bg-primary/90 border-none'
+              : 'bg-background text-foreground border border-border hover:bg-accent'
             }`}
         >
           {plan.cta}
@@ -382,17 +403,22 @@ function UpgradePlansAndFeatures({ yearly, planCols, comparison, tp, disabled, o
               const price = formatPrice(col.monthlyPrice, yearly);
               const isCustom = col.monthlyPrice === null;
               return (
-                <th key={col.key} className="p-4 text-left align-bottom border-b-2 border-border bg-background sticky top-0 z-10">
-                  <div className="text-sm font-bold text-foreground mb-0.5">{col.name}</div>
+                <th key={col.key} className={`p-4 text-left align-bottom border-b-2 border-border sticky top-0 z-10 ${col.isCurrent ? 'bg-primary/5' : 'bg-background'}`}>
+                  <div className="text-sm font-bold text-foreground mb-0.5">
+                    {col.name}
+                    {col.isCurrent && <span className="ml-1.5 text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">✓</span>}
+                  </div>
                   <div className="text-xs text-muted-foreground mb-2">
                     {isCustom ? tp.contactUs : <>{price}<span className="font-normal"> / {tp.mo}</span></>}
                   </div>
                   <button
                     onClick={onSelect}
-                    disabled={disabled}
-                    className={`w-full py-1 px-2.5 text-xs font-medium rounded-md cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ${col.primary
-                      ? 'bg-primary text-primary-foreground border-none hover:bg-primary/90'
-                      : 'bg-background text-foreground border border-border hover:bg-accent'
+                    disabled={disabled || col.isCurrent}
+                    className={`w-full py-1 px-2.5 text-xs font-medium rounded-md cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ${col.isCurrent
+                      ? 'bg-primary/10 text-primary border border-primary/30'
+                      : col.primary
+                        ? 'bg-primary text-primary-foreground border-none hover:bg-primary/90'
+                        : 'bg-background text-foreground border border-border hover:bg-accent'
                       }`}
                   >
                     {col.cta}
