@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,10 +9,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { logActivity } from '@/lib/activityLogger';
-import { Loader2, Video, Calendar, Clock, Layers, Link2 } from 'lucide-react';
+import { Loader2, Video, Calendar, Clock, Layers, Link2, AlertTriangle } from 'lucide-react';
 import { DeadlineHourPicker } from '@/components/DeadlineHourPicker';
 import type { Stage, GroupMember } from '@/types/database';
 import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface CreateMeetingDialogProps {
   open: boolean;
