@@ -1,55 +1,54 @@
 
 
-## Plan: Đếm ngược thời gian họp theo limit gói cước & tự động kết thúc
+## Plan: Fix xóa Workspace/Project, hiện Dọn dẹp mọi lúc, cập nhật thống kê & nâng cấp popup xác nhận
 
-### Hiện trạng
-- `MeetingRoom.tsx` đã có timer đếm **thời gian đã trôi** (`elapsed`) khi meeting `in_progress`
-- Chưa có cột `max_meeting_duration_minutes` trong `plan_limits`
-- Không có cơ chế đếm ngược hay tự động kết thúc khi hết limit
+### 1. Nguyên nhân gốc: Xóa Workspace không xóa Projects
 
-### Thay đổi
+**Bug**: Foreign key `groups_workspace_id_fkey` dùng `ON DELETE SET NULL` thay vì `ON DELETE CASCADE`. Khi xóa workspace, các project chỉ bị set `workspace_id = NULL` → vẫn tồn tại trong hệ thống.
 
-**1. Migration — thêm cột `max_meeting_duration_minutes`**
-```sql
-ALTER TABLE plan_limits ADD COLUMN max_meeting_duration_minutes integer;
-UPDATE plan_limits SET max_meeting_duration_minutes = 15 WHERE plan = 'plan_free';
-UPDATE plan_limits SET max_meeting_duration_minutes = 60 WHERE plan = 'plan_plus';
--- Pro, Business, Custom = NULL (unlimited)
-```
+**Fix**: 
+- Migration: Đổi FK constraint thành `ON DELETE CASCADE`
+- Edge function `delete_workspace`: Trước khi xóa workspace, xóa hết projects con (gồm tasks, files, members...) theo logic `deleteProject` đã có trong `AccountCleanupPanel`
 
-**2. `usePlanLimits.ts` — thêm `maxMeetingDurationMinutes`**
-- Thêm field vào interface + fetch logic
+### 2. Hiển thị tab Dọn dẹp mọi lúc
 
-**3. `CreateMeetingDialog.tsx` — lọc thời lượng theo limit**
-- Chỉ hiển thị các option thời lượng ≤ limit (nếu có limit)
-- Hiển thị cảnh báo nâng cấp nếu bị giới hạn
+**Hiện tại**: `ServicePlan.tsx` dòng 191 & 494 chỉ render tab "Dọn dẹp" khi `accountLimits.isOverLimits === true`
 
-**4. `MeetingRoom.tsx` — đếm ngược & tự động kết thúc**
-- Khi meeting `in_progress` và có limit:
-  - Tính `remaining = limitMinutes * 60 - elapsedSeconds`
-  - Hiển thị badge đếm ngược bên cạnh badge `elapsed` hiện có (VD: "Còn 05:30")
-  - Khi remaining ≤ 5 phút → badge chuyển đỏ + cảnh báo
-  - Khi remaining ≤ 0 → tự động gọi `handleEndMeeting()` + toast thông báo "Cuộc họp đã tự động kết thúc do hết thời lượng gói cước"
-- Nếu limit = null (unlimited) → không hiển thị đếm ngược, không tự động tắt
+**Fix**: Bỏ điều kiện `isOverLimits`, luôn hiển thị tab. Cập nhật mô tả trong `AccountCleanupPanel` cho phù hợp (không chỉ nói "giảm xuống hạn mức Free" mà nói "quản lý và dọn dẹp dữ liệu").
 
-**5. i18n (`en.ts`, `vi.ts`)**
-- Thêm chuỗi: cảnh báo sắp hết giờ, thông báo tự động kết thúc, giới hạn thời lượng tạo họp
+### 3. Cập nhật thống kê sau khi xóa
 
-### UI khi đang họp (có limit)
+**Vấn đề**: Sau khi xóa workspace/project, các usage metrics (member count, project count) không refresh.
 
-```text
-[LIVE] [00:12:30] [Còn 02:30 ⚠️]     ← badge đếm ngược màu đỏ khi < 5 phút
-```
+**Fix**:
+- `WorkspaceSettings.tsx` → sau `handleDelete`, gọi `refreshWorkspaces()` (đã có) + navigate về dashboard
+- `AccountCleanupPanel.tsx` → sau delete, gọi `refreshWorkspaces()` + `limits.refresh()` + `fetchData()` (đã có nhưng cần đảm bảo hoạt động đúng sau khi FK cascade fix)
+- Đảm bảo `useAccountLimitsCheck` requery sau delete
 
-Khi hết giờ → auto end + toast + redirect về danh sách.
+### 4. Nâng cấp popup xác nhận — chuyên nghiệp hơn, dùng "đồng ý"
 
-### Files
+**Thay đổi tại 3 nơi**:
+
+| Popup | Hiện tại | Sau khi sửa |
+|-------|----------|-------------|
+| **Xóa WS (WorkspaceSettings)** | Nhập tên workspace | Nhập `đồng ý`, diễn đạt chuyên nghiệp |
+| **Dọn dẹp bước 1 (CleanupPanel)** | "Xem lại danh sách xóa" | "Xác nhận phạm vi xóa" — lời lẽ chuyên nghiệp |
+| **Dọn dẹp bước 2 (CleanupPanel)** | Nhập `pricing` | Nhập `đồng ý`, diễn đạt chuyên nghiệp |
+
+Nội dung popup mới sẽ:
+- Dùng ngôn ngữ trang trọng, rõ ràng
+- Nút xác nhận yêu cầu nhập từ **"đồng ý"**
+- Cập nhật cả i18n EN (nhập **"agree"**)
+
+### Files thay đổi
+
 | File | Thay đổi |
 |------|----------|
-| Migration SQL | Thêm cột `max_meeting_duration_minutes` |
-| `src/hooks/usePlanLimits.ts` | Thêm `maxMeetingDurationMinutes` |
-| `src/components/MeetingRoom.tsx` | Đếm ngược remaining, auto-end khi hết giờ |
-| `src/components/CreateMeetingDialog.tsx` | Lọc options thời lượng, hiển thị cảnh báo |
-| `src/lib/i18n/en.ts` | Thêm chuỗi meeting limit |
-| `src/lib/i18n/vi.ts` | Thêm chuỗi meeting limit |
+| Migration SQL | Đổi FK `groups_workspace_id_fkey` thành `ON DELETE CASCADE` |
+| `supabase/functions/workspace-management/index.ts` | `delete_workspace` action: xóa projects con trước khi xóa workspace |
+| `src/pages/ServicePlan.tsx` | Bỏ điều kiện `isOverLimits` cho tab Cleanup |
+| `src/components/cleanup/AccountCleanupPanel.tsx` | Đổi confirm keyword `pricing` → `đồng ý`, viết lại diễn đạt popup, cập nhật mô tả panel |
+| `src/pages/WorkspaceSettings.tsx` | Viết lại popup xác nhận xóa WS: nhập `đồng ý` thay vì tên workspace |
+| `src/lib/i18n/en.ts` | Cập nhật chuỗi confirm xóa WS + cleanup (keyword: `agree`) |
+| `src/lib/i18n/vi.ts` | Cập nhật chuỗi confirm xóa WS + cleanup (keyword: `đồng ý`) |
 
