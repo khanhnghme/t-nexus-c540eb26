@@ -70,13 +70,14 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { plan, billing_cycle = "monthly", addons = [], coupon_code } = body;
+    const { plan, billing_cycle = "monthly", addons = [], coupon_code, order_type = "plan" } = body;
 
-    if (!plan || !PLAN_PRICES[plan]) {
-      return new Response(JSON.stringify({ error: "Invalid plan" }), {
+    if (!["plan", "addon"].includes(order_type)) {
+      return new Response(JSON.stringify({ error: "Invalid order_type" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
     if (!["monthly", "yearly"].includes(billing_cycle)) {
       return new Response(JSON.stringify({ error: "Invalid billing cycle" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -88,30 +89,68 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Check if first-time buyer (no completed orders)
-    const { data: completedOrders } = await serviceClient
-      .from("orders")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("status", "completed")
-      .limit(1);
+    // For addon-only orders, get user's current plan for discount calculation
+    let effectivePlan = plan;
 
-    const isFirstTimeBuyer = !completedOrders || completedOrders.length === 0;
+    if (order_type === "addon") {
+      // Addon orders don't require a plan param; use current user plan
+      const { data: profile } = await serviceClient
+        .from("profiles")
+        .select("user_plan, billing_cycle")
+        .eq("id", user.id)
+        .single();
 
-    const prices = PLAN_PRICES[plan];
-    const welcomePrices = WELCOME_PRICES[plan];
-    const originalAmount = billing_cycle === "yearly" ? prices.yearly : prices.monthly;
+      if (!profile || profile.user_plan === "plan_free") {
+        return new Response(JSON.stringify({ error: "Add-ons require a premium plan" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
-    let baseAmount = originalAmount;
+      effectivePlan = profile.user_plan;
+
+      if (!addons || addons.length === 0) {
+        return new Response(JSON.stringify({ error: "No addons specified" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } else {
+      // Plan order: validate plan
+      if (!plan || !PLAN_PRICES[plan]) {
+        return new Response(JSON.stringify({ error: "Invalid plan" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // Calculate base amount (only for plan orders)
+    let baseAmount = 0;
+    let originalAmount = 0;
     let welcomeDiscountAmount = 0;
 
-    if (isFirstTimeBuyer && welcomePrices) {
-      baseAmount = billing_cycle === "yearly" ? welcomePrices.yearly : welcomePrices.monthly;
-      welcomeDiscountAmount = Math.round((originalAmount - baseAmount) * 100) / 100;
+    if (order_type === "plan") {
+      const prices = PLAN_PRICES[plan];
+      originalAmount = billing_cycle === "yearly" ? prices.yearly : prices.monthly;
+      baseAmount = originalAmount;
+
+      // Check if first-time buyer
+      const { data: completedOrders } = await serviceClient
+        .from("orders")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "completed")
+        .limit(1);
+
+      const isFirstTimeBuyer = !completedOrders || completedOrders.length === 0;
+      const welcomePrices = WELCOME_PRICES[plan];
+
+      if (isFirstTimeBuyer && welcomePrices) {
+        baseAmount = billing_cycle === "yearly" ? welcomePrices.yearly : welcomePrices.monthly;
+        welcomeDiscountAmount = Math.round((originalAmount - baseAmount) * 100) / 100;
+      }
     }
 
     // Calculate addon amount WITH plan-based discount
-    const addonDiscountRate = ADDON_DISCOUNT_RATE[plan] || 0;
+    const addonDiscountRate = ADDON_DISCOUNT_RATE[effectivePlan] || 0;
     let addonAmountOriginal = 0;
     let addonAmountFinal = 0;
     const validAddons: Array<{ type: string; quantity: number }> = [];
@@ -127,11 +166,11 @@ Deno.serve(async (req) => {
     }
     addonAmountFinal = Math.round(addonAmountFinal * 100) / 100;
 
-    // Validate coupon
+    // Validate coupon (only for plan orders)
     let discountAmount = 0;
     let validCouponCode: string | null = null;
 
-    if (coupon_code) {
+    if (coupon_code && order_type === "plan") {
       const { data: coupon } = await serviceClient
         .from("coupons")
         .select("*")
@@ -178,7 +217,15 @@ Deno.serve(async (req) => {
 
     // Create PayPal order
     const accessToken = await getPayPalAccessToken();
-    const planLabel = plan.replace("plan_", "").charAt(0).toUpperCase() + plan.replace("plan_", "").slice(1);
+    
+    let description: string;
+    if (order_type === "addon") {
+      const addonSummary = validAddons.map(a => `${a.type}×${a.quantity}`).join(", ");
+      description = `T-Nexus Add-ons (${addonSummary})`;
+    } else {
+      const planLabel = plan.replace("plan_", "").charAt(0).toUpperCase() + plan.replace("plan_", "").slice(1);
+      description = `T-Nexus ${planLabel} Plan (${billing_cycle})`;
+    }
 
     const paypalRes = await fetch(`${PAYPAL_BASE}/v2/checkout/orders`, {
       method: "POST",
@@ -197,7 +244,7 @@ Deno.serve(async (req) => {
               discount: { currency_code: "USD", value: discountAmount.toFixed(2) },
             },
           },
-          description: `T-Nexus ${planLabel} Plan (${billing_cycle})`,
+          description,
         }],
       }),
     });
@@ -214,7 +261,8 @@ Deno.serve(async (req) => {
     // Save order to DB
     await serviceClient.from("orders").insert({
       user_id: user.id,
-      plan,
+      order_type,
+      plan: order_type === "addon" ? effectivePlan : plan,
       billing_cycle,
       base_amount: baseAmount,
       addon_amount: addonAmountFinal,
