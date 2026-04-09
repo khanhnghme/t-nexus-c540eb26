@@ -1164,6 +1164,60 @@ export type Database = {
           },
         ]
       }
+      orders: {
+        Row: {
+          addon_amount: number
+          addons: Json | null
+          base_amount: number
+          billing_cycle: string
+          completed_at: string | null
+          coupon_code: string | null
+          created_at: string
+          discount_amount: number
+          id: string
+          payment_method: string
+          paypal_order_id: string | null
+          plan: string
+          status: string
+          total_amount: number
+          user_id: string
+        }
+        Insert: {
+          addon_amount?: number
+          addons?: Json | null
+          base_amount?: number
+          billing_cycle?: string
+          completed_at?: string | null
+          coupon_code?: string | null
+          created_at?: string
+          discount_amount?: number
+          id?: string
+          payment_method?: string
+          paypal_order_id?: string | null
+          plan: string
+          status?: string
+          total_amount?: number
+          user_id: string
+        }
+        Update: {
+          addon_amount?: number
+          addons?: Json | null
+          base_amount?: number
+          billing_cycle?: string
+          completed_at?: string | null
+          coupon_code?: string | null
+          created_at?: string
+          discount_amount?: number
+          id?: string
+          payment_method?: string
+          paypal_order_id?: string | null
+          plan?: string
+          status?: string
+          total_amount?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       password_reset_codes: {
         Row: {
           code: string
