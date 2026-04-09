@@ -5,10 +5,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { FileText, Download, Loader2, ChevronDown, Filter } from 'lucide-react';
+import { FileText, Download, Loader2, ChevronDown, Filter, Lock, ArrowUpRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { exportProjectEvidencePdf, ExportData, ExportOptions } from '@/lib/projectEvidencePdf';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { useNavigate } from 'react-router-dom';
 import type { Group, GroupMember, Task, Stage } from '@/types/database';
 
 interface ProjectEvidenceExportProps {
@@ -18,6 +20,8 @@ interface ProjectEvidenceExportProps {
 
 export default function ProjectEvidenceExport({ groupId, project }: ProjectEvidenceExportProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { canExportData, isLoading: limitsLoading } = usePlanLimits();
   const [isExporting, setIsExporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressMessage, setProgressMessage] = useState('');
