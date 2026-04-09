@@ -260,6 +260,63 @@ export type Database = {
           },
         ]
       }
+      coupons: {
+        Row: {
+          applicable_plans: string[] | null
+          code: string
+          created_at: string
+          created_by: string
+          currency: string
+          description: string | null
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          min_plan: string | null
+          starts_at: string | null
+          updated_at: string
+          used_count: number
+        }
+        Insert: {
+          applicable_plans?: string[] | null
+          code: string
+          created_at?: string
+          created_by: string
+          currency?: string
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          min_plan?: string | null
+          starts_at?: string | null
+          updated_at?: string
+          used_count?: number
+        }
+        Update: {
+          applicable_plans?: string[] | null
+          code?: string
+          created_at?: string
+          created_by?: string
+          currency?: string
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          min_plan?: string | null
+          starts_at?: string | null
+          updated_at?: string
+          used_count?: number
+        }
+        Relationships: []
+      }
       demo_passwords: {
         Row: {
           id: string
