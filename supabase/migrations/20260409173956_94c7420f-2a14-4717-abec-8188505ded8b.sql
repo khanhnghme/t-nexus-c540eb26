@@ -1,0 +1,1 @@
+ALTER TABLE public.orders ADD COLUMN welcome_discount numeric NOT NULL DEFAULT 0;

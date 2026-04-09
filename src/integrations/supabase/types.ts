@@ -1181,6 +1181,7 @@ export type Database = {
           status: string
           total_amount: number
           user_id: string
+          welcome_discount: number
         }
         Insert: {
           addon_amount?: number
@@ -1198,6 +1199,7 @@ export type Database = {
           status?: string
           total_amount?: number
           user_id: string
+          welcome_discount?: number
         }
         Update: {
           addon_amount?: number
@@ -1215,6 +1217,7 @@ export type Database = {
           status?: string
           total_amount?: number
           user_id?: string
+          welcome_discount?: number
         }
         Relationships: []
       }
