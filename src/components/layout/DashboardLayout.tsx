@@ -42,6 +42,7 @@ import {
   Check,
   Plus,
   ChevronsUpDown,
+  ArrowLeft,
 } from 'lucide-react';
 import SidebarTreeNav from '@/components/SidebarTreeNav';
 import AdminSidebarNav from '@/components/AdminSidebarNav';

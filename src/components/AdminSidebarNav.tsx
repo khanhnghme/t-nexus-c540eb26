@@ -31,22 +31,6 @@ export default function AdminSidebarNav({ collapsed }: AdminSidebarNavProps) {
   if (collapsed) {
     return (
       <div className="tree-nav">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="sidebar-nav-item"
-            >
-              <ArrowLeft className="nav-icon" strokeWidth={1.8} />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={12}>
-            <p className="font-medium">{t?.backToDashboard || 'Back'}</p>
-          </TooltipContent>
-        </Tooltip>
-
-        <div className="sidebar-nav-separator" />
-
         {adminItems.map(item => (
           <Tooltip key={item.href}>
             <TooltipTrigger asChild>
@@ -65,15 +49,6 @@ export default function AdminSidebarNav({ collapsed }: AdminSidebarNavProps) {
 
   return (
     <div className="tree-nav">
-      <button
-        onClick={() => navigate('/dashboard')}
-        className="sidebar-nav-item w-full text-left group"
-      >
-        <ArrowLeft className="nav-icon" strokeWidth={1.8} />
-        <span className="nav-label">{t?.backToDashboard || 'Back'}</span>
-      </button>
-
-      <div className="sidebar-nav-separator" />
       <div className="sidebar-section-label">{t?.system || 'ADMIN'}</div>
 
       {adminItems.map(item => (
