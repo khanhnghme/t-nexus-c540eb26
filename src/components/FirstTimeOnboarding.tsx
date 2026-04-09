@@ -940,13 +940,10 @@ export default function FirstTimeOnboarding({
             {currentStep === 'plan' && (
               <div className="h-full flex flex-col">
                 <div className="px-6 md:px-10 pt-6 pb-2 text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                    <Crown className="w-7 h-7 text-primary" />
-                  </div>
                   <h2 className="text-2xl md:text-3xl font-extrabold mb-1">
                     {t.choosePlanTitle}
                   </h2>
-                  <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                  <p className="text-muted-foreground text-sm whitespace-nowrap mx-auto">
                     {t.choosePlanDesc}
                   </p>
                 </div>
@@ -1060,7 +1057,7 @@ export default function FirstTimeOnboarding({
                   </p>
                   <button
                     type="button"
-                    onClick={() => navigate('/guide/pricing')}
+                    onClick={() => window.open('/guide/pricing', '_blank')}
                     className="text-[11px] text-primary hover:underline text-center block mx-auto mb-2"
                   >
                     {t.planGuideLink}
