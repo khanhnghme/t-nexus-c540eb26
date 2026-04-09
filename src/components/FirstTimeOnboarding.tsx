@@ -189,7 +189,16 @@ export default function FirstTimeOnboarding({
     name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   const goNext = () => setCurrentStepIndex(i => Math.min(i + 1, allSteps.length - 1));
-  const goBack = () => setCurrentStepIndex(i => Math.max(i - 1, 0));
+  const goBack = () => {
+    if (currentStep === 'checkout' && checkoutSubStep === 2) {
+      setCheckoutSubStep(1);
+      return;
+    }
+    if (currentStep === 'checkout') {
+      setCheckoutSubStep(1);
+    }
+    setCurrentStepIndex(i => Math.max(i - 1, 0));
+  };
 
   const getPlanColorLocal = () => {
     switch (userPlan) {
