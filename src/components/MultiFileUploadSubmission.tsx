@@ -260,7 +260,6 @@ export default function MultiFileUploadSubmission({
           });
 
         if (error) {
-          // Log chi tiết lỗi để debug
           console.error('Upload error details:', {
             fileName: file.name,
             fileSize: file.size,
@@ -268,11 +267,16 @@ export default function MultiFileUploadSubmission({
             error: error
           });
           
+          // Detect file-too-large error from edge function (413)
+          const msg = error.message || '';
+          if (msg.includes('quá lớn') || msg.includes('too large') || msg.includes('Giới hạn')) {
+            throw new Error(msg);
+          }
+          
           // Phân loại lỗi rõ ràng hơn
           let errorMessage = `Không thể tải "${file.name}"`;
-          if (error.message.includes('duplicate') || error.message.includes('already exists')) {
+          if (msg.includes('duplicate') || msg.includes('already exists')) {
             errorMessage = `File "${file.name}" đã tồn tại, đang thử ghi đè...`;
-            // Thử upload lại với upsert
             const retryResult = await r2Storage.from('task-submissions')
               .upload(filePath, file, { upsert: true });
             
