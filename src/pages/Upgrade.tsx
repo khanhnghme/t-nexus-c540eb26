@@ -351,10 +351,12 @@ function PlanColumn({ plan, yearly, tp, disabled, onSelect }: { plan: Plan; year
       <div className="mb-5">
         <button
           onClick={onSelect}
-          disabled={disabled || plan.cta === currentPlanCta}
-          className={`w-full py-1.5 px-3.5 text-sm font-medium rounded-lg cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed ${plan.ctaStyle === 'primary'
-            ? 'bg-primary text-primary-foreground hover:bg-primary/90 border-none'
-            : 'bg-background text-foreground border border-border hover:bg-accent'
+          disabled={disabled || plan.isCurrent}
+          className={`w-full py-1.5 px-3.5 text-sm font-medium rounded-lg cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed ${plan.isCurrent
+            ? 'bg-primary/10 text-primary border border-primary/30'
+            : plan.ctaStyle === 'primary'
+              ? 'bg-primary text-primary-foreground hover:bg-primary/90 border-none'
+              : 'bg-background text-foreground border border-border hover:bg-accent'
             }`}
         >
           {plan.cta}
