@@ -86,24 +86,8 @@ function NavCustomizationCard({ userId, locale }: { userId?: string; locale: Loc
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          {normalPages.map(renderPageItem)}
+          {pages.map(renderPageItem)}
         </div>
-        {isAdmin && (
-          <div className="mt-3">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full gap-2 text-xs">
-                  <Shield className="w-3.5 h-3.5" />
-                  {isVi ? 'Nâng cao (Admin)' : 'Advanced (Admin)'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-72 p-2 space-y-1.5" side="right" align="start">
-                <p className="text-xs font-medium text-muted-foreground px-2 pb-1">{isVi ? 'Trang quản trị' : 'Admin pages'}</p>
-                {adminPages.map(renderPageItem)}
-              </PopoverContent>
-            </Popover>
-          </div>
-        )}
         {hiddenPages.length > 0 && (
           <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5">
             <EyeOff className="w-3 h-3" />
