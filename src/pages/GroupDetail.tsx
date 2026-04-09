@@ -461,6 +461,7 @@ export default function GroupDetail() {
   
 
   if (isLoading) return <><LoadingScreen message={gd.loading} /></>;
+  if (isAccessDenied) return <AccessDenied />;
   if (!group) return <><div className="text-center py-16"><h1 className="text-2xl font-bold mb-2">{gd.notFound}</h1><Link to="/groups"><Button>{gd.goBack}</Button></Link></div></>;
 
 
