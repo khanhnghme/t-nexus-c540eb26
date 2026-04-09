@@ -820,31 +820,101 @@ export default function ServicePlan() {
                   })}
                 </div>
 
-                {/* Total cost + confirm */}
+                {/* Total cost + checkout */}
                 <Card className="bg-muted/50">
-                  <CardContent className="p-5 space-y-3">
+                  <CardContent className="p-5 space-y-4">
+                    {/* Current total */}
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                       <div>
                         <span className="text-sm font-medium">{t.addonTotalCost || 'Total add-on cost'}:</span>
                         <span className="text-2xl font-bold tabular-nums ml-3">
                           ${totalAddonCost.toFixed(2)}
                         </span>
-                        <span className="text-sm text-muted-foreground ml-1">{t.addonPerMonth || '/month'}</span>
+                        <span className="text-sm text-muted-foreground ml-1">/{billingCycle === 'yearly' ? (t.addonPerYear || 'year') : (t.addonPerMonth || 'month')}</span>
                       </div>
-                      <Button
-                        onClick={handleAddonConfirm}
-                        disabled={!addonDirty}
-                        className="bg-violet-600 hover:bg-violet-700 text-white"
-                      >
-                        <Package className="w-4 h-4 mr-2" />
-                        {t.addonConfirm || 'Confirm Changes'}
-                      </Button>
                     </div>
+
                     {discount.pct > 0 && totalAddonQty > 0 && (
-                      <div className="flex justify-between text-sm text-emerald-600 pt-1 border-t">
+                      <div className="flex justify-between text-sm text-emerald-600 pt-1 border-t border-border">
                         <span>{t.addonSavings || 'Add-on savings'} ({discount.pct * 100}%)</span>
-                        <span>-${(totalAddonQty * BASE_PRICE * discount.pct).toFixed(2)}/{t.addonPerMonth || 'month'}</span>
+                        <span>-${(totalAddonQty * addonBasePrice * discount.pct).toFixed(2)}</span>
                       </div>
+                    )}
+
+                    {/* Delta purchase section */}
+                    {hasAddonDelta && (
+                      <div className="pt-3 border-t border-border space-y-3">
+                        <div className="text-sm font-medium">{t.addonNewPurchase || 'New add-on purchase'}:</div>
+                        <div className="space-y-1">
+                          {deltaAddons.map(a => (
+                            <div key={a.type} className="flex justify-between text-sm">
+                              <span className="text-muted-foreground capitalize">{a.type} × {a.quantity}</span>
+                              <span className="tabular-nums">${(a.quantity * unitPrice).toFixed(2)}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {deltaSaving > 0 && (
+                          <div className="flex justify-between text-sm text-emerald-600">
+                            <span>{t.addonSavings || 'Savings'} ({discount.pct * 100}%)</span>
+                            <span>-${deltaSaving.toFixed(2)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-base font-bold pt-1 border-t border-border">
+                          <span>{t.addonPayTotal || 'Amount to pay'}</span>
+                          <span>${deltaTotalFinal.toFixed(2)}</span>
+                        </div>
+
+                        {!showAddonPaypal ? (
+                          <Button
+                            onClick={() => setShowAddonPaypal(true)}
+                            className="w-full bg-violet-600 hover:bg-violet-700 text-white"
+                          >
+                            <Package className="w-4 h-4 mr-2" />
+                            {t.addonCheckout || 'Proceed to Payment'}
+                          </Button>
+                        ) : (
+                          <div className="space-y-3">
+                            {addonPaymentLoading && (
+                              <div className="flex items-center justify-center py-4">
+                                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                              </div>
+                            )}
+                            {paypalClientId ? (
+                              <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD' }}>
+                                <PayPalButtons
+                                  style={{ layout: 'vertical', shape: 'rect', label: 'pay', height: 40 }}
+                                  createOrder={async () => createAddonOrder()}
+                                  onApprove={async (data) => {
+                                    await captureAddonOrder(data.orderID);
+                                  }}
+                                  onError={(err) => {
+                                    console.error('PayPal error:', err);
+                                    toast({ title: 'PayPal Error', description: 'Payment could not be completed.', variant: 'destructive' });
+                                  }}
+                                  onCancel={() => {
+                                    setShowAddonPaypal(false);
+                                    toast({ title: 'Cancelled', description: t.addonPaymentCancelled || 'Payment was cancelled.' });
+                                  }}
+                                />
+                              </PayPalScriptProvider>
+                            ) : (
+                              <div className="text-center py-4">
+                                <Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                              <ShieldCheck className="w-3.5 h-3.5" />
+                              <span>{t.securePayment || 'Secure payment via PayPal'}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {!hasAddonDelta && addonDirty && (
+                      <p className="text-xs text-muted-foreground text-center pt-2">
+                        {t.addonNoIncrease || 'You can only purchase additional add-ons, not reduce existing ones from here.'}
+                      </p>
                     )}
                   </CardContent>
                 </Card>
