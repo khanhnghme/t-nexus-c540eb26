@@ -683,6 +683,7 @@ export const en = {
       utilities: 'Utilities',
       personal: 'PERSONAL',
       system: 'ADMIN',
+      backToDashboard: 'Back',
       createWorkspace: 'Create new Workspace',
       guestHint: '👽 You are accessing as a guest',
       notifications: 'Notifications',
