@@ -250,52 +250,6 @@ export default function ServicePlan() {
   const totalAddonQty = localAddons.projects + localAddons.storage + localAddons.members;
   const totalAddonCost = totalAddonQty * unitPrice;
 
-  const createAddonOrder = useCallback(async (): Promise<string> => {
-    const addonsPayload = deltaAddons.map(a => ({ type: a.type, quantity: a.quantity }));
-
-    const { data, error } = await supabase.functions.invoke('create-paypal-order', {
-      body: {
-        order_type: 'addon',
-        billing_cycle: billingCycle,
-        addons: addonsPayload,
-      },
-    });
-
-    if (error || !data?.orderID) {
-      throw new Error(error?.message || 'Failed to create order');
-    }
-    return data.orderID;
-  }, [deltaAddons, billingCycle]);
-
-  const captureAddonOrder = useCallback(async (orderID: string) => {
-    setAddonPaymentLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('capture-paypal-order', {
-        body: { orderID },
-      });
-
-      if (error || !data?.success) {
-        throw new Error(error?.message || 'Capture failed');
-      }
-
-      userAddons.refresh();
-      accountLimits.refresh();
-      setShowAddonPaypal(false);
-      setAddonDirty(false);
-      toast({
-        title: '✅ Add-on',
-        description: t.addonPurchaseSuccess || 'Add-on purchased successfully!',
-      });
-    } catch (err: any) {
-      toast({
-        title: 'Error',
-        description: err.message || 'Payment failed',
-        variant: 'destructive',
-      });
-    } finally {
-      setAddonPaymentLoading(false);
-    }
-  }, [userAddons, accountLimits, t]);
 
   if (isLoading) {
     return (
