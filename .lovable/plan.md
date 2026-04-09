@@ -1,48 +1,41 @@
 
 
-## Plan: Triển khai thanh toán Add-on mua thêm
+## Plan: Redesign trang Add-on Tab thành 2-step checkout
 
-### Tổng quan
-Cho phép người dùng Premium mua thêm add-on (projects, storage, members) riêng lẻ mà không cần mua kèm gói plan. Flow: ServicePlan addon tab → chọn số lượng → thanh toán PayPal → cộng dồn add-on.
+### Vấn đề hiện tại
+- Tab Add-on hiển thị "Tổng chi phí add-on: $39.84/tháng" bao gồm cả add-on đã mua lẫn mới → gây hiểu lầm
+- Không có tổng quan add-on hiện có vs. add-on mua thêm
+- Flow mua thêm chưa rõ ràng 2 step như checkout plan
 
-### Thay đổi cần thực hiện
+### Giải pháp: Chia Tab Add-on thành 2 phần rõ ràng
 
-#### 1. Database Migration
-- Thêm cột `order_type` vào bảng `orders` (default `'plan'`, values: `'plan'` | `'addon'`)
-- Cho phép cột `plan` nullable (vì addon-only order không cần plan)
+**Phần 1 — Tổng quan Add-on hiện có (read-only)**
+- Card hiển thị add-on đã sở hữu: loại, số lượng, giới hạn hiện tại (base + bonus)
+- Progress bar usage cho mỗi loại
+- Nếu chưa có add-on nào → hiển thị "Chưa có gói bổ sung nào"
 
-#### 2. Edge Function: `create-paypal-order`
-- Hỗ trợ thêm `order_type: 'addon'` từ request body
-- Khi `order_type === 'addon'`: không yêu cầu `plan`, tính giá add-on dựa trên plan hiện tại của user (để áp dụng đúng % giảm giá), `base_amount = 0`
-- Lưu order với `order_type = 'addon'`, plan = user's current plan
+**Phần 2 — Mua thêm Add-on (Step 1: chọn số lượng)**
+- Tách riêng section "Mua thêm gói bổ sung"
+- 3 card cho projects/storage/members với +/- buttons (bắt đầu từ 0, không phải từ số hiện có)
+- Mỗi card chỉ hiển thị số lượng mua MỚI và giá gốc cho phần mua mới
+- Footer: Tạm tính gốc → Tiết kiệm add-on (nếu có) → Tổng thanh toán
+- Nút "Tiến hành thanh toán" → navigate sang `/addon-checkout` (Step 2 đã có)
 
-#### 3. Edge Function: `capture-paypal-order`
-- Kiểm tra `order.order_type`:
-  - Nếu `'addon'`: chỉ cập nhật `user_addons` + `payment_history` + `plan_change_logs`. **Không** thay đổi `profiles.user_plan` hay `plan_expires_at`
-  - Nếu `'plan'` (default): giữ nguyên logic hiện tại
+### Thay đổi cụ thể
 
-#### 4. Edge Function: `paypal-webhook`
-- Tương tự capture: nếu `order.order_type === 'addon'`, skip profile/plan update, chỉ update addons + history
+**File: `src/pages/ServicePlan.tsx` — Tab addon (line ~638-832)**
 
-#### 5. Frontend: `ServicePlan.tsx` — Addon Tab
-- Thay nút "Confirm Changes" bằng flow thanh toán thực:
-  - Tính toán delta (số lượng mới - số lượng cũ trong DB) cho mỗi addon type
-  - Nếu delta > 0: hiển thị tổng giá cho phần mua thêm + nút "Thanh toán"
-  - Click "Thanh toán" → gọi `create-paypal-order` với `order_type: 'addon'`
-  - Render PayPal button inline (giống Checkout)
-  - Sau thanh toán thành công → refresh addons + toast thành công
-- Nếu delta <= 0 hoặc không thay đổi: disable nút
-- Hiển thị billing_cycle từ profile (monthly/yearly) để tính giá đúng
-
-#### 6. Logic giá
-- Giá gốc addon: $2.49/tháng/gói, $24.90/năm/gói
-- Giảm giá theo plan hiện tại: Plus 10%, Pro 20%, Business 20%
-- Billing cycle theo `profile.billing_cycle`
+1. **Xóa** `localAddons` sync từ DB (line 94-103) — không cần nữa vì mua mới bắt đầu từ 0
+2. **Thêm state mới** `newAddons` = `{ projects: 0, storage: 0, members: 0 }` cho phần mua thêm
+3. **Phần 1 — Tổng quan**: Render card read-only cho mỗi addon type từ `userAddons.getQuantity()`, hiển thị usage + progress
+4. **Phần 2 — Mua thêm**: +/- controls thao tác trên `newAddons` (delta bắt đầu từ 0)
+5. **Footer**: Chỉ hiển thị giá cho phần mua mới:
+   - Tạm tính: `totalNewQty × addonBasePrice`
+   - Tiết kiệm: nếu plan có discount
+   - Tổng: `totalNewQty × unitPrice`
+6. **Nút thanh toán**: Navigate `/addon-checkout?projects=N&storage=N&members=N` (chỉ gửi delta > 0)
+7. **Xóa** "Tổng chi phí add-on" gây hiểu lầm
 
 ### Files cần sửa
-- `supabase/functions/create-paypal-order/index.ts`
-- `supabase/functions/capture-paypal-order/index.ts`
-- `supabase/functions/paypal-webhook/index.ts`
 - `src/pages/ServicePlan.tsx`
-- Migration SQL (thêm `order_type` column)
 
