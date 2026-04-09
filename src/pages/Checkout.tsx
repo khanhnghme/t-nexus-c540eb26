@@ -439,12 +439,6 @@ export default function Checkout() {
                   </div>
                   <p className="text-[11px] text-muted-foreground">
                     {cycle === 'yearly' ? (t?.billedYearly || 'Billed yearly') : (t?.billedMonthly || 'Billed monthly')}
-                    {addonDiscountRate > 0 && (
-                      <>
-                        {' · '}
-                        <span className="text-emerald-600 font-medium">Add-on -{addonDiscountRate * 100}%</span>
-                      </>
-                    )}
                   </p>
                   {hasAddons && ADDON_TYPES.map(addon => {
                     const qty = addons[addon.type] || 0;
