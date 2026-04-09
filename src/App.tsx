@@ -55,6 +55,7 @@ import Checkout from "./pages/Checkout";
 import Onboarding from "./pages/Onboarding";
 import PaymentResult from "./pages/PaymentResult";
 import ServicePlan from "./pages/ServicePlan";
+import AddonCheckout from "./pages/AddonCheckout";
 import AdminLayout from "./components/layout/AdminLayout";
 import AdminBilling from "./pages/AdminBilling";
 import AdminUserBilling from "./pages/AdminUserBilling";

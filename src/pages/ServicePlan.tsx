@@ -864,50 +864,17 @@ export default function ServicePlan() {
                           <span>${deltaTotalFinal.toFixed(2)}</span>
                         </div>
 
-                        {!showAddonPaypal ? (
-                          <Button
-                            onClick={() => setShowAddonPaypal(true)}
-                            className="w-full bg-violet-600 hover:bg-violet-700 text-white"
-                          >
-                            <Package className="w-4 h-4 mr-2" />
-                            {t.addonCheckout || 'Proceed to Payment'}
-                          </Button>
-                        ) : (
-                          <div className="space-y-3">
-                            {addonPaymentLoading && (
-                              <div className="flex items-center justify-center py-4">
-                                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                              </div>
-                            )}
-                            {paypalClientId ? (
-                              <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD' }}>
-                                <PayPalButtons
-                                  style={{ layout: 'vertical', shape: 'rect', label: 'pay', height: 40 }}
-                                  createOrder={async () => createAddonOrder()}
-                                  onApprove={async (data) => {
-                                    await captureAddonOrder(data.orderID);
-                                  }}
-                                  onError={(err) => {
-                                    console.error('PayPal error:', err);
-                                    toast({ title: 'PayPal Error', description: 'Payment could not be completed.', variant: 'destructive' });
-                                  }}
-                                  onCancel={() => {
-                                    setShowAddonPaypal(false);
-                                    toast({ title: 'Cancelled', description: t.addonPaymentCancelled || 'Payment was cancelled.' });
-                                  }}
-                                />
-                              </PayPalScriptProvider>
-                            ) : (
-                              <div className="text-center py-4">
-                                <Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" />
-                              </div>
-                            )}
-                            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                              <ShieldCheck className="w-3.5 h-3.5" />
-                              <span>{t.securePayment || 'Secure payment via PayPal'}</span>
-                            </div>
-                          </div>
-                        )}
+                        <Button
+                          onClick={() => {
+                            const params = new URLSearchParams();
+                            deltaAddons.forEach(a => params.set(a.type, String(a.quantity)));
+                            navigate(`/addon-checkout?${params.toString()}`);
+                          }}
+                          className="w-full bg-violet-600 hover:bg-violet-700 text-white"
+                        >
+                          <Package className="w-4 h-4 mr-2" />
+                          {t.addonCheckout || 'Proceed to Payment'}
+                        </Button>
                       </div>
                     )}
 
