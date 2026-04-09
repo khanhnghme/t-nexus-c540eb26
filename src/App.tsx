@@ -52,6 +52,7 @@ import CreateWorkspace from "./pages/CreateWorkspace";
 import Notifications from "./pages/Notifications";
 import Upgrade from "./pages/Upgrade";
 import ServicePlan from "./pages/ServicePlan";
+import AdminLayout from "./components/layout/AdminLayout";
 
 const queryClient = new QueryClient();
 
@@ -166,11 +167,14 @@ function AppRoutes() {
           <Route path="/personal-info" element={<PersonalInfo />} />
           <Route path="/account-settings" element={<AccountSettings />} />
           <Route path="/tips" element={<Tips />} />
-          <Route path="/members" element={<MemberManagement />} />
-          <Route path="/admin/activity" element={<AdminActivity />} />
-          <Route path="/admin/backup" element={<AdminBackup />} />
-          <Route path="/admin/system" element={<AdminSystem />} />
-          <Route path="/utilities" element={<Utilities />} />
+          {/* ═══ Admin routes (nested with secondary sidebar) ═══ */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="members" element={<MemberManagement />} />
+            <Route path="activity" element={<AdminActivity />} />
+            <Route path="backup" element={<AdminBackup />} />
+            <Route path="system" element={<AdminSystem />} />
+            <Route path="utilities" element={<Utilities />} />
+          </Route>
           {/* ═══ Workspace routes ═══ */}
           <Route path="/workspace/new" element={<CreateWorkspace />} />
           <Route path="/workspace/settings" element={<WorkspaceSettings />} />
