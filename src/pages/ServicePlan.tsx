@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAccountLimitsCheck } from '@/hooks/useAccountLimitsCheck';
