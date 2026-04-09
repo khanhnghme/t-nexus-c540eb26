@@ -75,32 +75,12 @@ export default function ServicePlan() {
   const [billingHistory, setBillingHistory] = useState<PaymentRecord[]>([]);
   const [billingLoading, setBillingLoading] = useState(false);
 
-  // Local addon quantities for editing
-  const [localAddons, setLocalAddons] = useState<Record<AddonType, number>>({
+  // New addon quantities for purchasing (starts from 0)
+  const [newAddons, setNewAddons] = useState<Record<AddonType, number>>({
     projects: 0,
     storage: 0,
     members: 0,
   });
-  const [addonDirty, setAddonDirty] = useState(false);
-
-  const currentTab = searchParams.get('tab') || 'plan';
-
-  const plan = profile?.user_plan || 'plan_free';
-  const planName = formatPlanName(plan);
-  const isPremium = plan !== 'plan_free';
-  const features = featuresMap[plan] || featuresMap.plan_free;
-
-  // Sync local addons from DB
-  useEffect(() => {
-    if (!userAddons.isLoading) {
-      setLocalAddons({
-        projects: userAddons.getQuantity('projects'),
-        storage: userAddons.getQuantity('storage'),
-        members: userAddons.getQuantity('members'),
-      });
-      setAddonDirty(false);
-    }
-  }, [userAddons.isLoading, userAddons.addons]);
 
   // Fetch billing history
   useEffect(() => {
