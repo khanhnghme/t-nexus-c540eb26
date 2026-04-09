@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import tNexusLogo from '@/assets/t-nexus-logo.png';
+import tNexusTextLogo from '@/assets/t-nexus-text.png';
 import ReactMarkdown from 'react-markdown';
 import UserAvatar from '@/components/UserAvatar';
 
@@ -347,7 +347,7 @@ export default function AIAssistantPanel({
             <SheetTitle className="flex items-center gap-3 text-primary-foreground">
               <div className="relative">
                 <Avatar className="h-10 w-10 ring-2 ring-white/30 shadow-lg">
-                  <AvatarImage src={tNexusLogo} alt="AI Assistant" />
+                  <AvatarImage src={tNexusTextLogo} alt="AI Assistant" />
                   <AvatarFallback className="bg-white/20">
                     <Sparkles className="h-5 w-5 text-primary-foreground" />
                   </AvatarFallback>
@@ -429,7 +429,7 @@ export default function AIAssistantPanel({
               <div className="relative mb-5 ai-hero-entrance">
                 <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl scale-150 ai-pulse-glow" />
                 <Avatar className="relative h-16 w-16 ring-4 ring-primary/10 shadow-xl ai-hero-bounce">
-                  <AvatarImage src={tNexusLogo} alt="AI Assistant" />
+                  <AvatarImage src={tNexusTextLogo} alt="AI Assistant" />
                   <AvatarFallback className="bg-primary/10">
                     <Sparkles className="h-8 w-8 text-primary" />
                   </AvatarFallback>
@@ -490,7 +490,7 @@ export default function AIAssistantPanel({
                   {/* Avatar */}
                   {message.role === 'assistant' ? (
                     <Avatar className="h-7 w-7 shrink-0 mt-1 ring-1 ring-border shadow-sm">
-                      <AvatarImage src={tNexusLogo} alt="AI" />
+                      <AvatarImage src={tNexusTextLogo} alt="AI" />
                       <AvatarFallback className="bg-primary/10 text-primary">
                         <Sparkles className="h-3.5 w-3.5" />
                       </AvatarFallback>
