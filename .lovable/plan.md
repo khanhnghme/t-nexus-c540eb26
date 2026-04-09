@@ -1,57 +1,55 @@
 
 
-## Plan: Admin sidebar thay thế sidebar chính
+## Plan: Đếm ngược thời gian họp theo limit gói cước & tự động kết thúc
 
-### Vấn đề
-Hiện tại khi vào `/admin/*`, sidebar chính (SidebarTreeNav) vẫn hiển thị, và AdminLayout render thêm một sidebar phụ bên cạnh → tạo 2 sidebar song song, chiếm nhiều không gian.
-
-### Giải pháp
-Khi route bắt đầu bằng `/admin`, **thay thế** nội dung sidebar chính bằng menu admin (nút quay lại + danh sách admin items). Không cần AdminLayout riêng nữa.
+### Hiện trạng
+- `MeetingRoom.tsx` đã có timer đếm **thời gian đã trôi** (`elapsed`) khi meeting `in_progress`
+- Chưa có cột `max_meeting_duration_minutes` trong `plan_limits`
+- Không có cơ chế đếm ngược hay tự động kết thúc khi hết limit
 
 ### Thay đổi
 
-**1. `DashboardLayout.tsx` — phát hiện route admin, đổi sidebar**
-- Kiểm tra `location.pathname.startsWith('/admin')`
-- Nếu đúng: thay `SidebarTreeNav` bằng component `AdminSidebarNav` (nút "← Back", tiêu đề ADMIN, 4 mục con)
-- Ẩn luôn phần bottom (UpgradeBox + user profile) hoặc giữ user profile tuỳ ý — giữ user profile cho nhất quán
+**1. Migration — thêm cột `max_meeting_duration_minutes`**
+```sql
+ALTER TABLE plan_limits ADD COLUMN max_meeting_duration_minutes integer;
+UPDATE plan_limits SET max_meeting_duration_minutes = 15 WHERE plan = 'plan_free';
+UPDATE plan_limits SET max_meeting_duration_minutes = 60 WHERE plan = 'plan_plus';
+-- Pro, Business, Custom = NULL (unlimited)
+```
 
-**2. `AdminLayout.tsx` — đơn giản hóa**
-- Xóa toàn bộ secondary sidebar
-- Chỉ giữ lại: kiểm tra `isAdmin` → redirect nếu không phải admin, redirect `/admin` → `/admin/members`, và render `<Outlet />`
-- Không render sidebar riêng nữa
+**2. `usePlanLimits.ts` — thêm `maxMeetingDurationMinutes`**
+- Thêm field vào interface + fetch logic
 
-**3. `SidebarTreeNav.tsx` — tạo variant admin**
-- Hoặc tách ra component `AdminSidebarNav.tsx` mới, hoặc thêm logic vào trong `SidebarTreeNav`
-- Gồm: nút ArrowLeft "Back to Home", tiêu đề "ADMIN", 4 link (Members, Backup, System, Utilities)
-- Hỗ trợ cả collapsed mode (chỉ icon + tooltip)
+**3. `CreateMeetingDialog.tsx` — lọc thời lượng theo limit**
+- Chỉ hiển thị các option thời lượng ≤ limit (nếu có limit)
+- Hiển thị cảnh báo nâng cấp nếu bị giới hạn
 
-**4. CSS — dọn dẹp**
-- Xóa styles `.admin-secondary-sidebar`, `.admin-content-area` trong `index.css`
-- Tái sử dụng các class sidebar hiện có (`.sidebar-nav-item`, `.nav-icon`, v.v.)
+**4. `MeetingRoom.tsx` — đếm ngược & tự động kết thúc**
+- Khi meeting `in_progress` và có limit:
+  - Tính `remaining = limitMinutes * 60 - elapsedSeconds`
+  - Hiển thị badge đếm ngược bên cạnh badge `elapsed` hiện có (VD: "Còn 05:30")
+  - Khi remaining ≤ 5 phút → badge chuyển đỏ + cảnh báo
+  - Khi remaining ≤ 0 → tự động gọi `handleEndMeeting()` + toast thông báo "Cuộc họp đã tự động kết thúc do hết thời lượng gói cước"
+- Nếu limit = null (unlimited) → không hiển thị đếm ngược, không tự động tắt
 
-### Flow mới
+**5. i18n (`en.ts`, `vi.ts`)**
+- Thêm chuỗi: cảnh báo sắp hết giờ, thông báo tự động kết thúc, giới hạn thời lượng tạo họp
+
+### UI khi đang họp (có limit)
 
 ```text
-/dashboard:
-  [Logo] [TopBar        ]
-  [SidebarTreeNav] [Content]
-
-/admin/members:
-  [Logo] [TopBar        ]
-  [← Back       ] [Content]
-  [ADMIN        ]
-  [Members  ●   ]
-  [Backup       ]
-  [System       ]
-  [Utilities    ]
-  [User profile ]
+[LIVE] [00:12:30] [Còn 02:30 ⚠️]     ← badge đếm ngược màu đỏ khi < 5 phút
 ```
+
+Khi hết giờ → auto end + toast + redirect về danh sách.
 
 ### Files
 | File | Thay đổi |
 |------|----------|
-| `src/components/layout/DashboardLayout.tsx` | Phát hiện `/admin` route, render `AdminSidebarNav` thay cho `SidebarTreeNav` |
-| `src/components/layout/AdminLayout.tsx` | Xóa sidebar, chỉ giữ guard + redirect + `<Outlet />` |
-| `src/components/AdminSidebarNav.tsx` | **Mới** — menu admin cho sidebar chính |
-| `src/index.css` | Xóa `.admin-secondary-sidebar` styles, thêm styles nhỏ cho admin nav |
+| Migration SQL | Thêm cột `max_meeting_duration_minutes` |
+| `src/hooks/usePlanLimits.ts` | Thêm `maxMeetingDurationMinutes` |
+| `src/components/MeetingRoom.tsx` | Đếm ngược remaining, auto-end khi hết giờ |
+| `src/components/CreateMeetingDialog.tsx` | Lọc options thời lượng, hiển thị cảnh báo |
+| `src/lib/i18n/en.ts` | Thêm chuỗi meeting limit |
+| `src/lib/i18n/vi.ts` | Thêm chuỗi meeting limit |
 
