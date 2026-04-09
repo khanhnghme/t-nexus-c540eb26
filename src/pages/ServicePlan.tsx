@@ -15,7 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Crown, Zap, Building2, FolderKanban, HardDrive,
-  ArrowRight, Loader2, Infinity, Receipt, ArrowLeft,
+  ArrowRight, Loader2, Infinity, Receipt,
   Check, Users, Shield, Sparkles, BarChart3,
 } from 'lucide-react';
 
@@ -164,13 +164,6 @@ export default function ServicePlan() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
-          >
-            <ArrowLeft size={14} />
-            <span>{t.goBack}</span>
-          </button>
           <h1 className="text-2xl font-heading font-bold tracking-tight">{t.title}</h1>
           <p className="text-sm text-muted-foreground mt-1">{t.subtitle}</p>
         </div>
@@ -304,95 +297,86 @@ export default function ServicePlan() {
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card>
-                <CardContent className="p-4 space-y-2">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Building2 className="w-4 h-4" />
-                    <span className="text-xs font-medium">{t.workspace}</span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold tabular-nums">{wsUsages.length}</span>
-                    <span className="text-sm text-muted-foreground">
-                      / {planLimits?.max_workspaces ?? <Infinity className="w-3.5 h-3.5 inline" />}
-                    </span>
-                  </div>
-                  {planLimits?.max_workspaces && (
-                    <Progress value={Math.min(100, (wsUsages.length / planLimits.max_workspaces) * 100)} className="h-1.5" />
-                  )}
-                </CardContent>
-              </Card>
+              {(() => {
+                const totalStorage = wsUsages.reduce((s, w) => s + w.storageMb, 0);
 
-              <Card>
-                <CardContent className="p-4 space-y-2">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <FolderKanban className="w-4 h-4" />
-                    <span className="text-xs font-medium">{t.projects}</span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold tabular-nums">{totalProjects}</span>
-                    <span className="text-sm text-muted-foreground">
-                      / {planLimits?.max_projects_per_workspace
-                        ? planLimits.max_projects_per_workspace
-                        : <Infinity className="w-3.5 h-3.5 inline" />}
-                    </span>
-                  </div>
-                  {planLimits?.max_projects_per_workspace && (
-                    <Progress
-                      value={Math.min(100, (totalProjects / planLimits.max_projects_per_workspace) * 100)}
-                      className="h-1.5"
-                    />
-                  )}
-                </CardContent>
-              </Card>
+                const usageCards: {
+                  label: string;
+                  icon: React.ReactNode;
+                  current: number;
+                  max: number | null;
+                  suffix?: string;
+                  note?: string;
+                  iconColor: string;
+                  formatMax?: (v: number) => string;
+                }[] = [
+                  {
+                    label: t.workspace,
+                    icon: <Building2 className="w-4 h-4" />,
+                    current: wsUsages.length,
+                    max: planLimits?.max_workspaces ?? null,
+                    iconColor: 'text-blue-500',
+                  },
+                  {
+                    label: t.projects,
+                    icon: <FolderKanban className="w-4 h-4" />,
+                    current: totalProjects,
+                    max: planLimits?.max_projects_per_workspace ?? null,
+                    iconColor: 'text-violet-500',
+                  },
+                  {
+                    label: t.memberSeats,
+                    icon: <Users className="w-4 h-4" />,
+                    current: totalMembers,
+                    max: planLimits?.max_members_per_workspace ?? null,
+                    iconColor: 'text-emerald-500',
+                    note: t.memberSeatsNote,
+                  },
+                  {
+                    label: t.storage,
+                    icon: <HardDrive className="w-4 h-4" />,
+                    current: totalStorage,
+                    max: planLimits?.max_storage_mb ?? null,
+                    suffix: 'MB',
+                    iconColor: 'text-orange-500',
+                    formatMax: (v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)} GB` : `${v} MB`,
+                  },
+                ];
 
-              <Card>
-                <CardContent className="p-4 space-y-2">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Users className="w-4 h-4" />
-                    <span className="text-xs font-medium">{t.memberSeats}</span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold tabular-nums">{totalMembers}</span>
-                    <span className="text-sm text-muted-foreground">
-                      / {planLimits?.max_members_per_workspace
-                        ? planLimits.max_members_per_workspace
-                        : <Infinity className="w-3.5 h-3.5 inline" />}
-                    </span>
-                  </div>
-                  {planLimits?.max_members_per_workspace && (
-                    <Progress
-                      value={Math.min(100, (totalMembers / planLimits.max_members_per_workspace) * 100)}
-                      className="h-1.5"
-                    />
-                  )}
-                  <p className="text-[10px] text-muted-foreground">{t.memberSeatsNote}</p>
-                </CardContent>
-              </Card>
+                return usageCards.map((card, idx) => {
+                  const isOver = card.max !== null && card.current >= card.max;
+                  const pct = card.max !== null && card.max > 0 ? (card.current / card.max) * 100 : 0;
+                  const isWarning = !isOver && card.max !== null && pct >= 80;
 
-              <Card>
-                <CardContent className="p-4 space-y-2">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <HardDrive className="w-4 h-4" />
-                    <span className="text-xs font-medium">{t.storage}</span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold tabular-nums">
-                      {wsUsages.reduce((s, w) => s + w.storageMb, 0)}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      MB / {planLimits?.max_storage_mb
-                        ? `${planLimits.max_storage_mb >= 1000 ? `${(planLimits.max_storage_mb / 1000).toFixed(0)} GB` : `${planLimits.max_storage_mb} MB`}`
-                        : <Infinity className="w-3.5 h-3.5 inline" />}
-                    </span>
-                  </div>
-                  {planLimits?.max_storage_mb && (
-                    <Progress
-                      value={Math.min(100, (wsUsages.reduce((s, w) => s + w.storageMb, 0) / planLimits.max_storage_mb) * 100)}
-                      className="h-1.5"
-                    />
-                  )}
-                </CardContent>
-              </Card>
+                  return (
+                    <Card key={idx} className={isOver ? 'border-red-500/30 bg-red-500/5' : ''}>
+                      <CardContent className="p-4 space-y-2">
+                        <div className={`flex items-center gap-2 ${isOver ? 'text-red-600 dark:text-red-400' : card.iconColor}`}>
+                          {card.icon}
+                          <span className="text-xs font-medium">{card.label}</span>
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                          <span className={`text-2xl font-bold tabular-nums ${isOver ? 'text-red-600 dark:text-red-400' : ''}`}>
+                            {card.current}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            {card.suffix ? ` ${card.suffix}` : ''} / {card.max !== null
+                              ? (card.formatMax ? card.formatMax(card.max) : card.max)
+                              : <Infinity className="w-3.5 h-3.5 inline" />}
+                          </span>
+                        </div>
+                        {card.max !== null && (
+                          <Progress
+                            value={Math.min(100, pct)}
+                            className={`h-1.5 ${isOver ? '[&>div]:bg-red-500' : isWarning ? '[&>div]:bg-amber-500' : ''}`}
+                          />
+                        )}
+                        {card.note && <p className="text-[10px] text-muted-foreground">{card.note}</p>}
+                      </CardContent>
+                    </Card>
+                  );
+                });
+              })()}
             </div>
           </section>
 
@@ -416,8 +400,15 @@ export default function ServicePlan() {
                   const totalStorageAll = wsUsages.reduce((s, w) => s + w.storageMb, 0);
                   const projectContribPct = totalProjectsAll > 0 ? Math.round((ws.projectCount / totalProjectsAll) * 100) : 0;
                   const storageContribPct = totalStorageAll > 0 ? Math.round((ws.storageMb / totalStorageAll) * 100) : 0;
-
                   const formatStorage = (mb: number) => mb >= 1000 ? `${(mb / 1000).toFixed(1)} GB` : `${mb} MB`;
+
+                  const projPct = ws.maxProjects ? (ws.projectCount / ws.maxProjects) * 100 : 0;
+                  const projOver = ws.maxProjects !== null && ws.projectCount >= ws.maxProjects;
+                  const projWarn = !projOver && ws.maxProjects !== null && projPct >= 80;
+
+                  const storagePct = ws.maxStorageMb > 0 ? (ws.storageMb / ws.maxStorageMb) * 100 : 0;
+                  const storageOver = ws.maxStorageMb > 0 && ws.storageMb >= ws.maxStorageMb;
+                  const storageWarn = !storageOver && ws.maxStorageMb > 0 && storagePct >= 80;
 
                   return (
                     <Card key={ws.id}>
@@ -436,15 +427,18 @@ export default function ServicePlan() {
                         <div className="space-y-3">
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground flex items-center gap-1.5">
+                              <span className={`flex items-center gap-1.5 ${projOver ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
                                 <FolderKanban className="w-3 h-3" /> {t.projects}
                               </span>
-                              <span className="font-medium tabular-nums">
+                              <span className={`font-medium tabular-nums ${projOver ? 'text-red-600 dark:text-red-400' : ''}`}>
                                 {ws.projectCount} {t.projectsLabel}
                                 <span className="text-muted-foreground ml-1">({projectContribPct}%)</span>
                               </span>
                             </div>
-                            <Progress value={ws.maxProjects ? Math.min(100, (ws.projectCount / ws.maxProjects) * 100) : projectContribPct} className="h-1.5" />
+                            <Progress
+                              value={ws.maxProjects ? Math.min(100, projPct) : projectContribPct}
+                              className={`h-1.5 ${projOver ? '[&>div]:bg-red-500' : projWarn ? '[&>div]:bg-amber-500' : ''}`}
+                            />
                           </div>
 
                           <div className="space-y-1.5">
@@ -460,15 +454,18 @@ export default function ServicePlan() {
 
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground flex items-center gap-1.5">
+                              <span className={`flex items-center gap-1.5 ${storageOver ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
                                 <HardDrive className="w-3 h-3" /> {t.storage}
                               </span>
-                              <span className="font-medium tabular-nums">
+                              <span className={`font-medium tabular-nums ${storageOver ? 'text-red-600 dark:text-red-400' : ''}`}>
                                 {formatStorage(ws.storageMb)}
                                 <span className="text-muted-foreground ml-1">({storageContribPct}%)</span>
                               </span>
                             </div>
-                            <Progress value={ws.maxStorageMb > 0 ? Math.min(100, (ws.storageMb / ws.maxStorageMb) * 100) : 0} className="h-1.5" />
+                            <Progress
+                              value={ws.maxStorageMb > 0 ? Math.min(100, storagePct) : 0}
+                              className={`h-1.5 ${storageOver ? '[&>div]:bg-red-500' : storageWarn ? '[&>div]:bg-amber-500' : ''}`}
+                            />
                           </div>
                         </div>
                       </CardContent>
