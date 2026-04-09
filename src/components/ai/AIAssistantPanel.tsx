@@ -347,7 +347,7 @@ export default function AIAssistantPanel({
             <SheetTitle className="flex items-center gap-3 text-primary-foreground">
               <div className="relative">
                 <Avatar className="h-10 w-10 ring-2 ring-white/30 shadow-lg">
-                  <AvatarImage src={aiLogo} alt="AI Assistant" />
+                  <AvatarImage src={tNexusLogo} alt="AI Assistant" />
                   <AvatarFallback className="bg-white/20">
                     <Sparkles className="h-5 w-5 text-primary-foreground" />
                   </AvatarFallback>
@@ -355,7 +355,7 @@ export default function AIAssistantPanel({
                 <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-primary" />
               </div>
               <div className="flex flex-col items-start">
-                <span className="text-sm font-semibold tracking-tight">Bé Củ Cải</span>
+                <span className="text-sm font-semibold tracking-tight">T-Nexus AI</span>
                 <span className="text-[11px] text-primary-foreground/70 font-normal">
                   {projectName ? `📁 ${projectName}` : '🌐 Hỗ trợ chung'}
                 </span>
@@ -375,7 +375,7 @@ export default function AIAssistantPanel({
             )}
           </div>
           <SheetDescription className="sr-only">
-            Bé Củ Cải — trợ lý AI hỗ trợ tra cứu thông tin về công việc, deadline và phân công
+            T-Nexus AI — trợ lý AI hỗ trợ tra cứu thông tin về công việc, deadline và phân công
           </SheetDescription>
         </SheetHeader>
 
@@ -429,7 +429,7 @@ export default function AIAssistantPanel({
               <div className="relative mb-5 ai-hero-entrance">
                 <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl scale-150 ai-pulse-glow" />
                 <Avatar className="relative h-16 w-16 ring-4 ring-primary/10 shadow-xl ai-hero-bounce">
-                  <AvatarImage src={aiLogo} alt="AI Assistant" />
+                  <AvatarImage src={tNexusLogo} alt="AI Assistant" />
                   <AvatarFallback className="bg-primary/10">
                     <Sparkles className="h-8 w-8 text-primary" />
                   </AvatarFallback>
@@ -490,7 +490,7 @@ export default function AIAssistantPanel({
                   {/* Avatar */}
                   {message.role === 'assistant' ? (
                     <Avatar className="h-7 w-7 shrink-0 mt-1 ring-1 ring-border shadow-sm">
-                      <AvatarImage src={aiLogo} alt="AI" />
+                      <AvatarImage src={tNexusLogo} alt="AI" />
                       <AvatarFallback className="bg-primary/10 text-primary">
                         <Sparkles className="h-3.5 w-3.5" />
                       </AvatarFallback>
