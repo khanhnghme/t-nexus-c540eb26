@@ -431,68 +431,69 @@ export default function Checkout() {
                 <h3 className="text-base font-semibold">{t?.orderSummary || 'Order Summary'}</h3>
                 <Separator />
 
-                {/* Plan */}
-                <div className="flex justify-between items-start text-sm">
-                  <div>
-                    <p className="font-medium">{getPlanLabel(plan)} Plan</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {cycle === 'yearly' ? (t?.billedYearly || 'Billed yearly') : (t?.billedMonthly || 'Billed monthly')}
-                      {' · '}
-                      <span className={addonDiscountRate > 0 ? "text-emerald-600 font-medium" : ""}>
-                        Add-on {addonDiscountRate > 0 ? `-${addonDiscountRate * 100}%` : (isVi ? 'không giảm' : 'no discount')}
-                      </span>
-                    </p>
+                {/* Items - Tạm tính */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium">{getPlanLabel(plan)} Plan</span>
+                    <span className="font-semibold">${originalBaseAmount.toFixed(2)}</span>
                   </div>
-                  <span className="font-semibold">${originalBaseAmount.toFixed(2)}</span>
+                  <p className="text-[11px] text-muted-foreground">
+                    {cycle === 'yearly' ? (t?.billedYearly || 'Billed yearly') : (t?.billedMonthly || 'Billed monthly')}
+                    {addonDiscountRate > 0 && (
+                      <>
+                        {' · '}
+                        <span className="text-emerald-600 font-medium">Add-on -{addonDiscountRate * 100}%</span>
+                      </>
+                    )}
+                  </p>
+                  {hasAddons && ADDON_TYPES.map(addon => {
+                    const qty = addons[addon.type] || 0;
+                    if (qty === 0) return null;
+                    const unitOriginal = cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
+                    return (
+                      <div key={addon.type} className="flex justify-between text-sm text-muted-foreground">
+                        <span>{addon.emoji} {isVi ? addon.unitLabelVi : addon.unitLabel} ×{qty}</span>
+                        <span>${(unitOriginal * qty).toFixed(2)}</span>
+                      </div>
+                    );
+                  })}
                 </div>
 
-                {/* Welcome Offer discount line */}
-                {welcomeDiscount > 0 && (
-                  <div className="flex justify-between text-sm text-emerald-600">
-                    <span>🎉 {isVi ? 'Ưu đãi chào mừng' : 'Welcome Offer'}</span>
-                    <span>-${welcomeDiscount.toFixed(2)}</span>
-                  </div>
+                {/* Subtotal line */}
+                {(welcomeDiscount > 0 || addonSaving > 0 || discountAmount > 0) && (
+                  <>
+                    <Separator className="my-1" />
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>{isVi ? 'Tạm tính' : 'Subtotal'}</span>
+                      <span>${(originalBaseAmount + addonOriginal).toFixed(2)}</span>
+                    </div>
+                  </>
                 )}
 
-                {/* Addons */}
-                {hasAddons && (
-                  <div className="space-y-1.5">
-                    {ADDON_TYPES.map(addon => {
-                      const qty = addons[addon.type] || 0;
-                      if (qty === 0) return null;
-                      const unitOriginal = cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
-                      const unitFinal = Math.round(unitOriginal * (1 - addonDiscountRate) * 100) / 100;
-                      const totalOriginal = unitOriginal * qty;
-                      const totalFinal = unitFinal * qty;
-                      return (
-                        <div key={addon.type} className="flex justify-between text-sm text-muted-foreground">
-                          <span>{addon.emoji} {isVi ? addon.unitLabelVi : addon.unitLabel} ×{qty}</span>
-                          <span className="flex items-center gap-1.5">
-                            {addonDiscountRate > 0 && (
-                              <span className="line-through text-muted-foreground/60 text-xs">${totalOriginal.toFixed(2)}</span>
-                            )}
-                            <span className={addonDiscountRate > 0 ? "text-emerald-600 font-medium" : ""}>${totalFinal.toFixed(2)}</span>
-                          </span>
-                        </div>
-                      );
-                    })}
+                {/* All discounts grouped */}
+                {(welcomeDiscount > 0 || addonSaving > 0 || discountAmount > 0) && (
+                  <div className="space-y-1">
+                    {welcomeDiscount > 0 && (
+                      <div className="flex justify-between text-sm text-emerald-600">
+                        <span>🎉 {isVi ? 'Ưu đãi chào mừng' : 'Welcome Offer'}</span>
+                        <span>-${welcomeDiscount.toFixed(2)}</span>
+                      </div>
+                    )}
                     {addonSaving > 0 && (
-                      <div className="flex justify-between text-[11px] text-emerald-600">
-                        <span>{isVi ? 'Tiết kiệm add-on' : 'Add-on savings'}</span>
+                      <div className="flex justify-between text-sm text-emerald-600">
+                        <span>{isVi ? `Tiết kiệm add-on (${addonDiscountRate * 100}%)` : `Add-on savings (${addonDiscountRate * 100}%)`}</span>
                         <span>-${addonSaving.toFixed(2)}</span>
                       </div>
                     )}
-                  </div>
-                )}
-
-                {/* Coupon */}
-                {discountAmount > 0 && (
-                  <div className="flex justify-between text-sm text-emerald-600">
-                    <span className="flex items-center gap-1">
-                      <Tag className="h-3 w-3" />
-                      {couponDiscount?.code}
-                    </span>
-                    <span>-${discountAmount.toFixed(2)}</span>
+                    {discountAmount > 0 && (
+                      <div className="flex justify-between text-sm text-emerald-600">
+                        <span className="flex items-center gap-1">
+                          <Tag className="h-3 w-3" />
+                          {couponDiscount?.code}
+                        </span>
+                        <span>-${discountAmount.toFixed(2)}</span>
+                      </div>
+                    )}
                   </div>
                 )}
 
