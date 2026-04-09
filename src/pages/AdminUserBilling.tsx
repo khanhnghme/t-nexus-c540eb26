@@ -15,6 +15,7 @@ import { UserPlanHistoryTab } from '@/components/admin/UserPlanHistoryTab';
 import { UserNotesTab } from '@/components/admin/UserNotesTab';
 import { ManagePlanDialog } from '@/components/admin/ManagePlanDialog';
 import { PlanActionType } from '@/hooks/useAdminPlanActions';
+import { useAdminBillingRole } from '@/hooks/useAdminBillingRole';
 
 const PLAN_LABELS: Record<string, string> = {
   plan_free: 'Free', plan_plus: 'Plus', plan_pro: 'Pro', plan_business: 'Business', plan_custom: 'Custom',
@@ -43,6 +44,7 @@ export default function AdminUserBilling() {
   const o = t?.overview;
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { canOperate, canManage } = useAdminBillingRole();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogAction, setDialogAction] = useState<PlanActionType>('upgrade');
@@ -231,7 +233,13 @@ export default function AdminUserBilling() {
           <div className="rounded-xl border bg-card p-5">
             <h3 className="text-sm font-medium text-muted-foreground mb-3">{o?.quickActions || 'Quick Actions'}</h3>
             <div className="flex flex-wrap gap-2">
-              {quickActions.map(a => (
+              {quickActions
+                .filter(a => {
+                  if (!canOperate) return false;
+                  if (['suspend', 'restore'].includes(a.action) && !canManage) return false;
+                  return true;
+                })
+                .map(a => (
                 <Button
                   key={a.label}
                   variant="outline"
@@ -243,6 +251,9 @@ export default function AdminUserBilling() {
                   {a.label}
                 </Button>
               ))}
+              {!canOperate && (
+                <p className="text-sm text-muted-foreground italic">{t?.rbac?.viewerNotice || 'You have view-only access to billing information.'}</p>
+              )}
             </div>
           </div>
         </TabsContent>
@@ -254,7 +265,7 @@ export default function AdminUserBilling() {
           <UserPlanHistoryTab userId={userId!} />
         </TabsContent>
         <TabsContent value="notes">
-          <UserNotesTab userId={userId!} />
+          <UserNotesTab userId={userId!} canAddNote={canOperate} />
         </TabsContent>
       </Tabs>
 

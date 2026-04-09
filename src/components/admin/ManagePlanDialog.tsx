@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { PlanImpactPreview } from './PlanImpactPreview';
 import { useAdminPlanActions, PlanActionType } from '@/hooks/useAdminPlanActions';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAdminBillingRole } from '@/hooks/useAdminBillingRole';
 import { AlertTriangle, ArrowUpCircle, ArrowDownCircle, CalendarPlus, ShieldOff, ShieldCheck, Gift } from 'lucide-react';
 
 interface Props {
@@ -50,8 +51,9 @@ const ACTION_CONFIG: Record<PlanActionType, { icon: any; color: string; dangerou
 export function ManagePlanDialog({ open, onOpenChange, userId, currentPlan, currentStatus, currentExpiresAt, onSuccess, defaultAction }: Props) {
   const { translations } = useLanguage();
   const t = translations.app?.adminBilling?.managePlan;
+  const rbac = translations.app?.adminBilling?.rbac;
   const { executePlanAction } = useAdminPlanActions();
-
+  const { canOperate, canManage, billingRole } = useAdminBillingRole();
   const [action, setAction] = useState<PlanActionType>(defaultAction || 'upgrade');
   const [newPlan, setNewPlan] = useState(currentPlan === 'plan_free' ? 'plan_plus' : 'plan_free');
   const [effectiveMode, setEffectiveMode] = useState<'immediate' | 'next_cycle'>('immediate');
@@ -124,14 +126,21 @@ export function ManagePlanDialog({ open, onOpenChange, userId, currentPlan, curr
           {/* Action Select */}
           <div className="space-y-1.5">
             <Label>{t?.actionLabel || 'Action'}</Label>
+            {billingRole && (
+              <div className="mb-2">
+                <Badge variant="outline" className="text-xs">
+                  {rbac?.roleLabel || 'Your billing role'}: {rbac?.[billingRole as keyof typeof rbac] || billingRole}
+                </Badge>
+              </div>
+            )}
             <Select value={action} onValueChange={v => { setAction(v as PlanActionType); setShowImpact(false); setConfirmText(''); }}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="upgrade">{t?.actions?.upgrade || 'Upgrade'}</SelectItem>
                 <SelectItem value="downgrade">{t?.actions?.downgrade || 'Downgrade'}</SelectItem>
                 <SelectItem value="extend">{t?.actions?.extend || 'Extend'}</SelectItem>
-                <SelectItem value="suspend">{t?.actions?.suspend || 'Suspend'}</SelectItem>
-                <SelectItem value="restore">{t?.actions?.restore || 'Restore'}</SelectItem>
+                {canManage && <SelectItem value="suspend">{t?.actions?.suspend || 'Suspend'}</SelectItem>}
+                {canManage && <SelectItem value="restore">{t?.actions?.restore || 'Restore'}</SelectItem>}
                 <SelectItem value="grant_trial">{t?.actions?.grantTrial || 'Grant Trial'}</SelectItem>
               </SelectContent>
             </Select>
