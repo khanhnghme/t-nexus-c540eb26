@@ -18,8 +18,7 @@ import { toast } from '@/hooks/use-toast';
 import {
   Crown, Zap, Building2, FolderKanban, HardDrive,
   ArrowRight, Loader2, Infinity, Receipt,
-  Check, Users, Shield, Sparkles, BarChart3,
-  Plus, Minus, Package, AlertTriangle,
+  Check, Users, Shield, Sparkles, BarChart3, Package, AlertTriangle,
 } from 'lucide-react';
 
 interface WorkspaceUsage {
@@ -52,13 +51,7 @@ interface PaymentRecord {
   payment_method: string | null;
 }
 
-const BASE_PRICE = 2.49;
-
-function getAddonDiscount(plan: string): { pct: number; label: string } {
-  if (plan === 'plan_pro') return { pct: 0.10, label: '-10% Pro' };
-  if (plan === 'plan_business') return { pct: 0.20, label: '-20% Business' };
-  return { pct: 0, label: '' };
-}
+// Addon discount removed — now handled in AddonCheckout
 
 export default function ServicePlan() {
   const { user, profile } = useAuth();
@@ -75,12 +68,7 @@ export default function ServicePlan() {
   const [billingHistory, setBillingHistory] = useState<PaymentRecord[]>([]);
   const [billingLoading, setBillingLoading] = useState(false);
 
-  // New addon quantities for purchasing (starts from 0)
-  const [newAddons, setNewAddons] = useState<Record<AddonType, number>>({
-    projects: 0,
-    storage: 0,
-    members: 0,
-  });
+  // newAddons state removed — selection now in AddonCheckout
 
   // Fetch billing history
   useEffect(() => {
@@ -184,31 +172,11 @@ export default function ServicePlan() {
     setSearchParams({ tab: value }, { replace: true });
   };
 
-  const handleNewAddonChange = (type: AddonType, delta: number) => {
-    setNewAddons(prev => {
-      const newVal = Math.max(0, (prev[type] || 0) + delta);
-      return { ...prev, [type]: newVal };
-    });
-  };
-
   const currentTab = searchParams.get('tab') || 'plan';
   const plan = profile?.user_plan || 'plan_free';
   const planName = formatPlanName(plan);
   const isPremium = plan !== 'plan_free';
   const features = featuresMap[plan] || featuresMap.plan_free;
-
-  const billingCycle = (profile as any)?.billing_cycle || 'monthly';
-  const addonBasePrice = billingCycle === 'yearly' ? BASE_PRICE * 10 : BASE_PRICE;
-
-  const discount = getAddonDiscount(plan);
-  const unitPrice = addonBasePrice * (1 - discount.pct);
-
-  // New purchase calculations
-  const newTotalQty = newAddons.projects + newAddons.storage + newAddons.members;
-  const newSubtotal = newTotalQty * addonBasePrice;
-  const newSaving = Math.round(newTotalQty * addonBasePrice * discount.pct * 100) / 100;
-  const newTotal = newTotalQty * unitPrice;
-  const hasNewAddons = newTotalQty > 0;
 
   if (isLoading) {
     return (
@@ -703,121 +671,16 @@ export default function ServicePlan() {
 
                 <Separator />
 
-                {/* Section 2: Purchase More */}
-                <div className="space-y-3">
-                  <h3 className="text-sm font-semibold flex items-center gap-2">
-                    <Plus className="w-4 h-4 text-violet-500" />
-                    {t.addonBuyMore || 'Purchase additional packages'}
-                  </h3>
-
-                  <div className="grid gap-3">
-                    {addonCards.map(card => {
-                      const qty = newAddons[card.type];
-                      const costForThis = qty * unitPrice;
-
-                      return (
-                        <Card key={card.type}>
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between gap-4">
-                              <div className="flex items-center gap-3 min-w-0">
-                                <div className={`p-2 rounded-xl bg-muted ${card.iconColor}`}>
-                                  {card.icon}
-                                </div>
-                                <div>
-                                  <span className="font-semibold text-sm">{card.label}</span>
-                                  <p className="text-xs text-muted-foreground">{card.desc}</p>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-3 shrink-0">
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  className="h-8 w-8 rounded-full"
-                                  onClick={() => handleNewAddonChange(card.type, -1)}
-                                  disabled={qty <= 0}
-                                >
-                                  <Minus className="w-3.5 h-3.5" />
-                                </Button>
-                                <div className="text-center min-w-[3rem]">
-                                  <div className="text-lg font-bold tabular-nums">{qty}</div>
-                                  <div className="text-[10px] text-muted-foreground">{t.addonPackage || 'pkg'}</div>
-                                </div>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  className="h-8 w-8 rounded-full"
-                                  onClick={() => handleNewAddonChange(card.type, 1)}
-                                >
-                                  <Plus className="w-3.5 h-3.5" />
-                                </Button>
-                                {qty > 0 && (
-                                  <div className="text-right min-w-[4.5rem]">
-                                    <div className="text-sm font-semibold tabular-nums">${costForThis.toFixed(2)}</div>
-                                    <div className="text-[10px] text-muted-foreground">/{billingCycle === 'yearly' ? (t.addonPerYear || 'year') : (t.addonPerMonth || 'month')}</div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
+                {/* Buy more button */}
+                <div className="text-center pt-2">
+                  <Button
+                    onClick={() => navigate('/addon-checkout')}
+                    className="bg-violet-600 hover:bg-violet-700 text-white"
+                  >
+                    <Package className="w-4 h-4 mr-2" />
+                    {t.addonBuyMore || 'Buy more Add-on packages'}
+                  </Button>
                 </div>
-
-                {/* Purchase Summary */}
-                {hasNewAddons && (
-                  <Card className="bg-muted/50 border-violet-500/20">
-                    <CardContent className="p-5 space-y-3">
-                      <div className="text-sm font-semibold">{t.addonNewPurchase || 'Purchase Summary'}</div>
-
-                      <div className="space-y-1.5">
-                        {(['projects', 'storage', 'members'] as AddonType[])
-                          .filter(type => newAddons[type] > 0)
-                          .map(type => (
-                            <div key={type} className="flex justify-between text-sm">
-                              <span className="text-muted-foreground capitalize">{type} × {newAddons[type]}</span>
-                              <span className="tabular-nums">${(newAddons[type] * addonBasePrice).toFixed(2)}</span>
-                            </div>
-                          ))}
-                      </div>
-
-                      <Separator />
-
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{t.addonSubtotal || 'Subtotal'}</span>
-                        <span className="tabular-nums">${newSubtotal.toFixed(2)}</span>
-                      </div>
-
-                      {newSaving > 0 && (
-                        <div className="flex justify-between text-sm text-emerald-600">
-                          <span>{t.addonSavings || 'Add-on savings'} ({discount.pct * 100}%)</span>
-                          <span>-${newSaving.toFixed(2)}</span>
-                        </div>
-                      )}
-
-                      <div className="flex justify-between text-base font-bold pt-1 border-t border-border">
-                        <span>{t.addonPayTotal || 'Total'}</span>
-                        <span>${newTotal.toFixed(2)}</span>
-                      </div>
-
-                      <Button
-                        onClick={() => {
-                          const params = new URLSearchParams();
-                          (['projects', 'storage', 'members'] as AddonType[]).forEach(type => {
-                            if (newAddons[type] > 0) params.set(type, String(newAddons[type]));
-                          });
-                          navigate(`/addon-checkout?${params.toString()}`);
-                        }}
-                        className="w-full bg-violet-600 hover:bg-violet-700 text-white"
-                      >
-                        <Package className="w-4 h-4 mr-2" />
-                        {t.addonCheckout || 'Proceed to Payment'}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
               </>
             )}
           </section>
