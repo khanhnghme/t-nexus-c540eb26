@@ -2,30 +2,25 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { Locale } from '@/lib/i18n';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  CalendarDays, MessageSquare, BookOpen, Lightbulb, Users,
-  FolderArchive, Shield, Wrench, Eye, EyeOff, Navigation,
+  CalendarDays, MessageSquare, BookOpen, Lightbulb,
+  Eye, EyeOff, Navigation,
   Globe, Check, Loader2, Settings,
 } from 'lucide-react';
 
 const TOGGLEABLE_PAGES = [
-  { href: '/calendar', name: 'Calendar', nameVi: 'Lịch', icon: CalendarDays, description: 'Task calendar overview', descVi: 'Lịch tổng hợp công việc', adminOnly: false },
-  { href: '/communication', name: 'Communication', nameVi: 'Trao đổi', icon: MessageSquare, description: 'Messages & discussions', descVi: 'Tin nhắn & thảo luận', adminOnly: false },
-  { href: '/tips', name: 'Tips', nameVi: 'Mẹo', icon: BookOpen, description: 'System usage guides', descVi: 'Hướng dẫn sử dụng hệ thống', adminOnly: false },
-  { href: '/feedback', name: 'Feedback', nameVi: 'Góp ý', icon: Lightbulb, description: 'Send feedback', descVi: 'Gửi ý kiến phản hồi', adminOnly: false },
-  { href: '/admin/members', name: 'Members', nameVi: 'Thành viên', icon: Users, description: 'User management', descVi: 'Quản lý người dùng', adminOnly: true },
-  { href: '/admin/backup', name: 'Backup', nameVi: 'Sao lưu', icon: FolderArchive, description: 'Data backup', descVi: 'Backup dữ liệu', adminOnly: true },
-  { href: '/admin/system', name: 'Admin', nameVi: 'Quản trị', icon: Shield, description: 'System administration', descVi: 'Quản trị hệ thống', adminOnly: true },
-  { href: '/admin/utilities', name: 'Utilities', nameVi: 'Tiện ích', icon: Wrench, description: 'Tools & utilities', descVi: 'Công cụ & tiện ích', adminOnly: true },
+  { href: '/calendar', name: 'Calendar', nameVi: 'Lịch', icon: CalendarDays, description: 'Task calendar overview', descVi: 'Lịch tổng hợp công việc' },
+  { href: '/communication', name: 'Communication', nameVi: 'Trao đổi', icon: MessageSquare, description: 'Messages & discussions', descVi: 'Tin nhắn & thảo luận' },
+  { href: '/tips', name: 'Tips', nameVi: 'Mẹo', icon: BookOpen, description: 'System usage guides', descVi: 'Hướng dẫn sử dụng hệ thống' },
+  { href: '/feedback', name: 'Feedback', nameVi: 'Góp ý', icon: Lightbulb, description: 'Send feedback', descVi: 'Gửi ý kiến phản hồi' },
 ];
 
-function NavCustomizationCard({ userId, isAdmin, locale }: { userId?: string; isAdmin: boolean; locale: Locale }) {
+function NavCustomizationCard({ userId, locale }: { userId?: string; locale: Locale }) {
   const { profile, refreshProfile } = useAuth();
   const [hiddenPages, setHiddenPages] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -51,8 +46,7 @@ function NavCustomizationCard({ userId, isAdmin, locale }: { userId?: string; is
     window.dispatchEvent(new Event('nav-visibility-changed'));
   };
 
-  const normalPages = TOGGLEABLE_PAGES.filter(p => !p.adminOnly);
-  const adminPages = TOGGLEABLE_PAGES.filter(p => p.adminOnly);
+  const pages = TOGGLEABLE_PAGES;
 
   const renderPageItem = (page: typeof TOGGLEABLE_PAGES[0]) => {
     const PageIcon = page.icon;
@@ -92,24 +86,8 @@ function NavCustomizationCard({ userId, isAdmin, locale }: { userId?: string; is
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          {normalPages.map(renderPageItem)}
+          {pages.map(renderPageItem)}
         </div>
-        {isAdmin && (
-          <div className="mt-3">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full gap-2 text-xs">
-                  <Shield className="w-3.5 h-3.5" />
-                  {isVi ? 'Nâng cao (Admin)' : 'Advanced (Admin)'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-72 p-2 space-y-1.5" side="right" align="start">
-                <p className="text-xs font-medium text-muted-foreground px-2 pb-1">{isVi ? 'Trang quản trị' : 'Admin pages'}</p>
-                {adminPages.map(renderPageItem)}
-              </PopoverContent>
-            </Popover>
-          </div>
-        )}
         {hiddenPages.length > 0 && (
           <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5">
             <EyeOff className="w-3 h-3" />
@@ -202,7 +180,7 @@ export default function AccountSettings() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <LanguageCard locale={locale} setLocale={setLocale} />
-        <NavCustomizationCard userId={user?.id} isAdmin={isAdmin} locale={locale} />
+        <NavCustomizationCard userId={user?.id} locale={locale} />
       </div>
     </div>
   );
