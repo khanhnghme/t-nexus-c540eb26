@@ -1911,8 +1911,8 @@ export const vi: Translations = {
     ctaText: 'Đã sẵn sàng chọn gói phù hợp?',
     ctaButton: 'Xem bảng giá',
 
-    pricingCta: 'Bạn có thắc mắc về cách tính giá?',
-    pricingCtaLink: 'Xem hướng dẫn chi tiết',
+    pricingCta: 'Muốn hiểu rõ mô hình thanh toán, cách tính suất thành viên và giới hạn tài nguyên?',
+    pricingCtaLink: 'Đọc Tài liệu hướng dẫn giá (/guide/pricing)',
 
     // Table of Contents
     tocTitle: 'Mục lục',
