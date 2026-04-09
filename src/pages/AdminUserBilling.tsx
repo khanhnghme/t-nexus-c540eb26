@@ -1,16 +1,20 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { ArrowLeft, ArrowUpCircle, ArrowDownCircle, CalendarPlus, ShieldOff, ShieldCheck, StickyNote, History, Copy } from 'lucide-react';
+import { ArrowLeft, ArrowUpCircle, ArrowDownCircle, CalendarPlus, ShieldOff, ShieldCheck, StickyNote, History, Copy, Gift } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { UserPaymentsTab } from '@/components/admin/UserPaymentsTab';
 import { UserPlanHistoryTab } from '@/components/admin/UserPlanHistoryTab';
+import { UserNotesTab } from '@/components/admin/UserNotesTab';
+import { ManagePlanDialog } from '@/components/admin/ManagePlanDialog';
+import { PlanActionType } from '@/hooks/useAdminPlanActions';
 
 const PLAN_LABELS: Record<string, string> = {
   plan_free: 'Free', plan_plus: 'Plus', plan_pro: 'Pro', plan_business: 'Business', plan_custom: 'Custom',
@@ -38,6 +42,10 @@ export default function AdminUserBilling() {
   const t = translations.app?.adminBilling;
   const o = t?.overview;
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogAction, setDialogAction] = useState<PlanActionType>('upgrade');
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['admin-billing-user', userId],
@@ -53,7 +61,6 @@ export default function AdminUserBilling() {
     enabled: !!userId,
   });
 
-  // Fetch plan limits for this user's plan
   const { data: planLimits } = useQuery({
     queryKey: ['plan-limits', profile?.user_plan],
     queryFn: async () => {
@@ -68,7 +75,6 @@ export default function AdminUserBilling() {
     enabled: !!profile?.user_plan,
   });
 
-  // Fetch usage counts
   const { data: usage } = useQuery({
     queryKey: ['admin-billing-usage', userId],
     queryFn: async () => {
@@ -76,7 +82,6 @@ export default function AdminUserBilling() {
         supabase.from('workspaces' as any).select('id', { count: 'exact', head: true }).eq('owner_id', userId!),
         supabase.from('groups').select('id', { count: 'exact', head: true }),
       ]);
-      // Get unique members count + storage via RPC
       const [membersRes, storageRes] = await Promise.all([
         supabase.rpc('get_account_unique_members', { _owner_id: userId! }),
         supabase.rpc('get_account_storage_usage', { _owner_id: userId! }),
@@ -98,6 +103,11 @@ export default function AdminUserBilling() {
     }
   };
 
+  const openAction = (action: PlanActionType) => {
+    setDialogAction(action);
+    setDialogOpen(true);
+  };
+
   if (isLoading || !profile) {
     return <div className="p-6 text-muted-foreground">Loading...</div>;
   }
@@ -107,18 +117,16 @@ export default function AdminUserBilling() {
   const cycleLabel = (s: string) => t?.billingCycle?.[s] || s;
 
   const quickActions = [
-    { label: o?.upgrade || 'Upgrade', icon: ArrowUpCircle, color: 'text-emerald-500' },
-    { label: o?.downgrade || 'Downgrade', icon: ArrowDownCircle, color: 'text-orange-500' },
-    { label: o?.extend || 'Extend', icon: CalendarPlus, color: 'text-blue-500' },
-    { label: o?.suspend || 'Suspend', icon: ShieldOff, color: 'text-destructive' },
-    { label: o?.restore || 'Restore', icon: ShieldCheck, color: 'text-emerald-500' },
-    { label: o?.addNote || 'Add Note', icon: StickyNote, color: 'text-violet-500' },
-    { label: o?.viewHistory || 'View History', icon: History, color: 'text-muted-foreground' },
+    { label: o?.upgrade || 'Upgrade', icon: ArrowUpCircle, color: 'text-emerald-500', action: 'upgrade' as PlanActionType },
+    { label: o?.downgrade || 'Downgrade', icon: ArrowDownCircle, color: 'text-orange-500', action: 'downgrade' as PlanActionType },
+    { label: o?.extend || 'Extend', icon: CalendarPlus, color: 'text-blue-500', action: 'extend' as PlanActionType },
+    { label: o?.suspend || 'Suspend', icon: ShieldOff, color: 'text-destructive', action: 'suspend' as PlanActionType },
+    { label: o?.restore || 'Restore', icon: ShieldCheck, color: 'text-emerald-500', action: 'restore' as PlanActionType },
+    { label: t?.managePlan?.actions?.grantTrial || 'Grant Trial', icon: Gift, color: 'text-violet-500', action: 'grant_trial' as PlanActionType },
   ];
 
   return (
     <div className="p-6 space-y-6 max-w-[900px] mx-auto">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="sm" onClick={() => navigate('/admin/billing')}>
           <ArrowLeft className="h-4 w-4 mr-1" />
@@ -126,7 +134,6 @@ export default function AdminUserBilling() {
         </Button>
       </div>
 
-      {/* Tabs */}
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">{t?.tabs?.overview || 'Overview'}</TabsTrigger>
@@ -135,7 +142,6 @@ export default function AdminUserBilling() {
           <TabsTrigger value="notes">{t?.tabs?.notes || 'Internal Notes'}</TabsTrigger>
         </TabsList>
 
-        {/* ═══ Overview Tab ═══ */}
         <TabsContent value="overview" className="space-y-6 mt-4">
           {/* User Info Card */}
           <div className="rounded-xl border bg-card p-5">
@@ -231,7 +237,7 @@ export default function AdminUserBilling() {
                   variant="outline"
                   size="sm"
                   className="gap-1.5"
-                  onClick={() => toast({ title: t?.comingSoon || 'Coming soon', description: 'Phase 3' })}
+                  onClick={() => openAction(a.action)}
                 >
                   <a.icon className={`h-4 w-4 ${a.color}`} />
                   {a.label}
@@ -241,7 +247,6 @@ export default function AdminUserBilling() {
           </div>
         </TabsContent>
 
-        {/* ═══ Placeholder Tabs ═══ */}
         <TabsContent value="payments">
           <UserPaymentsTab userId={userId!} />
         </TabsContent>
@@ -249,9 +254,23 @@ export default function AdminUserBilling() {
           <UserPlanHistoryTab userId={userId!} />
         </TabsContent>
         <TabsContent value="notes">
-          <div className="text-center py-16 text-muted-foreground">{t?.comingSoon || 'Coming in the next phase'}</div>
+          <UserNotesTab userId={userId!} />
         </TabsContent>
       </Tabs>
+
+      {/* Manage Plan Dialog */}
+      <ManagePlanDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        userId={userId!}
+        currentPlan={profile.user_plan}
+        currentStatus={profile.plan_status}
+        currentExpiresAt={profile.plan_expires_at}
+        defaultAction={dialogAction}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['admin-billing-user', userId] });
+        }}
+      />
     </div>
   );
 }
