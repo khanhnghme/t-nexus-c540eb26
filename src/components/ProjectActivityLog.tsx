@@ -12,13 +12,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { useLanguage } from '@/contexts/LanguageContext';
 import ActivityLogFilters, { ActivityFilters } from '@/components/ActivityLogFilters';
 import { exportActivityLogToPdf } from '@/lib/activityLogPdf';
 import { toast } from 'sonner';
 import { 
   Activity, UserPlus, UserMinus, Edit, Trash2, Plus, CheckCircle,
   AlertCircle, Layers, FileText, Clock, List, LayoutGrid, FileDown,
-  Power, CheckSquare, X
+  Power, CheckSquare, X, Info, Lock
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
