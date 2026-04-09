@@ -1153,7 +1153,12 @@ export default function FirstTimeOnboarding({
                                     {cycle === 'yearly' ? (isVi ? 'Thanh toán theo năm' : 'Billed yearly') : (isVi ? 'Thanh toán theo tháng' : 'Billed monthly')}
                                   </p>
                                 </div>
-                                <span className="text-lg font-bold">${baseAmount.toFixed(2)}</span>
+                                <div className="text-right">
+                                  {welcomeDiscount > 0 && (
+                                    <span className="text-sm text-muted-foreground line-through mr-1.5">${originalBaseAmount.toFixed(2)}</span>
+                                  )}
+                                  <span className="text-lg font-bold">${baseAmount.toFixed(2)}</span>
+                                </div>
                               </div>
                             </CardContent>
                           </Card>
