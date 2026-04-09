@@ -68,6 +68,7 @@ import {
 import { exportMembersToExcel, getRoleDisplayName } from '@/lib/excelExport';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { useAuth } from '@/contexts/AuthContext';
 import UserAvatar from '@/components/UserAvatar';
 import ProfileViewDialog from '@/components/ProfileViewDialog';
@@ -95,6 +96,7 @@ export default function MemberManagementCard({
   onRefresh,
 }: MemberManagementCardProps) {
   const { toast } = useToast();
+  const { canExportData } = usePlanLimits();
   const { user, profile } = useAuth();
   const { guardAction: guardReadOnly } = useReadOnlyGuard();
   const navigate = useNavigate();
