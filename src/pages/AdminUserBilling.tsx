@@ -213,8 +213,8 @@ export default function AdminUserBilling() {
               <h3 className="text-sm font-medium text-muted-foreground mb-3">{o?.currentLimits || 'Current Limits'}</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between"><span>{o?.workspaces || 'Workspaces'}</span><span className="font-medium">{planLimits?.max_workspaces ?? '—'}</span></div>
-                <div className="flex justify-between"><span>{o?.projects || 'Projects'}</span><span className="font-medium">{planLimits?.max_projects_per_workspace ?? '—'}</span></div>
-                <div className="flex justify-between"><span>{o?.members || 'Members'}</span><span className="font-medium">{planLimits?.max_members_per_workspace ?? '—'}</span></div>
+                <div className="flex justify-between"><span>{'Projects (Total)'}</span><span className="font-medium">{planLimits?.max_projects_per_workspace ?? '—'}</span></div>
+                <div className="flex justify-between"><span>{'Members (Unique)'}</span><span className="font-medium">{planLimits?.max_members_per_workspace ?? '—'}</span></div>
                 <div className="flex justify-between"><span>{o?.storage || 'Storage'}</span><span className="font-medium">{planLimits?.max_storage_mb ? `${planLimits.max_storage_mb} MB` : '—'}</span></div>
               </div>
             </div>
@@ -222,8 +222,8 @@ export default function AdminUserBilling() {
               <h3 className="text-sm font-medium text-muted-foreground mb-3">{o?.currentUsage || 'Current Usage'}</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between"><span>{o?.workspaces || 'Workspaces'}</span><span className="font-medium">{usage?.workspaces ?? '—'}</span></div>
-                <div className="flex justify-between"><span>{o?.projects || 'Projects'}</span><span className="font-medium">{usage?.projects ?? '—'}</span></div>
-                <div className="flex justify-between"><span>{o?.members || 'Members'}</span><span className="font-medium">{usage?.members ?? '—'}</span></div>
+                <div className="flex justify-between"><span>{'Projects (Total)'}</span><span className="font-medium">{usage?.projects ?? '—'}</span></div>
+                <div className="flex justify-between"><span>{'Members (Unique)'}</span><span className="font-medium">{usage?.members ?? '—'}</span></div>
                 <div className="flex justify-between"><span>{o?.storage || 'Storage'}</span><span className="font-medium">{usage?.storageMb ?? 0} MB</span></div>
               </div>
             </div>

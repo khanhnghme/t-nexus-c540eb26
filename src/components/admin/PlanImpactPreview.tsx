@@ -33,8 +33,22 @@ export function PlanImpactPreview({ userId, currentPlan, newPlan }: Props) {
         supabase.rpc('get_account_unique_members', { _owner_id: userId }),
         supabase.rpc('get_account_storage_usage', { _owner_id: userId }),
       ]);
+
+      // Count total projects across all owned workspaces
+      const wsIds: string[] = [];
+      if ((wsRes as any).count > 0) {
+        const { data: wsData } = await supabase.from('workspaces' as any).select('id').eq('owner_id', userId);
+        if (wsData) wsData.forEach((w: any) => wsIds.push(w.id));
+      }
+      let totalProjects = 0;
+      if (wsIds.length > 0) {
+        const { count } = await supabase.from('groups').select('id', { count: 'exact', head: true }).in('workspace_id', wsIds);
+        totalProjects = count || 0;
+      }
+
       return {
         workspaces: (wsRes as any).count || 0,
+        projects: totalProjects,
         members: (membersRes.data as number) || 0,
         storageMb: Math.round((storageRes.data as number) || 0),
       };
@@ -47,8 +61,8 @@ export function PlanImpactPreview({ userId, currentPlan, newPlan }: Props) {
 
   const items = [
     { label: 'Workspaces', current: currentLimits.max_workspaces, next: newLimits.max_workspaces, used: usage.workspaces },
-    { label: 'Projects/WS', current: currentLimits.max_projects_per_workspace, next: newLimits.max_projects_per_workspace, used: 0 },
-    { label: 'Members/WS', current: currentLimits.max_members_per_workspace, next: newLimits.max_members_per_workspace, used: usage.members },
+    { label: 'Projects (Total)', current: currentLimits.max_projects_per_workspace, next: newLimits.max_projects_per_workspace, used: usage.projects },
+    { label: 'Members (Total)', current: currentLimits.max_members_per_workspace, next: newLimits.max_members_per_workspace, used: usage.members },
     { label: 'Storage (MB)', current: currentLimits.max_storage_mb, next: newLimits.max_storage_mb, used: usage.storageMb },
   ];
 
