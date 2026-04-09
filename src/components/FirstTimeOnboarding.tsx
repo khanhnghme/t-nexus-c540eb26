@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import confetti from 'canvas-confetti';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { r2Storage } from '@/lib/r2Storage';
