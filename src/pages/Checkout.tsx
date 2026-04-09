@@ -324,7 +324,7 @@ export default function Checkout() {
                   </h3>
                   {addonDiscountRate > 0 && (
                     <Badge variant="secondary" className="text-emerald-600 text-[11px]">
-                      -{addonDiscountRate * 100}% {isVi ? 'với' : 'with'} {PLAN_LABELS[plan]}
+                      -{addonDiscountRate * 100}% {isVi ? 'với' : 'with'} {getPlanLabel(plan)}
                     </Badge>
                   )}
                 </div>
@@ -413,7 +413,7 @@ export default function Checkout() {
                 {/* Plan */}
                 <div className="flex justify-between items-start text-sm">
                   <div>
-                    <p className="font-medium">{PLAN_LABELS[plan]} Plan</p>
+                    <p className="font-medium">{getPlanLabel(plan)} Plan</p>
                     <p className="text-[11px] text-muted-foreground">
                       {cycle === 'yearly' ? (t?.billedYearly || 'Billed yearly') : (t?.billedMonthly || 'Billed monthly')}
                     </p>
@@ -526,7 +526,7 @@ export default function Checkout() {
           {/* Plan row */}
           <div className="grid grid-cols-12 gap-2 items-center py-3 text-sm border-b border-dashed">
             <div className="col-span-6">
-              <p className="font-medium">{PLAN_LABELS[plan]} Plan</p>
+              <p className="font-medium">{getPlanLabel(plan)} Plan</p>
               <p className="text-[11px] text-muted-foreground">
                 {cycle === 'yearly' ? (t?.billedYearly || 'Billed yearly') : (t?.billedMonthly || 'Billed monthly')}
               </p>
@@ -677,7 +677,7 @@ export default function Checkout() {
 
               <div className="space-y-1.5 text-xs text-muted-foreground">
                 <div className="flex justify-between">
-                  <span>{PLAN_LABELS[plan]} Plan</span>
+                  <span>{getPlanLabel(plan)} Plan</span>
                   <span>${baseAmount.toFixed(2)}</span>
                 </div>
                 {addonFinal > 0 && (
