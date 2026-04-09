@@ -1,143 +1,123 @@
 
 
-## Plan: Admin Billing Dashboard + Plans Management + Coupon Module
+## Plan: Triển khai Thanh toán Web — PayPal (Phase 1)
 
 ### Tổng quan
-Chuyển đổi trang `/admin/billing` từ danh sách user đơn giản thành một **SaaS Admin Dashboard** đầy đủ với dashboard tổng quan, quản lý gói, và module coupon.
 
-### Cấu trúc trang mới
+Xây dựng luồng thanh toán thực tế cho trang `/upgrade`, thay thế toast "đang phát triển" bằng flow checkout hoàn chỉnh với PayPal. Thiết kế scalable để sau thêm Momo dễ dàng.
+
+### Kiến trúc
 
 ```text
-/admin/billing
-├── Dashboard Header (KPI cards)
-│   ├── Total Revenue (tháng)
-│   ├── Successful / Failed Payments
-│   ├── New / Renewed / Cancelled
-│   └── Active Users by Plan (mini bar)
-│
-├── Tabs Navigation
-│   ├── Overview (dashboard charts + stats)
-│   ├── Users (danh sách user hiện tại - giữ nguyên)
-│   ├── Plans (quản lý gói dịch vụ)
-│   ├── Transactions (giao dịch gần đây)
-│   └── Coupons (quản lý mã giảm giá)
+User chọn Plan → Checkout Page/Dialog
+  ├── Order Summary (plan + add-ons + coupon)
+  ├── Apply Coupon (từ bảng coupons đã có)
+  ├── Chọn Payment Method (PayPal / Momo disabled)
+  ├── PayPal Button → Edge Function tạo order
+  ├── PayPal Approve → Edge Function capture
+  └── Success → update profiles + payment_history + plan_change_logs
 ```
 
-### 1. Migration SQL — Bảng `coupons`
+### Chia đợt triển khai
 
-```sql
-CREATE TABLE public.coupons (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  code text NOT NULL UNIQUE,
-  discount_type text NOT NULL DEFAULT 'percentage', -- 'percentage' | 'fixed'
-  discount_value numeric NOT NULL DEFAULT 0,
-  currency text NOT NULL DEFAULT 'USD',
-  max_uses integer, -- NULL = unlimited
-  used_count integer NOT NULL DEFAULT 0,
-  applicable_plans text[] DEFAULT '{}', -- empty = all plans
-  min_plan text, -- minimum plan required
-  starts_at timestamptz,
-  expires_at timestamptz,
-  is_active boolean NOT NULL DEFAULT true,
-  description text,
-  created_by uuid NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
+---
 
-ALTER TABLE public.coupons ENABLE ROW LEVEL SECURITY;
+**ĐỢT 1 — Checkout UI + Edge Functions (PayPal)**
 
-CREATE POLICY "System admins can manage coupons" ON public.coupons
-  FOR ALL TO authenticated
-  USING (is_system_admin(auth.uid()))
-  WITH CHECK (is_system_admin(auth.uid()));
-```
+#### 1. Migration SQL
+- Thêm cột `billing_cycle` vào `payment_history` (monthly/yearly)
+- Thêm bảng `orders` (tạm giữ trạng thái order trước khi PayPal confirm):
+  ```sql
+  CREATE TABLE public.orders (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL,
+    plan text NOT NULL,
+    billing_cycle text NOT NULL DEFAULT 'monthly',
+    base_amount numeric NOT NULL DEFAULT 0,
+    addon_amount numeric NOT NULL DEFAULT 0,
+    discount_amount numeric NOT NULL DEFAULT 0,
+    total_amount numeric NOT NULL DEFAULT 0,
+    coupon_code text,
+    addons jsonb DEFAULT '[]',
+    payment_method text NOT NULL DEFAULT 'paypal',
+    paypal_order_id text,
+    status text NOT NULL DEFAULT 'pending',
+    created_at timestamptz DEFAULT now(),
+    completed_at timestamptz
+  );
+  ```
+  RLS: user chỉ xem/tạo order của mình, system admin xem tất cả.
 
-### 2. Component `AdminBillingDashboard.tsx` — KPI Cards
-- Query `profiles` để đếm user theo plan: `COUNT(*) GROUP BY user_plan`
-- Query `profiles` để đếm theo plan_status
-- Query `payment_history` tháng hiện tại: tổng revenue, count by status
-- Query `plan_change_logs` tháng hiện tại: count upgrade/downgrade/renew/cancel
-- Hiển thị 6 KPI cards: Revenue, Payments OK, Payments Failed, New Signups, Renewals, Cancellations
-- Bên dưới: Plan Distribution bar chart (horizontal stacked) + mini table user count per plan
+#### 2. Edge Function `create-paypal-order`
+- Nhận: `{ plan, billing_cycle, addons[], coupon_code? }`
+- Validate coupon (nếu có) — check bảng `coupons`: is_active, expires_at, used_count < max_uses, applicable_plans
+- Tính tổng: base price + addon price - discount
+- Gọi PayPal REST API `POST /v2/checkout/orders` tạo order
+- Lưu vào bảng `orders` với status = 'pending'
+- Trả về PayPal order ID cho client
 
-### 3. Refactor `AdminBilling.tsx` — Tabs Layout
-Chuyển từ flat list sang tabbed layout:
-- **Overview** tab: render `AdminBillingDashboard`
-- **Users** tab: giữ nguyên table users hiện tại (move logic vào `AdminBillingUsersTab.tsx`)
-- **Plans** tab: render `AdminPlansTab`
-- **Transactions** tab: render `AdminTransactionsTab`
-- **Coupons** tab: render `AdminCouponsTab`
+#### 3. Edge Function `capture-paypal-order`
+- Nhận: `{ paypal_order_id }`
+- Gọi PayPal API `POST /v2/checkout/orders/{id}/capture`
+- Nếu thành công:
+  - Update `orders.status = 'completed'`
+  - Update `profiles.user_plan`, `plan_status`, `plan_started_at`, `plan_expires_at`
+  - Insert `payment_history` record
+  - Insert `plan_change_logs` record
+  - Update `coupons.used_count` nếu dùng coupon
+  - Update `user_addons` nếu có addon
+- Trả về success/failure
 
-### 4. Component `AdminBillingUsersTab.tsx`
-- Di chuyển toàn bộ logic filter + table users hiện tại từ `AdminBilling.tsx` vào component riêng
-- Giữ nguyên UI, chỉ tách file
+#### 4. Trang Checkout (`src/pages/Checkout.tsx`)
+- Route: `/checkout?plan=pro&cycle=monthly`
+- Sections:
+  - **Order Summary**: tên gói, giá, chu kỳ
+  - **Add-ons** (optional): hiển thị 3 loại add-on với +/- buttons
+  - **Coupon Input**: ô nhập mã + nút "Áp dụng" → validate realtime
+  - **Price Breakdown**: Subtotal, Add-ons, Discount, Total — hiển thị rõ ràng
+  - **Payment Method**: PayPal button (active) + Momo (coming soon, disabled)
+  - **PayPal Button**: sử dụng `@paypal/react-paypal-js` SDK
 
-### 5. Component `AdminPlansTab.tsx` — Quản lý gói
-- Query `plan_limits` để lấy danh sách plans
-- Query `profiles` COUNT GROUP BY user_plan để lấy số user mỗi plan
-- Hiển thị dạng card grid (1 card/plan):
-  - Tên plan + badge màu
-  - Giá (hardcoded vì chưa có bảng price — hiển thị từ constant)
-  - Billing cycles available
-  - Limits: projects, members, storage, workspaces
-  - Active users count + % tổng
-  - Status badge (active/deprecated)
-- Read-only (chưa cho edit plan_limits qua UI — sẽ mở rộng sau)
+#### 5. Cập nhật `Upgrade.tsx`
+- Thay `handleSelectPlan` toast → `navigate('/checkout?plan=xxx&cycle=monthly|yearly')`
+- Giữ nguyên nếu user không phải owner
 
-### 6. Component `AdminTransactionsTab.tsx`
-- Query `payment_history` toàn bộ (không filter by user)
-- Filters: search, status, date range
-- Table: user name, transaction_id, plan, amount, status, paid_at
-- Click row → mở `PaymentDetailDialog` (đã có)
+#### 6. Secrets cần thiết
+- `PAYPAL_CLIENT_ID` (publishable → lưu trong code/env)
+- `PAYPAL_CLIENT_SECRET` (secret → dùng add_secret tool)
 
-### 7. Component `AdminCouponsTab.tsx` — Module mã giảm giá
-- Query bảng `coupons`
-- Table hiển thị: code, type (% / fixed), value, uses (used/max), applicable plans, status, expires
-- Nút "Create Coupon" → mở `CouponFormDialog`
-- Toggle active/inactive trực tiếp trên row
-- Click row → xem chi tiết + edit
+#### 7. i18n
+- Thêm block `checkout` (~30 chuỗi): order summary, apply coupon, payment method, success/error messages
 
-### 8. Component `CouponFormDialog.tsx`
-- Form fields:
-  - Code (text, auto-generate option)
-  - Discount type: percentage / fixed amount
-  - Discount value
-  - Max uses (optional)
-  - Applicable plans (multi-select checkboxes)
-  - Valid from / Valid until (date pickers)
-  - Description
-  - Active toggle
-- Validate: value > 0, percentage <= 100, dates logic
-- Insert/Update vào bảng `coupons`
+---
 
-### 9. i18n (en.ts + vi.ts)
-Thêm block `adminBilling.dashboard`, `adminBilling.plans`, `adminBilling.transactions`, `adminBilling.coupons` với ~60 chuỗi mỗi ngôn ngữ.
+**ĐỢT 2 — Post-payment UX + Webhook**
 
-### Triển khai chia đợt
+- Trang Success/Failure sau thanh toán
+- PayPal Webhook edge function (đảm bảo idempotent)
+- Email xác nhận thanh toán (dùng Resend)
+- Cập nhật ServicePlan hiển thị lịch sử thanh toán thật (thay mock data)
 
-**Lần này (1 message):**
-- Migration: tạo bảng `coupons`
-- Refactor `AdminBilling.tsx` → tabs layout
-- Tạo `AdminBillingDashboard.tsx` (KPI cards + stats)
-- Tạo `AdminBillingUsersTab.tsx` (tách từ AdminBilling)
-- Tạo `AdminPlansTab.tsx` (plan cards)
-- Tạo `AdminTransactionsTab.tsx` (global transactions)
-- Tạo `AdminCouponsTab.tsx` + `CouponFormDialog.tsx`
-- i18n en + vi
+---
 
-### Files
+**ĐỢT 3 — Momo Integration (tương lai)**
+
+- Edge function `create-momo-order` / `momo-webhook`
+- Detect locale → suggest payment method
+- UI: thêm Momo button khi user ở Việt Nam
+
+---
+
+### Files — Đợt 1
 
 | File | Thay đổi |
 |------|----------|
-| Migration SQL | Tạo bảng `coupons` + RLS |
-| `src/pages/AdminBilling.tsx` | Refactor hoàn toàn → tabs layout |
-| `src/components/admin/AdminBillingDashboard.tsx` | Component mới: KPI cards + stats |
-| `src/components/admin/AdminBillingUsersTab.tsx` | Component mới: tách users table |
-| `src/components/admin/AdminPlansTab.tsx` | Component mới: plan management cards |
-| `src/components/admin/AdminTransactionsTab.tsx` | Component mới: global transactions |
-| `src/components/admin/AdminCouponsTab.tsx` | Component mới: coupon management |
-| `src/components/admin/CouponFormDialog.tsx` | Component mới: form tạo/sửa coupon |
-| `src/lib/i18n/en.ts` | Thêm ~60 chuỗi dashboard/plans/transactions/coupons |
-| `src/lib/i18n/vi.ts` | Thêm ~60 chuỗi tương ứng |
+| Migration SQL | Tạo bảng `orders` |
+| `supabase/functions/create-paypal-order/index.ts` | Edge function tạo PayPal order |
+| `supabase/functions/capture-paypal-order/index.ts` | Edge function capture + update DB |
+| `src/pages/Checkout.tsx` | Trang checkout mới |
+| `src/App.tsx` | Thêm route `/checkout` |
+| `src/pages/Upgrade.tsx` | Điều hướng sang checkout thay vì toast |
+| `src/lib/i18n/en.ts` | Thêm chuỗi checkout |
+| `src/lib/i18n/vi.ts` | Thêm chuỗi checkout |
 
