@@ -153,6 +153,22 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
         projectStorageMap[k] = Math.round(projectStorageMap[k] / (1024 * 1024));
       });
 
+      // Fetch project guests (is_guest=true) per group
+      const guestUserIdsMap: Record<string, string[]> = {};
+      if (groupIds.length > 0) {
+        const { data: guests } = await supabase
+          .from('group_members')
+          .select('group_id, user_id')
+          .in('group_id', groupIds)
+          .eq('is_guest', true);
+        (guests || []).forEach(g => {
+          if (g.group_id && g.user_id) {
+            if (!guestUserIdsMap[g.group_id]) guestUserIdsMap[g.group_id] = [];
+            guestUserIdsMap[g.group_id].push(g.user_id);
+          }
+        });
+      }
+
       const infos: WorkspaceInfo[] = ownedWs.map(ws => {
         const wsGroups = groups.filter(g => g.workspace_id === ws.id);
         return {
@@ -161,12 +177,14 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
           projectCount: wsGroups.length,
           memberCount: (memberMap[ws.id] || 0) + 1, // +1 for owner
           storageMb: storageMap[ws.id] || 0,
+          memberUserIds: memberUserIdsMap[ws.id] || [],
           projects: wsGroups.map(g => ({
             id: g.id,
             name: g.name,
             taskCount: taskCountMap[g.id] || 0,
             storageMb: projectStorageMap[g.id] || 0,
             workspace_id: ws.id,
+            guestUserIds: guestUserIdsMap[g.id] || [],
           })),
         };
       });
