@@ -8,6 +8,7 @@ interface PlanLimits {
   maxTotalMembers: number | null;
   maxStorageMb: number | null;
   maxMeetingDurationMinutes: number | null;
+  maxActivityLogDays: number | null;
   isLoading: boolean;
 }
 
