@@ -15,7 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Crown, Zap, Building2, FolderKanban, HardDrive,
-  ArrowRight, Loader2, Infinity, Receipt, ArrowLeft,
+  ArrowRight, Loader2, Infinity, Receipt,
   Check, Users, Shield, Sparkles, BarChart3,
 } from 'lucide-react';
 
@@ -164,13 +164,6 @@ export default function ServicePlan() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
-          >
-            <ArrowLeft size={14} />
-            <span>{t.goBack}</span>
-          </button>
           <h1 className="text-2xl font-heading font-bold tracking-tight">{t.title}</h1>
           <p className="text-sm text-muted-foreground mt-1">{t.subtitle}</p>
         </div>
@@ -304,95 +297,86 @@ export default function ServicePlan() {
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card>
-                <CardContent className="p-4 space-y-2">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Building2 className="w-4 h-4" />
-                    <span className="text-xs font-medium">{t.workspace}</span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold tabular-nums">{wsUsages.length}</span>
-                    <span className="text-sm text-muted-foreground">
-                      / {planLimits?.max_workspaces ?? <Infinity className="w-3.5 h-3.5 inline" />}
-                    </span>
-                  </div>
-                  {planLimits?.max_workspaces && (
-                    <Progress value={Math.min(100, (wsUsages.length / planLimits.max_workspaces) * 100)} className="h-1.5" />
-                  )}
-                </CardContent>
-              </Card>
+              {(() => {
+                const totalStorage = wsUsages.reduce((s, w) => s + w.storageMb, 0);
 
-              <Card>
-                <CardContent className="p-4 space-y-2">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <FolderKanban className="w-4 h-4" />
-                    <span className="text-xs font-medium">{t.projects}</span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold tabular-nums">{totalProjects}</span>
-                    <span className="text-sm text-muted-foreground">
-                      / {planLimits?.max_projects_per_workspace
-                        ? planLimits.max_projects_per_workspace
-                        : <Infinity className="w-3.5 h-3.5 inline" />}
-                    </span>
-                  </div>
-                  {planLimits?.max_projects_per_workspace && (
-                    <Progress
-                      value={Math.min(100, (totalProjects / planLimits.max_projects_per_workspace) * 100)}
-                      className="h-1.5"
-                    />
-                  )}
-                </CardContent>
-              </Card>
+                const usageCards: {
+                  label: string;
+                  icon: React.ReactNode;
+                  current: number;
+                  max: number | null;
+                  suffix?: string;
+                  note?: string;
+                  iconColor: string;
+                  formatMax?: (v: number) => string;
+                }[] = [
+                  {
+                    label: t.workspace,
+                    icon: <Building2 className="w-4 h-4" />,
+                    current: wsUsages.length,
+                    max: planLimits?.max_workspaces ?? null,
+                    iconColor: 'text-blue-500',
+                  },
+                  {
+                    label: t.projects,
+                    icon: <FolderKanban className="w-4 h-4" />,
+                    current: totalProjects,
+                    max: planLimits?.max_projects_per_workspace ?? null,
+                    iconColor: 'text-violet-500',
+                  },
+                  {
+                    label: t.memberSeats,
+                    icon: <Users className="w-4 h-4" />,
+                    current: totalMembers,
+                    max: planLimits?.max_members_per_workspace ?? null,
+                    iconColor: 'text-emerald-500',
+                    note: t.memberSeatsNote,
+                  },
+                  {
+                    label: t.storage,
+                    icon: <HardDrive className="w-4 h-4" />,
+                    current: totalStorage,
+                    max: planLimits?.max_storage_mb ?? null,
+                    suffix: 'MB',
+                    iconColor: 'text-orange-500',
+                    formatMax: (v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)} GB` : `${v} MB`,
+                  },
+                ];
 
-              <Card>
-                <CardContent className="p-4 space-y-2">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Users className="w-4 h-4" />
-                    <span className="text-xs font-medium">{t.memberSeats}</span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold tabular-nums">{totalMembers}</span>
-                    <span className="text-sm text-muted-foreground">
-                      / {planLimits?.max_members_per_workspace
-                        ? planLimits.max_members_per_workspace
-                        : <Infinity className="w-3.5 h-3.5 inline" />}
-                    </span>
-                  </div>
-                  {planLimits?.max_members_per_workspace && (
-                    <Progress
-                      value={Math.min(100, (totalMembers / planLimits.max_members_per_workspace) * 100)}
-                      className="h-1.5"
-                    />
-                  )}
-                  <p className="text-[10px] text-muted-foreground">{t.memberSeatsNote}</p>
-                </CardContent>
-              </Card>
+                return usageCards.map((card, idx) => {
+                  const isOver = card.max !== null && card.current >= card.max;
+                  const pct = card.max !== null && card.max > 0 ? (card.current / card.max) * 100 : 0;
+                  const isWarning = !isOver && card.max !== null && pct >= 80;
 
-              <Card>
-                <CardContent className="p-4 space-y-2">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <HardDrive className="w-4 h-4" />
-                    <span className="text-xs font-medium">{t.storage}</span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold tabular-nums">
-                      {wsUsages.reduce((s, w) => s + w.storageMb, 0)}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      MB / {planLimits?.max_storage_mb
-                        ? `${planLimits.max_storage_mb >= 1000 ? `${(planLimits.max_storage_mb / 1000).toFixed(0)} GB` : `${planLimits.max_storage_mb} MB`}`
-                        : <Infinity className="w-3.5 h-3.5 inline" />}
-                    </span>
-                  </div>
-                  {planLimits?.max_storage_mb && (
-                    <Progress
-                      value={Math.min(100, (wsUsages.reduce((s, w) => s + w.storageMb, 0) / planLimits.max_storage_mb) * 100)}
-                      className="h-1.5"
-                    />
-                  )}
-                </CardContent>
-              </Card>
+                  return (
+                    <Card key={idx} className={isOver ? 'border-red-500/30 bg-red-500/5' : ''}>
+                      <CardContent className="p-4 space-y-2">
+                        <div className={`flex items-center gap-2 ${isOver ? 'text-red-600 dark:text-red-400' : card.iconColor}`}>
+                          {card.icon}
+                          <span className="text-xs font-medium">{card.label}</span>
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                          <span className={`text-2xl font-bold tabular-nums ${isOver ? 'text-red-600 dark:text-red-400' : ''}`}>
+                            {card.current}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            {card.suffix ? ` ${card.suffix}` : ''} / {card.max !== null
+                              ? (card.formatMax ? card.formatMax(card.max) : card.max)
+                              : <Infinity className="w-3.5 h-3.5 inline" />}
+                          </span>
+                        </div>
+                        {card.max !== null && (
+                          <Progress
+                            value={Math.min(100, pct)}
+                            className={`h-1.5 ${isOver ? '[&>div]:bg-red-500' : isWarning ? '[&>div]:bg-amber-500' : ''}`}
+                          />
+                        )}
+                        {card.note && <p className="text-[10px] text-muted-foreground">{card.note}</p>}
+                      </CardContent>
+                    </Card>
+                  );
+                });
+              })()}
             </div>
           </section>
 
