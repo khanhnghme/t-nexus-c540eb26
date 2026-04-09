@@ -810,7 +810,7 @@ export default function ServicePlan() {
                                 <div className="text-sm font-semibold tabular-nums">
                                   ${costForThis.toFixed(2)}
                                 </div>
-                                <div className="text-[10px] text-muted-foreground">{t.addonPerMonth || '/month'}</div>
+                                <div className="text-[10px] text-muted-foreground">/{billingCycle === 'yearly' ? (t.addonPerYear || 'year') : (t.addonPerMonth || 'month')}</div>
                               </div>
                             </div>
                           </div>
