@@ -273,6 +273,28 @@ export default function ProjectEvidenceExport({ groupId, project }: ProjectEvide
 
   const selectedCount = Object.values(options).filter(v => v).length;
 
+  if (!canExportData && !limitsLoading) {
+    return (
+      <Card className="border-amber-500/30">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Lock className="w-4 h-4 text-amber-500" />
+            Xuất Minh chứng
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Tính năng xuất dữ liệu chỉ dành cho gói Plus trở lên
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => navigate('/pricing')}>
+            <ArrowUpRight className="w-4 h-4" />
+            Nâng cấp để xuất dữ liệu
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader className="pb-3">
