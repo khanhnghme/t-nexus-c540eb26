@@ -1,53 +1,57 @@
 
 
-## Plan: Chặn truy cập trái phép vào Dự án và Workspace
+## Plan: Admin sidebar thay thế sidebar chính
 
-### Vấn đề hiện tại
-- Trang `GroupDetail` (chi tiết dự án) **không kiểm tra** người dùng có phải thành viên hay không — ai có URL đều truy cập được
-- Trang `Groups` hiển thị các project `workspace_public` cho workspace member — nhưng không chặn khi truy cập trực tiếp
-- RLS cho phép `created_by` (người tạo) xem group data ngay cả khi không phải member → cần kiểm tra ở frontend
+### Vấn đề
+Hiện tại khi vào `/admin/*`, sidebar chính (SidebarTreeNav) vẫn hiển thị, và AdminLayout render thêm một sidebar phụ bên cạnh → tạo 2 sidebar song song, chiếm nhiều không gian.
 
-### Giải pháp: Trang 403 + Access Guard
+### Giải pháp
+Khi route bắt đầu bằng `/admin`, **thay thế** nội dung sidebar chính bằng menu admin (nút quay lại + danh sách admin items). Không cần AdminLayout riêng nữa.
 
-**1. Tạo component `AccessDenied` (trang 403)**
-- File mới: `src/components/AccessDenied.tsx`
-- Giao diện sạch, icon khóa, thông báo "Bạn không có quyền truy cập" / "You don't have access"
-- Nút quay lại trang chủ
-- Hỗ trợ i18n (en/vi)
+### Thay đổi
 
-**2. Sửa `GroupDetail.tsx` — thêm access check**
-- Sau khi fetch `groupData` thành công, kiểm tra:
-  - Nếu project `private`: user phải là member (`group_members`) hoặc system admin
-  - Nếu project `workspace_public`: user phải là workspace participant hoặc member
-  - Nếu project `public_link`: cho phép (giữ nguyên)
-- Nếu không đủ quyền → hiển thị `AccessDenied` thay vì nội dung dự án
+**1. `DashboardLayout.tsx` — phát hiện route admin, đổi sidebar**
+- Kiểm tra `location.pathname.startsWith('/admin')`
+- Nếu đúng: thay `SidebarTreeNav` bằng component `AdminSidebarNav` (nút "← Back", tiêu đề ADMIN, 4 mục con)
+- Ẩn luôn phần bottom (UpgradeBox + user profile) hoặc giữ user profile tuỳ ý — giữ user profile cho nhất quán
 
-**3. Sửa `Groups.tsx` — đảm bảo danh sách đúng**
-- Hiện tại đã lọc đúng (chỉ hiện joined + workspace_public nếu là WS member) → giữ nguyên
+**2. `AdminLayout.tsx` — đơn giản hóa**
+- Xóa toàn bộ secondary sidebar
+- Chỉ giữ lại: kiểm tra `isAdmin` → redirect nếu không phải admin, redirect `/admin` → `/admin/members`, và render `<Outlet />`
+- Không render sidebar riêng nữa
 
-**4. Thêm i18n keys**
-- `app.accessDenied.title`: "Access Denied" / "Từ chối truy cập"
-- `app.accessDenied.description`: "You are not a member..." / "Bạn không phải thành viên..."
-- `app.accessDenied.backHome`: "Back to Home" / "Về trang chủ"
+**3. `SidebarTreeNav.tsx` — tạo variant admin**
+- Hoặc tách ra component `AdminSidebarNav.tsx` mới, hoặc thêm logic vào trong `SidebarTreeNav`
+- Gồm: nút ArrowLeft "Back to Home", tiêu đề "ADMIN", 4 link (Members, Backup, System, Utilities)
+- Hỗ trợ cả collapsed mode (chỉ icon + tooltip)
 
-### Technical Details
+**4. CSS — dọn dẹp**
+- Xóa styles `.admin-secondary-sidebar`, `.admin-content-area` trong `index.css`
+- Tái sử dụng các class sidebar hiện có (`.sidebar-nav-item`, `.nav-icon`, v.v.)
+
+### Flow mới
 
 ```text
-GroupDetail.tsx flow:
-  fetch groupData → fetch membersData
-    → check: user in membersData? OR isAdmin?
-       → YES: render normally
-       → NO: check visibility
-          → workspace_public? check workspace participant
-          → private? → show AccessDenied
-          → public_link? → allow
+/dashboard:
+  [Logo] [TopBar        ]
+  [SidebarTreeNav] [Content]
+
+/admin/members:
+  [Logo] [TopBar        ]
+  [← Back       ] [Content]
+  [ADMIN        ]
+  [Members  ●   ]
+  [Backup       ]
+  [System       ]
+  [Utilities    ]
+  [User profile ]
 ```
 
-### Files to modify
-| File | Change |
-|------|--------|
-| `src/components/AccessDenied.tsx` | New — 403 page component |
-| `src/pages/GroupDetail.tsx` | Add membership check after data fetch |
-| `src/lib/i18n/en.ts` | Add `accessDenied` keys |
-| `src/lib/i18n/vi.ts` | Add `accessDenied` keys |
+### Files
+| File | Thay đổi |
+|------|----------|
+| `src/components/layout/DashboardLayout.tsx` | Phát hiện `/admin` route, render `AdminSidebarNav` thay cho `SidebarTreeNav` |
+| `src/components/layout/AdminLayout.tsx` | Xóa sidebar, chỉ giữ guard + redirect + `<Outlet />` |
+| `src/components/AdminSidebarNav.tsx` | **Mới** — menu admin cho sidebar chính |
+| `src/index.css` | Xóa `.admin-secondary-sidebar` styles, thêm styles nhỏ cho admin nav |
 
