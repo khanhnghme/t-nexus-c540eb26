@@ -1,29 +1,44 @@
 
 
-## Plan: Thêm Welcome Offer vào trang /upgrade
+## Plan: Hiển thị rõ phần giảm giá welcome + gọn UI Step 2
 
 ### Vấn đề
-Trang `/upgrade` chưa kiểm tra và hiển thị ưu đãi chào mừng cho người mua lần đầu, trong khi Onboarding và Checkout đã có logic này.
+- Step 1 & Step 2: Mỗi plan card/row hiển thị giá gốc gạch ngang + giá welcome riêng lẻ → rối mắt
+- Step 2: Không hiển thị rõ tổng giá gốc - tổng giảm = tổng thanh toán
 
 ### Giải pháp
 
-**File: `src/pages/Upgrade.tsx`**
+**File: `src/pages/Checkout.tsx`**
 
-1. **Thêm state + query first-time buyer**: Import `supabase`, thêm `useEffect` query `orders` table kiểm tra `status = 'completed'` → set `isFirstTimeBuyer`
+#### Step 1 — Plan cards (line ~322-328)
+- Xoá dòng giá gốc gạch ngang riêng trên mỗi card
+- Chỉ hiển thị giá welcome (đã giảm) làm giá chính
+- Không ghi chi tiết giảm bao nhiêu trên từng card (banner chung đã nói "~20%")
 
-2. **Hiển thị Welcome Banner**: Nếu `isFirstTimeBuyer = true`, render banner gradient giống Onboarding/Checkout:
-   > 🎉 Ưu đãi chào mừng dành riêng cho bạn
-   > Giảm tối đa lên đến gần 20% cho gói đăng ký đầu tiên
-   > (Không áp dụng cho tiện ích bổ sung)
+#### Step 1 — Order Summary bên phải (line ~436-448)
+- Plan price chỉ hiển thị giá welcome `$baseAmount`
+- Nếu `welcomeDiscount > 0`, thêm 1 dòng riêng "🎉 Ưu đãi chào mừng" hiển thị `-$welcomeDiscount` màu emerald (giống dòng coupon)
 
-   Đặt banner ngay trên toggle Monthly/Yearly.
+#### Step 2 — Order Table (line ~552-620)
+- Plan row: chỉ hiển thị giá gốc `$originalBaseAmount` (không gạch ngang + giá welcome xen kẽ)
+- Bỏ hiển thị giá welcome trên dòng plan
+- Phần Subtotal/Discount/Total ở dưới bảng:
+  - Tạm tính: `$originalBaseAmount + $addonOriginal` (tổng giá gốc)
+  - Dòng "Ưu đãi chào mừng": `-$welcomeDiscount` (nếu có)
+  - Dòng "Add-on savings": `-$addonSaving` (nếu có)
+  - Dòng "Coupon": `-$discountAmount` (nếu có)
+  - Tổng: `$totalAmount`
 
-3. **Hiển thị giá welcome trên Plan Cards**: Import `getWelcomePrice` từ `planConfig.ts`. Trong `PlanColumn`, nếu `isFirstTimeBuyer` và plan có welcome price:
-   - Giá gốc gạch ngang (line-through)
-   - Giá welcome hiển thị màu xanh lá
+#### Step 2 — Pay Box bên phải (line ~708-724)
+- Plan hiển thị giá gốc `$originalBaseAmount`
+- Thêm dòng "Ưu đãi chào mừng" `-$welcomeDiscount` nếu có
+- Giữ nguyên dòng Add-ons, Discount
 
-4. **Truyền `isFirstTimeBuyer` prop**: Từ component cha xuống `PlanColumn` và bảng comparison header.
+### Tóm tắt logic
+- Không ghi chi tiết % giảm trên từng gói
+- Tách rõ: giá gốc → các dòng giảm giá → tổng cuối
+- UI sạch, dễ hiểu
 
 ### Files cần sửa
-- `src/pages/Upgrade.tsx` — thêm first-time check, banner, giá welcome trên cards
+- `src/pages/Checkout.tsx`
 
