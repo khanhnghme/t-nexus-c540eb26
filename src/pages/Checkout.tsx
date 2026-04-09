@@ -13,7 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
-import { PLAN_CONFIG, getPlanLabel, type PlanKey, PLAN_ORDER } from '@/lib/planConfig';
+import { PLAN_CONFIG, getPlanLabel, getWelcomePrice, type PlanKey, PLAN_ORDER } from '@/lib/planConfig';
 
 /* ═══ Constants ═══ */
 
@@ -68,12 +68,22 @@ export default function Checkout() {
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'failed'>('idle');
   const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
   const [paymentMethodOpen, setPaymentMethodOpen] = useState(true);
+  const [isFirstTimeBuyer, setIsFirstTimeBuyer] = useState(true);
 
   useEffect(() => {
     supabase.functions.invoke('get-paypal-config').then(({ data }) => {
       if (data?.clientId) setPaypalClientId(data.clientId);
     });
   }, []);
+
+  // Check if first-time buyer
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('orders').select('id').eq('user_id', user.id).eq('status', 'completed').limit(1)
+      .then(({ data }) => {
+        setIsFirstTimeBuyer(!data || data.length === 0);
+      });
+  }, [user]);
 
   useEffect(() => {
     setSearchParams({ plan, cycle }, { replace: true });
@@ -88,9 +98,12 @@ export default function Checkout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan]);
 
-  // Price calculations
+  // Price calculations — use welcome price if first-time buyer
   const prices = PLAN_PRICES[plan];
-  const baseAmount = prices ? (cycle === 'yearly' ? prices.yearly : prices.monthly) : 0;
+  const originalBaseAmount = prices ? (cycle === 'yearly' ? prices.yearly : prices.monthly) : 0;
+  const welcomePrice = isFirstTimeBuyer ? (getWelcomePrice(plan, cycle) ?? originalBaseAmount) : originalBaseAmount;
+  const baseAmount = welcomePrice;
+  const welcomeDiscount = originalBaseAmount - baseAmount;
   const addonDiscountRate = ADDON_DISCOUNT_RATE[plan] || 0;
 
   const { addonOriginal, addonFinal } = useMemo(() => {
@@ -235,6 +248,17 @@ export default function Checkout() {
           </div>
         </div>
 
+        {/* Welcome Offer Banner */}
+        {isFirstTimeBuyer && welcomeDiscount > 0 && (
+          <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-500/10 via-primary/10 to-violet-500/10 border border-emerald-500/20">
+            <div className="text-center">
+              <p className="font-bold text-sm">{isVi ? 'Ưu đãi chào mừng dành riêng cho bạn' : 'Welcome offer just for you'}</p>
+              <p className="text-sm">{isVi ? '🎉 Giảm tối đa lên đến gần 20% cho gói đăng ký đầu tiên' : '🎉 Up to ~20% off your first subscription'}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{isVi ? '(Không áp dụng cho tiện ích bổ sung)' : '(Not applicable to add-ons)'}</p>
+            </div>
+          </div>
+        )}
+
         {/* 2-column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
           {/* ── LEFT COLUMN: Config ── */}
@@ -271,7 +295,9 @@ export default function Checkout() {
                 {/* Plan cards - horizontal */}
                 <div className="grid grid-cols-3 gap-2.5">
                   {PLANS.map(p => {
-                    const price = cycle === 'yearly' ? p.yearly : p.monthly;
+                    const originalPrice = cycle === 'yearly' ? p.yearly : p.monthly;
+                    const wPrice = isFirstTimeBuyer ? (getWelcomePrice(p.key, cycle) ?? originalPrice) : originalPrice;
+                    const showWelcome = wPrice !== originalPrice;
                     const isSelected = plan === p.key;
                     return (
                       <button
@@ -293,7 +319,8 @@ export default function Checkout() {
                           <span className="font-semibold text-sm">{p.label}</span>
                           {isSelected && <Check className="h-3.5 w-3.5 text-primary" />}
                         </div>
-                        <div className="text-lg font-bold">${price.toFixed(2)}</div>
+                        {showWelcome && <span className="text-sm text-muted-foreground line-through">${originalPrice.toFixed(2)}</span>}
+                        <div className="text-lg font-bold">${wPrice.toFixed(2)}</div>
                         <div className="text-[11px] text-muted-foreground">
                           /{cycle === 'yearly' ? (isVi ? 'năm' : 'yr') : (isVi ? 'tháng' : 'mo')}
                         </div>
