@@ -192,6 +192,7 @@ function AppRoutes() {
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/checkout/result" element={<PaymentResult />} />
           <Route path="/service-plan" element={<ServicePlan />} />
+          <Route path="/addon-checkout" element={<AddonCheckout />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />
