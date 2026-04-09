@@ -83,6 +83,7 @@ export default function GroupDetail() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [stages, setStages] = useState<Stage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAccessDenied, setIsAccessDenied] = useState(false);
   const [isLeaderInGroup, setIsLeaderInGroup] = useState(false);
   const [isGroupCreator, setIsGroupCreator] = useState(false);
   
@@ -219,6 +220,38 @@ export default function GroupDetail() {
         setMembers(membersData.map(m => ({ ...m, profiles: profilesMap.get(m.user_id) })) as GroupMember[]);
         const myMembership = membersData.find(m => m.user_id === user?.id);
         setIsLeaderInGroup(myMembership?.role === 'project_admin' || myMembership?.role === 'project_owner' || isAdmin);
+
+        // ── Access check ──
+        const isMember = !!myMembership;
+        const visibility = groupData.visibility as string;
+
+        if (!isMember && !isAdmin) {
+          if (visibility === 'public_link' && groupData.is_public) {
+            // public_link → allow read-only view
+          } else if (visibility === 'workspace_public' && groupData.workspace_id) {
+            // Check if user is a workspace member
+            const { data: wsMember } = await supabase
+              .from('workspace_members')
+              .select('user_id')
+              .eq('workspace_id', groupData.workspace_id)
+              .eq('user_id', user?.id ?? '')
+              .maybeSingle();
+            if (!wsMember) {
+              setIsAccessDenied(true);
+              return;
+            }
+          } else {
+            // private or no match → deny
+            setIsAccessDenied(true);
+            return;
+          }
+        }
+      } else {
+        // No members data returned (RLS blocked) and not admin → deny
+        if (!isAdmin) {
+          setIsAccessDenied(true);
+          return;
+        }
       }
 
       const { data: tasksData } = await supabase.from('tasks').select('*').eq('group_id', resolvedGroupId).order('created_at', { ascending: false });
