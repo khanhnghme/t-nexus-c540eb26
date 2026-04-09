@@ -10,6 +10,8 @@ export interface PlanMeta {
   label: string;
   monthlyPrice: number | null;
   yearlyPrice: number | null;
+  welcomeMonthlyPrice: number | null;
+  welcomeYearlyPrice: number | null;
   addonDiscount: number;
   color: string;          // Tailwind text color
   bgClass: string;        // Light background
@@ -22,6 +24,8 @@ export const PLAN_CONFIG: Record<PlanKey, PlanMeta> = {
     label: 'Free',
     monthlyPrice: 0,
     yearlyPrice: 0,
+    welcomeMonthlyPrice: null,
+    welcomeYearlyPrice: null,
     addonDiscount: 0,
     color: 'text-muted-foreground',
     bgClass: 'bg-muted',
@@ -32,6 +36,8 @@ export const PLAN_CONFIG: Record<PlanKey, PlanMeta> = {
     label: 'Plus',
     monthlyPrice: 4.8,
     yearlyPrice: 48,
+    welcomeMonthlyPrice: 3.9,
+    welcomeYearlyPrice: 39,
     addonDiscount: 0.10,
     color: 'text-blue-500',
     bgClass: 'bg-blue-500/10',
@@ -42,6 +48,8 @@ export const PLAN_CONFIG: Record<PlanKey, PlanMeta> = {
     label: 'Pro',
     monthlyPrice: 12,
     yearlyPrice: 120,
+    welcomeMonthlyPrice: 9.9,
+    welcomeYearlyPrice: 99,
     addonDiscount: 0.20,
     color: 'text-violet-500',
     bgClass: 'bg-violet-500/10',
@@ -52,6 +60,8 @@ export const PLAN_CONFIG: Record<PlanKey, PlanMeta> = {
     label: 'Business',
     monthlyPrice: 24,
     yearlyPrice: 240,
+    welcomeMonthlyPrice: 21.9,
+    welcomeYearlyPrice: 219,
     addonDiscount: 0.20,
     color: 'text-amber-500',
     bgClass: 'bg-amber-500/10',
@@ -62,6 +72,8 @@ export const PLAN_CONFIG: Record<PlanKey, PlanMeta> = {
     label: 'Enterprise',
     monthlyPrice: null,
     yearlyPrice: null,
+    welcomeMonthlyPrice: null,
+    welcomeYearlyPrice: null,
     addonDiscount: 0,
     color: 'text-emerald-500',
     bgClass: 'bg-emerald-500/10',
