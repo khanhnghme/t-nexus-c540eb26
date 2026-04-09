@@ -248,6 +248,17 @@ export default function Checkout() {
           </div>
         </div>
 
+        {/* Welcome Offer Banner */}
+        {isFirstTimeBuyer && welcomeDiscount > 0 && (
+          <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-500/10 via-primary/10 to-violet-500/10 border border-emerald-500/20">
+            <div className="text-center">
+              <p className="font-bold text-sm">{isVi ? 'Ưu đãi chào mừng dành riêng cho bạn' : 'Welcome offer just for you'}</p>
+              <p className="text-sm">{isVi ? '🎉 Giảm tối đa lên đến gần 20% cho gói đăng ký đầu tiên' : '🎉 Up to ~20% off your first subscription'}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{isVi ? '(Không áp dụng cho tiện ích bổ sung)' : '(Not applicable to add-ons)'}</p>
+            </div>
+          </div>
+        )}
+
         {/* 2-column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
           {/* ── LEFT COLUMN: Config ── */}
