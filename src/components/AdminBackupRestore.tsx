@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import JSZip from 'jszip';
 import { generateProjectEvidencePdfBlob, ExportData as EvidenceExportData, ExportOptions as EvidenceExportOptions } from '@/lib/projectEvidencePdf';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
 
 interface Group {
   id: string;
@@ -309,6 +310,7 @@ interface StepInfo {
 
 export default function AdminBackupRestore() {
   const { user, isAdmin } = useAuth();
+  const { canExportData } = usePlanLimits();
   const { toast } = useToast();
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');
