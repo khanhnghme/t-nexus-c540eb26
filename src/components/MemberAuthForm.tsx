@@ -125,6 +125,7 @@ export function MemberAuthForm() {
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileWidgetRef>(null);
   // Login fields
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
