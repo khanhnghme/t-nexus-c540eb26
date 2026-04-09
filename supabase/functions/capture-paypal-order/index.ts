@@ -211,7 +211,6 @@ Deno.serve(async (req) => {
             user_id: user.id,
             addon_type: addon.type,
             quantity: addon.quantity,
-            price_per_unit: 2.49,
           });
         }
       }

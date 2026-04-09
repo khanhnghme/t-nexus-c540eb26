@@ -53,17 +53,21 @@ Deno.serve(async (req) => {
 
       // Backup capture: update order + profile + logs
       const capturedAmount = parseFloat(resource?.amount?.value || order.total_amount);
+      const now = new Date();
+      const nowISO = now.toISOString();
 
       await supabase
         .from("orders")
-        .update({ status: "completed", completed_at: new Date().toISOString() })
+        .update({ status: "completed", completed_at: nowISO })
         .eq("id", order.id);
 
       // Calculate plan expiry
-      const now = new Date();
-      const expiresAt = order.billing_cycle === "yearly"
-        ? new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000)
-        : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const expiresAt = new Date(now);
+      if (order.billing_cycle === "yearly") {
+        expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+      } else {
+        expiresAt.setMonth(expiresAt.getMonth() + 1);
+      }
 
       // Get old plan for logging
       const { data: oldProfile } = await supabase
@@ -77,10 +81,11 @@ Deno.serve(async (req) => {
         .update({
           user_plan: order.plan,
           plan_status: "active",
-          plan_started_at: now.toISOString(),
+          plan_started_at: nowISO,
           plan_expires_at: expiresAt.toISOString(),
           plan_source: "paypal",
           billing_cycle: order.billing_cycle,
+          downgraded_at: null,
         })
         .eq("id", order.user_id);
 
@@ -95,7 +100,7 @@ Deno.serve(async (req) => {
         coupon_code: order.coupon_code,
         payment_method: "paypal",
         status: "completed",
-        paid_at: now.toISOString(),
+        paid_at: nowISO,
         order_id: order.id,
         transaction_id: resource?.id || null,
         description: `${order.plan} (${order.billing_cycle}) via webhook`,
@@ -113,10 +118,8 @@ Deno.serve(async (req) => {
         reason: "PayPal webhook backup capture",
       });
 
-      // Increment coupon usage if applicable
+      // Increment coupon usage
       if (order.coupon_code) {
-        await supabase.rpc("", {}).catch(() => {});
-        // Direct update
         const { data: coupon } = await supabase
           .from("coupons")
           .select("id, used_count")
@@ -128,6 +131,46 @@ Deno.serve(async (req) => {
             .update({ used_count: coupon.used_count + 1 })
             .eq("id", coupon.id);
         }
+      }
+
+      // Update user addons
+      const addons = order.addons as Array<{ type: string; quantity: number }> | null;
+      if (addons && addons.length > 0) {
+        for (const addon of addons) {
+          const { data: existing } = await supabase
+            .from("user_addons")
+            .select("id, quantity")
+            .eq("user_id", order.user_id)
+            .eq("addon_type", addon.type)
+            .maybeSingle();
+
+          if (existing) {
+            await supabase.from("user_addons").update({
+              quantity: existing.quantity + addon.quantity,
+            }).eq("id", existing.id);
+          } else {
+            await supabase.from("user_addons").insert({
+              user_id: order.user_id,
+              addon_type: addon.type,
+              quantity: addon.quantity,
+            });
+          }
+        }
+      }
+
+      // Update workspace limits based on new plan
+      const { data: planLimits } = await supabase
+        .from("plan_limits")
+        .select("*")
+        .eq("plan", order.plan)
+        .single();
+
+      if (planLimits) {
+        await supabase.from("workspaces").update({
+          max_projects: planLimits.max_projects_per_workspace,
+          max_members: planLimits.max_members_per_workspace,
+          max_storage_mb: planLimits.max_storage_mb,
+        }).eq("owner_id", order.user_id);
       }
 
       console.log(`[paypal-webhook] Order ${order.id} completed via webhook`);
