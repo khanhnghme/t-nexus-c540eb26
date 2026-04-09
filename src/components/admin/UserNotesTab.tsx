@@ -24,9 +24,10 @@ const TYPE_COLORS: Record<NoteType, string> = {
 
 interface Props {
   userId: string;
+  canAddNote?: boolean;
 }
 
-export function UserNotesTab({ userId }: Props) {
+export function UserNotesTab({ userId, canAddNote = true }: Props) {
   const { translations } = useLanguage();
   const t = translations.app?.adminBilling?.notes;
   const { toast } = useToast();
@@ -85,7 +86,7 @@ export function UserNotesTab({ userId }: Props) {
   return (
     <div className="space-y-6 mt-4">
       {/* Add note form */}
-      <div className="rounded-xl border bg-card p-5 space-y-3">
+      {canAddNote && (
         <h3 className="text-sm font-medium flex items-center gap-2">
           <Plus className="h-4 w-4" />
           {t?.addTitle || 'Add Internal Note'}
@@ -117,6 +118,7 @@ export function UserNotesTab({ userId }: Props) {
           </Button>
         </div>
       </div>
+      )}
 
       {/* Notes list */}
       {isLoading ? (
