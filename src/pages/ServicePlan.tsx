@@ -773,7 +773,7 @@ export default function ServicePlan() {
                     </div>
                     {discount.pct > 0 && totalAddonQty > 0 && (
                       <div className="flex justify-between text-sm text-emerald-600 pt-1 border-t">
-                        <span>{isVi ? `Tiết kiệm add-on (${discount.pct * 100}%)` : `Add-on savings (${discount.pct * 100}%)`}</span>
+                        <span>{t.addonSavings || 'Add-on savings'} ({discount.pct * 100}%)</span>
                         <span>-${(totalAddonQty * BASE_PRICE * discount.pct).toFixed(2)}/{t.addonPerMonth || 'month'}</span>
                       </div>
                     )}
