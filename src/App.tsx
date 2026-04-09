@@ -52,6 +52,7 @@ import CreateWorkspace from "./pages/CreateWorkspace";
 import Notifications from "./pages/Notifications";
 import Upgrade from "./pages/Upgrade";
 import Checkout from "./pages/Checkout";
+import PaymentResult from "./pages/PaymentResult";
 import ServicePlan from "./pages/ServicePlan";
 import AdminLayout from "./components/layout/AdminLayout";
 import AdminBilling from "./pages/AdminBilling";
@@ -186,6 +187,7 @@ function AppRoutes() {
           <Route path="/workspace/members" element={<WorkspaceMembers />} />
           <Route path="/upgrade" element={<Upgrade />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/checkout/result" element={<PaymentResult />} />
           <Route path="/service-plan" element={<ServicePlan />} />
         </Route>
 

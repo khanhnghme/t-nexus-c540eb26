@@ -174,10 +174,11 @@ export default function Checkout() {
 
       setPaymentStatus('success');
       toast.success(t?.paymentSuccess || 'Payment successful!');
-      setTimeout(() => navigate('/service-plan'), 3000);
+      navigate(`/checkout/result?status=success&order_id=${res.data.orderId || ''}`);
     } catch (err) {
       setPaymentStatus('failed');
       toast.error(t?.paymentFailed || 'Payment failed. Please try again.');
+      navigate('/checkout/result?status=failed');
     }
   }, [navigate, t]);
 
