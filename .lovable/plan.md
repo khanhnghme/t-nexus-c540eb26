@@ -1,65 +1,83 @@
-
-
-## Plan: Đợt 3 — Module 4 (Admin Actions) + Module 6 (Ghi chú nội bộ)
+## Plan: Đợt 4 — Module 5 (Phân quyền Admin Billing)
 
 ### Scope
-Triển khai ManagePlanDialog với đầy đủ actions (upgrade/downgrade/extend/suspend/restore), Preview Impact, và tab Internal Notes. Thay thế tất cả quick action placeholders.
+Thêm phân quyền chi tiết cho billing admin: `billing_viewer`, `billing_operator`, `billing_manager`. Gate tất cả actions trong ManagePlanDialog + ẩn/hiện UI theo quyền. `system_owner` bypass tất cả.
 
-### 1. Component `ManagePlanDialog.tsx`
-Dialog modal mở từ quick action buttons, gồm:
-- **Select action**: Upgrade / Downgrade / Extend / Suspend / Restore / Grant Trial
-- **Form động theo action**:
-  - Upgrade/Downgrade: chọn plan mới, effective mode (immediate/next_cycle)
-  - Extend: chọn số ngày (+7/+30/+90/custom)
-  - Suspend: chọn mức khóa (toàn bộ premium)
-  - Restore: khôi phục plan trước đó, option bù thời gian
-- **Reason** (bắt buộc — disable nút Confirm nếu trống)
-- **Internal note** (tùy chọn)
-- **Checkbox**: Notify user, Apply immediately
-- **Nút "Preview Impact"** → mở panel so sánh
-- **Xác nhận 2 bước** cho thao tác nguy hiểm (downgrade→Free, suspend): nhập "CONFIRM" để kích hoạt nút
+### 1. Migration SQL
 
-### 2. Component `PlanImpactPreview.tsx`
-Hiển thị khi bấm Preview Impact:
-- So sánh limits cũ vs mới (workspaces, projects, members, storage)
-- Hiển thị usage hiện tại vs limit mới
-- Đánh dấu đỏ các mục vượt limit
-- Đề xuất xử lý: soft-lock, read-only
+**Thêm cột `billing_role` vào `user_roles`**:
+```sql
+ALTER TABLE user_roles ADD COLUMN billing_role text;
+-- Values: null (no billing access), 'billing_viewer', 'billing_operator', 'billing_manager'
+```
 
-### 3. Hook `useAdminPlanActions.ts`
-- Hàm `executePlanAction(action, params)`:
-  - Update profiles: user_plan, plan_status, plan_expires_at, plan_source, billing_cycle
-  - Insert plan_change_logs với đầy đủ thông tin
-  - Invalidate queries
-- Logic cho từng action type
-- Validation: reason required, 2-step cho dangerous actions
+**Tạo function `get_billing_role`**:
+```sql
+CREATE FUNCTION get_billing_role(_user_id uuid) RETURNS text
+-- Returns: 'billing_manager' for system_owner (auto), 
+-- or billing_role from user_roles for system_admin
+-- null if no billing access
+```
 
-### 4. Component `UserNotesTab.tsx`
-Tab Internal Notes đầy đủ:
-- Danh sách notes từ `admin_notes` WHERE user_id = userId
-- Mỗi note: content, note_type badge (general/warning/vip/abuse/support/partner), created_by name, created_at
-- Form thêm note mới: chọn type + nhập content
-- Badge màu theo type: warning=amber, abuse=red, vip=emerald, partner=blue, support=violet, general=muted
+### Phân quyền chi tiết
 
-### 5. Cập nhật `AdminUserBilling.tsx`
-- Import ManagePlanDialog + UserNotesTab
-- Quick action buttons mở ManagePlanDialog với action tương ứng
-- Tab notes → `<UserNotesTab userId={userId} />`
-- Refetch profile sau khi action thành công
+| Quyền | Viewer | Operator | Manager | Owner |
+|-------|--------|----------|---------|-------|
+| Xem gói, payments, history | ✓ | ✓ | ✓ | ✓ |
+| Xem notes | ✓ | ✓ | ✓ | ✓ |
+| Thêm notes | ✗ | ✓ | ✓ | ✓ |
+| Gia hạn (extend) | ✗ | ✓ | ✓ | ✓ |
+| Nâng/hạ gói | ✗ | ✓ | ✓ | ✓ |
+| Grant Trial | ✗ | ✓ | ✓ | ✓ |
+| Suspend / Restore | ✗ | ✗ | ✓ | ✓ |
+| Force downgrade to Free | ✗ | ✗ | ✓ | ✓ |
+| Custom plan assign | ✗ | ✗ | ✓ | ✓ |
 
-### 6. i18n — thêm chuỗi
-- Block `adminBilling.managePlan`: action labels, form labels, reason placeholder, confirm dialog, preview impact labels, dangerous action warning
-- Block `adminBilling.notes`: note types, form labels, empty state
+### 2. Hook `useAdminBillingRole.ts`
+- Fetch current user's `system_role` + `billing_role` từ `user_roles`
+- Export:
+  - `billingRole`: 'viewer' | 'operator' | 'manager' | null
+  - `canView`: boolean
+  - `canOperate`: boolean (extend, upgrade, downgrade, grant trial, add notes)
+  - `canManage`: boolean (suspend, restore, force actions)
+  - `isLoading`: boolean
+
+### 3. Cập nhật `ManagePlanDialog.tsx`
+- Import `useAdminBillingRole`
+- Disable/ẩn action options theo quyền:
+  - Viewer: dialog không mở (nút bị ẩn)
+  - Operator: ẩn `suspend`, `restore` khỏi select
+  - Manager/Owner: full access
+- Hiển thị badge quyền hiện tại của admin
+
+### 4. Cập nhật `AdminUserBilling.tsx`
+- Import `useAdminBillingRole`
+- Quick action buttons: ẩn/disable theo quyền
+  - Viewer: ẩn tất cả quick actions
+  - Operator: ẩn suspend/restore
+  - Manager: hiện tất cả
+- Tab Notes: ẩn form thêm note nếu viewer
+
+### 5. Cập nhật `UserNotesTab.tsx`
+- Nhận prop `canAddNote: boolean`
+- Ẩn form thêm note nếu `canAddNote === false`
+
+### 6. Cập nhật `useAdminPlanActions.ts`
+- Thêm server-side validation: check billing_role trước khi execute
+- Reject nếu operator cố suspend/restore
+
+### 7. i18n
+- `en.ts` + `vi.ts`: thêm block `adminBilling.rbac` (~10 chuỗi: role labels, permission denied messages, role badge labels)
 
 ### Files
 
 | File | Thay đổi |
 |------|----------|
-| `src/components/admin/ManagePlanDialog.tsx` | Component mới: dialog quản lý gói |
-| `src/components/admin/PlanImpactPreview.tsx` | Component mới: preview ảnh hưởng |
-| `src/hooks/useAdminPlanActions.ts` | Hook mới: logic thực thi actions |
-| `src/components/admin/UserNotesTab.tsx` | Component mới: tab ghi chú nội bộ |
-| `src/pages/AdminUserBilling.tsx` | Kết nối dialog + notes tab |
-| `src/lib/i18n/en.ts` | Thêm chuỗi managePlan + notes |
-| `src/lib/i18n/vi.ts` | Thêm chuỗi managePlan + notes |
-
+| Migration SQL | Thêm `billing_role` vào `user_roles` + function `get_billing_role` |
+| `src/hooks/useAdminBillingRole.ts` | Hook mới: kiểm tra quyền billing |
+| `src/components/admin/ManagePlanDialog.tsx` | Gate actions theo role |
+| `src/pages/AdminUserBilling.tsx` | Ẩn/hiện quick actions theo role |
+| `src/components/admin/UserNotesTab.tsx` | Prop `canAddNote` |
+| `src/hooks/useAdminPlanActions.ts` | Validation quyền server-side |
+| `src/lib/i18n/en.ts` | Thêm chuỗi rbac |
+| `src/lib/i18n/vi.ts` | Thêm chuỗi rbac |
