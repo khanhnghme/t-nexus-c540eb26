@@ -436,7 +436,7 @@ function CellContent({ value }: { value: CellValue }) {
   return <span className="text-[13px] text-foreground leading-relaxed">{value}</span>;
 }
 
-function UpgradePlansAndFeatures({ yearly, planCols, comparison, tp, disabled, onSelect }: { yearly: boolean; planCols: any[]; comparison: FeatureCategory[]; tp: any; disabled: boolean; onSelect: (planKey?: string) => void }) {
+function UpgradePlansAndFeatures({ yearly, planCols, comparison, tp, disabled, onSelect, isFirstTimeBuyer = false }: { yearly: boolean; planCols: any[]; comparison: FeatureCategory[]; tp: any; disabled: boolean; onSelect: (planKey?: string) => void; isFirstTimeBuyer?: boolean }) {
   return (
     <div style={{ marginTop: 72, paddingBottom: 48 }}>
       <h2 className="text-2xl font-bold text-foreground mb-8">{tp.comparisonTitle}</h2>
@@ -453,6 +453,9 @@ function UpgradePlansAndFeatures({ yearly, planCols, comparison, tp, disabled, o
             {planCols.map((col: any) => {
               const price = formatPrice(col.monthlyPrice, yearly);
               const isCustom = col.monthlyPrice === null;
+              const colPlanKey = `plan_${col.key}`;
+              const welcomePrice = isFirstTimeBuyer ? getWelcomePrice(colPlanKey, yearly ? 'yearly' : 'monthly') : null;
+              const hasWelcome = welcomePrice !== null && welcomePrice > 0;
               return (
                 <th key={col.key} className={`p-4 text-left align-bottom border-b-2 border-border sticky top-0 z-10 ${col.isCurrent ? 'bg-primary/5' : 'bg-background'}`}>
                   <div className="text-sm font-bold text-foreground mb-0.5">
@@ -460,7 +463,13 @@ function UpgradePlansAndFeatures({ yearly, planCols, comparison, tp, disabled, o
                     {col.isCurrent && <span className="ml-1.5 text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">✓</span>}
                   </div>
                   <div className="text-xs text-muted-foreground mb-2">
-                    {isCustom ? tp.contactUs : <>{price}<span className="font-normal"> / {tp.mo}</span></>}
+                    {isCustom ? tp.contactUs : hasWelcome ? (
+                      <>
+                        <span className="line-through">{price}</span>{' '}
+                        <span className="text-green-600 font-semibold">${welcomePrice % 1 === 0 ? welcomePrice.toFixed(0) : welcomePrice.toFixed(1)}</span>
+                        <span className="font-normal"> / {tp.mo}</span>
+                      </>
+                    ) : <>{price}<span className="font-normal"> / {tp.mo}</span></>}
                   </div>
                   <button
                     onClick={() => onSelect(col.key)}
