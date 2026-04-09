@@ -19,7 +19,7 @@ import {
   Crown, Zap, Building2, FolderKanban, HardDrive,
   ArrowRight, Loader2, Infinity, Receipt,
   Check, Users, Shield, Sparkles, BarChart3,
-  Plus, Minus, Package, AlertTriangle,
+  Check, Users, Shield, Sparkles, BarChart3, Package, AlertTriangle,
 } from 'lucide-react';
 
 interface WorkspaceUsage {
