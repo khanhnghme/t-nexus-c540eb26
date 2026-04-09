@@ -233,8 +233,8 @@ export default function ServicePlan() {
   };
   const hasAddonDelta = addonDeltas.projects > 0 || addonDeltas.storage > 0 || addonDeltas.members > 0;
 
-  const billingCycle = profile?.billing_cycle || 'monthly';
-  const addonBasePrice = billingCycle === 'yearly' ? ADDON_PRICE * 10 : ADDON_PRICE;
+  const billingCycle = (profile as any)?.billing_cycle || 'monthly';
+  const addonBasePrice = billingCycle === 'yearly' ? BASE_PRICE * 10 : BASE_PRICE;
 
   const discount = getAddonDiscount(plan);
   const unitPrice = addonBasePrice * (1 - discount.pct);
