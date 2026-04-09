@@ -259,20 +259,34 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
     let removedProjects = 0;
     let removedStorageMb = 0;
 
+    // Collect remaining member user_ids (unique seats) after removal
+    const remainingMemberIds = new Set<string>();
+    // Owner always remains
+    if (user) remainingMemberIds.add(user.id);
+
     wsInfos.forEach(ws => {
       if (selectedWs.has(ws.id)) {
         removedWs++;
         removedProjects += ws.projectCount;
         removedStorageMb += ws.storageMb;
+        // Entire WS removed → none of its members/guests count
       } else {
+        // WS stays → its workspace members remain
+        ws.memberUserIds.forEach(uid => remainingMemberIds.add(uid));
         ws.projects.forEach(p => {
           if (selectedProjects.has(p.id)) {
             removedProjects++;
             removedStorageMb += p.storageMb;
+            // Project removed → its guests don't count (unless they appear in other remaining contexts)
+          } else {
+            // Project stays → its guests remain
+            p.guestUserIds.forEach(uid => remainingMemberIds.add(uid));
           }
         });
       }
     });
+
+    const afterMembers = remainingMemberIds.size;
 
     const currentWs = wsInfos.length;
     const currentProjects = wsInfos.reduce((s, w) => s + w.projectCount, 0);
@@ -289,16 +303,16 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
     const wsOk = maxWs === null || afterWs <= maxWs;
     const projectsOk = maxProjects === null || afterProjects <= maxProjects;
     const storageOk = maxStorageMb === null || afterStorageMb <= maxStorageMb;
-    const membersOk = limits.maxMembers === null || limits.uniqueMembers <= limits.maxMembers;
+    const membersOk = limits.maxMembers === null || afterMembers <= limits.maxMembers;
     const allOk = wsOk && projectsOk && storageOk && membersOk;
 
     return {
       removedWs, removedProjects, removedStorageMb,
-      afterWs, afterProjects, afterStorageMb,
+      afterWs, afterProjects, afterStorageMb, afterMembers,
       wsOk, projectsOk, storageOk, membersOk, allOk,
       hasSelection: removedWs > 0 || removedProjects > 0,
     };
-  }, [wsInfos, selectedWs, selectedProjects, limits]);
+  }, [wsInfos, selectedWs, selectedProjects, limits, user]);
 
   // Delete logic
   const handleDelete = async () => {
