@@ -28,6 +28,7 @@ interface ProjectInfo {
   taskCount: number;
   storageMb: number;
   workspace_id: string;
+  guestUserIds: string[];
 }
 
 interface WorkspaceInfo {
@@ -37,6 +38,7 @@ interface WorkspaceInfo {
   memberCount: number;
   storageMb: number;
   projects: ProjectInfo[];
+  memberUserIds: string[];
 }
 
 interface AccountCleanupPanelProps {
