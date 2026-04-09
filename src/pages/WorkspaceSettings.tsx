@@ -310,13 +310,13 @@ export default function WorkspaceSettings() {
                           <p>{tw.deleteConfirmDesc}</p>
                           <div className="space-y-2">
                             <Label className="text-foreground font-medium">
-                              {tw.deleteConfirmLabel.replace('{name}', activeWorkspace.name)}
+                              {tw.deleteConfirmLabel}
                             </Label>
                             <Input
                               value={deleteConfirmName}
                               onChange={(e) => setDeleteConfirmName(e.target.value)}
-                              placeholder={activeWorkspace.name}
-                              className="border-destructive/50 focus-visible:ring-destructive"
+                              placeholder={isVi ? 'đồng ý' : 'agree'}
+                              className="border-destructive/50 focus-visible:ring-destructive font-mono"
                             />
                           </div>
                         </div>
