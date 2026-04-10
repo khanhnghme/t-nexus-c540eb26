@@ -22,7 +22,7 @@ function DashboardCheckout() {
 function MinimalCheckoutLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const isPaymentPage = location.pathname.startsWith('/checkout/payment');
+  const isPaymentPage = location.pathname.startsWith('/checkout/payment') || location.pathname.startsWith('/addon-checkout/payment');
   const isVi = document.documentElement.lang === 'vi';
 
   const [showBackConfirm, setShowBackConfirm] = useState(false);
