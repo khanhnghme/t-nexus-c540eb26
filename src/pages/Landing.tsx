@@ -411,10 +411,10 @@ export default function Landing() {
   }, [dashboardVideoElement]);
 
   useEffect(() => {
-    if (!showSplash && videoRef.current) {
+    if (videoRef.current) {
       videoRef.current.play().catch(() => undefined);
     }
-  }, [showSplash]);
+  }, []);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -538,7 +538,7 @@ export default function Landing() {
             playsInline
             preload="auto"
             className="pointer-events-none fixed inset-0 h-full w-full object-cover"
-            style={{ opacity: showSplash ? 0 : videoOpacity, zIndex: 0, willChange: 'transform', transform: 'translateZ(0)', transition: 'opacity 1s' }}
+            style={{ opacity: videoOpacity, zIndex: 0, willChange: 'transform', transform: 'translateZ(0)', transition: 'opacity 1s' }}
             src={videoUrl}
           />
           <div
