@@ -144,9 +144,6 @@ export default function GmailTab() {
     }
     return pages;
   };
-    }
-    return pages;
-  };
 
   if (!isChecking && !isConnected) {
     return (
