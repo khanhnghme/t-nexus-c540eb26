@@ -143,6 +143,8 @@ export default function AddonCheckoutPayment() {
 
   if (!order) return null;
 
+  return (
+    <div className="max-w-5xl mx-auto py-6 px-4 space-y-5">
       {/* Payment failure banner */}
       {paymentStatus === 'failed' && paymentError && (
         <div className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
@@ -162,8 +164,6 @@ export default function AddonCheckoutPayment() {
         </div>
       )}
 
-  return (
-    <div className="max-w-5xl mx-auto py-6 px-4 space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
