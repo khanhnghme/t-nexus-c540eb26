@@ -65,7 +65,7 @@ interface FirstTimeOnboardingProps {
   onComplete: () => void;
 }
 
-type StepId = 'language' | 'welcome' | 'password' | 'info' | 'plan' | 'checkout' | 'finish';
+type StepId = 'language' | 'welcome' | 'password' | 'info' | 'plan' | 'finish';
 
 const stepIcons: Record<StepId, React.ReactNode> = {
   language: <Globe className="w-4 h-4" />,
@@ -73,7 +73,6 @@ const stepIcons: Record<StepId, React.ReactNode> = {
   password: <Key className="w-4 h-4" />,
   info: <User className="w-4 h-4" />,
   plan: <Crown className="w-4 h-4" />,
-  checkout: <Crown className="w-4 h-4" />,
   finish: <Rocket className="w-4 h-4" />,
 };
 
@@ -105,14 +104,13 @@ export default function FirstTimeOnboarding({
     const base: StepId[] = ['language', 'welcome'];
     if (mustChangePassword) base.push('password');
     base.push('info');
-    // After successful payment, remove plan & checkout steps entirely
+    // After successful payment (returning from /checkout), skip plan step
     if (paymentStatus !== 'success') {
       base.push('plan');
-      if (selectedPlan !== 'plan_free') base.push('checkout');
     }
     base.push('finish');
     return base;
-  }, [mustChangePassword, selectedPlan, paymentStatus]);
+  }, [mustChangePassword, paymentStatus]);
 
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const currentStep = allSteps[currentStepIndex] ?? 'language';
