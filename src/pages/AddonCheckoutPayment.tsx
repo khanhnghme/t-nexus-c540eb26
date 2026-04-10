@@ -110,7 +110,7 @@ export default function AddonCheckoutPayment() {
   const saving = Math.round(totalQty * addonBasePrice * discount.pct * 100) / 100;
   const totalAmount = order?.total_amount || Math.round(totalQty * unitPrice * 100) / 100;
 
-  const createOrder = useCallback(async (): Promise<string> => {
+  const createSubscription = useCallback(async (): Promise<string> => {
     const { data, error } = await supabase.functions.invoke('create-paypal-order', {
       body: {
         order_type: 'addon',
@@ -119,8 +119,8 @@ export default function AddonCheckoutPayment() {
         internal_order_id: order?.id,
       },
     });
-    if (error || !data?.orderID) throw new Error(error?.message || 'Failed to create order');
-    return data.orderID;
+    if (error || !data?.subscriptionID) throw new Error(error?.message || 'Failed to create subscription');
+    return data.subscriptionID;
   }, [billingCycle, addons, order]);
 
   const pollOrderStatus = useCallback(async (code: string, maxAttempts = 10, interval = 2000) => {
@@ -132,12 +132,12 @@ export default function AddonCheckoutPayment() {
     return null;
   }, []);
 
-  const captureOrder = useCallback(async (paypalOrderID: string) => {
+  const captureOrder = useCallback(async (subscriptionID: string) => {
     setPaymentStatus('processing');
     setPaymentError(null);
     try {
       const { data, error } = await supabase.functions.invoke('capture-paypal-order', {
-        body: { orderID: paypalOrderID },
+        body: { subscriptionID },
       });
       if (error || !data?.success) throw new Error(error?.message || 'Capture failed');
       userAddons.refresh();
@@ -379,11 +379,11 @@ export default function AddonCheckoutPayment() {
               </Button>
             </div>
           ) : paypalClientId ? (
-            <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD' }}>
+            <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD', vault: true, intent: 'subscription' }}>
               <PayPalButtons
-                style={{ layout: 'vertical', shape: 'rect', label: 'pay', height: 45 }}
-                createOrder={async () => createOrder()}
-                onApprove={async (data) => { await captureOrder(data.orderID); }}
+                style={{ layout: 'vertical', shape: 'rect', label: 'subscribe', height: 45 }}
+                createSubscription={async () => createSubscription()}
+                onApprove={async (data) => { await captureOrder(data.subscriptionID!); }}
                 onError={(err) => {
                   console.error('PayPal error:', err);
                   toast({ title: 'PayPal Error', description: 'Payment could not be completed.', variant: 'destructive' });

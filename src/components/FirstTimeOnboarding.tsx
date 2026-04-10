@@ -439,7 +439,7 @@ export default function FirstTimeOnboarding({
     }
   }, [couponCode, selectedPlan, isVi, toast]);
 
-  const createOrder = useCallback(async () => {
+  const createSubscription = useCallback(async () => {
     const addonsList = Object.entries(addons)
       .filter(([, qty]) => qty > 0)
       .map(([type, quantity]) => ({ type, quantity }));
@@ -453,18 +453,18 @@ export default function FirstTimeOnboarding({
       },
     });
 
-    if (res.error || !res.data?.orderID) {
-      throw new Error(res.error?.message || 'Failed to create order');
+    if (res.error || !res.data?.subscriptionID) {
+      throw new Error(res.error?.message || 'Failed to create subscription');
     }
 
-    return res.data.orderID;
+    return res.data.subscriptionID;
   }, [selectedPlan, cycle, addons, couponDiscount]);
 
-  const onApprove = useCallback(async (data: { orderID: string }) => {
+  const onApprove = useCallback(async (data: { subscriptionID?: string; orderID?: string }) => {
     setPaymentStatus('processing');
     try {
       const res = await supabase.functions.invoke('capture-paypal-order', {
-        body: { orderID: data.orderID },
+        body: { subscriptionID: data.subscriptionID },
       });
 
       if (res.error || !res.data?.success) {
@@ -472,10 +472,8 @@ export default function FirstTimeOnboarding({
       }
 
       setPaymentStatus('success');
-      // Refresh profile from backend to get updated plan immediately
       onComplete();
       toast({ title: isVi ? 'Thanh toán thành công!' : 'Payment successful!' });
-      // goNext will be triggered by allSteps recalculation (plan/checkout removed, lands on finish)
     } catch {
       setPaymentStatus('failed');
       toast({ title: isVi ? 'Thanh toán thất bại. Vui lòng thử lại.' : 'Payment failed. Please try again.', variant: 'destructive' });
@@ -1681,10 +1679,10 @@ export default function FirstTimeOnboarding({
                                           <span className="text-sm text-muted-foreground">{isVi ? 'Đang xử lý thanh toán...' : 'Processing payment...'}</span>
                                         </div>
                                       ) : paypalClientId ? (
-                                        <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD' }}>
+                                        <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD', vault: true, intent: 'subscription' }}>
                                           <PayPalButtons
-                                            style={{ layout: 'vertical', shape: 'rect', label: 'pay', height: 40 }}
-                                            createOrder={async () => createOrder()}
+                                            style={{ layout: 'vertical', shape: 'rect', label: 'subscribe', height: 40 }}
+                                            createSubscription={async () => createSubscription()}
                                             onApprove={async (data) => onApprove(data)}
                                             onError={(err) => {
                                               console.error('PayPal error:', err);
