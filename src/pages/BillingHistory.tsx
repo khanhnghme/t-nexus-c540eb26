@@ -221,13 +221,14 @@ export default function BillingHistory() {
                           className="text-xs gap-1"
                           onClick={(e) => {
                             e.stopPropagation();
-                              const code = row.raw?.order_code;
-                              if (!code) return;
-                              if (row.raw?.order_type === 'addon') {
-                                navigate(`/addon-checkout/${code}`);
-                              } else {
-                                navigate(`/checkout/payment/${code}`);
-                              }
+                            const code = row.raw?.order_code;
+                            if (!code) return;
+                            sessionStorage.setItem('checkout_payment_return_path', window.location.pathname + window.location.search);
+                            if (row.raw?.order_type === 'addon') {
+                              navigate(`/addon-checkout/${code}`);
+                            } else {
+                              navigate(`/checkout/payment/${code}`);
+                            }
                           }}
                         >
                           <CreditCard className="w-3 h-3" />

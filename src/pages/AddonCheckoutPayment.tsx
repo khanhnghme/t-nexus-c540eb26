@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
-import { ShieldCheck, Loader2, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -47,8 +47,9 @@ export default function AddonCheckoutPayment() {
   const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancellingOrder, setCancellingOrder] = useState(false);
+  const [showBackDialog, setShowBackDialog] = useState(false);
+  const [backDialogTimeLeft, setBackDialogTimeLeft] = useState('');
 
-  // Background polling: detect webhook-completed orders
   useEffect(() => {
     if (!user || !orderCode || paymentStatus === 'success') return;
     if (paymentStatus !== 'idle' && paymentStatus !== 'processing' && paymentStatus !== 'failed') return;
@@ -80,8 +81,10 @@ export default function AddonCheckoutPayment() {
         return;
       }
       setOrder(orderRes.data);
+      if (orderRes.data.expires_at) {
+        sessionStorage.setItem('checkout_payment_expires_at', orderRes.data.expires_at);
+      }
       if (paypalRes.data?.clientId) setPaypalClientId(paypalRes.data.clientId);
-      // If order is finished, redirect to summary
       if (['completed', 'cancelled', 'expired'].includes(orderRes.data.status)) {
         navigate(`/checkout/summary/${orderCode}`, { replace: true });
         return;
@@ -95,7 +98,7 @@ export default function AddonCheckoutPayment() {
       }
       setLoading(false);
     });
-  }, [user, orderCode, navigate]);
+  }, [user, orderCode, navigate, isVi]);
 
   const plan = profile?.user_plan || 'plan_free';
   const billingCycle = order?.billing_cycle || 'monthly';
@@ -123,15 +126,6 @@ export default function AddonCheckoutPayment() {
     return data.subscriptionID;
   }, [billingCycle, addons, order]);
 
-  const pollOrderStatus = useCallback(async (code: string, maxAttempts = 10, interval = 2000) => {
-    for (let i = 0; i < maxAttempts; i++) {
-      const { data } = await supabase.from('orders').select('status').eq('order_code', code).maybeSingle();
-      if (data && data.status !== 'pending') return data.status;
-      await new Promise(r => setTimeout(r, interval));
-    }
-    return null;
-  }, []);
-
   const captureOrder = useCallback(async (subscriptionID: string) => {
     setPaymentStatus('processing');
     setPaymentError(null);
@@ -149,7 +143,6 @@ export default function AddonCheckoutPayment() {
         navigate(`/checkout/summary/${orderCode}`, { replace: true });
       } else if (data?.success && data?.pending) {
         toast({ title: isVi ? 'Đã xác nhận! Đang chờ kích hoạt...' : 'Confirmed! Waiting for activation...' });
-        // Stay in processing, background polling will handle redirect
       } else {
         throw new Error('Capture failed');
       }
@@ -171,6 +164,23 @@ export default function AddonCheckoutPayment() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [paymentStatus]);
 
+  useEffect(() => {
+    if (!showBackDialog || !order?.expires_at) return;
+    const update = () => {
+      const diff = new Date(order.expires_at).getTime() - Date.now();
+      if (diff <= 0) {
+        setBackDialogTimeLeft('00:00');
+        return;
+      }
+      const mm = Math.floor(diff / 60000);
+      const ss = Math.floor((diff % 60000) / 1000);
+      setBackDialogTimeLeft(`${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`);
+    };
+    update();
+    const iv = setInterval(update, 1000);
+    return () => clearInterval(iv);
+  }, [showBackDialog, order?.expires_at]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -181,9 +191,20 @@ export default function AddonCheckoutPayment() {
 
   if (!order) return null;
 
+  const backTarget = sessionStorage.getItem('checkout_payment_return_path') || '/addon-checkout';
+
   return (
     <div className="max-w-5xl mx-auto py-6 px-4 space-y-5">
-      {/* Payment failure banner */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="gap-1.5 text-muted-foreground hover:text-foreground -ml-2"
+        onClick={() => setShowBackDialog(true)}
+      >
+        <ArrowLeft className="w-4 h-4" />
+        <span className="text-sm">{isVi ? 'Quay lại' : 'Back'}</span>
+      </Button>
+
       {paymentStatus === 'failed' && paymentError && (
         <div className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
           <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
@@ -202,7 +223,6 @@ export default function AddonCheckoutPayment() {
         </div>
       )}
 
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{isVi ? 'Xác nhận & Thanh toán' : 'Confirm & Pay'}</h1>
@@ -224,7 +244,6 @@ export default function AddonCheckoutPayment() {
         )}
       </div>
 
-      {/* Order ID + Countdown */}
       <div className="flex items-center gap-2 text-sm">
         <span className="text-muted-foreground">{isVi ? 'Mã đơn hàng:' : 'Order ID:'}</span>
         <code className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{order?.order_code || orderCode}</code>
@@ -240,7 +259,6 @@ export default function AddonCheckoutPayment() {
         />
       )}
 
-      {/* Cancel Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -279,7 +297,30 @@ export default function AddonCheckoutPayment() {
         </DialogContent>
       </Dialog>
 
-      {/* Order Summary */}
+      <Dialog open={showBackDialog} onOpenChange={setShowBackDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{isVi ? 'Rời khỏi trang thanh toán?' : 'Leave payment page?'}</DialogTitle>
+            <DialogDescription>
+              {isVi
+                ? `Bạn còn đơn hàng chưa thanh toán. Có thể hoàn tất sau trong lịch sử. Còn lại: ${backDialogTimeLeft}.`
+                : `You have an unpaid order. You can complete it later in history. Remaining: ${backDialogTimeLeft}.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowBackDialog(false);
+              navigate(backTarget);
+            }}>
+              {isVi ? 'Quay lại' : 'Go back'}
+            </Button>
+            <Button onClick={() => setShowBackDialog(false)}>
+              {isVi ? 'Tiếp tục thanh toán' : 'Continue payment'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Card>
         <CardContent className="pt-5 pb-5">
           <div className="flex items-center justify-between mb-4">
@@ -339,7 +380,6 @@ export default function AddonCheckoutPayment() {
         </CardContent>
       </Card>
 
-      {/* Payment */}
       <Card>
         <CardContent className="p-6 space-y-4">
           <h2 className="text-base font-semibold">{isVi ? 'Phương thức thanh toán' : 'Payment Method'}</h2>
@@ -386,25 +426,27 @@ export default function AddonCheckoutPayment() {
               </Button>
             </div>
           ) : paypalClientId ? (
-            <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD', vault: true, intent: 'subscription' }}>
-              <PayPalButtons
-                style={{ layout: 'vertical', shape: 'rect', label: 'subscribe', height: 45 }}
-                createSubscription={async () => createSubscription()}
-                onApprove={async (data) => { await captureOrder(data.subscriptionID!); }}
-                onError={(err) => {
-                  const errStr = String(err);
-                  if (errStr.includes('popup close') || errStr.includes('Window is closed')) {
-                    console.warn('PayPal popup closed (may be normal after approval):', errStr);
-                    return;
-                  }
-                  console.error('PayPal error:', err);
-                  toast({ title: 'PayPal Error', description: 'Payment could not be completed.', variant: 'destructive' });
-                }}
-                onCancel={() => {
-                  toast({ title: isVi ? 'Đã hủy' : 'Cancelled', description: isVi ? 'Thanh toán đã bị hủy.' : 'Payment was cancelled.' });
-                }}
-              />
-            </PayPalScriptProvider>
+            <div className={`checkout-paypal-embed ${(showBackDialog || showCancelDialog) ? 'invisible' : ''}`}>
+              <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD', vault: true, intent: 'subscription' }}>
+                <PayPalButtons
+                  style={{ layout: 'vertical', shape: 'rect', label: 'subscribe', height: 45 }}
+                  createSubscription={async () => createSubscription()}
+                  onApprove={async (data) => { await captureOrder(data.subscriptionID!); }}
+                  onError={(err) => {
+                    const errStr = String(err);
+                    if (errStr.includes('popup close') || errStr.includes('Window is closed')) {
+                      console.warn('PayPal popup closed (may be normal after approval):', errStr);
+                      return;
+                    }
+                    console.error('PayPal error:', err);
+                    toast({ title: 'PayPal Error', description: 'Payment could not be completed.', variant: 'destructive' });
+                  }}
+                  onCancel={() => {
+                    toast({ title: isVi ? 'Đã hủy' : 'Cancelled', description: isVi ? 'Thanh toán đã bị hủy.' : 'Payment was cancelled.' });
+                  }}
+                />
+              </PayPalScriptProvider>
+            </div>
           ) : (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />

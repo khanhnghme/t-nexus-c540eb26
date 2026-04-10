@@ -22,29 +22,52 @@ function DashboardCheckout() {
 function MinimalCheckoutLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const isPaymentPage = location.pathname.startsWith('/checkout/payment');
+  const isPaymentPage = location.pathname.startsWith('/checkout/payment') || location.pathname.startsWith('/addon-checkout/');
   const isVi = document.documentElement.lang === 'vi';
 
   const [showBackConfirm, setShowBackConfirm] = useState(false);
   const [timeLeft, setTimeLeft] = useState('');
 
-  // Read expires_at from sessionStorage (set by CheckoutPayment)
   useEffect(() => {
     if (!showBackConfirm) return;
     const expiresAt = sessionStorage.getItem('checkout_payment_expires_at');
-    if (!expiresAt) { setTimeLeft('--:--'); return; }
+    if (!expiresAt) {
+      setTimeLeft('--:--');
+      return;
+    }
 
     const update = () => {
       const diff = new Date(expiresAt).getTime() - Date.now();
-      if (diff <= 0) { setTimeLeft('00:00'); return; }
+      if (diff <= 0) {
+        setTimeLeft('00:00');
+        return;
+      }
       const mm = Math.floor(diff / 60000);
       const ss = Math.floor((diff % 60000) / 1000);
       setTimeLeft(`${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`);
     };
+
     update();
     const iv = setInterval(update, 1000);
     return () => clearInterval(iv);
   }, [showBackConfirm]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (showBackConfirm) {
+      root.classList.add('checkout-back-confirm-open');
+    } else {
+      root.classList.remove('checkout-back-confirm-open');
+    }
+
+    return () => root.classList.remove('checkout-back-confirm-open');
+  }, [showBackConfirm]);
+
+  const getBackTarget = () => {
+    const stored = sessionStorage.getItem('checkout_payment_return_path');
+    if (stored) return stored;
+    return sessionStorage.getItem('checkout_from') === 'onboarding' ? '/onboarding' : '/checkout';
+  };
 
   const handleBackClick = () => {
     if (isPaymentPage) {
@@ -56,7 +79,12 @@ function MinimalCheckoutLayout() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Minimal header */}
+      <style>{`
+        .checkout-back-confirm-open .checkout-paypal-embed {
+          visibility: hidden;
+        }
+      `}</style>
+
       <header className="h-14 border-b bg-card flex items-center px-4 gap-3 shrink-0">
         <Button
           variant="ghost"
@@ -65,7 +93,7 @@ function MinimalCheckoutLayout() {
           onClick={handleBackClick}
         >
           <ChevronLeft className="w-4 h-4" />
-          <span className="text-sm">Back</span>
+          <span className="text-sm">{isVi ? 'Quay lại' : 'Back'}</span>
         </Button>
         <div className="flex-1" />
         <img
@@ -75,7 +103,6 @@ function MinimalCheckoutLayout() {
         />
       </header>
 
-      {/* Back confirmation dialog for payment page */}
       <Dialog open={showBackConfirm} onOpenChange={setShowBackConfirm}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -87,10 +114,14 @@ function MinimalCheckoutLayout() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setShowBackConfirm(false);
-              navigate('/onboarding');
-            }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const target = getBackTarget();
+                setShowBackConfirm(false);
+                navigate(target);
+              }}
+            >
               {isVi ? 'Quay lại' : 'Go back'}
             </Button>
             <Button onClick={() => setShowBackConfirm(false)}>
@@ -100,7 +131,6 @@ function MinimalCheckoutLayout() {
         </DialogContent>
       </Dialog>
 
-      {/* Content */}
       <main className="flex-1 overflow-auto">
         <Outlet />
       </main>

@@ -364,8 +364,26 @@ export default function CheckoutPayment() {
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => {
+              const fromOnboarding = sessionStorage.getItem('checkout_from') === 'onboarding';
+              const params = new URLSearchParams();
+
+              if (plan) params.set('plan', plan);
+              if (cycle) params.set('cycle', cycle);
+              if (couponCode) params.set('coupon', couponCode);
+              if (addons.length > 0) {
+                params.set('addons', addons.map(addon => `${addon.type}:${addon.quantity}`).join(','));
+              }
+              if (fromOnboarding) {
+                params.set('from', 'onboarding');
+              }
+
+              const fallbackPath = params.toString()
+                ? `/checkout?${params.toString()}`
+                : (fromOnboarding ? '/onboarding' : '/checkout');
+              const targetPath = sessionStorage.getItem('checkout_payment_return_path') || fallbackPath;
+
               setShowBackDialog(false);
-              navigate(-1);
+              navigate(targetPath);
             }}>
               {isVi ? 'Quay lại' : 'Go back'}
             </Button>
@@ -495,7 +513,7 @@ export default function CheckoutPayment() {
                         </Button>
                       </div>
                     ) : paypalClientId ? (
-                      <div className={(showBackDialog || showCancelDialog) ? 'invisible' : ''}>
+                      <div className={`checkout-paypal-embed ${(showBackDialog || showCancelDialog) ? 'invisible' : ''}`}>
                         <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD', vault: true, intent: 'subscription' }}>
                           <PayPalButtons
                             style={{ layout: 'vertical', shape: 'rect', label: 'subscribe', height: 40 }}
