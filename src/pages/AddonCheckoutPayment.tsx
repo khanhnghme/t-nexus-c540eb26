@@ -30,7 +30,7 @@ function getAddonDiscount(plan: string): { pct: number; label: string } {
 }
 
 export default function AddonCheckoutPayment() {
-  const { orderId } = useParams<{ orderId: string }>();
+  const { orderCode } = useParams<{ orderCode: string }>();
   const navigate = useNavigate();
   const { translations: { app: { servicePlan: t } } } = useLanguage();
   const { user, profile, refreshProfile } = useAuth();
@@ -48,10 +48,10 @@ export default function AddonCheckoutPayment() {
   const [cancellingOrder, setCancellingOrder] = useState(false);
 
   useEffect(() => {
-    if (!user || !orderId) return;
+    if (!user || !orderCode) return;
 
     Promise.all([
-      supabase.from('orders').select('*').eq('id', orderId).eq('user_id', user.id).single(),
+      supabase.from('orders').select('*').eq('order_code', orderCode).eq('user_id', user.id).single(),
       supabase.functions.invoke('get-paypal-config'),
     ]).then(([orderRes, paypalRes]) => {
       if (orderRes.error || !orderRes.data) {
@@ -62,7 +62,7 @@ export default function AddonCheckoutPayment() {
       if (paypalRes.data?.clientId) setPaypalClientId(paypalRes.data.clientId);
       // If order is finished, redirect to summary
       if (['completed', 'cancelled', 'expired'].includes(orderRes.data.status)) {
-        navigate(`/checkout/${orderId}/summary`, { replace: true });
+        navigate(`/checkout/summary/${orderCode}`, { replace: true });
         return;
       }
       if (orderRes.data.expires_at && new Date(orderRes.data.expires_at).getTime() <= Date.now() && orderRes.data.status === 'pending') {
@@ -70,7 +70,7 @@ export default function AddonCheckoutPayment() {
       }
       setLoading(false);
     });
-  }, [user, orderId, navigate]);
+  }, [user, orderCode, navigate]);
 
   const plan = profile?.user_plan || 'plan_free';
   const billingCycle = order?.billing_cycle || 'monthly';
@@ -91,12 +91,12 @@ export default function AddonCheckoutPayment() {
         order_type: 'addon',
         billing_cycle: billingCycle,
         addons,
-        internal_order_id: orderId,
+        internal_order_id: order?.id,
       },
     });
     if (error || !data?.orderID) throw new Error(error?.message || 'Failed to create order');
     return data.orderID;
-  }, [billingCycle, addons, orderId]);
+  }, [billingCycle, addons, order]);
 
   const captureOrder = useCallback(async (paypalOrderID: string) => {
     setPaymentStatus('processing');
@@ -110,7 +110,7 @@ export default function AddonCheckoutPayment() {
       accountLimits.refresh();
       await refreshProfile();
       toast({ title: '✅', description: isVi ? 'Mua add-on thành công!' : 'Add-on purchased successfully!' });
-      navigate(`/checkout/${orderId}/summary`, { replace: true });
+      navigate(`/checkout/summary/${orderCode}`, { replace: true });
     } catch (err: any) {
       setPaymentStatus('failed');
       toast({ title: 'Error', description: err.message || 'Payment failed', variant: 'destructive' });
@@ -155,12 +155,12 @@ export default function AddonCheckoutPayment() {
       {/* Order ID + Countdown */}
       <div className="flex items-center gap-2 text-sm">
         <span className="text-muted-foreground">{isVi ? 'Mã đơn hàng:' : 'Order ID:'}</span>
-        <code className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{order?.order_code || `#${orderId?.slice(0, 8).toUpperCase()}`}</code>
+        <code className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{order?.order_code || orderCode}</code>
       </div>
       {order.expires_at && (
         <OrderCountdown
           expiresAt={order.expires_at}
-          orderId={orderId!}
+          orderId={order.id}
           orderCode={order.order_code}
           isVi={isVi}
           onExpired={() => setOrderExpired(true)}
@@ -189,7 +189,7 @@ export default function AddonCheckoutPayment() {
               onClick={async () => {
                 setCancellingOrder(true);
                 try {
-                  await supabase.from('orders').update({ status: 'cancelled' }).eq('id', orderId!);
+                  await supabase.from('orders').update({ status: 'cancelled' }).eq('id', order?.id);
                   toast({ title: isVi ? 'Đơn hàng đã được hủy' : 'Order has been cancelled' });
                   setShowCancelDialog(false);
                   navigate('/billing-history', { replace: true });

@@ -23,7 +23,7 @@ const ADDON_TYPES = [
 ] as const;
 
 export default function CheckoutPayment() {
-  const { orderId } = useParams<{ orderId: string }>();
+  const { orderCode } = useParams<{ orderCode: string }>();
   const navigate = useNavigate();
   const { translations: { checkout: t, common: tc } } = useLanguage();
   const { user, refreshProfile } = useAuth();
@@ -41,10 +41,10 @@ export default function CheckoutPayment() {
 
   // Load order + paypal config
   useEffect(() => {
-    if (!user || !orderId) return;
+    if (!user || !orderCode) return;
 
     Promise.all([
-      supabase.from('orders').select('*').eq('id', orderId).eq('user_id', user.id).single(),
+      supabase.from('orders').select('*').eq('order_code', orderCode).eq('user_id', user.id).single(),
       supabase.functions.invoke('get-paypal-config'),
     ]).then(([orderRes, paypalRes]) => {
       if (orderRes.error || !orderRes.data) {
@@ -57,7 +57,7 @@ export default function CheckoutPayment() {
       const o = orderRes.data;
       // If order is finished, redirect to summary
       if (['completed', 'cancelled', 'expired'].includes(o.status)) {
-        navigate(`/checkout/${orderId}/summary`, { replace: true });
+        navigate(`/checkout/summary/${orderCode}`, { replace: true });
         return;
       }
       if (o.expires_at && new Date(o.expires_at).getTime() <= Date.now() && o.status === 'pending') {
@@ -65,7 +65,7 @@ export default function CheckoutPayment() {
       }
       setLoading(false);
     });
-  }, [user, orderId, navigate]);
+  }, [user, orderCode, navigate]);
 
   // Derived values from order
   const plan = order?.plan || '';
@@ -95,7 +95,7 @@ export default function CheckoutPayment() {
         billing_cycle: cycle,
         addons,
         coupon_code: couponCode || undefined,
-        internal_order_id: orderId,
+        internal_order_id: order?.id,
       },
     });
 
@@ -103,7 +103,7 @@ export default function CheckoutPayment() {
       throw new Error(res.error?.message || 'Failed to create order');
     }
     return res.data.orderID;
-  }, [plan, cycle, addons, couponCode, orderId]);
+  }, [plan, cycle, addons, couponCode, order]);
 
   const onApprove = useCallback(async (data: { orderID: string }) => {
     setPaymentStatus('processing');
@@ -117,11 +117,11 @@ export default function CheckoutPayment() {
       setPaymentStatus('success');
       toast.success(t?.paymentSuccess || 'Payment successful!');
       await refreshProfile();
-      navigate(`/checkout/${orderId}/summary`, { replace: true });
+      navigate(`/checkout/summary/${orderCode}`, { replace: true });
     } catch {
       setPaymentStatus('failed');
       toast.error(t?.paymentFailed || 'Payment failed. Please try again.');
-      navigate(`/checkout/${orderId}/summary`, { replace: true });
+      navigate(`/checkout/summary/${orderCode}`, { replace: true });
     }
   }, [navigate, t, refreshProfile]);
 
@@ -172,7 +172,7 @@ export default function CheckoutPayment() {
       {/* Order ID */}
       <div className="flex items-center gap-2 text-sm">
         <span className="text-muted-foreground">{isVi ? 'Mã đơn hàng:' : 'Order ID:'}</span>
-        <code className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{order?.order_code || `#${orderId?.slice(0, 8).toUpperCase()}`}</code>
+        <code className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{order?.order_code || orderCode}</code>
       </div>
 
       {/* Cancel Dialog */}
@@ -196,7 +196,7 @@ export default function CheckoutPayment() {
               onClick={async () => {
                 setCancellingOrder(true);
                 try {
-                  await supabase.from('orders').update({ status: 'cancelled' }).eq('id', orderId!);
+                  await supabase.from('orders').update({ status: 'cancelled' }).eq('id', order?.id);
                   toast.success(isVi ? 'Đơn hàng đã được hủy' : 'Order has been cancelled');
                   setShowCancelDialog(false);
                   navigate('/billing-history', { replace: true });
@@ -389,7 +389,7 @@ export default function CheckoutPayment() {
               {order.expires_at && !orderExpired && (
                 <OrderCountdown
                   expiresAt={order.expires_at}
-                  orderId={orderId!}
+                  orderId={order.id}
                   orderCode={order.order_code}
                   isVi={isVi}
                   onExpired={() => setOrderExpired(true)}
