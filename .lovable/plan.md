@@ -1,74 +1,43 @@
 
 
-## Giai đoạn 2: Frontend — Chuyển PayPal Buttons sang Subscriptions API
+## Phân tích lỗi & Kế hoạch sửa
 
-### Tổng quan
+### Nguyên nhân gốc
 
-Backend đã trả về `subscriptionID` thay vì `orderID`, nhưng frontend vẫn dùng `createOrder` prop và đọc `data.orderID`. Cần cập nhật 5 file để khớp với Subscriptions API.
+**Bug 1: Race condition — Subscription chưa ACTIVE khi capture được gọi**
 
-### Thay đổi cụ thể cho mỗi file
+Khi user approve trên PayPal popup → `onApprove` gọi `capture-paypal-order` ngay lập tức. Nhưng PayPal Subscriptions API có delay — subscription status có thể vẫn là `APPROVAL_PENDING` chứ chưa `ACTIVE`. 
 
-**Thay đổi chung áp dụng cho tất cả 5 file:**
+Capture function (line 177) trả về `{ success: false, status: "APPROVAL_PENDING" }` → Frontend coi đây là lỗi (line 149: `!res.data?.success`) → `setPaymentStatus('failed')`.
 
-```tsx
-// TRƯỚC:
-<PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD' }}>
-  <PayPalButtons
-    createOrder={async () => createOrder()}
-    onApprove={async (data) => onApprove(data)}
-  />
+**Bug 2: Background polling dừng khi failed**
 
-// SAU:
-<PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD', vault: true, intent: 'subscription' }}>
-  <PayPalButtons
-    createSubscription={async (data, actions) => { return await createSubscription(); }}
-    onApprove={async (data) => onApprove(data)}
-  />
-```
+Line 47: polling chỉ chạy khi `paymentStatus === 'idle' || 'processing'`. Khi capture thất bại → `paymentStatus = 'failed'` → polling dừng. Dù webhook đã hoàn thành order trong DB, frontend không biết.
 
----
+**Bug 3: `onApprove` không set `paymentStatus = 'success'`**
 
-### 1. `src/pages/CheckoutPayment.tsx`
-- Đổi `createOrder` callback → `createSubscription`: gọi `create-paypal-order`, đọc `res.data.subscriptionID` thay vì `res.data.orderID`
-- Đổi `onApprove`: gửi `subscriptionID: data.subscriptionID` thay vì `orderID: data.orderID` đến `capture-paypal-order`
-- `PayPalScriptProvider` thêm `vault: true, intent: 'subscription'`
-- `PayPalButtons`: `createOrder` → `createSubscription`
+Luồng thành công: toast success → refreshProfile → pollOrderStatus → navigate. Nhưng `paymentStatus` vẫn là `'processing'` suốt quá trình này. Nếu bất kỳ await nào chậm, user thấy spinner "Đang xác nhận" dù toast đã hiện "thành công".
 
-### 2. `src/pages/AddonCheckoutPayment.tsx`
-- Tương tự: đổi `createOrder` → `createSubscription`, `captureOrder(data.orderID)` → `captureOrder(data.subscriptionID)`
-- `PayPalScriptProvider` thêm `vault: true, intent: 'subscription'`
+### Kế hoạch sửa
 
-### 3. `src/pages/Checkout.tsx`
-- Đổi `createOrder` callback và `onApprove` callback tương tự
-- `PayPalScriptProvider` thêm `vault: true, intent: 'subscription'`
-- File này chứa PayPal buttons nhưng step 2 đã tách sang route riêng — chỉ cần đổi nếu còn PayPal logic
+**1. `capture-paypal-order/index.ts`**: Khi subscription chưa ACTIVE, trả `{ success: true, pending: true }` thay vì `{ success: false }`, để frontend không coi là lỗi mà tiếp tục polling.
 
-### 4. `src/pages/AddonCheckout.tsx`
-- Không có PayPal buttons trực tiếp (step 2 đã tách) — không cần thay đổi
+**2. `CheckoutPayment.tsx` — Sửa `onApprove`**:
+- Nếu capture trả `success: true` (dù pending hay không) → set `paymentStatus = 'success'` → navigate
+- Nếu capture trả `pending: true` → không throw error, chỉ tiếp tục polling chờ webhook hoàn thành
+- Set `paymentStatus = 'success'` TRƯỚC khi navigate
 
-### 5. `src/components/FirstTimeOnboarding.tsx`
-- Đổi `createOrder` → `createSubscription`: đọc `res.data.subscriptionID`
-- Đổi `onApprove`: gửi `subscriptionID: data.subscriptionID` đến `capture-paypal-order`
-- `PayPalScriptProvider` thêm `vault: true, intent: 'subscription'`
+**3. `CheckoutPayment.tsx` — Background polling**: Cho phép polling tiếp tục cả khi `paymentStatus === 'failed'`, vì webhook vẫn có thể hoàn thành order.
 
----
-
-### Chi tiết kỹ thuật
-
-Mỗi file cần 3 thay đổi:
-
-1. **PayPalScriptProvider options**: thêm `vault: true, intent: 'subscription'`
-2. **createOrder → createSubscription**: callback trả về `subscriptionID` từ edge function
-3. **onApprove handler**: đọc `data.subscriptionID` thay vì `data.orderID`, gửi đến capture endpoint
-
-Background polling giữ nguyên (poll order status từ DB). UI không thay đổi.
+**4. Áp dụng tương tự cho**: `AddonCheckoutPayment.tsx`, `Checkout.tsx`, `FirstTimeOnboarding.tsx`
 
 ### Files cần sửa
 
 | File | Thay đổi |
 |------|----------|
-| `src/pages/CheckoutPayment.tsx` | 3 thay đổi: provider options, createSubscription, onApprove |
-| `src/pages/AddonCheckoutPayment.tsx` | 3 thay đổi tương tự |
-| `src/pages/Checkout.tsx` | Kiểm tra — nếu còn PayPal buttons thì đổi |
-| `src/components/FirstTimeOnboarding.tsx` | 3 thay đổi tương tự |
+| `supabase/functions/capture-paypal-order/index.ts` | Trả `success: true, pending: true` khi subscription chưa ACTIVE |
+| `src/pages/CheckoutPayment.tsx` | Fix onApprove + polling logic |
+| `src/pages/AddonCheckoutPayment.tsx` | Fix tương tự |
+| `src/pages/Checkout.tsx` | Fix tương tự |
+| `src/components/FirstTimeOnboarding.tsx` | Fix tương tự |
 
