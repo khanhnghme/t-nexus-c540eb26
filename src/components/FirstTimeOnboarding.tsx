@@ -112,8 +112,16 @@ export default function FirstTimeOnboarding({
     return base;
   }, [mustChangePassword, paymentStatus]);
 
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [currentStepIndex, setCurrentStepIndex] = useState(() => {
+    const saved = sessionStorage.getItem('onboarding_step_index');
+    return saved ? parseInt(saved, 10) : 0;
+  });
   const currentStep = allSteps[currentStepIndex] ?? 'language';
+
+  // Persist step index to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('onboarding_step_index', String(currentStepIndex));
+  }, [currentStepIndex]);
 
   // Ensure step index doesn't go out of bounds when steps change
   useEffect(() => {
@@ -374,6 +382,8 @@ export default function FirstTimeOnboarding({
       const { error } = await supabase.from('profiles').update(updateData).eq('id', userId);
       if (error) throw error;
 
+      sessionStorage.removeItem('onboarding_step_index');
+      sessionStorage.removeItem('checkout_from');
       setShowCelebration(true);
       fireCelebration();
 
