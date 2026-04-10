@@ -191,7 +191,7 @@ export default function GmailTab() {
         </div>
       </div>
 
-      {(isLoading || isChecking) ? (
+      {(isLoading || isChecking || isLoadingMore) ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
           <Loader2 className="w-8 h-8 animate-spin mb-3" />
         </div>
