@@ -661,7 +661,6 @@ export default function Checkout() {
                 setCreatingReservation(true);
                 try {
                   const newOrderId = await createReservation();
-                  sessionStorage.setItem('checkout_payment_return_path', window.location.pathname + window.location.search);
                   setShowConfirmDialog(false);
                   navigate('/checkout/payment/' + newOrderId);
                 } catch (e) {
