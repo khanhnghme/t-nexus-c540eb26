@@ -305,6 +305,31 @@ export default function AddonCheckoutPayment() {
         </DialogContent>
       </Dialog>
 
+      {/* Back Confirmation Dialog */}
+      <Dialog open={showBackDialog} onOpenChange={setShowBackDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{isVi ? 'Rời khỏi trang thanh toán?' : 'Leave payment page?'}</DialogTitle>
+            <DialogDescription>
+              {isVi
+                ? `Bạn còn đơn hàng chưa thanh toán. Có thể hoàn tất sau trong lịch sử. Còn lại: ${backDialogTimeLeft}.`
+                : `You have an unpaid order. You can complete it later in history. Remaining: ${backDialogTimeLeft}.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowBackDialog(false);
+              navigate('/addon-checkout', { replace: true });
+            }}>
+              {isVi ? 'Quay lại' : 'Go back'}
+            </Button>
+            <Button onClick={() => setShowBackDialog(false)}>
+              {isVi ? 'Tiếp tục thanh toán' : 'Continue payment'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Order Summary */}
       <Card>
         <CardContent className="pt-5 pb-5">
@@ -412,25 +437,27 @@ export default function AddonCheckoutPayment() {
               </Button>
             </div>
           ) : paypalClientId ? (
-            <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD', vault: true, intent: 'subscription' }}>
-              <PayPalButtons
-                style={{ layout: 'vertical', shape: 'rect', label: 'subscribe', height: 45 }}
-                createSubscription={async () => createSubscription()}
-                onApprove={async (data) => { await captureOrder(data.subscriptionID!); }}
-                onError={(err) => {
-                  const errStr = String(err);
-                  if (errStr.includes('popup close') || errStr.includes('Window is closed')) {
-                    console.warn('PayPal popup closed (may be normal after approval):', errStr);
-                    return;
-                  }
-                  console.error('PayPal error:', err);
-                  toast({ title: 'PayPal Error', description: 'Payment could not be completed.', variant: 'destructive' });
-                }}
-                onCancel={() => {
-                  toast({ title: isVi ? 'Đã hủy' : 'Cancelled', description: isVi ? 'Thanh toán đã bị hủy.' : 'Payment was cancelled.' });
-                }}
-              />
-            </PayPalScriptProvider>
+            <div className={(showBackDialog || showCancelDialog) ? 'invisible' : ''}>
+              <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD', vault: true, intent: 'subscription' }}>
+                <PayPalButtons
+                  style={{ layout: 'vertical', shape: 'rect', label: 'subscribe', height: 45 }}
+                  createSubscription={async () => createSubscription()}
+                  onApprove={async (data) => { await captureOrder(data.subscriptionID!); }}
+                  onError={(err) => {
+                    const errStr = String(err);
+                    if (errStr.includes('popup close') || errStr.includes('Window is closed')) {
+                      console.warn('PayPal popup closed (may be normal after approval):', errStr);
+                      return;
+                    }
+                    console.error('PayPal error:', err);
+                    toast({ title: 'PayPal Error', description: 'Payment could not be completed.', variant: 'destructive' });
+                  }}
+                  onCancel={() => {
+                    toast({ title: isVi ? 'Đã hủy' : 'Cancelled', description: isVi ? 'Thanh toán đã bị hủy.' : 'Payment was cancelled.' });
+                  }}
+                />
+              </PayPalScriptProvider>
+            </div>
           ) : (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
