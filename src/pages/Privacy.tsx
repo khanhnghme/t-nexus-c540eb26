@@ -141,7 +141,7 @@ export default function Privacy() {
           <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ display: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#37352f' }} className="privacy-mobile-toggle">
             {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
-          <button onClick={() => navigate(lp('/'))} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', color: '#37352f', fontSize: 14, fontWeight: 500, padding: 0 }}>
+          <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', color: '#37352f', fontSize: 14, fontWeight: 500, padding: 0 }}>
             <ArrowLeft size={16} />
             <span>{backLabel}</span>
           </button>
