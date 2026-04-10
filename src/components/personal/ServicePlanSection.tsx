@@ -17,7 +17,7 @@ export default function ServicePlanSection() {
   const planName = getPlanLabel(plan);
   const isPremium = plan !== 'plan_free';
   const features = featuresMap[plan] || featuresMap.plan_free;
-  const nextPlan = (profile as any)?.next_plan || null;
+  const nextPlan = profile?.next_plan || null;
 
   return (
     <Card className="overflow-hidden">

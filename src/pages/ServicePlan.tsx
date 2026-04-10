@@ -332,7 +332,7 @@ export default function ServicePlan() {
           </section>
 
           {/* Next plan card */}
-          {(profile as any)?.next_plan && (
+          {profile?.next_plan && (
             <section>
               <Card className="border-blue-500/20 bg-blue-500/5">
                 <CardContent className="p-5 flex items-center gap-4">
@@ -343,7 +343,7 @@ export default function ServicePlan() {
                     <h3 className="font-semibold text-sm">{t.nextPlanTitle}</h3>
                     <p className="text-sm text-muted-foreground mt-0.5">
                       {(t.nextPlanDesc || '')
-                        .replace('{plan}', getPlanLabel((profile as any).next_plan))
+                        .replace('{plan}', getPlanLabel(profile.next_plan))
                         .replace('{date}', profile?.plan_expires_at
                           ? new Date(profile.plan_expires_at).toLocaleDateString()
                           : '—')}
