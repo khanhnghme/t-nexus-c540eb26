@@ -601,7 +601,7 @@ export default function AdminSystem() {
                         <p className="text-[11px] text-muted-foreground mt-0.5">{t.notifLettersDesc}</p>
                       </div>
                     </div>
-                    <Button size="sm" className="gap-1.5" onClick={() => { setEditingNotif(null); setNotifTitle(''); setNotifContent(''); setNotifMode('post_login'); setNotifMinSeconds(15); setNotifExpiresAt(''); setNotifTargetUserIds([]); setUserSearchQuery(''); setNotifDialogOpen(true); }}>
+                    <Button size="sm" className="gap-1.5" onClick={() => { setEditingNotif(null); setNotifTitle(''); setNotifContent(''); setNotifMinSeconds(15); setNotifExpiresAt(''); setNotifTargetUserIds([]); setUserSearchQuery(''); setNotifDialogOpen(true); }}>
                       <Plus className="w-3.5 h-3.5" /> {t.createNotif}
                     </Button>
                   </div>
@@ -637,7 +637,7 @@ export default function AdminSystem() {
                             {notif.is_active ? 'Bật' : 'Tắt'}
                           </Badge>
                           <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => {
-                            setEditingNotif(notif); setNotifTitle(notif.title); setNotifContent(notif.content); setNotifMode(notif.display_mode); setNotifMinSeconds(notif.min_view_seconds);
+                            setEditingNotif(notif); setNotifTitle(notif.title); setNotifContent(notif.content); setNotifMinSeconds(notif.min_view_seconds);
                             setNotifExpiresAt(notif.expires_at ? new Date(notif.expires_at).toISOString().slice(0, 16) : '');
                             setNotifTargetUserIds(Array.isArray(notif.target_user_ids) ? notif.target_user_ids : []);
                             setUserSearchQuery('');
