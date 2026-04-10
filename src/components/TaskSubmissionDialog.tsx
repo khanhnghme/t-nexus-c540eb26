@@ -194,8 +194,9 @@ export default function TaskSubmissionDialog({
   // Calculate submission stats
   const validLinksCount = submissionLinks.filter(l => l.url?.trim()).length;
   const filesCount = uploadedFiles.length;
+  const driveFilesCount = driveFiles.length;
   const totalFileSize = uploadedFiles.reduce((sum, f) => sum + f.file_size, 0);
-  const hasContent = filesCount > 0 || validLinksCount > 0;
+  const hasContent = filesCount > 0 || validLinksCount > 0 || driveFilesCount > 0;
 
   // Fetch task score from database
   useEffect(() => {
