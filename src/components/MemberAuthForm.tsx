@@ -1091,9 +1091,11 @@ export function MemberAuthForm() {
                         <div className="flex items-center gap-2 truncate">
                           <GraduationCap className="w-4 h-4 shrink-0 text-muted-foreground" />
                           <span className="truncate">
-                            {regInstitution
-                              ? INSTITUTIONS.find(i => i.name === regInstitution)?.name || regInstitution
-                              : ta.institutionPlaceholder}
+                            {regInstitution === '__other__'
+                              ? (ta.institutionOther || 'Đơn vị đào tạo khác')
+                              : regInstitution
+                                ? INSTITUTIONS.find(i => i.name === regInstitution)?.name || regInstitution
+                                : ta.institutionPlaceholder}
                           </span>
                         </div>
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -1141,11 +1143,34 @@ export function MemberAuthForm() {
                                 );
                               });
                             })()}
+                            <CommandGroup heading={ta.institutionOtherGroup || 'Khác'}>
+                              <CommandItem
+                                value="__other__"
+                                onSelect={() => {
+                                  setRegInstitution('__other__');
+                                  setRegInstitutionOpen(false);
+                                  setRegInstitutionSearch('');
+                                }}
+                              >
+                                <Check className={cn("mr-2 h-4 w-4", regInstitution === '__other__' ? "opacity-100" : "opacity-0")} />
+                                <span className="truncate">{ta.institutionOther || 'Đơn vị đào tạo khác...'}</span>
+                              </CommandItem>
+                            </CommandGroup>
                           </ScrollArea>
                         </CommandList>
                       </Command>
                     </PopoverContent>
                   </Popover>
+                  {regInstitution === '__other__' && (
+                    <div className="mt-2">
+                      <Input
+                        placeholder={ta.institutionOtherPlaceholder || 'Nhập tên đơn vị đào tạo...'}
+                        value={regCustomInstitution}
+                        onChange={(e) => setRegCustomInstitution(e.target.value)}
+                        disabled={isLoading}
+                      />
+                    </div>
+                  )}
                   {errors.institution && <p className="text-sm text-destructive">{errors.institution}</p>}
                 </div>
                 <div className="space-y-2">
