@@ -171,16 +171,35 @@ export default function CheckoutPayment() {
     }
   }, [navigate, t, refreshProfile, orderCode, isVi]);
 
+  const handleBeforeUnload = useCallback((e: BeforeUnloadEvent) => {
+    if (paymentStatus === 'processing') {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  }, [paymentStatus]);
+
   useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (paymentStatus === 'processing') {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [paymentStatus]);
+  }, [handleBeforeUnload]);
+
+  // Compute remaining time for back dialog
+  useEffect(() => {
+    if (!showBackDialog || !order?.expires_at) return;
+    const update = () => {
+      const diff = new Date(order.expires_at).getTime() - Date.now();
+      if (diff <= 0) {
+        setBackDialogTimeLeft('00:00');
+        return;
+      }
+      const mm = Math.floor(diff / 60000);
+      const ss = Math.floor((diff % 60000) / 1000);
+      setBackDialogTimeLeft(`${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`);
+    };
+    update();
+    const iv = setInterval(update, 1000);
+    return () => clearInterval(iv);
+  }, [showBackDialog, order?.expires_at]);
 
   if (loading) {
     return (
