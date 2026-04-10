@@ -54,6 +54,15 @@ function MinimalCheckoutLayout() {
     }
   };
 
+  const handleConfirmBack = () => {
+    setShowBackConfirm(false);
+    if (location.pathname.startsWith('/addon-checkout/')) {
+      navigate('/addon-checkout', { replace: true });
+    } else {
+      navigate('/onboarding');
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Minimal header */}
@@ -87,10 +96,7 @@ function MinimalCheckoutLayout() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setShowBackConfirm(false);
-              navigate('/onboarding');
-            }}>
+            <Button variant="outline" onClick={handleConfirmBack}>
               {isVi ? 'Quay lại' : 'Go back'}
             </Button>
             <Button onClick={() => setShowBackConfirm(false)}>
