@@ -328,12 +328,7 @@ export default function CheckoutPayment() {
                 </button>
                 {paymentMethodOpen && (
                   <div className="px-3 pb-3 pt-1">
-                    {paymentStatus === 'processing' ? (
-                      <div className="flex items-center justify-center py-6 gap-2">
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        <span className="text-sm text-muted-foreground">{t?.processing || 'Processing payment...'}</span>
-                      </div>
-                    ) : orderExpired ? (
+                    {orderExpired ? (
                       <div className="flex flex-col items-center justify-center py-6 gap-2 text-center">
                         <AlertTriangle className="h-5 w-5 text-destructive" />
                         <p className="text-sm text-destructive font-medium">
