@@ -87,6 +87,9 @@ export default function Upgrade() {
   };
 
   const currentPlanKey: string = effectivePlan ? effectivePlan.replace(/^plan_/, '') : 'free';
+  const nextPlan = (profile as any)?.next_plan || null;
+  const nextPlanKey = nextPlan ? nextPlan.replace(/^plan_/, '') : null;
+  const scheduledCta = isVi ? 'Đã lên lịch' : 'Scheduled';
   const upgradeCta = isVi ? 'Nâng cấp' : 'Upgrade';
   const currentPlanCta = isVi ? 'Gói hiện tại' : 'Current plan';
   const downgradeCta = isVi ? 'Hạ cấp' : 'Downgrade';
@@ -97,6 +100,7 @@ export default function Upgrade() {
   const currentRank = PLAN_RANK[currentPlanKey] ?? 0;
 
   const getCta = (planKey: string) => {
+    if (planKey === nextPlanKey) return scheduledCta;
     if (planKey === currentPlanKey) return currentPlanCta;
     if (planKey === 'enterprise') return contactCta;
     const rank = PLAN_RANK[planKey] ?? 0;
@@ -104,6 +108,7 @@ export default function Upgrade() {
   };
 
   const getCtaStyle = (planKey: string): 'primary' | 'outline' => {
+    if (planKey === nextPlanKey) return 'outline';
     if (planKey === currentPlanKey) return 'outline';
     if (planKey === 'pro' && currentRank < 2) return 'primary';
     return 'outline';

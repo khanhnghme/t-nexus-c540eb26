@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
-import { ArrowLeft, ArrowRight, Tag, Plus, Minus, ShieldCheck, CreditCard, Loader2, Check, Package, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Tag, Plus, Minus, ShieldCheck, CreditCard, Loader2, Check, Package, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
