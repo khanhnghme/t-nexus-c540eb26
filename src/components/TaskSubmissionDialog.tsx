@@ -378,6 +378,19 @@ export default function TaskSubmissionDialog({
         });
       });
 
+      // Add drive files
+      driveFiles.forEach(df => {
+        allSubmissions.push({
+          title: df.title,
+          url: df.url,
+          drive_file_id: df.drive_file_id,
+          mime_type: df.mime_type,
+          icon_url: df.icon_url,
+          file_size: df.file_size,
+          type: 'drive'
+        });
+      });
+
       const submissionLinkJson = JSON.stringify(allSubmissions);
 
       // Update task
