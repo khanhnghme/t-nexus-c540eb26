@@ -185,6 +185,7 @@ export default function ConnectedServicesCard() {
       descriptionVi: 'Đồng bộ sự kiện giữa hệ thống và Google Calendar',
       isConnected: calendar.isConnected,
       isChecking: calendar.isChecking,
+      email: calendar.connectedEmail,
       onConnect: calendar.connect,
       onDisconnect: calendar.disconnect,
     },
