@@ -76,6 +76,8 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
       setExpanded('projects');
     } else if (path === '/personal-info' || path === '/account-settings') {
       setExpanded('account');
+    } else if (path === '/service-plan' || path === '/billing-history') {
+      setExpanded('billing');
     }
   }, [location.pathname]);
 
