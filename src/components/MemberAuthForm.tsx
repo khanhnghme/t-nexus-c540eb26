@@ -81,7 +81,7 @@ function PolicyCheckbox({
             href={localizedPolicyPath}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-warning hover:underline font-semibold"
+            className="text-foreground hover:underline font-semibold"
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
@@ -95,7 +95,7 @@ function PolicyCheckbox({
             href={localizedPrivacyPath}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-warning hover:underline font-semibold"
+            className="text-foreground hover:underline font-semibold"
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
