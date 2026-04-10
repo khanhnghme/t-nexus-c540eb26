@@ -231,16 +231,6 @@ export const vi: Translations = {
     footerPrivacyPolicy: 'Chính sách bảo mật',
     footerTermsOfService: 'Điều khoản sử dụng',
 
-    // Data & Privacy section
-    dataPrivacyTitle: 'Dữ liệu của bạn, quyền kiểm soát của bạn',
-    dataPrivacySubtitle: 'Chúng tôi cam kết bảo vệ quyền riêng tư và minh bạch trong cách sử dụng dữ liệu của bạn.',
-    dataPrivacyGoogleAuth: 'Đăng nhập Google chỉ dùng để xác thực danh tính — chúng tôi chỉ truy cập tên, email và ảnh đại diện.',
-    dataPrivacyEncrypted: 'Dữ liệu dự án được lưu trữ an toàn với mã hóa khi truyền và khi lưu.',
-    dataPrivacyNoSharing: 'Chúng tôi không bán hoặc chia sẻ dữ liệu cá nhân với bên thứ ba vì mục đích quảng cáo.',
-    dataPrivacyUserRights: 'Bạn có thể yêu cầu xóa tài khoản và toàn bộ dữ liệu liên quan bất kỳ lúc nào.',
-    dataPrivacyLearnMore: 'Đọc Chính sách bảo mật',
-    dataPrivacyTerms: 'Điều khoản sử dụng',
-
     // Intro modal
     introTitle: 'Giới thiệu T-Nexus',
     introPage: 'Trang',
