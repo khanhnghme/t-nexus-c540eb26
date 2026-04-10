@@ -142,6 +142,7 @@ export default function FirstTimeOnboarding({
   const [editInstitution, setEditInstitution] = useState(userInstitution || '');
   const [institutionOpen, setInstitutionOpen] = useState(false);
   const [institutionSearch, setInstitutionSearch] = useState('');
+  const [customInstitution, setCustomInstitution] = useState('');
   const needsStudentId = !userStudentId || userStudentId.trim() === '';
   const needsFullName = !userFullName || userFullName.trim() === '';
   const filteredInstitutions = useMemo(() => searchInstitutions(institutionSearch), [institutionSearch]);
