@@ -371,7 +371,7 @@ export default function FirstTimeOnboarding({
       if (avatarUrl) updateData.avatar_url = avatarUrl;
       if (needsStudentId) updateData.student_id = editStudentId.trim();
       updateData.full_name = editFullName.trim();
-      updateData.institution = editInstitution.trim();
+      updateData.institution = editInstitution === '__other__' ? customInstitution.trim() : editInstitution.trim();
 
       const { error } = await supabase.from('profiles').update(updateData).eq('id', userId);
       if (error) throw error;
