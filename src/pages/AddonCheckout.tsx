@@ -403,7 +403,19 @@ export default function AddonCheckout() {
               <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
                 {isVi ? 'Hủy' : 'Cancel'}
               </Button>
-              <Button disabled={!agreedToPolicy} onClick={() => { setShowConfirmDialog(false); setStep(2); }}>
+              <Button disabled={!agreedToPolicy || creatingReservation} onClick={async () => {
+                setCreatingReservation(true);
+                try {
+                  await createReservation();
+                  setShowConfirmDialog(false);
+                  setStep(2);
+                } catch (e) {
+                  toast({ title: 'Error', description: isVi ? 'Không thể tạo đơn hàng' : 'Failed to create order', variant: 'destructive' });
+                } finally {
+                  setCreatingReservation(false);
+                }
+              }}>
+                {creatingReservation && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
                 {isVi ? 'Tiếp tục thanh toán' : 'Continue to Payment'}
                 <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
