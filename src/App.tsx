@@ -170,6 +170,17 @@ function AppRoutes() {
         <Route path="/file-preview" element={<ForceLightMode><FilePreview /></ForceLightMode>} />
 
         {/* ═══ Protected routes with persistent DashboardLayout ═══ */}
+        {/* ═══ Standalone checkout routes (smart layout) ═══ */}
+        <Route element={<ProtectedRoute><CheckoutLayoutWrapper /></ProtectedRoute>}>
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/checkout/result" element={<PaymentResult />} />
+          <Route path="/checkout/summary/:orderCode" element={<CheckoutSummary />} />
+          <Route path="/checkout/payment/:orderCode" element={<CheckoutPayment />} />
+          <Route path="/addon-checkout" element={<AddonCheckout />} />
+          <Route path="/addon-checkout/:orderCode" element={<AddonCheckoutPayment />} />
+        </Route>
+
+        {/* ═══ Protected routes with persistent DashboardLayout ═══ */}
         <Route element={<ProtectedLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/notifications" element={<Notifications />} />
@@ -200,14 +211,8 @@ function AppRoutes() {
           <Route path="/workspace/settings" element={<WorkspaceSettings />} />
           <Route path="/workspace/members" element={<WorkspaceMembers />} />
           <Route path="/upgrade" element={<Upgrade />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/checkout/result" element={<PaymentResult />} />
-          <Route path="/checkout/summary/:orderCode" element={<CheckoutSummary />} />
-          <Route path="/checkout/payment/:orderCode" element={<CheckoutPayment />} />
           <Route path="/service-plan" element={<ServicePlan />} />
           <Route path="/billing-history" element={<BillingHistory />} />
-          <Route path="/addon-checkout" element={<AddonCheckout />} />
-          <Route path="/addon-checkout/:orderCode" element={<AddonCheckoutPayment />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />
