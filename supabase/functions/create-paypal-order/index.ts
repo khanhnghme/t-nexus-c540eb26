@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { plan, billing_cycle = "monthly", addons = [], coupon_code, order_type = "plan" } = body;
+    const { plan, billing_cycle = "monthly", addons = [], coupon_code, order_type = "plan", internal_order_id } = body;
 
     if (!["plan", "addon"].includes(order_type)) {
       return new Response(JSON.stringify({ error: "Invalid order_type" }), {
@@ -300,10 +300,10 @@ Deno.serve(async (req) => {
 
     const approveLink = subscription.links?.find((l: any) => l.rel === "approve")?.href;
 
-    // Save order to DB
+    // ═══ Save to DB: UPDATE existing reservation or INSERT new ═══
     const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
 
-    const { data: insertedOrder } = await serviceClient.from("orders").insert({
+    const orderData = {
       user_id: user.id,
       order_type,
       plan: order_type === "addon" ? effectivePlan : plan,
@@ -319,14 +319,58 @@ Deno.serve(async (req) => {
       status: "pending",
       welcome_discount: welcomeDiscountAmount,
       expires_at: expiresAt,
-    }).select("order_code").single();
+      // Reset post-processing flags — they should only be set true AFTER capture/webhook
+      addons_applied: false,
+      coupon_applied: false,
+    };
+
+    let orderCode: string | null = null;
+
+    if (internal_order_id) {
+      // UPDATE the existing reservation row instead of inserting a duplicate
+      const { data: existingOrder } = await serviceClient
+        .from("orders")
+        .select("id, order_code, status, user_id")
+        .eq("id", internal_order_id)
+        .eq("user_id", user.id)
+        .single();
+
+      if (existingOrder && existingOrder.status === "pending") {
+        // Update the reservation with PayPal subscription info and recalculated amounts
+        const { user_id: _uid, ...updateData } = orderData;
+        await serviceClient
+          .from("orders")
+          .update(updateData)
+          .eq("id", internal_order_id);
+
+        orderCode = existingOrder.order_code;
+        console.log(`[create-paypal-order] Updated existing order ${internal_order_id} with subscription ${subscription.id}`);
+      } else {
+        // Reservation not found or not pending — insert new (fallback)
+        console.warn(`[create-paypal-order] Reservation ${internal_order_id} not found/not pending, inserting new order`);
+        const { data: insertedOrder } = await serviceClient
+          .from("orders")
+          .insert(orderData)
+          .select("order_code")
+          .single();
+        orderCode = insertedOrder?.order_code || null;
+      }
+    } else {
+      // No reservation (e.g. onboarding flow) — insert new
+      const { data: insertedOrder } = await serviceClient
+        .from("orders")
+        .insert(orderData)
+        .select("order_code")
+        .single();
+      orderCode = insertedOrder?.order_code || null;
+    }
 
     return new Response(
       JSON.stringify({
         subscriptionID: subscription.id,
         approveUrl: approveLink,
         expiresAt,
-        orderCode: insertedOrder?.order_code,
+        orderCode,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
