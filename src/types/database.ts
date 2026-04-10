@@ -50,6 +50,8 @@ export interface Profile {
   user_plan: UserPlan;
   preferred_locale: string;
   downgraded_at: string | null;
+  next_plan: string | null;
+  next_billing_cycle: string | null;
 }
 
 export interface UserRole {

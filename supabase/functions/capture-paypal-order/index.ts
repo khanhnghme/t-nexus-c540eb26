@@ -7,6 +7,14 @@ const corsHeaders = {
 
 const PAYPAL_BASE = "https://api-m.sandbox.paypal.com";
 
+const PLAN_RANK: Record<string, number> = {
+  plan_free: 0,
+  plan_plus: 1,
+  plan_pro: 2,
+  plan_business: 3,
+  plan_custom: 4,
+};
+
 async function getPayPalAccessToken(): Promise<string> {
   const clientId = Deno.env.get("PAYPAL_CLIENT_ID")!;
   const clientSecret = Deno.env.get("PAYPAL_CLIENT_SECRET")!;

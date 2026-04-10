@@ -53,23 +53,41 @@ export function useAdminPlanActions() {
 
     switch (action) {
       case 'upgrade':
-      case 'downgrade':
         if (!newPlan) throw new Error('New plan required');
         profileUpdate.user_plan = newPlan;
         profileUpdate.plan = newPlan;
         profileUpdate.plan_status = 'active';
         profileUpdate.plan_source = 'admin_assigned';
         profileUpdate.plan_started_at = new Date().toISOString();
-        if (action === 'upgrade' && newPlan !== 'plan_free') {
-          // Set 30-day expiry by default
+        // Clear any scheduled downgrade
+        profileUpdate.next_plan = null;
+        profileUpdate.next_billing_cycle = null;
+        if (newPlan !== 'plan_free') {
           const expires = new Date();
           expires.setDate(expires.getDate() + 30);
           profileUpdate.plan_expires_at = expires.toISOString();
           logNewExpires = expires.toISOString();
         }
-        if (action === 'downgrade' && newPlan === 'plan_free') {
+        break;
+
+      case 'downgrade':
+        if (!newPlan) throw new Error('New plan required');
+        if (newPlan === 'plan_free') {
+          // Immediate downgrade to free
+          profileUpdate.user_plan = newPlan;
+          profileUpdate.plan = newPlan;
+          profileUpdate.plan_status = 'active';
+          profileUpdate.plan_source = 'admin_assigned';
           profileUpdate.plan_expires_at = null;
           profileUpdate.downgraded_at = new Date().toISOString();
+          profileUpdate.next_plan = null;
+          profileUpdate.next_billing_cycle = null;
+        } else {
+          // Schedule downgrade for next cycle
+          profileUpdate.next_plan = newPlan;
+          profileUpdate.next_billing_cycle = effectiveMode === 'immediate' ? 'monthly' : 'monthly';
+          logNewPlan = newPlan;
+          // Override action_type for logging
         }
         break;
 
