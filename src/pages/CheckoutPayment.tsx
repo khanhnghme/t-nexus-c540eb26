@@ -192,20 +192,11 @@ export default function CheckoutPayment() {
         )}
       </div>
 
-      {/* Order ID + Countdown */}
+      {/* Order ID */}
       <div className="flex items-center gap-2 text-sm">
         <span className="text-muted-foreground">{isVi ? 'Mã đơn hàng:' : 'Order ID:'}</span>
         <code className="font-mono text-xs bg-muted px-2 py-0.5 rounded">#{orderId?.slice(0, 8).toUpperCase()}</code>
       </div>
-      {order.expires_at && (
-        <OrderCountdown
-          expiresAt={order.expires_at}
-          orderId={orderId!}
-          isVi={isVi}
-          onExpired={() => setOrderExpired(true)}
-          onCreateNew={() => navigate('/checkout?plan=' + plan + '&cycle=' + cycle)}
-        />
-      )}
 
       {/* Cancel Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
@@ -417,7 +408,22 @@ export default function CheckoutPayment() {
                 </p>
               </div>
               <Separator />
-              <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground pt-2">
+              {/* Countdown integrated */}
+              {order.expires_at && !orderExpired && (
+                <OrderCountdown
+                  expiresAt={order.expires_at}
+                  orderId={orderId!}
+                  isVi={isVi}
+                  onExpired={() => setOrderExpired(true)}
+                  onCreateNew={() => navigate('/checkout?plan=' + plan + '&cycle=' + cycle)}
+                />
+              )}
+              {orderExpired && (
+                <div className="text-center text-sm text-destructive font-medium">
+                  {isVi ? 'Đơn hàng đã hết hạn' : 'Order has expired'}
+                </div>
+              )}
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground pt-1">
                 <ShieldCheck className="h-3.5 w-3.5" />
                 {t?.securePayment || 'Secure payment powered by PayPal'}
               </div>
