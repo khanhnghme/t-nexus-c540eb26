@@ -93,7 +93,7 @@ export default function AdminSystem() {
   const [notifTitle, setNotifTitle] = useState('');
   const [notifContent, setNotifContent] = useState('');
   const notifMode = 'post_login';
-  const [notifMinSeconds, setNotifMinSeconds] = useState(15);
+  
   const [notifExpiresAt, setNotifExpiresAt] = useState('');
   const [savingNotif, setSavingNotif] = useState(false);
   const [notifTargetUserIds, setNotifTargetUserIds] = useState<string[]>([]);
@@ -601,7 +601,7 @@ export default function AdminSystem() {
                         <p className="text-[11px] text-muted-foreground mt-0.5">{t.notifLettersDesc}</p>
                       </div>
                     </div>
-                    <Button size="sm" className="gap-1.5" onClick={() => { setEditingNotif(null); setNotifTitle(''); setNotifContent(''); setNotifMinSeconds(15); setNotifExpiresAt(''); setNotifTargetUserIds([]); setUserSearchQuery(''); setNotifDialogOpen(true); }}>
+                    <Button size="sm" className="gap-1.5" onClick={() => { setEditingNotif(null); setNotifTitle(''); setNotifContent(''); setNotifExpiresAt(''); setNotifTargetUserIds([]); setUserSearchQuery(''); setNotifDialogOpen(true); }}>
                       <Plus className="w-3.5 h-3.5" /> {t.createNotif}
                     </Button>
                   </div>
@@ -621,7 +621,7 @@ export default function AdminSystem() {
                             <p className="text-sm font-semibold truncate">{notif.title}</p>
                             <div className="flex items-center flex-wrap gap-2 text-[11px] text-muted-foreground mt-0.5">
                               <span>🔒 Sau ĐN</span>
-                              <span className="inline-flex items-center gap-0.5"><Clock className="w-3 h-3" />{notif.min_view_seconds}s</span>
+                              
                               {notif.expires_at && <span>⏳ {format(new Date(notif.expires_at), "dd/MM/yy", { locale: locale === "vi" ? viLocale : undefined })}</span>}
                               <span>📅 {format(new Date(notif.created_at), "dd/MM/yy HH:mm", { locale: locale === "vi" ? viLocale : undefined })}</span>
                               {Array.isArray(notif.target_user_ids) && notif.target_user_ids.length > 0 && (
@@ -637,7 +637,7 @@ export default function AdminSystem() {
                             {notif.is_active ? 'Bật' : 'Tắt'}
                           </Badge>
                           <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => {
-                            setEditingNotif(notif); setNotifTitle(notif.title); setNotifContent(notif.content); setNotifMinSeconds(notif.min_view_seconds);
+                            setEditingNotif(notif); setNotifTitle(notif.title); setNotifContent(notif.content);
                             setNotifExpiresAt(notif.expires_at ? new Date(notif.expires_at).toISOString().slice(0, 16) : '');
                             setNotifTargetUserIds(Array.isArray(notif.target_user_ids) ? notif.target_user_ids : []);
                             setUserSearchQuery('');
@@ -994,10 +994,6 @@ export default function AdminSystem() {
                 <Label className="text-xs">Chế độ hiển thị</Label>
                 <div className="h-8 flex items-center text-xs text-muted-foreground px-3 border rounded-md bg-muted/30">Sau đăng nhập</div>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Thời gian xem tối thiểu (giây)</Label>
-                <Input type="number" min={5} max={120} value={notifMinSeconds} onChange={(e) => setNotifMinSeconds(Number(e.target.value))} className="h-8 text-xs" />
-              </div>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Hết hạn (để trống = vĩnh viễn)</Label>
@@ -1084,7 +1080,7 @@ export default function AdminSystem() {
             <Button disabled={savingNotif || !notifTitle || !notifContent} onClick={async () => {
               setSavingNotif(true);
               try {
-                const payload: any = { title: notifTitle, content: notifContent, display_mode: notifMode, min_view_seconds: notifMinSeconds, expires_at: notifExpiresAt || null, target_user_ids: notifTargetUserIds.length > 0 ? notifTargetUserIds : null };
+                const payload: any = { title: notifTitle, content: notifContent, display_mode: notifMode, expires_at: notifExpiresAt || null, target_user_ids: notifTargetUserIds.length > 0 ? notifTargetUserIds : null };
                 if (editingNotif) {
                   await supabase.from('system_notifications').update(payload).eq('id', editingNotif.id);
                 } else {
