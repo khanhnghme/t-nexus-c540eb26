@@ -131,15 +131,15 @@ export default function GmailTab() {
 
   const getPageNumbers = () => {
     const pages: (number | 'ellipsis')[] = [];
-    if (totalPages <= 7) {
+    if (totalPages <= 9) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
       pages.push(1);
-      if (currentPage > 3) pages.push('ellipsis');
-      const start = Math.max(2, currentPage - 1);
-      const end = Math.min(totalPages - 1, currentPage + 1);
+      if (currentPage > 4) pages.push('ellipsis');
+      const start = Math.max(2, currentPage - 2);
+      const end = Math.min(totalPages - 1, currentPage + 2);
       for (let i = start; i <= end; i++) pages.push(i);
-      if (currentPage < totalPages - 2) pages.push('ellipsis');
+      if (currentPage < totalPages - 3) pages.push('ellipsis');
       pages.push(totalPages);
     }
     return pages;
