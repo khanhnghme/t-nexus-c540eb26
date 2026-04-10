@@ -221,8 +221,7 @@ export default function Checkout() {
     return data.order_code;
   }, [user, plan, cycle, addons, originalBaseAmount, addonFinal, discountAmount, welcomeDiscount, addonSaving, totalAmount, couponDiscount]);
 
-  const createOrder = useCallback(async () => {
-    // Use existing reservation if available
+  const createSubscription = useCallback(async () => {
     const internalOrderId = orderReservation?.orderId;
 
     const addonsList = Object.entries(addons)
@@ -239,18 +238,18 @@ export default function Checkout() {
       },
     });
 
-    if (res.error || !res.data?.orderID) {
-      throw new Error(res.error?.message || 'Failed to create order');
+    if (res.error || !res.data?.subscriptionID) {
+      throw new Error(res.error?.message || 'Failed to create subscription');
     }
 
-    return res.data.orderID;
+    return res.data.subscriptionID;
   }, [plan, cycle, addons, couponDiscount, orderReservation]);
 
-  const onApprove = useCallback(async (data: { orderID: string }) => {
+  const onApprove = useCallback(async (data: { subscriptionID?: string; orderID?: string }) => {
     setPaymentStatus('processing');
     try {
       const res = await supabase.functions.invoke('capture-paypal-order', {
-        body: { orderID: data.orderID },
+        body: { subscriptionID: data.subscriptionID },
       });
 
       if (res.error || !res.data?.success) {
