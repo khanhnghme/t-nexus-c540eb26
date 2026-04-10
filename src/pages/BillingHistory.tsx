@@ -121,10 +121,23 @@ export default function BillingHistory() {
   const canContinuePayment = (r: BillingRecord) =>
     r.status === 'pending' && r.expires_at && new Date(r.expires_at).getTime() > Date.now();
 
-  const formatDateTime = (d: string | null) => {
-    if (!d) return '—';
+  const formatDateTimeParts = (d: string | null) => {
+    if (!d) return null;
     const date = new Date(d);
-    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
+    const datePart = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+    const timePart = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
+    return { datePart, timePart };
+  };
+
+  const DateTimeCell = ({ value }: { value: string | null }) => {
+    const parts = formatDateTimeParts(value);
+    if (!parts) return <span>—</span>;
+    return (
+      <div className="leading-tight">
+        <div>{parts.datePart}</div>
+        <div className="text-muted-foreground text-[11px]">{parts.timePart}</div>
+      </div>
+    );
   };
 
   const getStatusBadge = (status: string) => {
