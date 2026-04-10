@@ -143,6 +143,7 @@ export default function SubmissionButton({
   if (items.length === 1) {
     const item = items[0];
     const isFile = item.type === 'file';
+    const isDrive = item.type === 'drive';
     
     return (
       <Button
@@ -153,7 +154,12 @@ export default function SubmissionButton({
         }`}
         onClick={(e) => handleOpenItem(item, e)}
       >
-        {isFile ? (
+        {isDrive ? (
+          <>
+            <img src="https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png" alt="" className="w-3 h-3" />
+            {variant === 'compact' ? 'Drive' : 'Xem Drive'}
+          </>
+        ) : isFile ? (
           <>
             <Eye className="w-3 h-3" />
             {variant === 'compact' ? 'File' : 'Xem file'}
