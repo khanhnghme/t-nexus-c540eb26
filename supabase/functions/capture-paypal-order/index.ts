@@ -177,9 +177,10 @@ Deno.serve(async (req) => {
     if (subscription.status !== "ACTIVE") {
       console.log(`[verify] Subscription ${subscriptionID} status: ${subscription.status}`);
       return new Response(JSON.stringify({ 
-        success: false, 
+        success: true, 
+        pending: true,
         status: subscription.status,
-        message: "Subscription not yet active" 
+        message: "Subscription not yet active — polling will complete" 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
