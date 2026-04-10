@@ -323,7 +323,7 @@ export default function ServicePlan() {
                   const autoRenew = profile?.auto_renew;
                   const nextPlan = profile?.next_plan;
                   const planSource = profile?.plan_source || '—';
-                  const isDowngrade = nextPlan && ['plan_free', 'plan_plus'].includes(nextPlan) && plan !== 'plan_free';
+                  const isDowngrade = nextPlan && ['plan_free', 'plan_plus'].includes(nextPlan as string);
 
                   return (
                     <div className="mt-5">
