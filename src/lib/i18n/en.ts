@@ -226,6 +226,8 @@ export const en = {
     footerContactTitle: 'Contact',
     footerComingSoon: 'Coming soon',
     footerDesignedFor: 'Designed for coursework, research and capstone project workflows.',
+    footerPrivacyPolicy: 'Privacy Policy',
+    footerTermsOfService: 'Terms of Service',
 
     // Intro modal
     introTitle: 'Introducing T-Nexus',

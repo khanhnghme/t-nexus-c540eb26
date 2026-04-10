@@ -228,6 +228,8 @@ export const vi: Translations = {
     footerContactTitle: 'Liên hệ',
     footerComingSoon: 'Sắp ra mắt',
     footerDesignedFor: 'Thiết kế cho quy trình đồ án, nghiên cứu và khóa luận tốt nghiệp.',
+    footerPrivacyPolicy: 'Chính sách bảo mật',
+    footerTermsOfService: 'Điều khoản sử dụng',
 
     // Intro modal
     introTitle: 'Giới thiệu T-Nexus',
