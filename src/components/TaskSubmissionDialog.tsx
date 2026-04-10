@@ -82,6 +82,8 @@ import UserAvatar from './UserAvatar';
 
 import { CountdownTimer } from './CountdownTimer';
 import ResourceLinkRenderer from './ResourceLinkRenderer';
+import { useGoogleDriveConnect } from '@/hooks/useGoogleDriveConnect';
+import { useGoogleDrivePicker, type DriveFile } from '@/hooks/useGoogleDrivePicker';
 
 interface TaskAssignee {
   user_id: string;
@@ -133,12 +135,20 @@ export default function TaskSubmissionDialog({
   const [status, setStatus] = useState<TaskStatus | ''>('');
   const [submissionLinks, setSubmissionLinks] = useState<SubmissionLink[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [driveFiles, setDriveFiles] = useState<DriveFile[]>([]);
   const [note, setNote] = useState('');
   const [taskAssignees, setTaskAssignees] = useState<TaskAssignee[]>([]);
   // showLateWarning removed - late warning now integrated into post-submit step
   const [taskScore, setTaskScore] = useState<TaskScore | null>(null);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [showPostSubmitStep, setShowPostSubmitStep] = useState(false);
+
+  // Google Drive integration
+  const driveConnect = useGoogleDriveConnect();
+  const drivePicker = useGoogleDrivePicker({
+    getPickerToken: driveConnect.getPickerToken,
+    onFilesPicked: (files) => setDriveFiles(prev => [...prev, ...files]),
+  });
 
   // Get max file size and submission method from task
   const taskWithSize = task as (Task & { max_file_size?: number }) | null;
@@ -184,8 +194,9 @@ export default function TaskSubmissionDialog({
   // Calculate submission stats
   const validLinksCount = submissionLinks.filter(l => l.url?.trim()).length;
   const filesCount = uploadedFiles.length;
+  const driveFilesCount = driveFiles.length;
   const totalFileSize = uploadedFiles.reduce((sum, f) => sum + f.file_size, 0);
-  const hasContent = filesCount > 0 || validLinksCount > 0;
+  const hasContent = filesCount > 0 || validLinksCount > 0 || driveFilesCount > 0;
 
   // Fetch task score from database
   useEffect(() => {
@@ -212,6 +223,7 @@ export default function TaskSubmissionDialog({
       setStatus('');
       setNote('');
       setUploadedFiles([]);
+      setDriveFiles([]);
       setSubmissionLinks([]);
       setActiveTab(initialTab || 'requirements');
       setIsNotesOpen(false);
@@ -222,9 +234,20 @@ export default function TaskSubmissionDialog({
         if (Array.isArray(parsed)) {
           const links: SubmissionLink[] = [];
           const files: UploadedFile[] = [];
+          const drives: DriveFile[] = [];
           
           parsed.forEach((item: any) => {
-            if (item.file_path) {
+            if (item.type === 'drive') {
+              drives.push({
+                drive_file_id: item.drive_file_id,
+                title: item.title || 'File',
+                url: item.url,
+                mime_type: item.mime_type || '',
+                icon_url: item.icon_url || '',
+                file_size: item.file_size || 0,
+                type: 'drive',
+              });
+            } else if (item.file_path) {
               files.push({
                 file_path: item.file_path,
                 file_name: item.file_name || 'file',
@@ -241,6 +264,7 @@ export default function TaskSubmissionDialog({
           
           setSubmissionLinks(links);
           setUploadedFiles(files);
+          setDriveFiles(drives);
         } else {
           setSubmissionLinks([{ title: 'Bài nộp', url: task.submission_link }]);
         }
@@ -354,6 +378,19 @@ export default function TaskSubmissionDialog({
         });
       });
 
+      // Add drive files
+      driveFiles.forEach(df => {
+        allSubmissions.push({
+          title: df.title,
+          url: df.url,
+          drive_file_id: df.drive_file_id,
+          mime_type: df.mime_type,
+          icon_url: df.icon_url,
+          file_size: df.file_size,
+          type: 'drive'
+        });
+      });
+
       const submissionLinkJson = JSON.stringify(allSubmissions);
 
       // Update task
@@ -369,11 +406,12 @@ export default function TaskSubmissionDialog({
 
       // Determine submission type for history: 'file', 'link', or 'mixed'
       const hasFiles = uploadedFiles.length > 0;
+      const hasDriveFiles = driveFiles.length > 0;
       const hasLinks = validLinks.length > 0;
       let historyType: 'file' | 'link' | 'mixed' = 'link';
-      if (hasFiles && hasLinks) {
+      if ((hasFiles || hasDriveFiles) && hasLinks) {
         historyType = 'mixed';
-      } else if (hasFiles) {
+      } else if (hasFiles || hasDriveFiles) {
         historyType = 'file';
       } else {
         historyType = 'link';
@@ -585,7 +623,7 @@ export default function TaskSubmissionDialog({
                   <span className="font-bold">Nộp bài</span>
                   {hasContent && (
                     <Badge variant="secondary" className="h-5 px-1.5 text-[10px] bg-background/80">
-                      {filesCount + validLinksCount}
+                      {filesCount + validLinksCount + driveFilesCount}
                     </Badge>
                   )}
                 </TabsTrigger>
@@ -762,7 +800,7 @@ export default function TaskSubmissionDialog({
                           <span className="text-sm font-bold text-foreground">Bài đã nộp</span>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-2 mb-2">
+                        <div className="grid grid-cols-3 gap-2 mb-2">
                           <div className="text-center p-2 rounded-lg bg-background/60">
                             <HardDrive className="w-3.5 h-3.5 mx-auto mb-0.5 text-emerald-500" />
                             <p className="text-lg font-bold text-foreground">{filesCount}</p>
@@ -772,6 +810,11 @@ export default function TaskSubmissionDialog({
                             <Globe className="w-3.5 h-3.5 mx-auto mb-0.5 text-blue-500" />
                             <p className="text-lg font-bold text-foreground">{validLinksCount}</p>
                             <p className="text-[9px] text-muted-foreground">Link</p>
+                          </div>
+                          <div className="text-center p-2 rounded-lg bg-background/60">
+                            <img src="https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png" alt="Drive" className="w-3.5 h-3.5 mx-auto mb-0.5" />
+                            <p className="text-lg font-bold text-foreground">{driveFilesCount}</p>
+                            <p className="text-[9px] text-muted-foreground">Drive</p>
                           </div>
                         </div>
 
@@ -913,7 +956,7 @@ export default function TaskSubmissionDialog({
                     )}
 
                     {/* Layout - File Upload & Links - fill remaining height */}
-                    <div className={`grid gap-6 flex-1 min-h-0 ${allowFileUpload && allowLinkSubmission ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+                    <div className={`grid gap-4 flex-1 min-h-0 ${allowFileUpload && allowLinkSubmission ? 'grid-cols-1 lg:grid-cols-3' : allowFileUpload || allowLinkSubmission ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
                       {/* CÁCH 1 - File Upload */}
                       {allowFileUpload && (
                         <div className="rounded-xl border-2 border-emerald-500/30 overflow-hidden flex flex-col shadow-sm min-h-0">
@@ -1103,6 +1146,110 @@ export default function TaskSubmissionDialog({
                           </div>
                         </div>
                       )}
+
+                      {/* CÁCH 3 - Google Drive */}
+                      {allowFileUpload && (
+                        <div className="rounded-xl border-2 border-violet-500/30 overflow-hidden flex flex-col shadow-sm min-h-0">
+                          {/* Header */}
+                          <div className="flex items-center gap-3 px-4 py-3.5 bg-gradient-to-r from-violet-500/15 via-violet-500/8 to-transparent border-b border-violet-500/20">
+                            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-violet-600 text-white font-extrabold text-lg shadow-lg shadow-violet-500/30">
+                              3
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="text-lg font-extrabold font-heading tracking-wide bg-gradient-to-r from-violet-600 to-violet-500 dark:from-violet-400 dark:to-violet-300 bg-clip-text text-transparent leading-tight">
+                                CÁCH 3
+                              </h3>
+                              <p className="text-sm font-semibold text-violet-700/70 dark:text-violet-300/70 mt-0.5">Chọn từ Google Drive</p>
+                            </div>
+                            {driveConnect.isConnected && (
+                              <Badge className="text-[9px] px-1.5 bg-green-500/15 text-green-600 dark:text-green-400 border-green-500/30">
+                                Đã liên kết
+                              </Badge>
+                            )}
+                          </div>
+
+                          {/* Content */}
+                          <div className="p-3 flex-1 min-h-0 overflow-y-auto bg-gradient-to-b from-violet-500/[0.03] to-transparent">
+                            {!driveConnect.isConnected ? (
+                              <div className="h-full min-h-[180px] flex flex-col items-center justify-center gap-3">
+                                <div className="relative">
+                                  <img src="https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png" alt="Google Drive" className="w-12 h-12 opacity-40" />
+                                </div>
+                                <p className="text-sm text-muted-foreground text-center">Kết nối Google Drive để chọn file</p>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={driveConnect.connect}
+                                  className="gap-2 border-violet-500/30 text-violet-600 hover:bg-violet-500/10"
+                                >
+                                  <img src="https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png" alt="" className="w-4 h-4" />
+                                  Liên kết Google Drive
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                {driveFiles.length > 0 && (
+                                  <div className="space-y-1.5">
+                                    {driveFiles.map((df, idx) => (
+                                      <div key={idx} className="flex items-center gap-2 p-2 rounded-lg border border-violet-500/20 bg-violet-500/5 group hover:border-violet-500/40 transition-colors">
+                                        {df.icon_url ? (
+                                          <img src={df.icon_url} alt="" className="w-5 h-5 shrink-0" />
+                                        ) : (
+                                          <FileText className="w-4 h-4 text-violet-500 shrink-0" />
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-xs font-medium truncate" title={df.title}>{df.title}</p>
+                                          {df.file_size > 0 && (
+                                            <p className="text-[10px] text-muted-foreground">{formatFileSize(df.file_size)}</p>
+                                          )}
+                                        </div>
+                                        <Badge className="text-[8px] px-1 py-0 bg-violet-500/10 text-violet-500 border-violet-500/20 shrink-0">Drive</Badge>
+                                        <div className="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                          <a href={df.url} target="_blank" rel="noopener noreferrer">
+                                            <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-violet-500 hover:text-violet-600 hover:bg-violet-500/10">
+                                              <ExternalLink className="w-3 h-3" />
+                                            </Button>
+                                          </a>
+                                          {canSubmit && (
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="icon"
+                                              onClick={() => setDriveFiles(prev => prev.filter((_, i) => i !== idx))}
+                                              className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                            >
+                                              <Trash2 className="w-3 h-3" />
+                                            </Button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                {canSubmit && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={drivePicker.openPicker}
+                                    disabled={drivePicker.isLoading}
+                                    className="w-full h-9 gap-2 border-violet-500/30 text-violet-600 hover:bg-violet-500/10 border-dashed"
+                                  >
+                                    {drivePicker.isLoading ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <Plus className="w-4 h-4" />
+                                    )}
+                                    Chọn file từ Drive
+                                  </Button>
+                                )}
+                                {driveFiles.length === 0 && !canSubmit && (
+                                  <p className="text-xs text-muted-foreground text-center py-4">Chưa có file từ Drive</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Removed: Status & Note now shown in post-submit step */}
@@ -1264,6 +1411,20 @@ export default function TaskSubmissionDialog({
                           <div key={i} className="text-xs text-muted-foreground pl-5 flex items-center gap-1.5 min-w-0 overflow-hidden">
                             <LinkIcon className="w-3 h-3 shrink-0 opacity-60" />
                             <span className="truncate min-w-0 flex-1" title={l.title || l.url}>{l.title || l.url}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {driveFilesCount > 0 && (
+                      <div className="space-y-1">
+                        <span className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                          <img src="https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png" alt="" className="w-3.5 h-3.5" />
+                          {driveFilesCount} file Drive
+                        </span>
+                        {driveFiles.map((df, i) => (
+                          <div key={i} className="text-xs text-muted-foreground pl-5 flex items-center gap-1.5 min-w-0 overflow-hidden">
+                            {df.icon_url ? <img src={df.icon_url} alt="" className="w-3 h-3 shrink-0" /> : <FileText className="w-3 h-3 shrink-0 opacity-60" />}
+                            <span className="truncate min-w-0 flex-1" title={df.title}>{df.title}</span>
                           </div>
                         ))}
                       </div>
