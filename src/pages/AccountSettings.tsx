@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   CalendarDays, MessageSquare, BookOpen, Lightbulb,
   Eye, EyeOff, Navigation,
-  Globe, Check, Loader2, Settings,
+  Globe, Check, Loader2, Link2,
 } from 'lucide-react';
 import ConnectedServicesCard from '@/components/settings/ConnectedServicesCard';
 
@@ -21,7 +21,7 @@ const TOGGLEABLE_PAGES = [
   { href: '/feedback', name: 'Feedback', nameVi: 'Góp ý', icon: Lightbulb, description: 'Send feedback', descVi: 'Gửi ý kiến phản hồi' },
 ];
 
-function NavCustomizationCard({ userId, locale }: { userId?: string; locale: Locale }) {
+function NavCustomizationSection({ userId, locale }: { userId?: string; locale: Locale }) {
   const { profile, refreshProfile } = useAuth();
   const [hiddenPages, setHiddenPages] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -47,60 +47,40 @@ function NavCustomizationCard({ userId, locale }: { userId?: string; locale: Loc
     window.dispatchEvent(new Event('nav-visibility-changed'));
   };
 
-  const renderPageItem = (page: typeof TOGGLEABLE_PAGES[0]) => {
-    const PageIcon = page.icon;
-    const isVisible = !hiddenPages.includes(page.href);
-    return (
-      <div
-        key={page.href}
-        className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-          isVisible
-            ? 'border-primary/20 bg-primary/5'
-            : 'border-border bg-muted/30 opacity-60'
-        }`}
-      >
-        <div className={`p-2 rounded-lg ${isVisible ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-          <PageIcon className="w-4 h-4" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium">{isVi ? page.nameVi : page.name}</p>
-          <p className="text-xs text-muted-foreground truncate">{isVi ? page.descVi : page.description}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {isVisible ? <Eye className="w-3.5 h-3.5 text-primary" /> : <EyeOff className="w-3.5 h-3.5 text-muted-foreground" />}
-          <Switch checked={isVisible} onCheckedChange={() => togglePage(page.href)} />
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Navigation className="w-4 h-4 text-primary" />
-          {isVi ? 'Tùy chỉnh thanh điều hướng' : 'Navigation Customization'}
-        </CardTitle>
-        <CardDescription>{isVi ? 'Ẩn hoặc hiện các trang trên thanh điều hướng' : 'Show or hide pages in the navigation bar'}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          {TOGGLEABLE_PAGES.map(renderPageItem)}
-        </div>
-        {hiddenPages.length > 0 && (
-          <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5">
-            <EyeOff className="w-3 h-3" />
-            {isVi
-              ? `Đang ẩn ${hiddenPages.length} trang — truy cập bằng URL trực tiếp`
-              : `${hiddenPages.length} page(s) hidden — access via direct URL`}
-          </p>
-        )}
-      </CardContent>
-    </Card>
+    <div className="space-y-3">
+      {TOGGLEABLE_PAGES.map((page) => {
+        const PageIcon = page.icon;
+        const isVisible = !hiddenPages.includes(page.href);
+        return (
+          <div
+            key={page.href}
+            className="flex items-center gap-3 py-2"
+          >
+            <div className={`p-1.5 rounded-md ${isVisible ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+              <PageIcon className="w-4 h-4" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium leading-none">{isVi ? page.nameVi : page.name}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{isVi ? page.descVi : page.description}</p>
+            </div>
+            <Switch checked={isVisible} onCheckedChange={() => togglePage(page.href)} />
+          </div>
+        );
+      })}
+      {hiddenPages.length > 0 && (
+        <p className="text-xs text-muted-foreground flex items-center gap-1.5 pt-1">
+          <EyeOff className="w-3 h-3" />
+          {isVi
+            ? `Đang ẩn ${hiddenPages.length} trang`
+            : `${hiddenPages.length} page(s) hidden`}
+        </p>
+      )}
+    </div>
   );
 }
 
-function LanguageCard({ locale, setLocale: setLocaleFn }: { locale: Locale; setLocale: (l: Locale) => Promise<void> }) {
+function LanguageSection({ locale, setLocale: setLocaleFn }: { locale: Locale; setLocale: (l: Locale) => Promise<void> }) {
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
   const isVi = locale === 'vi';
@@ -124,39 +104,28 @@ function LanguageCard({ locale, setLocale: setLocaleFn }: { locale: Locale; setL
   ];
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Globe className="w-4 h-4 text-primary" />
-          {isVi ? 'Ngôn ngữ' : 'Language'}
-        </CardTitle>
-        <CardDescription>
-          {isVi ? 'Chọn ngôn ngữ hiển thị cho tài khoản' : 'Choose display language for your account'}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {options.map((opt) => {
-          const isActive = locale === opt.value;
-          return (
-            <button
-              key={opt.value}
-              onClick={() => handleChange(opt.value)}
-              disabled={saving}
-              className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
-                isActive
-                  ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                  : 'border-border hover:border-primary/30 hover:bg-muted/50'
-              }`}
-            >
-              <span className="text-2xl">{opt.flag}</span>
-              <span className="flex-1 text-sm font-medium">{opt.label}</span>
-              {isActive && <Check className="w-4 h-4 text-primary" />}
-              {saving && !isActive && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
-            </button>
-          );
-        })}
-      </CardContent>
-    </Card>
+    <div className="flex gap-2">
+      {options.map((opt) => {
+        const isActive = locale === opt.value;
+        return (
+          <button
+            key={opt.value}
+            onClick={() => handleChange(opt.value)}
+            disabled={saving}
+            className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border transition-all text-sm font-medium ${
+              isActive
+                ? 'border-primary bg-primary/5 text-foreground'
+                : 'border-border text-muted-foreground hover:border-primary/30 hover:bg-muted/30'
+            }`}
+          >
+            <span className="text-lg">{opt.flag}</span>
+            {opt.label}
+            {isActive && <Check className="w-3.5 h-3.5 text-primary" />}
+            {saving && !isActive && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -166,26 +135,48 @@ export default function AccountSettings() {
   const isVi = locale === 'vi';
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 px-1">
+    <div className="max-w-3xl mx-auto py-2 px-1 space-y-6">
       {/* Page header */}
       <div>
-        <h1 className="text-2xl font-heading font-bold tracking-tight flex items-center gap-2">
-          <Settings className="w-6 h-6 text-primary" />
+        <h1 className="text-xl font-heading font-bold tracking-tight">
           {isVi ? 'Cài đặt' : 'Settings'}
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {isVi ? 'Tùy chỉnh giao diện, ngôn ngữ và dịch vụ liên kết' : 'Customize interface, language & connected services'}
+        <p className="text-sm text-muted-foreground mt-0.5">
+          {isVi ? 'Tùy chỉnh giao diện và dịch vụ liên kết' : 'Customize interface & connected services'}
         </p>
       </div>
 
-      {/* Connected Services — full width */}
-      <ConnectedServicesCard />
+      {/* All settings in one card */}
+      <Card>
+        <CardContent className="p-0 divide-y divide-border">
+          {/* Language */}
+          <div className="p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Globe className="w-4 h-4 text-muted-foreground" />
+              <h3 className="text-sm font-medium">{isVi ? 'Ngôn ngữ' : 'Language'}</h3>
+            </div>
+            <LanguageSection locale={locale} setLocale={setLocale} />
+          </div>
 
-      {/* Preferences row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <LanguageCard locale={locale} setLocale={setLocale} />
-        <NavCustomizationCard userId={user?.id} locale={locale} />
-      </div>
+          {/* Connected Services */}
+          <div className="p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Link2 className="w-4 h-4 text-muted-foreground" />
+              <h3 className="text-sm font-medium">{isVi ? 'Dịch vụ liên kết' : 'Connected Services'}</h3>
+            </div>
+            <ConnectedServicesCard />
+          </div>
+
+          {/* Navigation */}
+          <div className="p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Navigation className="w-4 h-4 text-muted-foreground" />
+              <h3 className="text-sm font-medium">{isVi ? 'Thanh điều hướng' : 'Navigation'}</h3>
+            </div>
+            <NavCustomizationSection userId={user?.id} locale={locale} />
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
