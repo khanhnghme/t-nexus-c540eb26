@@ -392,6 +392,11 @@ export default function AddonCheckoutPayment() {
                 createSubscription={async () => createSubscription()}
                 onApprove={async (data) => { await captureOrder(data.subscriptionID!); }}
                 onError={(err) => {
+                  const errStr = String(err);
+                  if (errStr.includes('popup close') || errStr.includes('Window is closed')) {
+                    console.warn('PayPal popup closed (may be normal after approval):', errStr);
+                    return;
+                  }
                   console.error('PayPal error:', err);
                   toast({ title: 'PayPal Error', description: 'Payment could not be completed.', variant: 'destructive' });
                 }}

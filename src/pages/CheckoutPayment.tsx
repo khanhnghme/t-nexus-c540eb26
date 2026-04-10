@@ -439,6 +439,11 @@ export default function CheckoutPayment() {
                           createSubscription={async () => createSubscription()}
                           onApprove={async (data) => onApprove(data)}
                           onError={(err) => {
+                            const errStr = String(err);
+                            if (errStr.includes('popup close') || errStr.includes('Window is closed')) {
+                              console.warn('PayPal popup closed (may be normal after approval):', errStr);
+                              return;
+                            }
                             console.error('PayPal error:', err);
                             toast.error(t?.paypalError || 'PayPal encountered an error');
                           }}

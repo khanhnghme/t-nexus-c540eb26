@@ -117,7 +117,7 @@ export default function CheckoutSummary() {
       .eq('order_code', orderCode)
       .eq('user_id', user.id)
       .single()
-      .then(({ data, error }) => {
+      .then(async ({ data, error }) => {
         if (error || !data) {
           navigate('/billing-history', { replace: true });
           return;
