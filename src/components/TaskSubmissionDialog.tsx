@@ -222,6 +222,7 @@ export default function TaskSubmissionDialog({
       setStatus('');
       setNote('');
       setUploadedFiles([]);
+      setDriveFiles([]);
       setSubmissionLinks([]);
       setActiveTab(initialTab || 'requirements');
       setIsNotesOpen(false);
@@ -232,9 +233,20 @@ export default function TaskSubmissionDialog({
         if (Array.isArray(parsed)) {
           const links: SubmissionLink[] = [];
           const files: UploadedFile[] = [];
+          const drives: DriveFile[] = [];
           
           parsed.forEach((item: any) => {
-            if (item.file_path) {
+            if (item.type === 'drive') {
+              drives.push({
+                drive_file_id: item.drive_file_id,
+                title: item.title || 'File',
+                url: item.url,
+                mime_type: item.mime_type || '',
+                icon_url: item.icon_url || '',
+                file_size: item.file_size || 0,
+                type: 'drive',
+              });
+            } else if (item.file_path) {
               files.push({
                 file_path: item.file_path,
                 file_name: item.file_name || 'file',
@@ -251,6 +263,7 @@ export default function TaskSubmissionDialog({
           
           setSubmissionLinks(links);
           setUploadedFiles(files);
+          setDriveFiles(drives);
         } else {
           setSubmissionLinks([{ title: 'Bài nộp', url: task.submission_link }]);
         }
