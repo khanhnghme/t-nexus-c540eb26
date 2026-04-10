@@ -1,60 +1,41 @@
 
 
-## Plan: Fix Onboarding Payment Flow — 401 Error, Plan Reset Bug & Auto-Advance
+## Plan: Add Connected Tools section to all plan-related pages
 
-### Issues Found
+### Summary
+Extract the Connected Tools data (Google integrations) into a shared constant/component, then add the "Connected Tools" section to all pages that display plan features — matching the exact style from the Pricing page.
 
-**Issue 1: Edge function 401 — stale deployed code**
-The deployed `create-paypal-order` function contains `supabase.auth.getClaims()` which doesn't exist. The local code is correct but hasn't been deployed. Both PayPal functions need redeployment.
+### Pages to update
 
-**Issue 2: CRITICAL — `handleFinish` resets plan to Free**
-Line 378 in `FirstTimeOnboarding.tsx` hardcodes `user_plan: 'plan_free'` in the profile update. When the user clicks "Enter System" after paying, it **overwrites** the plan that `capture-paypal-order` just set. This is why the user loses their paid plan.
+1. **Upgrade.tsx** — Add Connected Tools below the feature list in `PlanColumn` for Pro, Business, and Enterprise plans. Also add to the comparison table (`UpgradePlansAndFeatures`).
 
-**Issue 3: Stuck on checkout step after payment success**
-After `onApprove` succeeds, `goNext()` is called to advance to the finish step, but the checkout sub-step 2 UI doesn't show a success state before transitioning — user just sees "Confirm & Pay" with a brief flash.
+2. **ServicePlan.tsx** — Add Connected Tools in the "Plan Benefits" section (Tab 1: Current Plan) when the user's plan is Pro, Business, or Custom.
 
-### Solution
+3. **ServicePlanSection.tsx** — Add a compact Connected Tools list below the features list, only visible for Pro/Business/Custom plans.
 
-#### 1. Redeploy edge functions
-Deploy both `create-paypal-order` and `capture-paypal-order` to sync local code → production.
+4. **FirstTimeOnboarding.tsx** — Add Connected Tools below each plan card's feature list for Pro and Business plans during onboarding.
 
-#### 2. Fix plan reset in `handleFinish` (`FirstTimeOnboarding.tsx`, line 378)
-- Remove the hardcoded `user_plan: 'plan_free'` line
-- If user paid (paymentStatus === 'success'), do NOT touch `user_plan` — it's already set by the edge function
-- Only set `user_plan: 'plan_free'` if the user chose Free plan and didn't pay
+### Shared code
+Create a reusable `ConnectedToolsList` component or shared constant in a new file (e.g., `src/lib/connectedTools.ts`) containing:
+- Gmail logo, Google Drive logo, Google Calendar logo imports
+- Labels: "Email Integration", "Google Drive", "Calendar Sync"
+- A React component that renders the "Connected Tools" header + checkmark + logo + label rows
 
-#### 3. Auto-advance checkout after payment success
-- In `onApprove`, after successful capture, show a brief "Payment successful" state on the checkout step (1-2 seconds) before calling `goNext()` to finish step
-- Call `refreshProfile` (from props/onComplete) so the finish step shows the correct plan badge
+### Style
+- Matches Pricing page exactly: border-top separator, "Connected Tools" title (13px, 600 weight), Check icon (blue, 15px), logo (16x16), label (13px)
+- Adapts to each page's styling context (inline styles on Pricing/Upgrade Notion-style pages, Tailwind classes on ServicePlan/Settings pages)
 
-#### 4. Refresh profile after payment
-- After `capture-paypal-order` succeeds, fetch the updated profile so the plan badge on the finish step reflects the purchased plan (not the old Free plan)
+### Technical details
+- No logic, API, or database changes
+- Only UI additions — existing layouts remain untouched
+- `showIntegrations` condition: plan key includes `pro`, `business`, `custom`, or `enterprise`
 
-### Technical Details
-
-**File: `src/components/FirstTimeOnboarding.tsx`**
-
-1. **Line 378** — Change from:
-   ```typescript
-   user_plan: 'plan_free' as const,
-   ```
-   To conditional logic:
-   ```typescript
-   ...(paymentStatus !== 'success' && selectedPlan === 'plan_free' 
-     ? { user_plan: 'plan_free' } 
-     : {}),
-   ```
-
-2. **`onApprove` callback (line 460-479)** — After successful capture:
-   - Call a profile refresh to get updated plan data
-   - Add a small delay before `goNext()` to show success state on checkout
-   - Update local plan display state
-
-3. **Checkout sub-step 2 UI** — When `paymentStatus === 'success'`, replace the payment form with a success confirmation card (green checkmark + "Payment Confirmed" message) before auto-advancing to finish.
-
-### Files to Edit
-| File | Change |
+### Files to create/edit
+| File | Action |
 |------|--------|
-| `src/components/FirstTimeOnboarding.tsx` | Fix plan reset, add success UI on checkout, refresh profile after payment |
-| Edge functions (deploy only) | Redeploy `create-paypal-order` and `capture-paypal-order` |
+| `src/components/ConnectedToolsBadge.tsx` | **Create** — shared component |
+| `src/pages/Upgrade.tsx` | **Edit** — add to PlanColumn + comparison table |
+| `src/pages/ServicePlan.tsx` | **Edit** — add to plan benefits section |
+| `src/components/personal/ServicePlanSection.tsx` | **Edit** — add below features |
+| `src/components/FirstTimeOnboarding.tsx` | **Edit** — add to plan cards |
 

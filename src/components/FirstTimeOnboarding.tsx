@@ -226,14 +226,6 @@ export default function FirstTimeOnboarding({
 
   const goNext = () => setCurrentStepIndex(i => Math.min(i + 1, allSteps.length - 1));
   const goBack = () => {
-    // After payment success, skip checkout step when going back from finish
-    if (currentStep === 'finish' && paymentStatus === 'success') {
-      const planIndex = allSteps.indexOf('plan');
-      if (planIndex >= 0) {
-        setCurrentStepIndex(planIndex);
-        return;
-      }
-    }
     if (currentStep === 'checkout' && checkoutSubStep === 2) {
       setCheckoutSubStep(1);
       return;
@@ -375,7 +367,7 @@ export default function FirstTimeOnboarding({
         bio: bio.trim() || null,
         onboarding_completed: true,
         must_change_password: false,
-        ...(paymentStatus !== 'success' ? { user_plan: 'plan_free' as const } : {}),
+        user_plan: 'plan_free' as const,
       };
       if (avatarUrl) updateData.avatar_url = avatarUrl;
       if (needsStudentId) updateData.student_id = editStudentId.trim();
@@ -470,21 +462,13 @@ export default function FirstTimeOnboarding({
 
       setPaymentStatus('success');
       toast({ title: isVi ? 'Thanh toán thành công!' : 'Payment successful!' });
-
-      // Refresh profile to ensure plan is persisted by edge function
-      await supabase
-        .from('profiles')
-        .select('user_plan')
-        .eq('id', userId)
-        .single();
-
-      // Brief delay to show success state, then advance
-      setTimeout(() => goNext(), 1500);
+      // Go to finish step
+      goNext();
     } catch {
       setPaymentStatus('failed');
       toast({ title: isVi ? 'Thanh toán thất bại. Vui lòng thử lại.' : 'Payment failed. Please try again.', variant: 'destructive' });
     }
-  }, [isVi, toast, userId]);
+  }, [isVi, toast]);
 
   const stepLabels: Record<StepId, string> = {
     language: t.stepLang,
@@ -1820,26 +1804,12 @@ export default function FirstTimeOnboarding({
                     )}
                   </div>
 
-                  {paymentStatus === 'success' && (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 mb-2">
-                      <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                        {isVi ? 'Thanh toán đã xác nhận' : 'Payment Confirmed'}
-                      </span>
-                    </div>
-                  )}
-
                   <div className="flex gap-3 w-full max-w-xs">
-                    {paymentStatus !== 'success' && (
-                      <Button variant="outline" onClick={goBack} className="h-12 gap-2 rounded-xl text-base flex-1">
-                        <ChevronLeft className="w-5 h-5" /> {t.goBack}
-                      </Button>
-                    )}
+                    <Button variant="outline" onClick={goBack} className="h-12 gap-2 rounded-xl text-base flex-1">
+                      <ChevronLeft className="w-5 h-5" /> {t.goBack}
+                    </Button>
                     <Button onClick={handleFinish} disabled={isSaving} size="lg"
-                      className={cn(
-                        "gap-2 h-12 text-base rounded-xl shadow-lg hover:shadow-xl transition-all bg-gradient-to-r from-primary to-primary/90",
-                        paymentStatus === 'success' ? 'flex-1' : 'flex-[2]'
-                      )}>
+                      className="gap-2 h-12 text-base rounded-xl shadow-lg hover:shadow-xl transition-all bg-gradient-to-r from-primary to-primary/90 flex-[2]">
                       {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Rocket className="w-5 h-5" />}
                       {t.enterSystem}
                     </Button>
