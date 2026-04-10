@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const PAYPAL_BASE = "https://api-m.sandbox.paypal.com";
+const PAYPAL_BASE = Deno.env.get("PAYPAL_BASE") || "https://api-m.sandbox.paypal.com";
 
 const PLAN_RANK: Record<string, number> = {
   plan_free: 0,
@@ -40,7 +40,6 @@ async function applyAddonsIfNeeded(
 ) {
   if (!addons || addons.length === 0) return;
 
-  // Atomically check and set flag
   const { data: updated, error } = await serviceClient
     .from("orders")
     .update({ addons_applied: true })
@@ -49,10 +48,7 @@ async function applyAddonsIfNeeded(
     .select("id")
     .maybeSingle();
 
-  if (error || !updated) {
-    console.log(`[capture] Addons already applied for order ${orderId}, skipping`);
-    return;
-  }
+  if (error || !updated) return;
 
   for (const addon of addons) {
     const { data: existing } = await serviceClient
@@ -88,10 +84,7 @@ async function applyCouponIfNeeded(serviceClient: any, orderId: string, couponCo
     .select("id")
     .maybeSingle();
 
-  if (error || !updated) {
-    console.log(`[capture] Coupon already applied for order ${orderId}, skipping`);
-    return;
-  }
+  if (error || !updated) return;
 
   const { data: coupon } = await serviceClient
     .from("coupons")
@@ -115,8 +108,7 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -129,16 +121,14 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { orderID } = await req.json();
-    if (!orderID) {
-      return new Response(JSON.stringify({ error: "Missing orderID" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const { subscriptionID } = await req.json();
+    if (!subscriptionID) {
+      return new Response(JSON.stringify({ error: "Missing subscriptionID" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -150,14 +140,13 @@ Deno.serve(async (req) => {
     const { data: order } = await serviceClient
       .from("orders")
       .select("*")
-      .eq("paypal_order_id", orderID)
+      .eq("paypal_subscription_id", subscriptionID)
       .eq("user_id", user.id)
       .single();
 
     if (!order) {
       return new Response(JSON.stringify({ error: "Order not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -167,51 +156,46 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Reject expired orders
+    // Check expiry
     const isExpired = order.status === "expired" || (order.expires_at && new Date(order.expires_at) < new Date());
     if (isExpired) {
-      // Mark as expired if not already
       if (order.status !== "expired") {
         await serviceClient.from("orders").update({ status: "expired" }).eq("id", order.id);
       }
       return new Response(JSON.stringify({ error: "Order expired" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Capture PayPal order
+    // Verify subscription status with PayPal
     const accessToken = await getPayPalAccessToken();
-    const captureRes = await fetch(`${PAYPAL_BASE}/v2/checkout/orders/${orderID}/capture`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
+    const subRes = await fetch(`${PAYPAL_BASE}/v1/billing/subscriptions/${subscriptionID}`, {
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
     });
+    const subscription = await subRes.json();
 
-    const captureData = await captureRes.json();
-
-    if (captureData.status !== "COMPLETED") {
-      console.error("PayPal capture failed:", JSON.stringify(captureData));
-      await serviceClient.from("orders").update({ status: "failed" }).eq("id", order.id);
-      return new Response(JSON.stringify({ error: "Payment capture failed" }), {
-        status: 400,
+    if (subscription.status !== "ACTIVE") {
+      console.log(`[verify] Subscription ${subscriptionID} status: ${subscription.status}`);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        status: subscription.status,
+        message: "Subscription not yet active" 
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const captureId = captureData.purchase_units?.[0]?.payments?.captures?.[0]?.id;
+    // Subscription is ACTIVE — complete the order
     const now = new Date().toISOString();
     const isAddonOrder = order.order_type === "addon";
 
-    // 1. Update order status
+    // 1. Update order
     await serviceClient.from("orders").update({
       status: "completed",
       completed_at: now,
     }).eq("id", order.id);
 
-    // 2. Idempotent addon application
+    // 2. Apply addons
     const addons = order.addons as Array<{ type: string; quantity: number }> | null;
     await applyAddonsIfNeeded(serviceClient, order.id, user.id, addons);
 
@@ -223,23 +207,13 @@ Deno.serve(async (req) => {
         currency: "USD",
         status: "completed",
         payment_method: "paypal",
-        transaction_id: captureId || orderID,
-        order_id: orderID,
+        transaction_id: subscriptionID,
+        order_id: order.id,
         original_amount: order.addon_amount,
         discount_amount: order.discount_amount,
         final_amount: order.total_amount,
         paid_at: now,
-        description: `Add-on purchase (${order.billing_cycle})`,
-      });
-
-      await serviceClient.from("plan_change_logs").insert({
-        user_id: user.id,
-        action_type: "addon_purchase",
-        old_plan: order.plan,
-        new_plan: order.plan,
-        change_source: "user_payment",
-        reason: `Add-on PayPal payment ${captureId || orderID}`,
-        performed_by: user.id,
+        description: `Add-on subscription (${order.billing_cycle})`,
       });
 
       return new Response(
@@ -248,7 +222,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // PLAN ORDER: full profile + workspace update
+    // PLAN ORDER
     const startDate = new Date();
     const expiryDate = new Date();
     if (order.billing_cycle === "yearly") {
@@ -270,19 +244,17 @@ Deno.serve(async (req) => {
 
     const isUpgrade = newRank > oldRank || oldPlan === "plan_free";
     const isDowngrade = newRank < oldRank && oldPlan !== "plan_free";
-    const isRenew = newRank === oldRank && oldPlan !== "plan_free";
-    const hasScheduledPlan = !!profile?.next_plan;
 
     let actionType: string;
 
     if (isDowngrade) {
-      const profileUpdate: Record<string, any> = {
+      actionType = profile?.next_plan ? "change_scheduled_plan" : "downgrade_scheduled";
+      await serviceClient.from("profiles").update({
         next_plan: order.plan,
         next_billing_cycle: order.billing_cycle,
+        paypal_subscription_id: subscriptionID,
         updated_at: now,
-      };
-      actionType = hasScheduledPlan ? "change_scheduled_plan" : "downgrade_scheduled";
-      await serviceClient.from("profiles").update(profileUpdate).eq("id", user.id);
+      }).eq("id", user.id);
     } else {
       actionType = isUpgrade ? "upgrade" : "renew";
       await serviceClient.from("profiles").update({
@@ -295,6 +267,8 @@ Deno.serve(async (req) => {
         downgraded_at: null,
         next_plan: null,
         next_billing_cycle: null,
+        paypal_subscription_id: subscriptionID,
+        paypal_plan_id: order.plan,
       }).eq("id", user.id);
     }
 
@@ -305,8 +279,8 @@ Deno.serve(async (req) => {
       currency: "USD",
       status: "completed",
       payment_method: "paypal",
-      transaction_id: captureId || orderID,
-      order_id: orderID,
+      transaction_id: subscriptionID,
+      order_id: order.id,
       coupon_code: order.coupon_code,
       original_amount: order.base_amount + order.addon_amount,
       discount_amount: order.discount_amount,
@@ -323,14 +297,12 @@ Deno.serve(async (req) => {
       old_expires_at: oldExpiry,
       new_expires_at: isDowngrade ? oldExpiry : expiryDate.toISOString(),
       change_source: "user_payment",
-      reason: `PayPal payment ${captureId || orderID}`,
+      reason: `PayPal subscription ${subscriptionID}`,
       performed_by: user.id,
     });
 
-    // Idempotent coupon increment
     await applyCouponIfNeeded(serviceClient, order.id, order.coupon_code);
 
-    // Only update workspace limits for upgrade/renew
     if (!isDowngrade) {
       const { data: planLimits } = await serviceClient
         .from("plan_limits")
@@ -354,8 +326,7 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error("capture-paypal-order error:", err);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   const clientId = Deno.env.get("PAYPAL_CLIENT_ID") || "";
 
   return new Response(
-    JSON.stringify({ clientId }),
+    JSON.stringify({ clientId, vault: true, intent: "subscription" }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 });

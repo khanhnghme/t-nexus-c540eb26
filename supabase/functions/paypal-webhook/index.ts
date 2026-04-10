@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const PAYPAL_BASE = "https://api-m.sandbox.paypal.com";
+const PAYPAL_BASE = Deno.env.get("PAYPAL_BASE") || "https://api-m.sandbox.paypal.com";
 
 /* ═══ PayPal Webhook Signature Verification ═══ */
 async function verifyWebhookSignature(req: Request, body: string): Promise<boolean> {
@@ -26,7 +26,6 @@ async function verifyWebhookSignature(req: Request, body: string): Promise<boole
     return false;
   }
 
-  // Get access token
   const clientId = Deno.env.get("PAYPAL_CLIENT_ID")!;
   const clientSecret = Deno.env.get("PAYPAL_CLIENT_SECRET")!;
   const tokenRes = await fetch(`${PAYPAL_BASE}/v1/oauth2/token`, {
@@ -43,7 +42,6 @@ async function verifyWebhookSignature(req: Request, body: string): Promise<boole
     return false;
   }
 
-  // Verify signature via PayPal API
   const verifyRes = await fetch(`${PAYPAL_BASE}/v1/notifications/verify-webhook-signature`, {
     method: "POST",
     headers: {
@@ -78,7 +76,6 @@ async function applyAddonsIfNeeded(
 ) {
   if (!addons || addons.length === 0) return;
 
-  // Atomically check and set flag
   const { data: updated, error } = await supabase
     .from("orders")
     .update({ addons_applied: true })
@@ -87,10 +84,7 @@ async function applyAddonsIfNeeded(
     .select("id")
     .maybeSingle();
 
-  if (error || !updated) {
-    console.log(`[paypal-webhook] Addons already applied for order ${orderId}, skipping`);
-    return;
-  }
+  if (error || !updated) return;
 
   for (const addon of addons) {
     const { data: existing } = await supabase
@@ -126,10 +120,7 @@ async function applyCouponIfNeeded(supabase: any, orderId: string, couponCode: s
     .select("id")
     .maybeSingle();
 
-  if (error || !updated) {
-    console.log(`[paypal-webhook] Coupon already applied for order ${orderId}, skipping`);
-    return;
-  }
+  if (error || !updated) return;
 
   const { data: coupon } = await supabase
     .from("coupons")
@@ -138,10 +129,7 @@ async function applyCouponIfNeeded(supabase: any, orderId: string, couponCode: s
     .maybeSingle();
 
   if (coupon) {
-    await supabase
-      .from("coupons")
-      .update({ used_count: coupon.used_count + 1 })
-      .eq("id", coupon.id);
+    await supabase.from("coupons").update({ used_count: coupon.used_count + 1 }).eq("id", coupon.id);
   }
 }
 
@@ -154,13 +142,11 @@ Deno.serve(async (req) => {
   try {
     const bodyText = await req.text();
 
-    // Verify webhook signature
     const isValid = await verifyWebhookSignature(req, bodyText);
     if (!isValid) {
       console.error("[paypal-webhook] Invalid webhook signature, rejecting");
       return new Response(JSON.stringify({ error: "Invalid signature" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -170,15 +156,15 @@ Deno.serve(async (req) => {
 
     console.log(`[paypal-webhook] event_type=${eventType}`);
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
 
-    /* ═══ CHECKOUT.ORDER.APPROVED — Server-side auto-capture fallback ═══ */
-    if (eventType === "CHECKOUT.ORDER.APPROVED") {
-      const paypalOrderId = resource?.id;
-      if (!paypalOrderId) {
-        console.log("[paypal-webhook] CHECKOUT.ORDER.APPROVED: No order ID in payload");
+    /* ═══ BILLING.SUBSCRIPTION.ACTIVATED ═══ */
+    if (eventType === "BILLING.SUBSCRIPTION.ACTIVATED") {
+      const subscriptionId = resource?.id;
+      if (!subscriptionId) {
         return new Response(JSON.stringify({ received: true }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -187,120 +173,34 @@ Deno.serve(async (req) => {
       const { data: order } = await supabase
         .from("orders")
         .select("*")
-        .eq("paypal_order_id", paypalOrderId)
+        .eq("paypal_subscription_id", subscriptionId)
         .maybeSingle();
 
       if (!order) {
-        console.log(`[paypal-webhook] CHECKOUT.ORDER.APPROVED: No order found for ${paypalOrderId}`);
-        return new Response(JSON.stringify({ received: true }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      if (order.status !== "pending") {
-        console.log(`[paypal-webhook] CHECKOUT.ORDER.APPROVED: Order ${order.id} status=${order.status}, skipping capture`);
-        return new Response(JSON.stringify({ received: true, skipped: true }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      // Server-side capture
-      console.log(`[paypal-webhook] CHECKOUT.ORDER.APPROVED: Auto-capturing order ${paypalOrderId}`);
-      const clientId = Deno.env.get("PAYPAL_CLIENT_ID")!;
-      const clientSecret = Deno.env.get("PAYPAL_CLIENT_SECRET")!;
-      const tokenRes = await fetch(`${PAYPAL_BASE}/v1/oauth2/token`, {
-        method: "POST",
-        headers: {
-          Authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: "grant_type=client_credentials",
-      });
-      const tokenData = await tokenRes.json();
-      if (!tokenData.access_token) {
-        console.error("[paypal-webhook] Failed to get access token for auto-capture");
-        return new Response(JSON.stringify({ error: "Token failed" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      const captureRes = await fetch(`${PAYPAL_BASE}/v2/checkout/orders/${paypalOrderId}/capture`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${tokenData.access_token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      const captureData = await captureRes.json();
-
-      if (captureData.status !== "COMPLETED") {
-        console.error(`[paypal-webhook] Auto-capture failed for ${paypalOrderId}:`, captureData);
-        return new Response(JSON.stringify({ received: true, capture_failed: true }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      console.log(`[paypal-webhook] Auto-capture succeeded for ${paypalOrderId}, PAYMENT.CAPTURE.COMPLETED webhook will handle completion`);
-      // The capture will trigger a PAYMENT.CAPTURE.COMPLETED webhook from PayPal
-      // which will handle the actual order completion logic below
-      return new Response(JSON.stringify({ received: true, auto_captured: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (eventType === "PAYMENT.CAPTURE.COMPLETED") {
-      const paypalOrderId = resource?.supplementary_data?.related_ids?.order_id || resource?.id;
-      if (!paypalOrderId) {
-        console.log("[paypal-webhook] No order ID found in payload");
-        return new Response(JSON.stringify({ received: true }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      const { data: order } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("paypal_order_id", paypalOrderId)
-        .maybeSingle();
-
-      if (!order) {
-        console.log(`[paypal-webhook] No order found for PayPal order ${paypalOrderId}`);
+        console.log(`[paypal-webhook] ACTIVATED: No order for subscription ${subscriptionId}`);
         return new Response(JSON.stringify({ received: true }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
       if (order.status === "completed") {
-        console.log(`[paypal-webhook] Order ${order.id} already completed, skipping`);
+        console.log(`[paypal-webhook] ACTIVATED: Order ${order.id} already completed`);
         return new Response(JSON.stringify({ received: true, skipped: true }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      // Reject expired orders
-      const isExpired = order.status === "expired" || (order.expires_at && new Date(order.expires_at) < new Date());
-      if (isExpired) {
-        if (order.status !== "expired") {
-          await supabase.from("orders").update({ status: "expired" }).eq("id", order.id);
-        }
-        console.log(`[paypal-webhook] Order ${order.id} expired, rejecting`);
-        return new Response(JSON.stringify({ received: true, expired: true }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      const capturedAmount = parseFloat(resource?.amount?.value || order.total_amount);
       const now = new Date();
       const nowISO = now.toISOString();
       const isAddonOrder = order.order_type === "addon";
 
-      await supabase
-        .from("orders")
-        .update({ status: "completed", completed_at: nowISO })
-        .eq("id", order.id);
+      // Mark order completed
+      await supabase.from("orders").update({
+        status: "completed",
+        completed_at: nowISO,
+      }).eq("id", order.id);
 
-      // Idempotent addon application
+      // Apply addons
       const addons = order.addons as Array<{ type: string; quantity: number }> | null;
       await applyAddonsIfNeeded(supabase, order.id, order.user_id, addons);
 
@@ -308,16 +208,16 @@ Deno.serve(async (req) => {
         await supabase.from("payment_history").insert({
           user_id: order.user_id,
           plan_purchased: order.plan || "addon",
-          amount: capturedAmount,
+          amount: order.total_amount,
           original_amount: order.addon_amount,
           discount_amount: order.discount_amount,
-          final_amount: capturedAmount,
+          final_amount: order.total_amount,
           payment_method: "paypal",
           status: "completed",
           paid_at: nowISO,
           order_id: order.id,
-          transaction_id: resource?.id || null,
-          description: `Add-on purchase (${order.billing_cycle}) via webhook`,
+          transaction_id: subscriptionId,
+          description: `Add-on subscription (${order.billing_cycle}) via webhook`,
         });
 
         await supabase.from("plan_change_logs").insert({
@@ -326,12 +226,12 @@ Deno.serve(async (req) => {
           old_plan: order.plan,
           new_plan: order.plan,
           change_source: "paypal_webhook",
-          reason: "PayPal webhook addon capture",
+          reason: `Subscription activated ${subscriptionId}`,
         });
 
-        console.log(`[paypal-webhook] Addon order ${order.id} completed via webhook`);
+        console.log(`[paypal-webhook] ACTIVATED: Addon order ${order.id} completed`);
       } else {
-        // PLAN ORDER: full profile + workspace update
+        // Plan order
         const expiresAt = new Date(now);
         if (order.billing_cycle === "yearly") {
           expiresAt.setFullYear(expiresAt.getFullYear() + 1);
@@ -345,32 +245,33 @@ Deno.serve(async (req) => {
           .eq("id", order.user_id)
           .single();
 
-        await supabase
-          .from("profiles")
-          .update({
-            user_plan: order.plan,
-            plan_status: "active",
-            plan_started_at: nowISO,
-            plan_expires_at: expiresAt.toISOString(),
-            plan_source: "paypal",
-            billing_cycle: order.billing_cycle,
-            downgraded_at: null,
-          })
-          .eq("id", order.user_id);
+        await supabase.from("profiles").update({
+          user_plan: order.plan,
+          plan_status: "active",
+          plan_started_at: nowISO,
+          plan_expires_at: expiresAt.toISOString(),
+          plan_source: "paypal",
+          billing_cycle: order.billing_cycle,
+          downgraded_at: null,
+          next_plan: null,
+          next_billing_cycle: null,
+          paypal_subscription_id: subscriptionId,
+          paypal_plan_id: order.plan,
+        }).eq("id", order.user_id);
 
         await supabase.from("payment_history").insert({
           user_id: order.user_id,
           plan_purchased: order.plan,
-          amount: capturedAmount,
+          amount: order.total_amount,
           original_amount: order.base_amount + order.addon_amount,
           discount_amount: order.discount_amount,
-          final_amount: capturedAmount,
+          final_amount: order.total_amount,
           coupon_code: order.coupon_code,
           payment_method: "paypal",
           status: "completed",
           paid_at: nowISO,
           order_id: order.id,
-          transaction_id: resource?.id || null,
+          transaction_id: subscriptionId,
           description: `${order.plan} (${order.billing_cycle}) via webhook`,
         });
 
@@ -382,13 +283,12 @@ Deno.serve(async (req) => {
           old_expires_at: oldProfile?.plan_expires_at,
           new_expires_at: expiresAt.toISOString(),
           change_source: "paypal_webhook",
-          reason: "PayPal webhook backup capture",
+          reason: `Subscription activated ${subscriptionId}`,
         });
 
-        // Idempotent coupon increment
         await applyCouponIfNeeded(supabase, order.id, order.coupon_code);
 
-        // Update workspace limits based on new plan
+        // Update workspace limits
         const { data: planLimits } = await supabase
           .from("plan_limits")
           .select("*")
@@ -403,20 +303,139 @@ Deno.serve(async (req) => {
           }).eq("owner_id", order.user_id);
         }
 
-        console.log(`[paypal-webhook] Plan order ${order.id} completed via webhook`);
+        console.log(`[paypal-webhook] ACTIVATED: Plan order ${order.id} completed`);
       }
-    } else if (
-      eventType === "PAYMENT.CAPTURE.DENIED" ||
-      eventType === "PAYMENT.CAPTURE.REFUNDED"
-    ) {
-      const paypalOrderId = resource?.supplementary_data?.related_ids?.order_id || resource?.id;
-      if (paypalOrderId) {
-        const newStatus = eventType === "PAYMENT.CAPTURE.REFUNDED" ? "refunded" : "failed";
-        await supabase
-          .from("orders")
-          .update({ status: newStatus })
-          .eq("paypal_order_id", paypalOrderId);
-        console.log(`[paypal-webhook] Order marked as ${newStatus}`);
+    }
+
+    /* ═══ PAYMENT.SALE.COMPLETED — Recurring payment ═══ */
+    else if (eventType === "PAYMENT.SALE.COMPLETED") {
+      const billingAgreementId = resource?.billing_agreement_id;
+      if (!billingAgreementId) {
+        console.log("[paypal-webhook] SALE.COMPLETED: No billing_agreement_id");
+        return new Response(JSON.stringify({ received: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Find user profile by subscription ID
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id, user_plan, plan_expires_at, billing_cycle, paypal_subscription_id")
+        .eq("paypal_subscription_id", billingAgreementId)
+        .maybeSingle();
+
+      if (!profile) {
+        // Could be the initial payment from ACTIVATED — skip
+        console.log(`[paypal-webhook] SALE.COMPLETED: No profile for agreement ${billingAgreementId}`);
+        return new Response(JSON.stringify({ received: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Extend plan_expires_at by 1 cycle
+      const currentExpiry = profile.plan_expires_at ? new Date(profile.plan_expires_at) : new Date();
+      const newExpiry = new Date(Math.max(currentExpiry.getTime(), Date.now()));
+
+      if (profile.billing_cycle === "yearly") {
+        newExpiry.setFullYear(newExpiry.getFullYear() + 1);
+      } else {
+        newExpiry.setMonth(newExpiry.getMonth() + 1);
+      }
+
+      await supabase.from("profiles").update({
+        plan_expires_at: newExpiry.toISOString(),
+        plan_status: "active",
+        updated_at: new Date().toISOString(),
+      }).eq("id", profile.id);
+
+      // Record payment history
+      const amount = parseFloat(resource?.amount?.total || "0");
+      await supabase.from("payment_history").insert({
+        user_id: profile.id,
+        plan_purchased: profile.user_plan,
+        amount,
+        currency: resource?.amount?.currency || "USD",
+        status: "completed",
+        payment_method: "paypal",
+        transaction_id: resource?.id,
+        paid_at: new Date().toISOString(),
+        description: `Recurring payment (${profile.billing_cycle})`,
+        final_amount: amount,
+      });
+
+      console.log(`[paypal-webhook] SALE.COMPLETED: Extended ${profile.id} to ${newExpiry.toISOString()}`);
+    }
+
+    /* ═══ BILLING.SUBSCRIPTION.CANCELLED ═══ */
+    else if (eventType === "BILLING.SUBSCRIPTION.CANCELLED") {
+      const subscriptionId = resource?.id;
+      if (!subscriptionId) {
+        return new Response(JSON.stringify({ received: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id, user_plan, plan_expires_at")
+        .eq("paypal_subscription_id", subscriptionId)
+        .maybeSingle();
+
+      if (profile) {
+        await supabase.from("profiles").update({
+          plan_status: "cancelled",
+          auto_renew: false,
+          updated_at: new Date().toISOString(),
+        }).eq("id", profile.id);
+
+        await supabase.from("plan_change_logs").insert({
+          user_id: profile.id,
+          action_type: "subscription_cancelled",
+          old_plan: profile.user_plan,
+          new_plan: profile.user_plan,
+          old_expires_at: profile.plan_expires_at,
+          new_expires_at: profile.plan_expires_at,
+          change_source: "paypal_webhook",
+          reason: `Subscription cancelled by user ${subscriptionId}`,
+        });
+
+        console.log(`[paypal-webhook] CANCELLED: Profile ${profile.id} set to cancelled`);
+      }
+    }
+
+    /* ═══ BILLING.SUBSCRIPTION.PAYMENT.FAILED ═══ */
+    else if (eventType === "BILLING.SUBSCRIPTION.PAYMENT.FAILED") {
+      const subscriptionId = resource?.id;
+      if (!subscriptionId) {
+        return new Response(JSON.stringify({ received: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id, user_plan, plan_expires_at")
+        .eq("paypal_subscription_id", subscriptionId)
+        .maybeSingle();
+
+      if (profile) {
+        await supabase.from("profiles").update({
+          plan_status: "payment_failed",
+          updated_at: new Date().toISOString(),
+        }).eq("id", profile.id);
+
+        await supabase.from("plan_change_logs").insert({
+          user_id: profile.id,
+          action_type: "payment_failed",
+          old_plan: profile.user_plan,
+          new_plan: profile.user_plan,
+          old_expires_at: profile.plan_expires_at,
+          new_expires_at: profile.plan_expires_at,
+          change_source: "paypal_webhook",
+          reason: `Payment failed for subscription ${subscriptionId}`,
+        });
+
+        console.log(`[paypal-webhook] PAYMENT.FAILED: Profile ${profile.id}`);
       }
     }
 
@@ -426,8 +445,7 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error("[paypal-webhook] Error:", err);
     return new Response(JSON.stringify({ error: "Internal error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

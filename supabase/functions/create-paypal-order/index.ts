@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const PAYPAL_BASE = "https://api-m.sandbox.paypal.com";
+const PAYPAL_BASE = Deno.env.get("PAYPAL_BASE") || "https://api-m.sandbox.paypal.com";
 
 const PLAN_PRICES: Record<string, { monthly: number; yearly: number }> = {
   plan_plus: { monthly: 4.8, yearly: 48 },
@@ -28,14 +28,8 @@ const ADDON_DISCOUNT_RATE: Record<string, number> = {
 };
 
 async function getPayPalAccessToken(): Promise<string> {
-  const clientId = Deno.env.get("PAYPAL_CLIENT_ID");
-  const clientSecret = Deno.env.get("PAYPAL_CLIENT_SECRET");
-  
-  if (!clientId || !clientSecret) {
-    console.error("Missing PayPal credentials:", { hasClientId: !!clientId, hasClientSecret: !!clientSecret });
-    throw new Error("PayPal credentials not configured");
-  }
-
+  const clientId = Deno.env.get("PAYPAL_CLIENT_ID")!;
+  const clientSecret = Deno.env.get("PAYPAL_CLIENT_SECRET")!;
   const res = await fetch(`${PAYPAL_BASE}/v1/oauth2/token`, {
     method: "POST",
     headers: {
@@ -45,10 +39,7 @@ async function getPayPalAccessToken(): Promise<string> {
     body: "grant_type=client_credentials",
   });
   const data = await res.json();
-  if (!data.access_token) {
-    console.error("PayPal token response:", JSON.stringify(data));
-    throw new Error(`Failed to get PayPal access token: ${data.error || data.error_description || res.status}`);
-  }
+  if (!data.access_token) throw new Error("Failed to get PayPal access token");
   return data.access_token;
 }
 
@@ -98,11 +89,9 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // For addon-only orders, get user's current plan for discount calculation
     let effectivePlan = plan;
 
     if (order_type === "addon") {
-      // Addon orders don't require a plan param; use current user plan
       const { data: profile } = await serviceClient
         .from("profiles")
         .select("user_plan, billing_cycle")
@@ -123,7 +112,6 @@ Deno.serve(async (req) => {
         });
       }
     } else {
-      // Plan order: validate plan
       if (!plan || !PLAN_PRICES[plan]) {
         return new Response(JSON.stringify({ error: "Invalid plan" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -131,7 +119,19 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Calculate base amount (only for plan orders)
+    // Determine if first-time buyer (for welcome pricing)
+    let isFirstTimeBuyer = false;
+    if (order_type === "plan") {
+      const { data: completedOrders } = await serviceClient
+        .from("orders")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "completed")
+        .limit(1);
+      isFirstTimeBuyer = !completedOrders || completedOrders.length === 0;
+    }
+
+    // Calculate amounts for order record
     let baseAmount = 0;
     let originalAmount = 0;
     let welcomeDiscountAmount = 0;
@@ -141,24 +141,14 @@ Deno.serve(async (req) => {
       originalAmount = billing_cycle === "yearly" ? prices.yearly : prices.monthly;
       baseAmount = originalAmount;
 
-      // Check if first-time buyer
-      const { data: completedOrders } = await serviceClient
-        .from("orders")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("status", "completed")
-        .limit(1);
-
-      const isFirstTimeBuyer = !completedOrders || completedOrders.length === 0;
-      const welcomePrices = WELCOME_PRICES[plan];
-
-      if (isFirstTimeBuyer && welcomePrices) {
-        baseAmount = billing_cycle === "yearly" ? welcomePrices.yearly : welcomePrices.monthly;
+      if (isFirstTimeBuyer && WELCOME_PRICES[plan]) {
+        const wp = WELCOME_PRICES[plan];
+        baseAmount = billing_cycle === "yearly" ? wp.yearly : wp.monthly;
         welcomeDiscountAmount = Math.round((originalAmount - baseAmount) * 100) / 100;
       }
     }
 
-    // Calculate addon amount WITH plan-based discount
+    // Calculate addon amounts
     const addonDiscountRate = ADDON_DISCOUNT_RATE[effectivePlan] || 0;
     let addonAmountOriginal = 0;
     let addonAmountFinal = 0;
@@ -175,7 +165,7 @@ Deno.serve(async (req) => {
     }
     addonAmountFinal = Math.round(addonAmountFinal * 100) / 100;
 
-    // Validate coupon (only for plan orders)
+    // Validate coupon
     let discountAmount = 0;
     let validCouponCode: string | null = null;
 
@@ -224,50 +214,93 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create PayPal order
-    const accessToken = await getPayPalAccessToken();
-    
-    let description: string;
-    if (order_type === "addon") {
-      const addonSummary = validAddons.map(a => `${a.type}×${a.quantity}`).join(", ");
-      description = `T-Nexus Add-ons (${addonSummary})`;
-    } else {
-      const planLabel = plan.replace("plan_", "").charAt(0).toUpperCase() + plan.replace("plan_", "").slice(1);
-      description = `T-Nexus ${planLabel} Plan (${billing_cycle})`;
-    }
+    // Look up PayPal Plan ID from paypal_plans table
+    const useWelcome = order_type === "plan" && isFirstTimeBuyer && !!WELCOME_PRICES[plan];
 
-    const paypalRes = await fetch(`${PAYPAL_BASE}/v2/checkout/orders`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        intent: "CAPTURE",
-        purchase_units: [{
-          amount: {
-            currency_code: "USD",
-            value: totalAmount.toFixed(2),
-            breakdown: {
-              item_total: { currency_code: "USD", value: (baseAmount + addonAmountFinal).toFixed(2) },
-              discount: { currency_code: "USD", value: discountAmount.toFixed(2) },
-            },
-          },
-          description,
-        }],
-      }),
-    });
+    const { data: paypalPlan } = await serviceClient
+      .from("paypal_plans")
+      .select("paypal_plan_id")
+      .eq("plan_key", order_type === "addon" ? effectivePlan : plan)
+      .eq("billing_cycle", billing_cycle)
+      .eq("is_welcome", useWelcome)
+      .single();
 
-    const paypalOrder = await paypalRes.json();
-
-    if (!paypalOrder.id) {
-      console.error("PayPal error:", JSON.stringify(paypalOrder));
-      return new Response(JSON.stringify({ error: "Failed to create PayPal order" }), {
+    if (!paypalPlan) {
+      console.error("No PayPal plan found for:", { plan: order_type === "addon" ? effectivePlan : plan, billing_cycle, useWelcome });
+      return new Response(JSON.stringify({ error: "PayPal plan not configured" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Save order to DB with expiration
+    // Create PayPal subscription
+    const accessToken = await getPayPalAccessToken();
+
+    const subscriptionBody: Record<string, any> = {
+      plan_id: paypalPlan.paypal_plan_id,
+      application_context: {
+        brand_name: "T-Nexus",
+        shipping_preference: "NO_SHIPPING",
+        user_action: "SUBSCRIBE_NOW",
+        return_url: `${Deno.env.get("SUPABASE_URL")}/functions/v1/capture-paypal-order`,
+        cancel_url: `${Deno.env.get("SUPABASE_URL")}/functions/v1/capture-paypal-order`,
+      },
+      custom_id: user.id,
+    };
+
+    // If coupon discount exists, override the first cycle price
+    if (discountAmount > 0) {
+      const discountedPrice = Math.round((totalAmount) * 100) / 100;
+      subscriptionBody.plan = {
+        billing_cycles: [
+          {
+            sequence: 1,
+            tenure_type: "REGULAR",
+            pricing_scheme: {
+              fixed_price: {
+                value: discountedPrice.toFixed(2),
+                currency_code: "USD",
+              },
+            },
+          },
+        ],
+      };
+    }
+
+    // For addon orders, use setup_fee to charge addon amount
+    if (order_type === "addon" && addonAmountFinal > 0) {
+      subscriptionBody.plan = {
+        ...(subscriptionBody.plan || {}),
+        payment_preferences: {
+          setup_fee: {
+            value: addonAmountFinal.toFixed(2),
+            currency_code: "USD",
+          },
+        },
+      };
+    }
+
+    const subRes = await fetch(`${PAYPAL_BASE}/v1/billing/subscriptions`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        Prefer: "return=representation",
+      },
+      body: JSON.stringify(subscriptionBody),
+    });
+
+    const subscription = await subRes.json();
+
+    if (!subscription.id) {
+      console.error("PayPal subscription creation failed:", JSON.stringify(subscription));
+      return new Response(JSON.stringify({ error: "Failed to create PayPal subscription" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const approveLink = subscription.links?.find((l: any) => l.rel === "approve")?.href;
+
+    // Save order to DB
     const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
 
     const { data: insertedOrder } = await serviceClient.from("orders").insert({
@@ -282,14 +315,19 @@ Deno.serve(async (req) => {
       coupon_code: validCouponCode,
       addons: validAddons,
       payment_method: "paypal",
-      paypal_order_id: paypalOrder.id,
+      paypal_subscription_id: subscription.id,
       status: "pending",
       welcome_discount: welcomeDiscountAmount,
       expires_at: expiresAt,
     }).select("order_code").single();
 
     return new Response(
-      JSON.stringify({ orderID: paypalOrder.id, expiresAt, internalOrderId: paypalOrder.id, orderCode: insertedOrder?.order_code }),
+      JSON.stringify({
+        subscriptionID: subscription.id,
+        approveUrl: approveLink,
+        expiresAt,
+        orderCode: insertedOrder?.order_code,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

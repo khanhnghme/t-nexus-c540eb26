@@ -1359,6 +1359,7 @@ export type Database = {
           order_type: string
           payment_method: string
           paypal_order_id: string | null
+          paypal_subscription_id: string | null
           plan: string | null
           status: string
           total_amount: number
@@ -1382,6 +1383,7 @@ export type Database = {
           order_type?: string
           payment_method?: string
           paypal_order_id?: string | null
+          paypal_subscription_id?: string | null
           plan?: string | null
           status?: string
           total_amount?: number
@@ -1405,6 +1407,7 @@ export type Database = {
           order_type?: string
           payment_method?: string
           paypal_order_id?: string | null
+          paypal_subscription_id?: string | null
           plan?: string | null
           status?: string
           total_amount?: number
@@ -1500,6 +1503,39 @@ export type Database = {
           system_note?: string | null
           transaction_id?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      paypal_plans: {
+        Row: {
+          billing_cycle: string
+          created_at: string | null
+          id: string
+          is_welcome: boolean | null
+          paypal_plan_id: string
+          paypal_product_id: string
+          plan_key: string
+          price: number
+        }
+        Insert: {
+          billing_cycle: string
+          created_at?: string | null
+          id?: string
+          is_welcome?: boolean | null
+          paypal_plan_id: string
+          paypal_product_id: string
+          plan_key: string
+          price: number
+        }
+        Update: {
+          billing_cycle?: string
+          created_at?: string | null
+          id?: string
+          is_welcome?: boolean | null
+          paypal_plan_id?: string
+          paypal_product_id?: string
+          plan_key?: string
+          price?: number
         }
         Relationships: []
       }
@@ -1736,6 +1772,8 @@ export type Database = {
           next_billing_cycle: string | null
           next_plan: string | null
           onboarding_completed: boolean
+          paypal_plan_id: string | null
+          paypal_subscription_id: string | null
           phone: string | null
           plan: string
           plan_expires_at: string | null
@@ -1778,6 +1816,8 @@ export type Database = {
           next_billing_cycle?: string | null
           next_plan?: string | null
           onboarding_completed?: boolean
+          paypal_plan_id?: string | null
+          paypal_subscription_id?: string | null
           phone?: string | null
           plan?: string
           plan_expires_at?: string | null
@@ -1820,6 +1860,8 @@ export type Database = {
           next_billing_cycle?: string | null
           next_plan?: string | null
           onboarding_completed?: boolean
+          paypal_plan_id?: string | null
+          paypal_subscription_id?: string | null
           phone?: string | null
           plan?: string
           plan_expires_at?: string | null

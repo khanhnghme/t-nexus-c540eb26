@@ -22,15 +22,14 @@ Deno.serve(async (req) => {
     // 1. Process scheduled downgrades (next_plan IS NOT NULL AND plan_expires_at <= now)
     const { data: scheduledProfiles, error: fetchError } = await serviceClient
       .from("profiles")
-      .select("id, user_plan, plan, next_plan, next_billing_cycle, plan_expires_at, auto_renew")
+      .select("id, user_plan, plan, next_plan, next_billing_cycle, plan_expires_at")
       .not("next_plan", "is", null)
       .lte("plan_expires_at", nowISO);
 
     if (fetchError) {
       console.error("Error fetching scheduled profiles:", fetchError);
       return new Response(JSON.stringify({ error: "Failed to fetch profiles" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -41,7 +40,6 @@ Deno.serve(async (req) => {
       const newPlan = profile.next_plan;
       const billingCycle = profile.next_billing_cycle || "monthly";
 
-      // Calculate new expiry
       const newExpiry = new Date();
       if (billingCycle === "yearly") {
         newExpiry.setFullYear(newExpiry.getFullYear() + 1);
@@ -49,7 +47,6 @@ Deno.serve(async (req) => {
         newExpiry.setMonth(newExpiry.getMonth() + 1);
       }
 
-      // Update profile to new plan
       const { error: updateError } = await serviceClient.from("profiles").update({
         user_plan: newPlan,
         plan: newPlan,
@@ -67,7 +64,6 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Update workspace limits
       const { data: planLimits } = await serviceClient
         .from("plan_limits")
         .select("*")
@@ -82,7 +78,6 @@ Deno.serve(async (req) => {
         }).eq("owner_id", profile.id);
       }
 
-      // Log the transition
       await serviceClient.from("plan_change_logs").insert({
         user_id: profile.id,
         action_type: "cycle_transition",
@@ -97,15 +92,15 @@ Deno.serve(async (req) => {
       transitioned++;
     }
 
-    // 2. Process expired plans without next_plan (downgrade to free if no auto_renew)
+    // 2. Expired plans: cancelled or payment_failed + past expires_at → downgrade to free
     const { data: expiredProfiles, error: expiredError } = await serviceClient
       .from("profiles")
-      .select("id, user_plan, plan_expires_at, auto_renew")
+      .select("id, user_plan, plan_expires_at")
       .is("next_plan", null)
       .neq("user_plan", "plan_free")
       .not("plan_expires_at", "is", null)
       .lte("plan_expires_at", nowISO)
-      .eq("auto_renew", false);
+      .in("plan_status", ["cancelled", "payment_failed"]);
 
     if (!expiredError && expiredProfiles) {
       for (const profile of expiredProfiles) {
@@ -118,6 +113,8 @@ Deno.serve(async (req) => {
           downgraded_at: nowISO,
           next_plan: null,
           next_billing_cycle: null,
+          paypal_subscription_id: null,
+          paypal_plan_id: null,
           updated_at: nowISO,
         }).eq("id", profile.id);
 
@@ -126,7 +123,6 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Update workspace limits to free tier
         const { data: freeLimits } = await serviceClient
           .from("plan_limits")
           .select("*")
@@ -149,7 +145,7 @@ Deno.serve(async (req) => {
           old_expires_at: profile.plan_expires_at,
           new_expires_at: null,
           change_source: "system_cron",
-          reason: "Plan expired without renewal",
+          reason: "Plan expired (cancelled/payment_failed)",
         });
 
         expired++;
@@ -165,8 +161,7 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error("process-plan-cycle error:", err);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
