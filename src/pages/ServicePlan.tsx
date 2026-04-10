@@ -51,7 +51,7 @@ type PaymentRecord = any;
 export default function ServicePlan() {
   const { user, profile } = useAuth();
   const { workspaces } = useWorkspace();
-  const { translations: { app: { servicePlan: t, servicePlanFullFeatures: featuresMap } } } = useLanguage();
+  const { translations: { app: { servicePlan: t, servicePlanFullFeatures: featuresMap, servicePlanFeatureGroups: featureGroupsMap } } } = useLanguage();
   const accountLimits = useAccountLimitsCheck();
   const userAddons = useUserAddons();
   const navigate = useNavigate();
