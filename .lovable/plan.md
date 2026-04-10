@@ -1,35 +1,60 @@
 
 
-## Plan: Fix Payment Flow in Onboarding
+## Plan: Order Reservation Model — Giữ đơn có thời hạn
 
-### Root Cause Analysis
+### Hiện trạng
 
-Three bugs found in `FirstTimeOnboarding.tsx`:
+Hệ thống đã có 80% mô hình này:
+- Order tạo với `status = pending` khi gọi `create-paypal-order`
+- `cleanup-pending-orders` tự hủy đơn pending sau 2h (dùng `created_at`)
+- `capture-paypal-order` check idempotent (`completed` → skip)
 
-1. **`handleFinish` overwrites paid plan**: Line 370 hardcodes `user_plan: 'plan_free'` — this RESETS the plan back to free even after successful payment. The backend already sets the correct plan during capture/webhook, so this line destroys it.
+### Thiếu sót cần bổ sung
 
-2. **Back button allows returning to checkout**: `goBack()` has no guard for `paymentStatus === 'success'`, so users can navigate back to the payment step after paying.
-
-3. **Steps not updated after payment**: `allSteps` depends on `selectedPlan` but doesn't account for `paymentStatus === 'success'`. After successful payment, the 'plan' and 'checkout' steps should be removed from the sidebar and navigation.
-
-### Changes (single file: `FirstTimeOnboarding.tsx`)
-
-**Fix 1 — Don't overwrite plan in handleFinish**
-- When `paymentStatus === 'success'`, remove `user_plan` from `updateData` entirely (backend already set it correctly via capture-paypal-order)
-- Only set `user_plan: 'plan_free'` when no payment was made (free plan selected)
-
-**Fix 2 — Block back navigation after payment**
-- In `goBack()`: if `paymentStatus === 'success'` and current step is 'finish', do nothing (or skip over plan/checkout steps directly to 'info')
-
-**Fix 3 — Remove plan/checkout steps from sidebar after payment**
-- Update `allSteps` memo to exclude 'plan' and 'checkout' when `paymentStatus === 'success'`
-- This removes them from the sidebar and prevents any navigation to those steps
-
-**Fix 4 — Refresh profile after payment**
-- In `onApprove`: call `refreshProfile()` (from props/context) after successful capture, before calling `goNext()`, so the parent component has the updated plan immediately
-
-### Files to edit
-| File | Change |
+| Lỗ hổng | Vấn đề |
 |---|---|
-| `src/components/FirstTimeOnboarding.tsx` | Fix all 4 issues above |
+| Không có `expires_at` | Cleanup dùng `created_at + 2h` ngầm, nhưng capture không check → **đơn hết hạn vẫn có thể capture** |
+| Capture không reject expired | Nếu cron chưa chạy và đơn quá 2h, capture vẫn xử lý bình thường |
+| Frontend không biết đơn hết hạn | Không hiển thị countdown hoặc cảnh báo |
+
+### Thay đổi
+
+#### 1. DB Migration — Thêm cột `expires_at`
+```sql
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS expires_at timestamptz;
+-- Backfill existing pending orders
+UPDATE orders SET expires_at = created_at + interval '2 hours' WHERE expires_at IS NULL;
+```
+
+#### 2. `create-paypal-order/index.ts`
+- Set `expires_at = NOW() + 2 hours` khi insert order
+
+#### 3. `capture-paypal-order/index.ts`
+- Sau khi fetch order, thêm check:
+  ```
+  if (order.status === 'expired' || (order.expires_at && new Date(order.expires_at) < new Date()))
+    → return 400 "Order expired"
+  ```
+- Nếu order đã quá hạn nhưng chưa bị cron đánh expired → set expired luôn và reject
+
+#### 4. `cleanup-pending-orders/index.ts`
+- Đổi điều kiện: dùng `expires_at <= NOW()` thay vì `created_at < 2h ago`
+
+#### 5. `paypal-webhook/index.ts`
+- Thêm check `expires_at` tương tự capture — reject webhook cho đơn hết hạn
+
+### Không thay đổi
+- Frontend flow (step 1/2) giữ nguyên
+- Logic tính giá, coupon, addon giữ nguyên
+- PayPal integration flow giữ nguyên
+
+### Files
+
+| File | Action |
+|---|---|
+| DB migration | Add `expires_at` column |
+| `supabase/functions/create-paypal-order/index.ts` | Set `expires_at` on insert |
+| `supabase/functions/capture-paypal-order/index.ts` | Reject expired orders |
+| `supabase/functions/cleanup-pending-orders/index.ts` | Use `expires_at` column |
+| `supabase/functions/paypal-webhook/index.ts` | Reject expired orders |
 
