@@ -352,6 +352,7 @@ export default function AddonCheckout() {
                 setCreatingReservation(true);
                 try {
                   const newOrderCode = await createReservation();
+                  sessionStorage.setItem('checkout_payment_return_path', window.location.pathname + window.location.search);
                   setShowConfirmDialog(false);
                   navigate('/addon-checkout/' + newOrderCode);
                 } catch (e) {
