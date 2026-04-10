@@ -547,6 +547,27 @@ export default function Checkout() {
         </div>
       </div>
 
+      {/* Downgrade warning banners */}
+      {isDowngrade && (
+        <div className="flex items-start gap-3 p-4 rounded-lg border border-amber-500/30 bg-amber-500/5">
+          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-foreground">{t?.downgradeWarning}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{t?.downgradeWarningDesc}</p>
+          </div>
+        </div>
+      )}
+      {existingNextPlan && (
+        <div className="flex items-start gap-3 p-4 rounded-lg border border-orange-500/30 bg-orange-500/5">
+          <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-foreground">
+              {(t?.existingScheduleWarning || '').replace('{plan}', getPlanLabel(existingNextPlan))}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── TOP: Order Summary Table ── */}
       <Card>
         <CardContent className="pt-5 pb-5">
