@@ -229,13 +229,6 @@ export default function FirstTimeOnboarding({
     if (paymentStatus === 'success' && currentStep === 'finish') {
       return;
     }
-    if (currentStep === 'checkout' && checkoutSubStep === 2) {
-      setCheckoutSubStep(1);
-      return;
-    }
-    if (currentStep === 'checkout') {
-      setCheckoutSubStep(1);
-    }
     setCurrentStepIndex(i => Math.max(i - 1, 0));
   };
 
@@ -1311,22 +1304,18 @@ export default function FirstTimeOnboarding({
               </div>
             )}
 
-            {/* ===== CHECKOUT (inline) ===== */}
+            {/* ===== CHECKOUT (config only — payment redirects to /checkout) ===== */}
             {currentStep === 'checkout' && (
               <div className="h-full flex flex-col">
                 <div className="px-6 md:px-10 pt-6 pb-3 text-center">
                   <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                    <CreditCard className="w-7 h-7 text-primary" />
+                    <Crown className="w-7 h-7 text-primary" />
                   </div>
                   <h2 className="text-2xl font-extrabold mb-1">
-                    {checkoutSubStep === 1
-                      ? (isVi ? 'Thanh toán' : 'Checkout')
-                      : (isVi ? 'Xác nhận & Thanh toán' : 'Confirm & Pay')}
+                    {isVi ? 'Tùy chỉnh đơn hàng' : 'Customize Order'}
                   </h2>
                   <p className="text-muted-foreground text-sm">
-                    {checkoutSubStep === 1
-                      ? (isVi ? `Bước 1/2 — Chọn gói & tùy chỉnh` : `Step 1/2 — Select plan & customize`)
-                      : (isVi ? `Bước 2/2 — Kiểm tra và thanh toán` : `Step 2/2 — Review and pay`)}
+                    {isVi ? 'Chọn chu kỳ, add-on và mã giảm giá' : 'Select billing cycle, add-ons and coupon'}
                   </p>
                 </div>
 
