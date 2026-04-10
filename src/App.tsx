@@ -47,6 +47,7 @@ import Pricing from "./pages/Pricing";
 import PricingDocs from "./pages/PricingDocs";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import Guide from "./pages/Guide";
 import WorkspaceSettings from "./pages/WorkspaceSettings";
 import WorkspaceMembers from "./pages/WorkspaceMembers";
 import CreateWorkspace from "./pages/CreateWorkspace";
