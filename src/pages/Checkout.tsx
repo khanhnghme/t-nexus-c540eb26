@@ -85,6 +85,7 @@ export default function Checkout() {
   const [agreedToPolicy, setAgreedToPolicy] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancellingOrder, setCancellingOrder] = useState(false);
+  const [creatingReservation, setCreatingReservation] = useState(false);
 
   useEffect(() => {
     supabase.functions.invoke('get-paypal-config').then(({ data }) => {
