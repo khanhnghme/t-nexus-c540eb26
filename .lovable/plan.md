@@ -1,47 +1,31 @@
 
 
-## Plan: Fix payment flow — auto-redirect and status sync
+## Nâng cấp trạng thái "Processing" tại Step 2
 
-### Problem
-After successful PayPal capture, the order status may not be updated in the database immediately (race condition between capture response and webhook). The UI stays on Step 2 or shows a spinner indefinitely.
+### Vấn đề hiện tại
+- **CheckoutPayment.tsx**: Có full-screen processing overlay nhưng chỉ hiển thị "Đang xử lý thanh toán..." -- thiếu cảnh báo không thoát trang
+- **AddonCheckoutPayment.tsx**: Processing chỉ hiển thị spinner nhỏ trong payment card, không có cảnh báo
 
-### Changes
+### Thay đổi
 
-#### 1. `src/pages/CheckoutPayment.tsx`
-- Add polling after `capture-paypal-order` returns: poll order status up to 10 times (2s interval) until `status !== 'pending'`
-- Once status is `completed`/`failed`/`cancelled`/`expired` → navigate to `/checkout/summary/{orderCode}`
-- If polling exhausts retries, still navigate to summary (let summary page handle display)
-- Remove the intermediate spinner state that blocks UI indefinitely (lines 140-146) — replace with auto-redirect logic
+#### 1. Nâng cấp Processing UI trong `CheckoutPayment.tsx` (dòng 157-163)
+Thay thế overlay đơn giản bằng một Card chuyên nghiệp hơn:
+- Spinner lớn hơn với animation
+- Tiêu đề: "Đang xác nhận thanh toán với PayPal" / "Confirming payment with PayPal"
+- Cảnh báo vàng (amber): "⚠️ Vui lòng không thoát hoặc tải lại trang" / "Please do not leave or reload this page"
+- Hiển thị mã đơn hàng đang xử lý
+- Thanh progress animation (indeterminate) để user thấy hệ thống đang hoạt động
 
-#### 2. `src/pages/AddonCheckoutPayment.tsx`
-- Same polling mechanism after `captureOrder` succeeds
-- On failure, also redirect to summary instead of staying on payment page
-- Add polling fallback for async webhook delays
+#### 2. Nâng cấp Processing UI trong `AddonCheckoutPayment.tsx` (dòng 309-313)
+Tương tự CheckoutPayment, thay spinner nhỏ bằng UI processing rõ ràng hơn:
+- Spinner + text mô tả đang xác nhận với PayPal
+- Cảnh báo không thoát trang
+- Hiển thị order code
 
-#### 3. Both files — reload protection
-- Already have redirect logic on load (lines 59-61 in CheckoutPayment, 64-66 in AddonCheckoutPayment) — this is correct
-- Add `failed` to the redirect status list if not already present (both already include `completed`, `cancelled`, `expired` — need to verify `failed` is included)
+#### 3. Thêm `beforeunload` event listener
+Trong cả 2 file, khi `paymentStatus === 'processing'`, đăng ký `window.addEventListener('beforeunload')` để hiện cảnh báo trình duyệt khi user cố thoát/reload trang.
 
-### Polling implementation (shared logic)
-```typescript
-const pollOrderStatus = async (orderCode: string, maxAttempts = 10, interval = 2000) => {
-  for (let i = 0; i < maxAttempts; i++) {
-    const { data } = await supabase
-      .from('orders')
-      .select('status')
-      .eq('order_code', orderCode)
-      .single();
-    if (data && data.status !== 'pending') return data.status;
-    await new Promise(r => setTimeout(r, interval));
-  }
-  return null; // timeout
-};
-```
-
-### Files
-
-| File | Action |
-|---|---|
-| `src/pages/CheckoutPayment.tsx` | Edit — add polling after capture, fix redirect logic |
-| `src/pages/AddonCheckoutPayment.tsx` | Edit — add polling after capture, redirect on failure |
+### Files cần sửa
+- `src/pages/CheckoutPayment.tsx`
+- `src/pages/AddonCheckoutPayment.tsx`
 
