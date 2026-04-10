@@ -837,6 +837,119 @@ export default function ResourceUploadDialog({
                   </div>
                 )}
               </TabsContent>
+
+              {/* === GOOGLE DRIVE TAB === */}
+              <TabsContent value="drive" className="flex-1 mt-0 flex flex-col overflow-hidden data-[state=inactive]:hidden">
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20 mb-3 shrink-0">
+                  <Info className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <p className="font-medium text-foreground">Chọn file từ Google Drive</p>
+                    <p>• Chọn file trực tiếp từ Google Drive của bạn, hệ thống sẽ <strong>lưu link</strong> (không tải file).</p>
+                    <p>• Hỗ trợ chọn <strong>nhiều file cùng lúc</strong>.</p>
+                    <p>• Cần liên kết tài khoản Google Drive trước khi sử dụng.</p>
+                  </div>
+                </div>
+
+                {isDriveChecking ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : !isDriveConnected ? (
+                  <div className="flex-1 flex flex-col items-center justify-center gap-3">
+                    <HardDrive className="w-12 h-12 text-muted-foreground/40" />
+                    <p className="text-sm text-muted-foreground">Chưa liên kết Google Drive</p>
+                    <Button onClick={connectDrive} className="gap-2">
+                      <HardDrive className="w-4 h-4" />
+                      Liên kết Google Drive
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <div
+                      className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors shrink-0"
+                      onClick={openPicker}
+                    >
+                      {isPickerLoading ? (
+                        <Loader2 className="w-8 h-8 mx-auto text-muted-foreground mb-2 animate-spin" />
+                      ) : (
+                        <HardDrive className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                      )}
+                      <p className="text-sm font-medium">Nhấn để mở Google Drive Picker</p>
+                      <p className="text-xs text-muted-foreground mt-1">Chọn một hoặc nhiều file từ Drive</p>
+                    </div>
+
+                    {pendingDriveFiles.length > 0 && (
+                      <ScrollArea className="flex-1 mt-3">
+                        <div className="space-y-2 pr-2">
+                          {pendingDriveFiles.map((item) => (
+                            <div key={item.id} className={cn(
+                              "flex items-center gap-3 p-2.5 rounded-lg border bg-card",
+                              item.status === 'done' && "border-green-200 bg-green-500/5",
+                              item.status === 'error' && "border-red-200 bg-red-500/5",
+                            )}>
+                              <div className="w-8 h-8 rounded flex items-center justify-center bg-primary/10 shrink-0">
+                                {item.driveFile.icon_url ? (
+                                  <img src={item.driveFile.icon_url} alt="" className="w-4 h-4" />
+                                ) : (
+                                  <HardDrive className="w-4 h-4 text-primary" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm font-medium truncate">{item.driveFile.title}</p>
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0 border-primary/30 text-primary">Drive</Badge>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  {item.driveFile.file_size > 0 && <span>{formatFileSize(item.driveFile.file_size)}</span>}
+                                  {item.driveFile.mime_type && <span className="truncate max-w-[200px]">{item.driveFile.mime_type}</span>}
+                                  {item.status === 'pending' && (
+                                    <Select value={item.category} onValueChange={(v) => updateDriveFileCategory(item.id, v)}>
+                                      <SelectTrigger className="h-5 text-[10px] w-auto px-2 py-0 border-0 bg-muted">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {CATEGORIES.map(c => (
+                                          <SelectItem key={c.value} value={c.value} className="text-xs">{c.label}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  )}
+                                  {item.status === 'done' && (
+                                    <span className="flex items-center gap-1 text-green-600"><CheckCircle2 className="w-3 h-3" /> Hoàn tất</span>
+                                  )}
+                                  {item.status === 'error' && (
+                                    <span className="flex items-center gap-1 text-red-600"><AlertCircle className="w-3 h-3" /> {item.error}</span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {item.status === 'pending' && (
+                                  <>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
+                                      <a href={item.driveFile.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                      </a>
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeDriveFile(item.id)}>
+                                      <X className="w-3.5 h-3.5" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    )}
+
+                    {pendingDriveFiles.length === 0 && (
+                      <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
+                        Chưa chọn file nào từ Google Drive.
+                      </div>
+                    )}
+                  </>
+                )}
+              </TabsContent>
             </div>
           </Tabs>
         </div>
