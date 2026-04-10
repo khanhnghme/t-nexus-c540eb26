@@ -1,9 +1,8 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import {
-  ArrowLeft, ArrowRight, ShieldCheck, Loader2,
-  FolderKanban, HardDrive, Users, Plus, Minus, Package, AlertTriangle,
+  ArrowLeft, ArrowRight, Loader2,
+  FolderKanban, HardDrive, Users, Plus, Minus, Package,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,10 +11,8 @@ import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserAddons, AddonType } from '@/hooks/useUserAddons';
-import { useAccountLimitsCheck } from '@/hooks/useAccountLimitsCheck';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPlanName } from '@/hooks/useWorkspaceBilling';
-import { OrderCountdown } from '@/components/OrderCountdown';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 

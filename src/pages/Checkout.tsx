@@ -58,6 +58,17 @@ export default function Checkout() {
   const { translations: { checkout: t, common: tc } } = useLanguage();
   const { user, profile, refreshProfile } = useAuth();
 
+  // Support pre-fill from onboarding: /checkout?plan=X&cycle=Y&addons=projects:2,storage:1&coupon=CODE&from=onboarding
+  const fromOnboarding = searchParams.get('from') === 'onboarding';
+  const initialAddons: Record<string, number> = {};
+  const addonsParam = searchParams.get('addons');
+  if (addonsParam) {
+    addonsParam.split(',').forEach(item => {
+      const [type, qty] = item.split(':');
+      if (type && qty) initialAddons[type] = parseInt(qty, 10) || 0;
+    });
+  }
+
   const [plan, setPlan] = useState(searchParams.get('plan') || 'plan_pro');
   const [cycle, setCycle] = useState<'monthly' | 'yearly'>((searchParams.get('cycle') || 'monthly') as 'monthly' | 'yearly');
   const isVi = tc?.language === 'vi' || document.documentElement.lang === 'vi';
@@ -70,7 +81,7 @@ export default function Checkout() {
   const existingNextPlan = profile?.next_plan || null;
 
   const [step, setStep] = useState(1);
-  const [addons, setAddons] = useState<Record<string, number>>({});
+  const [addons, setAddons] = useState<Record<string, number>>(initialAddons);
   const [couponCode, setCouponCode] = useState('');
   const [couponDiscount, setCouponDiscount] = useState<{ type: string; value: number; code: string } | null>(null);
   const [couponError, setCouponError] = useState('');
