@@ -167,6 +167,19 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Reject expired orders
+    const isExpired = order.status === "expired" || (order.expires_at && new Date(order.expires_at) < new Date());
+    if (isExpired) {
+      // Mark as expired if not already
+      if (order.status !== "expired") {
+        await serviceClient.from("orders").update({ status: "expired" }).eq("id", order.id);
+      }
+      return new Response(JSON.stringify({ error: "Order expired" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Capture PayPal order
     const accessToken = await getPayPalAccessToken();
     const captureRes = await fetch(`${PAYPAL_BASE}/v2/checkout/orders/${orderID}/capture`, {

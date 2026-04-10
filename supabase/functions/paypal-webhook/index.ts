@@ -203,6 +203,18 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Reject expired orders
+      const isExpired = order.status === "expired" || (order.expires_at && new Date(order.expires_at) < new Date());
+      if (isExpired) {
+        if (order.status !== "expired") {
+          await supabase.from("orders").update({ status: "expired" }).eq("id", order.id);
+        }
+        console.log(`[paypal-webhook] Order ${order.id} expired, rejecting`);
+        return new Response(JSON.stringify({ received: true, expired: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       const capturedAmount = parseFloat(resource?.amount?.value || order.total_amount);
       const now = new Date();
       const nowISO = now.toISOString();
