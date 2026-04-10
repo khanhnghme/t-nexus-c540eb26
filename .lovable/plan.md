@@ -1,54 +1,66 @@
 
 
-## Kế hoạch: Thống nhất tất cả luồng thanh toán về chuẩn 3-step
+## Kế hoạch: Fix luồng Onboarding → Checkout không bị xung đột layout
 
-### Phân tích hiện trạng
+### Vấn đề hiện tại
 
-| Luồng | Hiện tại | Vấn đề |
-|-------|----------|--------|
-| **Plan checkout** (`/checkout` → `/checkout/payment` → `/checkout/summary`) | ✅ Chuẩn | Không sửa |
-| **Addon checkout** (`/addon-checkout` → `/addon-checkout/:orderCode` → `/checkout/summary`) | ⚠️ Gần chuẩn | `AddonCheckout.tsx` còn code cũ dùng `orderID` thay vì `subscriptionID`, navigate đến `/checkout/result` — dead code nhưng cần dọn |
-| **Onboarding** (`FirstTimeOnboarding.tsx`) | ❌ Lệch chuẩn | Có PayPal buttons nhúng trực tiếp trong component, tự xử lý capture/polling riêng, không dùng route `/checkout/*` |
+- `/onboarding` nằm **ngoài** `ProtectedLayout` (không có DashboardLayout)
+- `/checkout`, `/checkout/payment/:orderCode`, `/checkout/summary/:orderCode` nằm **trong** `ProtectedLayout` (có DashboardLayout với sidebar, header)
+- Khi user onboarding bấm "Nâng cấp" → navigate `/checkout` → bị render bên trong DashboardLayout → chồng layout, vỡ UI
 
-### Thay đổi cần thực hiện
+### Giải pháp: Tạo layout wrapper thông minh cho checkout routes
 
-**1. `src/components/FirstTimeOnboarding.tsx` — Loại bỏ PayPal inline, redirect sang `/checkout`**
+Tách checkout routes ra khỏi `ProtectedLayout`, đặt chúng ở cấp standalone. Tạo một wrapper component `CheckoutLayoutWrapper` tự detect context:
 
-- Xóa toàn bộ checkout sub-step 2 (PayPal buttons, `createSubscription`, `onApprove`, payment processing UI)
-- Giữ checkout sub-step 1 (chọn cycle, addons, coupon) làm bước cấu hình
-- Khi user bấm "Tiếp tục thanh toán" ở sub-step 1 → redirect sang `/checkout?plan=X&cycle=Y&addons=...&coupon=...&from=onboarding`
-- Xóa import `PayPalScriptProvider`, `PayPalButtons`
-- Giữ step "plan" (chọn gói) và step "finish" nguyên vẹn
-- Khi quay về từ `/checkout/summary` thành công → `/onboarding` sẽ detect profile đã có plan mới → bỏ qua plan/checkout steps, nhảy thẳng finish
+- Nếu `sessionStorage.getItem('checkout_from') === 'onboarding'` → render layout đơn giản (minimal: header nhỏ + nội dung, không sidebar)
+- Nếu không → render bên trong `DashboardLayoutProvider` + `DashboardLayout` như cũ
 
-**2. `src/pages/Checkout.tsx` — Hỗ trợ query params từ onboarding**
+Cách này giữ **1 codebase checkout duy nhất**, chỉ thay đổi shell bao ngoài.
 
-- Đọc query params `from=onboarding`, `plan`, `cycle`, `addons`, `coupon` để pre-fill form
-- Sau khi hoàn tất checkout summary → nếu `from=onboarding`, redirect về `/onboarding` thay vì `/dashboard`
+### Thay đổi cụ thể
 
-**3. `src/pages/CheckoutSummary.tsx` — Hỗ trợ redirect về onboarding**
+**1. `src/App.tsx` — Di chuyển checkout routes**
 
-- Nếu detect `from=onboarding` (qua query param hoặc sessionStorage) → nút "Về Dashboard" đổi thành "Tiếp tục thiết lập" → navigate `/onboarding`
+- Tách 4 checkout routes ra khỏi `<Route element={<ProtectedLayout />}>`
+- Đặt chúng vào standalone `<Route element={<CheckoutLayoutWrapper />}>`:
 
-**4. `src/pages/AddonCheckout.tsx` — Dọn dead code**
+```text
+// Standalone checkout routes (trước ProtectedLayout)
+<Route element={<ProtectedRoute><CheckoutLayoutWrapper /></ProtectedRoute>}>
+  <Route path="/checkout" element={<Checkout />} />
+  <Route path="/checkout/result" element={<PaymentResult />} />
+  <Route path="/checkout/summary/:orderCode" element={<CheckoutSummary />} />
+  <Route path="/checkout/payment/:orderCode" element={<CheckoutPayment />} />
+  <Route path="/addon-checkout" element={<AddonCheckout />} />
+  <Route path="/addon-checkout/:orderCode" element={<AddonCheckoutPayment />} />
+</Route>
+```
 
-- Xóa `createOrder` và `captureOrder` callbacks (dead code từ khi tách Step 2 sang `AddonCheckoutPayment.tsx`)
-- Xóa import `PayPalScriptProvider`, `PayPalButtons` (không còn dùng)
-- Giữ nguyên Step 1 UI và `createReservation` logic
+**2. Tạo `src/components/layout/CheckoutLayoutWrapper.tsx`**
 
-### Không sửa (giữ nguyên)
+- Kiểm tra `sessionStorage.getItem('checkout_from')`
+- Nếu `=== 'onboarding'` → render minimal layout (logo + back button + `<Outlet />`)
+- Nếu khác → render `<DashboardLayoutProvider><DashboardLayout useOutlet /></DashboardLayoutProvider>` (y hệt ProtectedLayout hiện tại)
+- Giữ nguyên trải nghiệm dashboard cho user thường
 
-- `src/pages/CheckoutPayment.tsx`
-- `src/pages/AddonCheckoutPayment.tsx`  
-- `src/pages/CheckoutSummary.tsx` (chỉ thêm logic redirect onboarding nhỏ)
-- `supabase/functions/*` (backend không đổi)
+**3. `src/components/FirstTimeOnboarding.tsx` — Đơn giản hóa**
 
-### Files cần sửa
+- Xóa toàn bộ checkout sub-step trong onboarding (step `checkout` khỏi `allSteps`)
+- Khi user bấm "Nâng cấp" ở step `plan` → `sessionStorage.setItem('checkout_from', 'onboarding')` + navigate `/checkout?plan=X&cycle=Y&from=onboarding` (đã có sẵn logic này)
+- Bỏ `'checkout'` khỏi `StepId` type và `stepIcons`/`stepLabels`/`stepDescriptions`
+
+### Không sửa
+
+- `src/pages/Checkout.tsx` — giữ nguyên
+- `src/pages/CheckoutPayment.tsx` — giữ nguyên  
+- `src/pages/CheckoutSummary.tsx` — giữ nguyên (đã có logic "Tiếp tục thiết lập")
+- Backend — không đổi
+
+### Files cần tạo/sửa
 
 | File | Thay đổi |
 |------|----------|
-| `src/components/FirstTimeOnboarding.tsx` | Xóa PayPal inline, redirect sang `/checkout` |
-| `src/pages/Checkout.tsx` | Đọc query params onboarding để pre-fill |
-| `src/pages/CheckoutSummary.tsx` | Thêm nút redirect về onboarding |
-| `src/pages/AddonCheckout.tsx` | Dọn dead code PayPal |
+| `src/components/layout/CheckoutLayoutWrapper.tsx` | **Tạo mới** — wrapper detect onboarding vs dashboard |
+| `src/App.tsx` | Di chuyển 6 checkout routes ra standalone |
+| `src/components/FirstTimeOnboarding.tsx` | Xóa checkout step, giữ redirect |
 
