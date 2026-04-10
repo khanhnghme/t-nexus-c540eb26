@@ -800,7 +800,7 @@ export default function TaskSubmissionDialog({
                           <span className="text-sm font-bold text-foreground">Bài đã nộp</span>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-2 mb-2">
+                        <div className="grid grid-cols-3 gap-2 mb-2">
                           <div className="text-center p-2 rounded-lg bg-background/60">
                             <HardDrive className="w-3.5 h-3.5 mx-auto mb-0.5 text-emerald-500" />
                             <p className="text-lg font-bold text-foreground">{filesCount}</p>
@@ -810,6 +810,11 @@ export default function TaskSubmissionDialog({
                             <Globe className="w-3.5 h-3.5 mx-auto mb-0.5 text-blue-500" />
                             <p className="text-lg font-bold text-foreground">{validLinksCount}</p>
                             <p className="text-[9px] text-muted-foreground">Link</p>
+                          </div>
+                          <div className="text-center p-2 rounded-lg bg-background/60">
+                            <img src="https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png" alt="Drive" className="w-3.5 h-3.5 mx-auto mb-0.5" />
+                            <p className="text-lg font-bold text-foreground">{driveFilesCount}</p>
+                            <p className="text-[9px] text-muted-foreground">Drive</p>
                           </div>
                         </div>
 
