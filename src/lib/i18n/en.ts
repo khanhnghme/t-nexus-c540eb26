@@ -225,9 +225,13 @@ export const en = {
     footerResourcesLinks: ['Product Demo', 'Efficiency', 'Reviews'],
     footerContactTitle: 'Contact',
     footerComingSoon: 'Coming soon',
+    footerCompanyTitle: 'Company',
+    footerCompanyLinks: ['About us', 'Careers', 'Security', 'Status'],
     footerDesignedFor: 'Designed for coursework, research and capstone project workflows.',
     footerPrivacyPolicy: 'Privacy Policy',
     footerTermsOfService: 'Terms of Service',
+    footerTermsAndPrivacy: 'Terms & Privacy',
+    footerYourPrivacyRights: 'Your Privacy Rights',
 
     // Intro modal
     introTitle: 'Introducing T-Nexus',

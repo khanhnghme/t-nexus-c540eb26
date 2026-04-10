@@ -1418,6 +1418,17 @@ export default function Landing() {
                       { label: tc.installApp, href: lp('/download'), external: false },
                     ],
                   },
+                  {
+                    title: tl.footerCompanyTitle,
+                    links: [
+                      { label: tl.footerCompanyLinks[0], href: '#top' },
+                      { label: tl.footerCompanyLinks[1], href: '#top' },
+                      { label: tl.footerCompanyLinks[2], href: '#top' },
+                      { label: tl.footerCompanyLinks[3], href: '#top' },
+                      { label: tl.footerTermsAndPrivacy, href: lp('/guide/terms'), external: false },
+                      { label: tl.footerYourPrivacyRights, href: lp('/guide/privacy'), external: false },
+                    ],
+                  },
                 ].map((column) => (
                   <div key={column.title}>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.22em]" style={{ color: colorVar('--landing-hero-subtle') }}>
