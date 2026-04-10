@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Bell, Trash2, Check, Clock, CheckCircle2, Send, UserPlus, Edit, X as XIcon, MailOpen, Loader2, Inbox, Filter } from 'lucide-react';
+import { Bell, Trash2, Check, Clock, CheckCircle2, Send, UserPlus, Edit, X as XIcon, MailOpen, Loader2, Inbox, Filter, Shield, Eye, Calendar, User, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,6 +14,9 @@ import { enUS } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { deleteWithUndo } from '@/lib/deleteWithUndo';
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
 
 interface Notification {
   id: string;
@@ -31,6 +34,19 @@ interface Notification {
     status: string;
     groups?: { name: string; workspace_id: string | null };
   } | null;
+}
+
+interface SystemNotification {
+  id: string;
+  title: string;
+  content: string;
+  display_mode: string;
+  min_view_seconds: number;
+  expires_at: string | null;
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+  target_user_ids: string[] | null;
 }
 
 type TabFilter = 'all' | 'unread' | 'read';
@@ -61,6 +77,173 @@ function groupByDate(notifications: Notification[], locale: string) {
   }
   for (const [label, items] of map) groups.push({ label, items });
   return groups;
+}
+
+/* ═══ System Notifications Banner ═══ */
+function SystemNotificationsBanner({ userId, locale }: { userId: string; locale: string }) {
+  const isVi = locale === 'vi';
+  const [sysNotifs, setSysNotifs] = useState<SystemNotification[]>([]);
+  const [senderNames, setSenderNames] = useState<Record<string, string>>({});
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const fetch = async () => {
+      const now = new Date().toISOString();
+      const { data } = await supabase
+        .from('system_notifications')
+        .select('*')
+        .eq('is_active', true)
+        .eq('display_mode', 'post_login')
+        .or(`expires_at.is.null,expires_at.gt.${now}`)
+        .order('created_at', { ascending: false });
+      if (!data || data.length === 0) return;
+
+      // Filter by target_user_ids
+      const filtered = (data as SystemNotification[]).filter(n => {
+        if (Array.isArray(n.target_user_ids) && n.target_user_ids.length > 0) {
+          return n.target_user_ids.includes(userId);
+        }
+        return true;
+      });
+
+      // Check dismissals from DB
+      const notifIds = filtered.map(n => n.id);
+      if (notifIds.length > 0) {
+        const { data: dismissals } = await supabase
+          .from('notification_dismissals')
+          .select('notification_id, view_count')
+          .eq('user_id', userId)
+          .in('notification_id', notifIds);
+        const dismissed = new Set<string>();
+        if (dismissals) {
+          dismissals.forEach(d => {
+            if ((d.view_count ?? 1) >= 5) dismissed.add(d.notification_id);
+          });
+        }
+        setDismissedIds(dismissed);
+      }
+
+      setSysNotifs(filtered);
+
+      // Fetch sender names
+      const creatorIds = [...new Set(filtered.map(n => n.created_by))];
+      if (creatorIds.length > 0) {
+        const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', creatorIds);
+        if (profiles) {
+          const map: Record<string, string> = {};
+          profiles.forEach(p => { map[p.id] = p.full_name; });
+          setSenderNames(map);
+        }
+      }
+    };
+    fetch();
+  }, [userId]);
+
+  const handleDismiss = async (notifId: string) => {
+    // Record dismissal in DB
+    const { data: existing } = await supabase
+      .from('notification_dismissals')
+      .select('id, view_count')
+      .eq('notification_id', notifId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase
+        .from('notification_dismissals')
+        .update({ view_count: (existing.view_count ?? 1) + 1 })
+        .eq('id', existing.id);
+    } else {
+      await supabase.from('notification_dismissals').insert([{
+        notification_id: notifId,
+        user_id: userId,
+        view_count: 1,
+      }]);
+    }
+
+    setDismissedIds(prev => new Set([...prev, notifId]));
+    if (expandedId === notifId) setExpandedId(null);
+  };
+
+  const visible = sysNotifs.filter(n => !dismissedIds.has(n.id));
+  if (visible.length === 0) return null;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 mb-1">
+        <Shield className="w-4 h-4 text-blue-500" />
+        <h3 className="text-sm font-semibold text-foreground">
+          {isVi ? 'Thông báo hệ thống' : 'System Notices'}
+        </h3>
+        <Badge variant="secondary" className="text-[10px] h-5">{visible.length}</Badge>
+      </div>
+
+      {visible.map(notif => {
+        const isExpanded = expandedId === notif.id;
+        return (
+          <div
+            key={notif.id}
+            className="border border-blue-200 dark:border-blue-800/50 bg-blue-50/50 dark:bg-blue-950/20 rounded-xl overflow-hidden transition-all"
+          >
+            {/* Header row */}
+            <button
+              className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-blue-100/30 dark:hover:bg-blue-900/20 transition-colors"
+              onClick={() => setExpandedId(isExpanded ? null : notif.id)}
+            >
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-blue-500/10">
+                <Shield className="w-4 h-4 text-blue-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground truncate">{notif.title}</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <User className="w-3 h-3" />
+                    {senderNames[notif.created_by] || (isVi ? 'Quản trị viên' : 'Administrator')}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {format(new Date(notif.created_at), 'HH:mm — dd/MM/yyyy', { locale: viLocale })}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+              </div>
+            </button>
+
+            {/* Expanded content */}
+            {isExpanded && (
+              <div className="border-t border-blue-200/60 dark:border-blue-800/30">
+                <div className="px-4 py-4 max-h-[40vh] overflow-y-auto">
+                  <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:font-semibold prose-a:text-blue-500 prose-a:no-underline hover:prose-a:underline text-[13.5px]">
+                    <ReactMarkdown rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>
+                      {notif.content}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+                <div className="px-4 py-2.5 border-t border-blue-200/60 dark:border-blue-800/30 bg-muted/20 flex items-center justify-between">
+                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <Eye className="w-3 h-3" />
+                    {isVi ? `${notif.min_view_seconds}s bắt buộc` : `${notif.min_view_seconds}s required`}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs gap-1"
+                    onClick={(e) => { e.stopPropagation(); handleDismiss(notif.id); }}
+                  >
+                    <Check className="w-3 h-3" />
+                    {isVi ? 'Đã đọc' : 'Mark read'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export default function Notifications() {
@@ -216,6 +399,9 @@ export default function Notifications() {
           )}
         </div>
       </div>
+
+      {/* System Notifications (post_login) */}
+      {user && <SystemNotificationsBanner userId={user.id} locale={locale} />}
 
       {/* Filters row */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">

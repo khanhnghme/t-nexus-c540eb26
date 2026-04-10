@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 
-import MandatoryNotification from '@/components/MandatoryNotification';
+
 import { useFullLockdown } from '@/hooks/useFullLockdown';
 import { Button } from '@/components/ui/button';
 import {
@@ -527,7 +527,7 @@ export default function Landing() {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden" style={{ backgroundColor: colorVar('--landing-night'), fontFamily: "'NotionInter', 'Inter', sans-serif" }}>
-      <MandatoryNotification mode="pre_login" locale={locale} />
+      
 
       {videoEnabled && videoUrl && (
         <>
