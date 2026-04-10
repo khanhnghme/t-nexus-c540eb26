@@ -121,10 +121,23 @@ export default function BillingHistory() {
   const canContinuePayment = (r: BillingRecord) =>
     r.status === 'pending' && r.expires_at && new Date(r.expires_at).getTime() > Date.now();
 
-  const formatDateTime = (d: string | null) => {
-    if (!d) return '—';
+  const formatDateTimeParts = (d: string | null) => {
+    if (!d) return null;
     const date = new Date(d);
-    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
+    const datePart = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+    const timePart = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
+    return { datePart, timePart };
+  };
+
+  const DateTimeCell = ({ value }: { value: string | null }) => {
+    const parts = formatDateTimeParts(value);
+    if (!parts) return <span>—</span>;
+    return (
+      <div className="leading-tight">
+        <div>{parts.datePart}</div>
+        <div className="text-muted-foreground text-[11px]">{parts.timePart}</div>
+      </div>
+    );
   };
 
   const getStatusBadge = (status: string) => {
@@ -191,13 +204,13 @@ export default function BillingHistory() {
                       }
                     }}
                   >
-                    <td className="px-5 py-3 text-sm whitespace-nowrap">{formatDateTime(row.created_at)}</td>
+                    <td className="px-5 py-3 text-sm"><DateTimeCell value={row.created_at} /></td>
                     <td className="px-5 py-3 text-sm font-mono text-xs text-muted-foreground">
                       #{(row.order_id || row.id).slice(0, 8).toUpperCase()}
                     </td>
                     <td className="px-5 py-3 text-sm font-medium">{formatPlanName(row.plan_purchased)}</td>
                     <td className="px-5 py-3 text-sm text-muted-foreground">{row.payment_method || '—'}</td>
-                    <td className="px-5 py-3 text-sm text-muted-foreground whitespace-nowrap">{formatDateTime(row.paid_at)}</td>
+                    <td className="px-5 py-3 text-sm text-muted-foreground"><DateTimeCell value={row.paid_at} /></td>
                     <td className="px-5 py-3 text-sm text-right tabular-nums">${displayAmount.toFixed(2)}</td>
                     <td className="px-5 py-3 text-center">{getStatusBadge(row.status)}</td>
                     <td className="px-5 py-3 text-center">
