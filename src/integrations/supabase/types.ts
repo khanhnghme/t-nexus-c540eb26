@@ -1353,6 +1353,7 @@ export type Database = {
           coupon_code: string | null
           created_at: string
           discount_amount: number
+          expires_at: string | null
           id: string
           order_type: string
           payment_method: string
@@ -1374,6 +1375,7 @@ export type Database = {
           coupon_code?: string | null
           created_at?: string
           discount_amount?: number
+          expires_at?: string | null
           id?: string
           order_type?: string
           payment_method?: string
@@ -1395,6 +1397,7 @@ export type Database = {
           coupon_code?: string | null
           created_at?: string
           discount_amount?: number
+          expires_at?: string | null
           id?: string
           order_type?: string
           payment_method?: string
