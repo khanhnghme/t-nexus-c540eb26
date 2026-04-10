@@ -1,39 +1,51 @@
 
 
-## Fix: Giữ đúng step onboarding khi quay lại từ checkout
+## Kế hoạch: Cập nhật plan realtime + AI welcome images trên finish step
 
-### Nguyên nhân
+### Vấn đề 1: Plan chưa cập nhật ở finish step
 
-`currentStepIndex` dùng `useState(0)` — khi navigate đi `/checkout` rồi bấm Back, component `FirstTimeOnboarding` bị remount → state reset về `0` → quay lại bước "language".
+Khi user quay về `/onboarding` sau thanh toán thành công, `profile.user_plan` có thể chưa được refresh. Component `Onboarding.tsx` truyền `userPlan={profile.user_plan}` nhưng không gọi `refreshProfile()` khi mount lại.
 
-### Giải pháp
+**Fix**: Trong `Onboarding.tsx`, gọi `refreshProfile()` khi component mount nếu `sessionStorage` có flag `checkout_from === 'onboarding'` (nghĩa là vừa quay về từ checkout). Đồng thời trong `FirstTimeOnboarding.tsx`, cập nhật `getPlanLabelLocal()` và `getPlanColorLocal()` để dùng `userPlan` prop trực tiếp (đã đúng), và thêm `plan_business` vào switch case (hiện thiếu).
 
-Lưu `currentStepIndex` vào `sessionStorage` mỗi khi step thay đổi. Khi component mount, đọc lại giá trị đã lưu thay vì mặc định `0`.
+### Vấn đề 2: Ảnh welcome khác nhau cho mỗi plan
 
-### Thay đổi
+Hiện tại finish step dùng 1 ảnh tĩnh `completeImg` cho mọi plan. Yêu cầu: tạo 4 ảnh AI phong cách hoạt hình 3D cho 4 plan (Free, Plus, Pro, Business).
 
-**File: `src/components/FirstTimeOnboarding.tsx`**
+**Cách làm**:
+- Dùng Lovable AI image generation tạo 4 ảnh 3D cartoon (mỗi plan 1 theme riêng)
+- Lưu vào `src/assets/` với tên `onboarding-complete-free.png`, `onboarding-complete-plus.png`, etc.
+- Trong finish step, chọn ảnh dựa theo `userPlan`
 
-1. Khởi tạo `currentStepIndex` từ sessionStorage:
+### Thay đổi cụ thể
+
+**1. `src/pages/Onboarding.tsx`**
+- Thêm `useEffect` gọi `refreshProfile()` khi mount nếu `sessionStorage.getItem('checkout_from') === 'onboarding'`
+
+**2. `src/components/FirstTimeOnboarding.tsx`**
+- Fix `getPlanColorLocal()`: thêm case `plan_business`
+- Fix `getPlanLabelLocal()`: thêm case `plan_business`  
+- Thay `completeImg` bằng logic chọn ảnh theo plan:
 ```typescript
-const [currentStepIndex, setCurrentStepIndex] = useState(() => {
-  const saved = sessionStorage.getItem('onboarding_step_index');
-  return saved ? parseInt(saved, 10) : 0;
-});
+const finishImage = {
+  plan_free: completeImgFree,
+  plan_plus: completeImgPlus,
+  plan_pro: completeImgPro,
+  plan_business: completeImgBusiness,
+}[userPlan || 'plan_free'] || completeImgFree;
 ```
 
-2. Thêm useEffect đồng bộ step vào sessionStorage:
-```typescript
-useEffect(() => {
-  sessionStorage.setItem('onboarding_step_index', String(currentStepIndex));
-}, [currentStepIndex]);
-```
+**3. Tạo 4 ảnh AI** (3D cartoon style)
+- Free: Nhân vật hoạt hình 3D vui vẻ, bắt đầu hành trình
+- Plus: Nhân vật với huy hiệu xanh dương, bay lên
+- Pro: Nhân vật với áo giáp tím, siêu năng lực
+- Business: Nhân vật vàng gold, vương miện, đỉnh cao
 
-3. Khi onboarding hoàn tất (bước finish → complete), xóa key:
-```typescript
-sessionStorage.removeItem('onboarding_step_index');
-sessionStorage.removeItem('checkout_from');
-```
+### Files cần sửa/tạo
 
-Chỉ sửa 1 file, không ảnh hưởng checkout hay layout.
+| File | Thay đổi |
+|------|----------|
+| `src/pages/Onboarding.tsx` | Thêm refreshProfile khi quay từ checkout |
+| `src/components/FirstTimeOnboarding.tsx` | Fix plan display + dynamic image |
+| `src/assets/onboarding-complete-*.png` x4 | Tạo mới bằng AI |
 
