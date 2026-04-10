@@ -471,15 +471,12 @@ export default function FirstTimeOnboarding({
       setPaymentStatus('success');
       toast({ title: isVi ? 'Thanh toán thành công!' : 'Payment successful!' });
 
-      // Refresh profile to get updated plan from edge function
-      const { data: updatedProfile } = await supabase
+      // Refresh profile to ensure plan is persisted by edge function
+      await supabase
         .from('profiles')
         .select('user_plan')
         .eq('id', userId)
         .single();
-      if (updatedProfile?.user_plan) {
-        setUserPlan(updatedProfile.user_plan);
-      }
 
       // Brief delay to show success state, then advance
       setTimeout(() => goNext(), 1500);
