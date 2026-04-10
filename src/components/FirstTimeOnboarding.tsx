@@ -10,11 +10,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { r2Storage } from '@/lib/r2Storage';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PLAN_CONFIG, getPlanLabel as getPlanLabelFromConfig, getWelcomePrice, type PlanKey } from '@/lib/planConfig';
+import { REGIONS, searchInstitutions } from '@/lib/institutions';
 import tNexusTextWhite from '@/assets/t-nexus-text-white.png';
 import welcomeImg from '@/assets/onboarding-welcome.png';
 import securityImg from '@/assets/onboarding-security.png';
@@ -26,7 +30,7 @@ import {
   Rocket, Eye, EyeOff, Mail, ListChecks, Users, FolderKanban,
   Award, MessageSquare, ChevronLeft, Globe, Crown, Zap,
   Tag, Plus, Minus, Package, CreditCard, ShieldCheck,
-  ArrowRight, ArrowLeft, ChevronUp, ChevronDown,
+  ArrowRight, ArrowLeft, ChevronUp, ChevronDown, Building2, ChevronsUpDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -55,6 +59,7 @@ interface FirstTimeOnboardingProps {
   userFullName: string;
   userEmail: string;
   userStudentId: string;
+  userInstitution?: string | null;
   userPlan?: string;
   mustChangePassword: boolean;
   onComplete: () => void;
@@ -73,7 +78,7 @@ const stepIcons: Record<StepId, React.ReactNode> = {
 };
 
 export default function FirstTimeOnboarding({
-  userId, userFullName, userEmail, userStudentId, userPlan, mustChangePassword, onComplete,
+  userId, userFullName, userEmail, userStudentId, userInstitution, userPlan, mustChangePassword, onComplete,
 }: FirstTimeOnboardingProps) {
   const { toast } = useToast();
   const { translations: { app: appT, pricing: pricingT }, setLocale, locale } = useLanguage();
@@ -134,8 +139,20 @@ export default function FirstTimeOnboarding({
   const [infoErrors, setInfoErrors] = useState<Record<string, boolean>>({});
   const [editStudentId, setEditStudentId] = useState(userStudentId || '');
   const [editFullName, setEditFullName] = useState(userFullName || '');
+  const [editInstitution, setEditInstitution] = useState(userInstitution || '');
+  const [institutionOpen, setInstitutionOpen] = useState(false);
+  const [institutionSearch, setInstitutionSearch] = useState('');
   const needsStudentId = !userStudentId || userStudentId.trim() === '';
   const needsFullName = !userFullName || userFullName.trim() === '';
+  const filteredInstitutions = useMemo(() => searchInstitutions(institutionSearch), [institutionSearch]);
+  const institutionsByRegion = useMemo(() => {
+    const map = new Map<string, typeof filteredInstitutions>();
+    for (const region of REGIONS) {
+      const items = filteredInstitutions.filter(i => i.region === region);
+      if (items.length > 0) map.set(region, items);
+    }
+    return map;
+  }, [filteredInstitutions]);
 
   // Load PayPal config when checkout step is possible
   useEffect(() => {
@@ -299,6 +316,7 @@ export default function FirstTimeOnboarding({
     if (!skills.trim()) errors.skills = true;
     if (needsStudentId && !editStudentId.trim()) errors.editStudentId = true;
     if (!editFullName.trim()) errors.editFullName = true;
+    if (!editInstitution.trim()) errors.editInstitution = true;
     setInfoErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -351,6 +369,7 @@ export default function FirstTimeOnboarding({
       if (avatarUrl) updateData.avatar_url = avatarUrl;
       if (needsStudentId) updateData.student_id = editStudentId.trim();
       updateData.full_name = editFullName.trim();
+      updateData.institution = editInstitution.trim();
 
       const { error } = await supabase.from('profiles').update(updateData).eq('id', userId);
       if (error) throw error;
@@ -932,6 +951,70 @@ export default function FirstTimeOnboarding({
                             className={cn('h-9 border-0 bg-muted/50 rounded-lg focus-visible:ring-1', infoErrors[field.id] && 'bg-destructive/10')} />
                         </div>
                       ))}
+
+                      {/* Institution dropdown */}
+                      <div className={cn(
+                        'rounded-xl border p-3 transition-all',
+                        infoErrors.editInstitution ? 'border-destructive bg-destructive/5' : 'bg-card hover:shadow-sm'
+                      )}>
+                        <Label className="text-xs flex items-center gap-1.5 mb-1.5 font-semibold">
+                          <span className="text-primary"><Building2 className="w-4 h-4" /></span>
+                          {isVi ? 'Đơn vị đào tạo' : 'Institution'} <span className="text-destructive">*</span>
+                        </Label>
+                        <Popover open={institutionOpen} onOpenChange={setInstitutionOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={institutionOpen}
+                              className={cn(
+                                'w-full justify-between h-9 border-0 bg-muted/50 rounded-lg font-normal text-sm',
+                                !editInstitution && 'text-muted-foreground',
+                                infoErrors.editInstitution && 'bg-destructive/10'
+                              )}
+                            >
+                              <span className="truncate">
+                                {editInstitution || (isVi ? 'Chọn đơn vị đào tạo...' : 'Select institution...')}
+                              </span>
+                              <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[340px] p-0" align="start">
+                            <Command shouldFilter={false}>
+                              <CommandInput
+                                placeholder={isVi ? 'Tìm kiếm...' : 'Search...'}
+                                value={institutionSearch}
+                                onValueChange={setInstitutionSearch}
+                              />
+                              <CommandList>
+                                <CommandEmpty>{isVi ? 'Không tìm thấy' : 'No results found'}</CommandEmpty>
+                                <ScrollArea className="h-[240px]">
+                                  {Array.from(institutionsByRegion.entries()).map(([region, items]) => (
+                                    <CommandGroup key={region} heading={region}>
+                                      {items.map(inst => (
+                                        <CommandItem
+                                          key={inst.code}
+                                          value={inst.code}
+                                          onSelect={() => {
+                                            setEditInstitution(inst.name);
+                                            setInstitutionOpen(false);
+                                            setInstitutionSearch('');
+                                            setInfoErrors(p => ({ ...p, editInstitution: false }));
+                                          }}
+                                        >
+                                          <Check className={cn('mr-2 h-4 w-4', editInstitution === inst.name ? 'opacity-100' : 'opacity-0')} />
+                                          <span className="truncate">{inst.name}</span>
+                                          <span className="ml-auto text-[10px] text-muted-foreground">{inst.code}</span>
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  ))}
+                                </ScrollArea>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
                     </div>
 
                     <div className="mt-3 rounded-xl border bg-card p-3">
