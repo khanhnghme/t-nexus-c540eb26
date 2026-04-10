@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
-import { ShieldCheck, Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -60,6 +60,11 @@ export default function AddonCheckoutPayment() {
       }
       setOrder(orderRes.data);
       if (paypalRes.data?.clientId) setPaypalClientId(paypalRes.data.clientId);
+      // If order is finished, redirect to summary
+      if (['completed', 'cancelled', 'expired'].includes(orderRes.data.status)) {
+        navigate(`/checkout/${orderId}/summary`, { replace: true });
+        return;
+      }
       if (orderRes.data.expires_at && new Date(orderRes.data.expires_at).getTime() <= Date.now() && orderRes.data.status === 'pending') {
         setOrderExpired(true);
       }
@@ -105,7 +110,7 @@ export default function AddonCheckoutPayment() {
       accountLimits.refresh();
       await refreshProfile();
       toast({ title: '✅', description: isVi ? 'Mua add-on thành công!' : 'Add-on purchased successfully!' });
-      navigate(`/checkout/result?status=success&order_id=${data.orderId || ''}`, { replace: true });
+      navigate(`/checkout/${orderId}/summary`, { replace: true });
     } catch (err: any) {
       setPaymentStatus('failed');
       toast({ title: 'Error', description: err.message || 'Payment failed', variant: 'destructive' });
@@ -122,28 +127,6 @@ export default function AddonCheckoutPayment() {
 
   if (!order) return null;
 
-  const isCompleted = order.status === 'completed';
-  const isCancelled = order.status === 'cancelled';
-
-  if (isCompleted || isCancelled) {
-    return (
-      <div className="max-w-lg mx-auto py-12 px-4 text-center space-y-4">
-        <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full ${isCompleted ? 'bg-emerald-500/10' : 'bg-destructive/10'}`}>
-          {isCompleted ? <ShieldCheck className="w-6 h-6 text-emerald-600" /> : <AlertTriangle className="w-6 h-6 text-destructive" />}
-        </div>
-        <h1 className="text-xl font-bold">
-          {isCompleted ? (isVi ? 'Đơn hàng đã hoàn tất' : 'Order Completed') : (isVi ? 'Đơn hàng đã bị hủy' : 'Order Cancelled')}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {isVi ? 'Mã đơn hàng:' : 'Order ID:'} #{orderId?.slice(0, 8).toUpperCase()}
-        </p>
-        <Button variant="outline" onClick={() => navigate('/billing-history')}>
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          {isVi ? 'Lịch sử thanh toán' : 'Billing History'}
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-5xl mx-auto py-6 px-4 space-y-5">
@@ -152,7 +135,7 @@ export default function AddonCheckoutPayment() {
         <div>
           <h1 className="text-2xl font-bold">{isVi ? 'Xác nhận & Thanh toán' : 'Confirm & Pay'}</h1>
           <p className="text-sm text-muted-foreground">
-            {isVi ? 'Bước 2/2 — Kiểm tra và thanh toán' : 'Step 2/2 — Review and pay'}
+            {isVi ? 'Bước 2/3 — Kiểm tra và thanh toán' : 'Step 2/3 — Review and pay'}
           </p>
         </div>
         {!orderExpired && (
