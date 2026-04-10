@@ -28,8 +28,14 @@ const ADDON_DISCOUNT_RATE: Record<string, number> = {
 };
 
 async function getPayPalAccessToken(): Promise<string> {
-  const clientId = Deno.env.get("PAYPAL_CLIENT_ID")!;
-  const clientSecret = Deno.env.get("PAYPAL_CLIENT_SECRET")!;
+  const clientId = Deno.env.get("PAYPAL_CLIENT_ID");
+  const clientSecret = Deno.env.get("PAYPAL_CLIENT_SECRET");
+  
+  if (!clientId || !clientSecret) {
+    console.error("Missing PayPal credentials:", { hasClientId: !!clientId, hasClientSecret: !!clientSecret });
+    throw new Error("PayPal credentials not configured");
+  }
+
   const res = await fetch(`${PAYPAL_BASE}/v1/oauth2/token`, {
     method: "POST",
     headers: {
@@ -39,7 +45,10 @@ async function getPayPalAccessToken(): Promise<string> {
     body: "grant_type=client_credentials",
   });
   const data = await res.json();
-  if (!data.access_token) throw new Error("Failed to get PayPal access token");
+  if (!data.access_token) {
+    console.error("PayPal token response:", JSON.stringify(data));
+    throw new Error(`Failed to get PayPal access token: ${data.error || data.error_description || res.status}`);
+  }
   return data.access_token;
 }
 
