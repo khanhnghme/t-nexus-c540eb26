@@ -203,22 +203,51 @@ Deno.serve(async (req) => {
 
     const { data: profile } = await serviceClient
       .from("profiles")
-      .select("user_plan, plan_expires_at")
+      .select("user_plan, plan_expires_at, next_plan")
       .eq("id", user.id)
       .single();
 
     const oldPlan = profile?.user_plan || "plan_free";
     const oldExpiry = profile?.plan_expires_at;
+    const oldRank = PLAN_RANK[oldPlan] ?? 0;
+    const newRank = PLAN_RANK[order.plan] ?? 0;
 
-    await serviceClient.from("profiles").update({
-      user_plan: order.plan,
-      plan_status: "active",
-      plan_started_at: startDate.toISOString(),
-      plan_expires_at: expiryDate.toISOString(),
-      plan_source: "paypal",
-      billing_cycle: order.billing_cycle,
-      downgraded_at: null,
-    }).eq("id", user.id);
+    // Determine transition type
+    const isUpgrade = newRank > oldRank || oldPlan === "plan_free";
+    const isDowngrade = newRank < oldRank && oldPlan !== "plan_free";
+    const isRenew = newRank === oldRank && oldPlan !== "plan_free";
+    const hasScheduledPlan = !!profile?.next_plan;
+
+    let actionType: string;
+
+    if (isDowngrade) {
+      // DOWNGRADE: schedule for next cycle, keep current plan active
+      const profileUpdate: Record<string, any> = {
+        next_plan: order.plan,
+        next_billing_cycle: order.billing_cycle,
+        updated_at: now,
+      };
+
+      // If user already had a scheduled plan (change of mind), just overwrite
+      actionType = hasScheduledPlan ? "change_scheduled_plan" : "downgrade_scheduled";
+
+      await serviceClient.from("profiles").update(profileUpdate).eq("id", user.id);
+    } else {
+      // UPGRADE or RENEW: immediate switch
+      actionType = isUpgrade ? "upgrade" : "renew";
+
+      await serviceClient.from("profiles").update({
+        user_plan: order.plan,
+        plan_status: "active",
+        plan_started_at: startDate.toISOString(),
+        plan_expires_at: expiryDate.toISOString(),
+        plan_source: "paypal",
+        billing_cycle: order.billing_cycle,
+        downgraded_at: null,
+        next_plan: null,
+        next_billing_cycle: null,
+      }).eq("id", user.id);
+    }
 
     await serviceClient.from("payment_history").insert({
       user_id: user.id,
@@ -239,11 +268,11 @@ Deno.serve(async (req) => {
 
     await serviceClient.from("plan_change_logs").insert({
       user_id: user.id,
-      action_type: oldPlan === "plan_free" ? "upgrade" : (order.plan === oldPlan ? "renew" : "upgrade"),
+      action_type: actionType,
       old_plan: oldPlan,
       new_plan: order.plan,
       old_expires_at: oldExpiry,
-      new_expires_at: expiryDate.toISOString(),
+      new_expires_at: isDowngrade ? oldExpiry : expiryDate.toISOString(),
       change_source: "user_payment",
       reason: `PayPal payment ${captureId || orderID}`,
       performed_by: user.id,
