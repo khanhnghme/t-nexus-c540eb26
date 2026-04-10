@@ -3,6 +3,9 @@ import { useState, useMemo } from 'react';
 import { Check, ArrowLeft, Plus, Minus } from 'lucide-react';
 import tNexusLogo from '@/assets/t-nexus-logo.png';
 import tNexusText from '@/assets/t-nexus-text.png';
+import gmailLogo from '@/assets/gmail-logo.png';
+import googleDriveLogo from '@/assets/google-drive-logo.png';
+import googleCalendarLogo from '@/assets/google-calendar-logo.png';
 import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageToggle from '@/components/LanguageToggle';
 
