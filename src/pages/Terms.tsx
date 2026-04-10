@@ -199,7 +199,7 @@ export default function Terms() {
           </button>
 
           <button
-            onClick={() => navigate(lp('/'))}
+            onClick={() => navigate(-1)}
             style={{
               display: 'flex',
               alignItems: 'center',

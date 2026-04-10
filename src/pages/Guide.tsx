@@ -1,91 +1,88 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { FileText, Shield, CreditCard, ArrowLeft, ExternalLink } from 'lucide-react';
 import tNexusLogo from '@/assets/t-nexus-logo.png';
+import tNexusTextWhite from '@/assets/t-nexus-text-white.png';
+import { ArrowLeft } from 'lucide-react';
+import LanguageToggle from '@/components/LanguageToggle';
 
 export default function Guide() {
+  const navigate = useNavigate();
   const { locale } = useLanguage();
   const isVi = locale === 'vi';
   const prefix = isVi ? '/vi' : '';
 
-  const guides = [
+  const sections = [
     {
-      title: isVi ? 'Điều khoản sử dụng' : 'Terms of Service',
-      description: isVi
-        ? 'Các điều khoản và điều kiện khi sử dụng nền tảng T-Nexus.'
-        : 'Terms and conditions for using the T-Nexus platform.',
-      href: `${prefix}/guide/terms`,
-      icon: FileText,
+      title: isVi ? 'Chính sách' : 'Policies',
+      links: [
+        { label: isVi ? 'Điều khoản sử dụng' : 'Terms of Service', href: `${prefix}/guide/terms` },
+        { label: isVi ? 'Chính sách bảo mật' : 'Privacy Policy', href: `${prefix}/guide/privacy` },
+      ],
     },
     {
-      title: isVi ? 'Chính sách bảo mật' : 'Privacy Policy',
-      description: isVi
-        ? 'Cách chúng tôi thu thập, sử dụng và bảo vệ thông tin cá nhân của bạn.'
-        : 'How we collect, use, and protect your personal information.',
-      href: `${prefix}/guide/privacy`,
-      icon: Shield,
-    },
-    {
-      title: isVi ? 'Tài liệu định giá' : 'Pricing Documentation',
-      description: isVi
-        ? 'Chi tiết về các gói dịch vụ và tính năng đi kèm.'
-        : 'Details about service plans and included features.',
-      href: `${prefix}/guide/pricing`,
-      icon: CreditCard,
+      title: isVi ? 'Tài liệu' : 'Documentation',
+      links: [
+        { label: isVi ? 'Hướng dẫn định giá' : 'Pricing Documentation', href: `${prefix}/guide/pricing` },
+      ],
     },
   ];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div style={{ minHeight: '100vh', background: '#fff', color: '#37352f', fontFamily: 'ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif' }}>
       {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to={prefix || '/'} className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900 transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            {isVi ? 'Trang chủ' : 'Home'}
-          </Link>
-          <Link to={prefix || '/'} className="flex items-center gap-2">
-            <img src={tNexusLogo} alt="T-Nexus" className="h-7 w-7" />
-            <span className="font-semibold text-neutral-900">T-Nexus</span>
-          </Link>
+      <header style={{ position: 'sticky', top: 0, zIndex: 10, borderBottom: '1px solid #e8e5e0', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <button
+            onClick={() => navigate(-1)}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', color: '#37352f', fontSize: 14, fontWeight: 500, padding: 0 }}
+          >
+            <ArrowLeft size={16} />
+            <span>{isVi ? 'Quay lại' : 'Back'}</span>
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <LanguageToggle />
+            <Link to={prefix || '/'} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <img src={tNexusLogo} alt="T-Nexus" style={{ height: 28, width: 28 }} />
+              <img src={tNexusTextWhite} alt="T-Nexus" style={{ height: 14, filter: 'invert(1)' }} />
+            </Link>
+          </div>
         </div>
       </header>
 
       {/* Content */}
-      <main className="max-w-4xl mx-auto px-6 py-16">
-        <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold text-neutral-900 mb-3">
-            {isVi ? 'Tài liệu & Chính sách' : 'Documentation & Policies'}
-          </h1>
-          <p className="text-neutral-500 text-lg">
-            {isVi
-              ? 'Tìm hiểu về các chính sách, điều khoản và tài liệu hướng dẫn của T-Nexus.'
-              : 'Learn about T-Nexus policies, terms, and documentation.'}
-          </p>
-        </div>
+      <main style={{ maxWidth: 900, margin: '0 auto', padding: '48px 24px 80px' }}>
+        <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>
+          {isVi ? 'Tài liệu & Chính sách' : 'Documentation & Policies'}
+        </h1>
+        <p style={{ fontSize: 15, color: '#787774', marginBottom: 40 }}>
+          {isVi
+            ? 'Tìm hiểu về các chính sách, điều khoản và tài liệu hướng dẫn của T-Nexus.'
+            : 'Learn about T-Nexus policies, terms, and documentation.'}
+        </p>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {guides.map((guide) => {
-            const Icon = guide.icon;
-            return (
-              <Link
-                key={guide.href}
-                to={guide.href}
-                className="group flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-6 transition-all hover:border-neutral-400 hover:shadow-md"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="rounded-lg bg-neutral-100 p-2.5 text-neutral-600 group-hover:bg-neutral-900 group-hover:text-white transition-colors">
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <ExternalLink className="w-4 h-4 text-neutral-300 group-hover:text-neutral-500 transition-colors" />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {sections.map((section) => (
+            <div key={section.title} style={{ borderTop: '1px solid #e8e5e0', padding: '28px 0' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 16, alignItems: 'start' }}>
+                <p style={{ fontSize: 14, fontWeight: 700, color: '#37352f', margin: 0 }}>
+                  {section.title}
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px 24px' }}>
+                  {section.links.map((link) => (
+                    <Link
+                      key={link.href}
+                      to={link.href}
+                      style={{ fontSize: 14, color: '#37352f', textDecoration: 'none', transition: 'color 0.15s' }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = '#2383e2')}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = '#37352f')}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
                 </div>
-                <div>
-                  <h2 className="font-semibold text-neutral-900 mb-1">{guide.title}</h2>
-                  <p className="text-sm text-neutral-500 leading-relaxed">{guide.description}</p>
-                </div>
-              </Link>
-            );
-          })}
+              </div>
+            </div>
+          ))}
         </div>
       </main>
     </div>
