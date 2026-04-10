@@ -63,7 +63,11 @@ export default function GmailTab() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [nextPageToken, setNextPageToken] = useState<string | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
+  // 5 emails/page, 25 emails/sync = 5 pages per sync batch
+  const PAGES_PER_BATCH = Math.floor(25 / PAGE_SIZE); // 5
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   const fetchEmails = useCallback(async (page: number) => {
@@ -92,8 +96,33 @@ export default function GmailTab() {
     if (isConnected && !isChecking) fetchEmails(currentPage);
   }, [isConnected, isChecking, currentPage, fetchEmails]);
 
+  // Auto-load more when user navigates beyond available data
+  const handlePageChange = useCallback(async (page: number) => {
+    // Check if we need more emails from Gmail
+    const neededEmails = page * PAGE_SIZE;
+    if (neededEmails > totalCount && nextPageToken && !isLoadingMore && !isSyncing) {
+      setIsLoadingMore(true);
+      try {
+        const result = await syncEmails(nextPageToken);
+        if (result?.nextPageToken) {
+          setNextPageToken(result.nextPageToken);
+        } else {
+          setNextPageToken(null);
+        }
+      } finally {
+        setIsLoadingMore(false);
+      }
+    }
+    setCurrentPage(page);
+  }, [totalCount, nextPageToken, isLoadingMore, isSyncing, syncEmails]);
+
   const handleSync = async () => {
-    await syncEmails();
+    const result = await syncEmails();
+    if (result?.nextPageToken) {
+      setNextPageToken(result.nextPageToken);
+    } else {
+      setNextPageToken(null);
+    }
     setCurrentPage(1);
     await fetchEmails(1);
   };
@@ -162,7 +191,7 @@ export default function GmailTab() {
         </div>
       </div>
 
-      {(isLoading || isChecking) ? (
+      {(isLoading || isChecking || isLoadingMore) ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
           <Loader2 className="w-8 h-8 animate-spin mb-3" />
         </div>
@@ -239,7 +268,7 @@ export default function GmailTab() {
                 <PaginationContent>
                   <PaginationItem>
                     <PaginationPrevious
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                       className={cn(currentPage === 1 && "pointer-events-none opacity-50", "cursor-pointer")}
                     />
                   </PaginationItem>
@@ -252,7 +281,7 @@ export default function GmailTab() {
                       <PaginationItem key={p}>
                         <PaginationLink
                           isActive={currentPage === p}
-                          onClick={() => setCurrentPage(p as number)}
+                          onClick={() => handlePageChange(p as number)}
                           className="cursor-pointer"
                         >
                           {p}
@@ -262,7 +291,7 @@ export default function GmailTab() {
                   )}
                   <PaginationItem>
                     <PaginationNext
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                       className={cn(currentPage === totalPages && "pointer-events-none opacity-50", "cursor-pointer")}
                     />
                   </PaginationItem>

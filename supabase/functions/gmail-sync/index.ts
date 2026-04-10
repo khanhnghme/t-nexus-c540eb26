@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { action } = await req.json();
+    const { action, pageToken } = await req.json();
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // --- DISCONNECT ---
@@ -112,11 +112,10 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Fetch latest 50 messages list
-      const listRes = await fetch(
-        "https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=50",
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
+      // Fetch 25 messages, support pagination via pageToken
+      let listUrl = "https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=25";
+      if (pageToken) listUrl += `&pageToken=${pageToken}`;
+      const listRes = await fetch(listUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
 
       if (!listRes.ok) {
         const err = await listRes.text();
@@ -129,9 +128,10 @@ Deno.serve(async (req) => {
 
       const listData = await listRes.json();
       const messageIds: { id: string; threadId: string }[] = listData.messages || [];
+      const nextPageToken = listData.nextPageToken || null;
 
       if (messageIds.length === 0) {
-        return new Response(JSON.stringify({ synced: 0 }), {
+        return new Response(JSON.stringify({ synced: 0, nextPageToken: null }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -186,7 +186,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      return new Response(JSON.stringify({ synced: messages.length }), {
+      return new Response(JSON.stringify({ synced: messages.length, nextPageToken }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
