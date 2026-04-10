@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { CheckCircle2, XCircle, Loader2, ArrowRight, RotateCcw, MessageCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, ArrowRight, RotateCcw, MessageCircle, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -73,6 +73,23 @@ export default function PaymentResult() {
                 <CheckCircle2 className="h-12 w-12 text-emerald-500" />
               </div>
             </div>
+            {/* Confetti dots animation */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+              {[...Array(12)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute w-2 h-2 rounded-full animate-bounce"
+                  style={{
+                    left: `${10 + Math.random() * 80}%`,
+                    top: `${5 + Math.random() * 30}%`,
+                    backgroundColor: ['#10b981', '#f59e0b', '#6366f1', '#ec4899', '#06b6d4'][i % 5],
+                    animationDelay: `${i * 0.15}s`,
+                    animationDuration: `${1.5 + Math.random()}s`,
+                    opacity: 0.7,
+                  }}
+                />
+              ))}
+            </div>
             <h1 className="text-2xl font-bold">{t?.successTitle || 'Payment Successful!'}</h1>
             <p className="text-muted-foreground">{t?.successDesc || 'Your plan has been upgraded successfully.'}</p>
           </>
@@ -140,6 +157,10 @@ export default function PaymentResult() {
             <Button onClick={() => navigate('/service-plan')} className="w-full">
               {t?.viewPlan || 'View Your Plan'}
               <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/addon-checkout')} className="w-full">
+              <Package className="w-4 h-4 mr-2" />
+              {t?.buyAddons || 'Buy more Add-ons'}
             </Button>
             <Button variant="outline" onClick={() => navigate('/dashboard')} className="w-full">
               {t?.backDashboard || 'Back to Dashboard'}

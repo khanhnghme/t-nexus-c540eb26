@@ -840,65 +840,163 @@ export default function ServicePlan() {
           <AccountCleanupPanel onCleanupComplete={fetchUsages} />
         </TabsContent>
 
-        {/* TAB: Billing history */}
+        {/* TAB: Billing history — Card-based timeline */}
         <TabsContent value="billing" className="space-y-4">
           <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
             <Receipt className="w-5 h-5 text-muted-foreground" />
             {t.billingHistory}
           </h2>
 
-          <Card>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.dateCol}</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.txnCol}</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.planCol}</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{'Method'}</th>
-                    <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.amountCol}</th>
-                    <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.statusCol}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {billingLoading ? (
-                    <tr><td colSpan={6} className="text-center py-8"><Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" /></td></tr>
-                  ) : billingHistory.length === 0 ? (
-                    <tr><td colSpan={6} className="text-center py-8 text-sm text-muted-foreground">{t.noTransactions || 'No transactions yet'}</td></tr>
-                  ) : billingHistory.map(row => {
-                    const date = new Date(row.created_at);
-                    const formattedDate = `${date.getDate().toString().padStart(2,'0')}/${(date.getMonth()+1).toString().padStart(2,'0')}/${date.getFullYear()}`;
-                    const displayAmount = row.final_amount ?? row.amount;
-                    const statusLabel = row.status === 'completed' ? 'Paid' : row.status === 'pending' ? 'Pending' : row.status;
-                    return (
-                      <tr key={row.id} className="hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setSelectedPayment(row)}>
-                        <td className="px-5 py-3 text-sm">{formattedDate}</td>
-                        <td className="px-5 py-3 text-sm font-mono text-xs text-muted-foreground">{row.transaction_id || row.id.slice(0,13)}</td>
-                        <td className="px-5 py-3 text-sm font-medium">{formatPlanName(row.plan_purchased)}</td>
-                        <td className="px-5 py-3 text-sm text-muted-foreground">{row.payment_method || '—'}</td>
-                        <td className="px-5 py-3 text-sm text-right tabular-nums">${displayAmount.toFixed(2)}</td>
-                        <td className="px-5 py-3 text-right">
-                          <Badge
-                            variant={statusLabel === 'Paid' ? 'default' : 'secondary'}
-                            className={`text-[10px] ${
-                              statusLabel === 'Paid' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-none' :
-                              statusLabel === 'Pending' ? 'bg-amber-500/15 text-amber-600 border-none' :
-                              'bg-muted text-muted-foreground border-none'
-                            }`}
-                          >
-                            {statusLabel}
-                          </Badge>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+          {billingLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
-            <div className="px-5 py-3 border-t border-border">
-              <p className="text-xs text-muted-foreground text-center">{t.showingRecent}</p>
+          ) : billingHistory.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="p-10 flex flex-col items-center gap-3 text-center">
+                <div className="p-4 rounded-2xl bg-muted">
+                  <Receipt className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <h3 className="font-semibold">{t.noTransactions || 'No transactions yet'}</h3>
+                <p className="text-sm text-muted-foreground max-w-xs">
+                  {t.noTransactionsDesc || 'Your payment history will appear here once you purchase a plan.'}
+                </p>
+                <Button onClick={() => navigate('/upgrade?from=personal')} className="mt-2">
+                  <Zap className="w-4 h-4 mr-2" />
+                  {t.startPurchase || 'Get Started with a Plan'}
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {billingHistory.map(row => {
+                const date = new Date(row.created_at);
+                const formattedDate = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+                const displayAmount = row.final_amount ?? row.amount;
+                const statusKey = row.status === 'completed' ? 'paid' : row.status === 'pending' ? 'pending' : row.status === 'expired' ? 'expired' : 'failed';
+                const statusConfig: Record<string, { label: string; icon: React.ReactNode; color: string; bg: string }> = {
+                  paid: {
+                    label: t.statusPaid || 'Paid',
+                    icon: <Check className="w-4 h-4" />,
+                    color: 'text-emerald-600 dark:text-emerald-400',
+                    bg: 'bg-emerald-500/10',
+                  },
+                  pending: {
+                    label: t.statusPending || 'Pending',
+                    icon: <RefreshCw className="w-4 h-4" />,
+                    color: 'text-amber-600 dark:text-amber-400',
+                    bg: 'bg-amber-500/10',
+                  },
+                  expired: {
+                    label: t.statusExpired || 'Expired',
+                    icon: <AlertTriangle className="w-4 h-4" />,
+                    color: 'text-muted-foreground',
+                    bg: 'bg-muted',
+                  },
+                  failed: {
+                    label: t.statusFailed || 'Failed',
+                    icon: <AlertTriangle className="w-4 h-4" />,
+                    color: 'text-destructive',
+                    bg: 'bg-destructive/10',
+                  },
+                };
+                const sc = statusConfig[statusKey] || statusConfig.failed;
+                const isCompleted = row.status === 'completed';
+
+                return (
+                  <Card
+                    key={row.id}
+                    className="hover:shadow-md transition-shadow cursor-pointer group"
+                    onClick={() => setSelectedPayment(row)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        {/* Status icon */}
+                        <div className={`p-2.5 rounded-xl shrink-0 ${sc.bg} ${sc.color}`}>
+                          {sc.icon}
+                        </div>
+
+                        {/* Main content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="font-semibold text-sm truncate">{formatPlanName(row.plan_purchased)}</span>
+                              <Badge
+                                variant="secondary"
+                                className={`text-[10px] shrink-0 border-none ${
+                                  statusKey === 'paid' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' :
+                                  statusKey === 'pending' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' :
+                                  statusKey === 'expired' ? 'bg-muted text-muted-foreground' :
+                                  'bg-destructive/15 text-destructive'
+                                }`}
+                              >
+                                {sc.label}
+                              </Badge>
+                            </div>
+                            <span className="text-lg font-bold tabular-nums shrink-0">
+                              ${displayAmount.toFixed(2)}
+                            </span>
+                          </div>
+
+                          {/* Meta row */}
+                          <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground flex-wrap">
+                            <span>{formattedDate}</span>
+                            <span className="font-mono">{row.transaction_id || row.id.slice(0, 13)}</span>
+                            {row.payment_method && (
+                              <span className="flex items-center gap-1">
+                                <CreditCard className="w-3 h-3" />
+                                {row.payment_method}
+                              </span>
+                            )}
+                            {row.coupon_code && (
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                                🎟 {row.coupon_code}
+                              </Badge>
+                            )}
+                          </div>
+
+                          {/* Action buttons — only for completed */}
+                          {isCompleted && (
+                            <div className="flex items-center gap-2 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const cycle = row.description?.includes('yearly') || row.description?.includes('Yearly') ? 'yearly' : 'monthly';
+                                  navigate(`/checkout?plan=${row.plan_purchased}&cycle=${cycle}`);
+                                }}
+                              >
+                                <RefreshCw className="w-3 h-3 mr-1" />
+                                {t.repurchase || 'Buy Again'}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate('/upgrade?from=personal');
+                                }}
+                              >
+                                <Zap className="w-3 h-3 mr-1" />
+                                {t.upgradeBtn || 'Upgrade'}
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
-          </Card>
+          )}
+
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground">{t.showingRecent}</p>
+          </div>
 
           <UserPaymentDetailDialog
             payment={selectedPayment}
