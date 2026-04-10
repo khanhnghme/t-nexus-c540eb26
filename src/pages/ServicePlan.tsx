@@ -312,6 +312,104 @@ export default function ServicePlan() {
                   </div>
                 </div>
 
+                {/* Subscription Details Card — only for premium */}
+                {isPremium && (() => {
+                  const startDate = profile?.plan_started_at ? new Date(profile.plan_started_at) : null;
+                  const expiresDate = profile?.plan_expires_at ? new Date(profile.plan_expires_at) : null;
+                  const now = new Date();
+                  const daysUntilExpiry = expiresDate ? Math.ceil((expiresDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
+                  const isExpiringSoon = daysUntilExpiry !== null && daysUntilExpiry <= 7 && daysUntilExpiry > 0;
+                  const billingLabel = profile?.billing_cycle === 'yearly' ? t.yearlyLabel : t.monthlyLabel;
+                  const autoRenew = profile?.auto_renew;
+                  const nextPlan = profile?.next_plan;
+                  const planSource = profile?.plan_source || '—';
+                  const isDowngrade = nextPlan && ['plan_free', 'plan_plus'].includes(nextPlan) && plan !== 'plan_free';
+
+                  return (
+                    <div className="mt-5">
+                      <Separator className="mb-5" />
+                      <h3 className="text-sm font-medium mb-3 flex items-center gap-1.5">
+                        <CalendarDays className="w-4 h-4 text-muted-foreground" />
+                        {t.subscriptionDetails}
+                      </h3>
+                      <Card className="border-border/50">
+                        <CardContent className="p-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+                            <div className="flex items-center justify-between py-1.5 text-sm">
+                              <span className="text-muted-foreground">{t.startedAt}</span>
+                              <span className="font-medium">
+                                {startDate ? startDate.toLocaleDateString() : '—'}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between py-1.5 text-sm">
+                              <span className="text-muted-foreground">{t.expiresAt}</span>
+                              <span className={`font-medium ${isExpiringSoon ? 'text-orange-500' : ''}`}>
+                                {expiresDate ? expiresDate.toLocaleDateString() : t.noExpiration}
+                                {isExpiringSoon && (
+                                  <span className="ml-1.5 text-xs text-orange-500">({t.expiresWarning})</span>
+                                )}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between py-1.5 text-sm">
+                              <span className="text-muted-foreground">{t.billingCycleLabel}</span>
+                              <span className="font-medium flex items-center gap-1">
+                                <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
+                                {billingLabel}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between py-1.5 text-sm">
+                              <span className="text-muted-foreground">{t.autoRenewLabel}</span>
+                              <span className={`font-medium flex items-center gap-1 ${autoRenew ? 'text-emerald-500' : 'text-orange-500'}`}>
+                                {autoRenew ? (
+                                  <><Check className="w-3.5 h-3.5" /> {t.autoRenewEnabled}</>
+                                ) : (
+                                  <><Minus className="w-3.5 h-3.5" /> {t.autoRenewDisabled}</>
+                                )}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between py-1.5 text-sm">
+                              <span className="text-muted-foreground">{t.planSourceLabel}</span>
+                              <span className="font-medium capitalize">{planSource}</span>
+                            </div>
+                          </div>
+
+                          {/* Scheduled downgrade/upgrade warning */}
+                          {nextPlan && (
+                            <>
+                              <Separator className="my-3" />
+                              <div className={`flex items-center gap-2 p-2.5 rounded-lg text-sm ${
+                                isDowngrade ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                              }`}>
+                                {isDowngrade ? <ArrowDown className="w-4 h-4 shrink-0" /> : <ArrowUp className="w-4 h-4 shrink-0" />}
+                                <div>
+                                  <span className="font-medium">
+                                    {isDowngrade ? t.scheduledDowngrade : t.scheduledUpgrade}:
+                                  </span>{' '}
+                                  {getPlanLabel(nextPlan)}
+                                  {expiresDate && (
+                                    <span className="text-muted-foreground"> — {expiresDate.toLocaleDateString()}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </>
+                          )}
+
+                          {/* Will not auto-renew warning */}
+                          {!autoRenew && !nextPlan && (
+                            <>
+                              <Separator className="my-3" />
+                              <div className="flex items-center gap-2 p-2.5 rounded-lg text-sm bg-orange-500/10 text-orange-600 dark:text-orange-400">
+                                <AlertTriangle className="w-4 h-4 shrink-0" />
+                                <span>{t.willNotRenew}</span>
+                              </div>
+                            </>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  );
+                })()}
+
                 <Separator className="my-5" />
 
                 <div>
@@ -364,29 +462,6 @@ export default function ServicePlan() {
               </CardContent>
             </Card>
           </section>
-
-          {/* Next plan card */}
-          {profile?.next_plan && (
-            <section>
-              <Card className="border-blue-500/20 bg-blue-500/5">
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="p-2.5 rounded-xl bg-blue-500/10">
-                    <RefreshCw className="w-5 h-5 text-blue-500" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-sm">{t.nextPlanTitle}</h3>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      {(t.nextPlanDesc || '')
-                        .replace('{plan}', getPlanLabel(profile.next_plan))
-                        .replace('{date}', profile?.plan_expires_at
-                          ? new Date(profile.plan_expires_at).toLocaleDateString()
-                          : '—')}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </section>
-          )}
 
           {!isPremium && (
             <section>
