@@ -178,7 +178,7 @@ export default function CheckoutSummary() {
 
   return (
     <div className="max-w-2xl mx-auto py-8 px-4 space-y-6">
-      <StepProgress isVi={isVi} />
+      <StepProgress isVi={isVi} status={status} />
 
       {/* Section 1: Status Header */}
       <div className="flex flex-col items-center text-center space-y-3">
