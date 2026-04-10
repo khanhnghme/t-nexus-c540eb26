@@ -426,20 +426,28 @@ export default function Notifications() {
           </TabsList>
         </Tabs>
 
-        <Select value={wsFilter} onValueChange={setWsFilter}>
-          <SelectTrigger className="w-full sm:w-[220px] h-9">
-            <SelectValue placeholder={t.allWorkspaces} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t.allWorkspaces}</SelectItem>
-            {workspaces.map(ws => (
-              <SelectItem key={ws.id} value={ws.id}>{ws.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {tab !== 'email' && (
+          <Select value={wsFilter} onValueChange={setWsFilter}>
+            <SelectTrigger className="w-full sm:w-[220px] h-9">
+              <SelectValue placeholder={t.allWorkspaces} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t.allWorkspaces}</SelectItem>
+              {workspaces.map(ws => (
+                <SelectItem key={ws.id} value={ws.id}>{ws.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
-      {/* Content */}
+      {/* Gmail Tab */}
+      {tab === 'email' ? (
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <GmailTab />
+        </div>
+      ) : (
+      /* Notification Content */
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
