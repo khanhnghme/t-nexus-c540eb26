@@ -281,7 +281,7 @@ export default function GmailTab() {
                       <PaginationItem key={p}>
                         <PaginationLink
                           isActive={currentPage === p}
-                          onClick={() => setCurrentPage(p as number)}
+                          onClick={() => handlePageChange(p as number)}
                           className="cursor-pointer"
                         >
                           {p}
