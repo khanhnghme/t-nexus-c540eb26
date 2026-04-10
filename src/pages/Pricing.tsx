@@ -399,8 +399,10 @@ function PlanColumn({ plan, yearly, tp }: { plan: Plan; yearly: boolean; tp: any
       {/* Google Integrations — Pro / Business / Enterprise only */}
       {showIntegrations && (
         <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid rgba(55,53,47,0.09)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#37352f', margin: 0 }}>Connected Tools</p>
           {GOOGLE_INTEGRATIONS.map(item => (
             <div key={item.label} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+              <Check size={15} style={{ color: '#2383e2', flexShrink: 0, marginTop: 2 }} strokeWidth={2.5} />
               <img src={item.logo} alt={item.label} style={{ width: 18, height: 18, flexShrink: 0, marginTop: 1, objectFit: 'contain' }} />
               <div style={{ minWidth: 0 }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: '#37352f', lineHeight: 1.3, display: 'block' }}>{item.label}</span>
