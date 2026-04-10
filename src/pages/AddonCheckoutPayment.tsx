@@ -61,7 +61,7 @@ export default function AddonCheckoutPayment() {
       setOrder(orderRes.data);
       if (paypalRes.data?.clientId) setPaypalClientId(paypalRes.data.clientId);
       // If order is finished, redirect to summary
-      if (['completed', 'cancelled', 'expired'].includes(orderRes.data.status)) {
+      if (['completed', 'cancelled', 'expired', 'failed'].includes(orderRes.data.status)) {
         navigate(`/checkout/summary/${orderCode}`, { replace: true });
         return;
       }
@@ -98,6 +98,15 @@ export default function AddonCheckoutPayment() {
     return data.orderID;
   }, [billingCycle, addons, order]);
 
+  const pollOrderStatus = useCallback(async (code: string, maxAttempts = 10, interval = 2000) => {
+    for (let i = 0; i < maxAttempts; i++) {
+      const { data } = await supabase.from('orders').select('status').eq('order_code', code).maybeSingle();
+      if (data && data.status !== 'pending') return data.status;
+      await new Promise(r => setTimeout(r, interval));
+    }
+    return null;
+  }, []);
+
   const captureOrder = useCallback(async (paypalOrderID: string) => {
     setPaymentStatus('processing');
     try {
@@ -105,17 +114,19 @@ export default function AddonCheckoutPayment() {
         body: { orderID: paypalOrderID },
       });
       if (error || !data?.success) throw new Error(error?.message || 'Capture failed');
-      setPaymentStatus('success');
       userAddons.refresh();
       accountLimits.refresh();
       await refreshProfile();
       toast({ title: '✅', description: isVi ? 'Mua add-on thành công!' : 'Add-on purchased successfully!' });
+      await pollOrderStatus(orderCode!);
       navigate(`/checkout/summary/${orderCode}`, { replace: true });
     } catch (err: any) {
       setPaymentStatus('failed');
       toast({ title: 'Error', description: err.message || 'Payment failed', variant: 'destructive' });
+      await pollOrderStatus(orderCode!).catch(() => {});
+      navigate(`/checkout/summary/${orderCode}`, { replace: true });
     }
-  }, [navigate, isVi, userAddons, accountLimits, refreshProfile]);
+  }, [navigate, isVi, userAddons, accountLimits, refreshProfile, orderCode, pollOrderStatus]);
 
   if (loading) {
     return (

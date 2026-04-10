@@ -56,7 +56,7 @@ export default function CheckoutPayment() {
 
       const o = orderRes.data;
       // If order is finished, redirect to summary
-      if (['completed', 'cancelled', 'expired'].includes(o.status)) {
+      if (['completed', 'cancelled', 'expired', 'failed'].includes(o.status)) {
         navigate(`/checkout/summary/${orderCode}`, { replace: true });
         return;
       }
@@ -105,6 +105,15 @@ export default function CheckoutPayment() {
     return res.data.orderID;
   }, [plan, cycle, addons, couponCode, order]);
 
+  const pollOrderStatus = useCallback(async (code: string, maxAttempts = 10, interval = 2000) => {
+    for (let i = 0; i < maxAttempts; i++) {
+      const { data } = await supabase.from('orders').select('status').eq('order_code', code).maybeSingle();
+      if (data && data.status !== 'pending') return data.status;
+      await new Promise(r => setTimeout(r, interval));
+    }
+    return null;
+  }, []);
+
   const onApprove = useCallback(async (data: { orderID: string }) => {
     setPaymentStatus('processing');
     try {
@@ -114,16 +123,19 @@ export default function CheckoutPayment() {
       if (res.error || !res.data?.success) {
         throw new Error(res.error?.message || 'Payment capture failed');
       }
-      setPaymentStatus('success');
       toast.success(t?.paymentSuccess || 'Payment successful!');
       await refreshProfile();
+      // Poll to ensure DB status is updated before redirect
+      await pollOrderStatus(orderCode!);
       navigate(`/checkout/summary/${orderCode}`, { replace: true });
     } catch {
       setPaymentStatus('failed');
       toast.error(t?.paymentFailed || 'Payment failed. Please try again.');
+      // Poll then redirect to summary regardless
+      await pollOrderStatus(orderCode!).catch(() => {});
       navigate(`/checkout/summary/${orderCode}`, { replace: true });
     }
-  }, [navigate, t, refreshProfile]);
+  }, [navigate, t, refreshProfile, orderCode, pollOrderStatus]);
 
   if (loading) {
     return (
@@ -137,10 +149,11 @@ export default function CheckoutPayment() {
 
   const hasAddons = addons.length > 0;
 
-  if (paymentStatus === 'success' || paymentStatus === 'failed') {
+  if (paymentStatus === 'processing' || paymentStatus === 'success') {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">{isVi ? 'Đang xử lý thanh toán...' : 'Processing payment...'}</p>
       </div>
     );
   }
