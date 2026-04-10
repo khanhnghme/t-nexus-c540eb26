@@ -531,6 +531,11 @@ export default function TaskSubmissionDialog({
   const statusConfig = task ? getStatusConfig(task.status) : getStatusConfig('TODO');
   const StatusIcon = statusConfig.icon;
 
+  const handleDialogClose = () => {
+    if (drivePicker.isOpen) return;
+    onClose();
+  };
+
   const getTimeStatus = () => {
     if (!deadlineDate) return null;
     const now = new Date();
@@ -553,8 +558,16 @@ export default function TaskSubmissionDialog({
   const timeStatus = getTimeStatus();
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] w-[1280px] sm:h-[720px] h-[90vh] max-h-[90vh] p-0 overflow-hidden flex flex-col">
+    <Dialog open={isOpen} modal={!drivePicker.isOpen} onOpenChange={(open) => { if (!open) handleDialogClose(); }}>
+      <DialogContent
+        className="max-w-[95vw] w-[1280px] sm:h-[720px] h-[90vh] max-h-[90vh] p-0 overflow-hidden flex flex-col"
+        onInteractOutside={(event) => {
+          if (drivePicker.isOpen) event.preventDefault();
+        }}
+        onEscapeKeyDown={(event) => {
+          if (drivePicker.isOpen) event.preventDefault();
+        }}
+      >
         {/* Header with task info */}
         <DialogHeader className="px-4 sm:px-6 py-3 border-b bg-gradient-to-r from-primary/10 to-transparent shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
@@ -1262,7 +1275,7 @@ export default function TaskSubmissionDialog({
         
         {/* Footer */}
         <DialogFooter className="px-6 py-3 border-t bg-muted/30 gap-2 shrink-0">
-          <Button variant="outline" onClick={onClose} className="h-10 min-w-24">
+          <Button variant="outline" onClick={handleDialogClose} disabled={drivePicker.isOpen} className="h-10 min-w-24">
             Đóng
           </Button>
           {canSubmit && (
