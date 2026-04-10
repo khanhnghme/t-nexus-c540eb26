@@ -1,51 +1,37 @@
 
 
-## Kế hoạch: Cập nhật plan realtime + AI welcome images trên finish step
+## Fix: Back button, PayPal glow, và popup xác nhận cho addon checkout
 
-### Vấn đề 1: Plan chưa cập nhật ở finish step
+### Vấn đề từ screenshot và mô tả
 
-Khi user quay về `/onboarding` sau thanh toán thành công, `profile.user_plan` có thể chưa được refresh. Component `Onboarding.tsx` truyền `userPlan={profile.user_plan}` nhưng không gọi `refreshProfile()` khi mount lại.
+1. **Back button không hoạt động**: Trong `CheckoutLayoutWrapper` (onboarding layout), nút "Quay lại" trong dialog luôn navigate về `/onboarding` — nhưng với dashboard flow thì `CheckoutPayment.tsx` dùng `navigate(-1)` là đúng. Vấn đề: khi không phải onboarding, nút Back trong `CheckoutPayment` gọi `navigate(-1)` nhưng có thể history stack rỗng.
 
-**Fix**: Trong `Onboarding.tsx`, gọi `refreshProfile()` khi component mount nếu `sessionStorage` có flag `checkout_from === 'onboarding'` (nghĩa là vừa quay về từ checkout). Đồng thời trong `FirstTimeOnboarding.tsx`, cập nhật `getPlanLabelLocal()` và `getPlanColorLocal()` để dùng `userPlan` prop trực tiếp (đã đúng), và thêm `plan_business` vào switch case (hiện thiếu).
+2. **PayPal buttons phát sáng qua dialog**: Trong `AddonCheckoutPayment.tsx` chưa có class `invisible` khi dialog mở — PayPal iframe xuyên qua overlay.
 
-### Vấn đề 2: Ảnh welcome khác nhau cho mỗi plan
-
-Hiện tại finish step dùng 1 ảnh tĩnh `completeImg` cho mọi plan. Yêu cầu: tạo 4 ảnh AI phong cách hoạt hình 3D cho 4 plan (Free, Plus, Pro, Business).
-
-**Cách làm**:
-- Dùng Lovable AI image generation tạo 4 ảnh 3D cartoon (mỗi plan 1 theme riêng)
-- Lưu vào `src/assets/` với tên `onboarding-complete-free.png`, `onboarding-complete-plus.png`, etc.
-- Trong finish step, chọn ảnh dựa theo `userPlan`
+3. **Addon checkout thiếu popup xác nhận back**: `AddonCheckoutPayment.tsx` không có `showBackDialog` + countdown logic.
 
 ### Thay đổi cụ thể
 
-**1. `src/pages/Onboarding.tsx`**
-- Thêm `useEffect` gọi `refreshProfile()` khi mount nếu `sessionStorage.getItem('checkout_from') === 'onboarding'`
+**1. `src/pages/CheckoutPayment.tsx`**
+- Fix nút "Quay lại" trong back dialog: thay `navigate(-1)` bằng `navigate('/checkout', { replace: true })` (quay về step 1) cho dashboard flow, hoặc nếu từ onboarding thì không cần vì layout đã xử lý.
 
-**2. `src/components/FirstTimeOnboarding.tsx`**
-- Fix `getPlanColorLocal()`: thêm case `plan_business`
-- Fix `getPlanLabelLocal()`: thêm case `plan_business`  
-- Thay `completeImg` bằng logic chọn ảnh theo plan:
-```typescript
-const finishImage = {
-  plan_free: completeImgFree,
-  plan_plus: completeImgPlus,
-  plan_pro: completeImgPro,
-  plan_business: completeImgBusiness,
-}[userPlan || 'plan_free'] || completeImgFree;
-```
+**2. `src/pages/AddonCheckoutPayment.tsx`**
+- Thêm state `showBackDialog`, `backDialogTimeLeft`
+- Thêm `useEffect` countdown timer (copy logic từ CheckoutPayment)
+- Thêm nút Back ở đầu trang (trước header)
+- Thêm Back Confirmation Dialog (giống CheckoutPayment)
+- Wrap PayPal buttons với `invisible` class khi `showBackDialog || showCancelDialog` đang mở
+- Nút "Quay lại" trong dialog → `navigate('/addon-checkout')` (quay về step 1 addon)
 
-**3. Tạo 4 ảnh AI** (3D cartoon style)
-- Free: Nhân vật hoạt hình 3D vui vẻ, bắt đầu hành trình
-- Plus: Nhân vật với huy hiệu xanh dương, bay lên
-- Pro: Nhân vật với áo giáp tím, siêu năng lực
-- Business: Nhân vật vàng gold, vương miện, đỉnh cao
+**3. `src/components/layout/CheckoutLayoutWrapper.tsx`**
+- Fix `isPaymentPage` check: thêm detect `/addon-checkout/` routes (hiện chỉ check `/checkout/payment`)
+- Nút "Quay lại" trong dialog: navigate phù hợp theo route (onboarding vs addon)
 
-### Files cần sửa/tạo
+### Files cần sửa
 
 | File | Thay đổi |
 |------|----------|
-| `src/pages/Onboarding.tsx` | Thêm refreshProfile khi quay từ checkout |
-| `src/components/FirstTimeOnboarding.tsx` | Fix plan display + dynamic image |
-| `src/assets/onboarding-complete-*.png` x4 | Tạo mới bằng AI |
+| `src/pages/CheckoutPayment.tsx` | Fix navigate trong back dialog |
+| `src/pages/AddonCheckoutPayment.tsx` | Thêm back button + confirmation dialog + invisible PayPal |
+| `src/components/layout/CheckoutLayoutWrapper.tsx` | Detect addon routes + fix navigation |
 
