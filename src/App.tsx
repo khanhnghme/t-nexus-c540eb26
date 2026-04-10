@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import PageTransition from "@/components/PageTransition";
 
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import CheckoutLayoutWrapper from "@/components/layout/CheckoutLayoutWrapper";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
