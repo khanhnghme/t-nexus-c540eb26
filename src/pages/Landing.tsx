@@ -44,7 +44,7 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react';
-import LoadingScreen from '@/components/LoadingScreen';
+
 import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageToggle from '@/components/LanguageToggle';
@@ -528,11 +528,6 @@ export default function Landing() {
   return (
     <div className="relative min-h-screen overflow-x-hidden" style={{ backgroundColor: colorVar('--landing-night'), fontFamily: "'NotionInter', 'Inter', sans-serif" }}>
       {/* Loading/Splash overlays — content renders behind for crawlers */}
-      {isChecking && !showSplash && (
-        <div className="fixed inset-0 z-[9998]" style={{ backgroundColor: colorVar('--landing-night') }}>
-          <LoadingScreen message={tl.loadingHomepage} />
-        </div>
-      )}
       {showSplash && (
         <SplashScreen
           onComplete={() => {

@@ -5,14 +5,14 @@ import { AuthForm } from '@/components/AuthForm';
 import RememberLoginScreen from '@/components/RememberLoginScreen';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import LoadingScreen from '@/components/LoadingScreen';
+
 import LanguageToggle from '@/components/LanguageToggle';
 
 export default function Auth() {
   const { user, profile, roles, isLoading: authLoading, signOut, maintenanceMode, isAdmin } = useAuth();
   const { translations: t, localizedPath: lp } = useLanguage();
 
-  if (authLoading) return <LoadingScreen message={t.auth.checking} />;
+  if (authLoading) return null;
 
   // During maintenance, non-admin users should NOT see RememberLoginScreen.
   // NOTE: We do NOT call signOut() here because during a fresh login, roles
