@@ -142,6 +142,17 @@ export default function CheckoutPayment() {
     }
   }, [navigate, t, refreshProfile, orderCode, pollOrderStatus, isVi]);
 
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (paymentStatus === 'processing') {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [paymentStatus]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -153,17 +164,6 @@ export default function CheckoutPayment() {
   if (!order) return null;
 
   const hasAddons = addons.length > 0;
-
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (paymentStatus === 'processing') {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [paymentStatus]);
 
   if (paymentStatus === 'processing') {
     return (
