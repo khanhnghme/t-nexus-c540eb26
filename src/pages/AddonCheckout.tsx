@@ -370,8 +370,4 @@ export default function AddonCheckout() {
         </Dialog>
       </div>
     );
-  }
-
-  /* Step 2 is now a separate route: /addon-checkout/:orderId */
-  return null;
 }
