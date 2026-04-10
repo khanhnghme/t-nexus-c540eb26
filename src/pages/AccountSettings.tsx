@@ -12,6 +12,7 @@ import {
   Eye, EyeOff, Navigation,
   Globe, Check, Loader2, Settings,
 } from 'lucide-react';
+import ConnectedServicesCard from '@/components/settings/ConnectedServicesCard';
 
 const TOGGLEABLE_PAGES = [
   { href: '/calendar', name: 'Calendar', nameVi: 'Lịch', icon: CalendarDays, description: 'Task calendar overview', descVi: 'Lịch tổng hợp công việc' },
