@@ -43,8 +43,8 @@ export default function CheckoutPayment() {
   // Background polling: detect webhook-completed orders
   useEffect(() => {
     if (!user || !orderCode || paymentStatus === 'success') return;
-    // Only poll when idle or processing (user may have opened PayPal popup)
-    if (paymentStatus !== 'idle' && paymentStatus !== 'processing') return;
+    // Poll when idle, processing, or failed (webhook may still complete)
+    if (paymentStatus !== 'idle' && paymentStatus !== 'processing' && paymentStatus !== 'failed') return;
 
     const interval = setInterval(async () => {
       const { data } = await supabase.from('orders').select('status').eq('order_code', orderCode).eq('user_id', user.id).maybeSingle();
@@ -146,20 +146,28 @@ export default function CheckoutPayment() {
       const res = await supabase.functions.invoke('capture-paypal-order', {
         body: { subscriptionID: data.subscriptionID },
       });
-      if (res.error || !res.data?.success) {
+      if (res.error) {
         throw new Error(res.error?.message || 'Payment capture failed');
       }
-      toast.success(t?.paymentSuccess || 'Payment successful!');
-      await refreshProfile();
-      // Poll to ensure DB status is updated before redirect
-      await pollOrderStatus(orderCode!);
-      navigate(`/checkout/summary/${orderCode}`, { replace: true });
+      if (res.data?.success && !res.data?.pending) {
+        // Fully completed
+        setPaymentStatus('success');
+        toast.success(t?.paymentSuccess || 'Payment successful!');
+        await refreshProfile();
+        navigate(`/checkout/summary/${orderCode}`, { replace: true });
+      } else if (res.data?.success && res.data?.pending) {
+        // Subscription approved but not yet ACTIVE — let polling handle it
+        toast.success(isVi ? 'Đã xác nhận! Đang chờ PayPal kích hoạt...' : 'Confirmed! Waiting for PayPal activation...');
+        // Stay in processing state, background polling will navigate when completed
+      } else {
+        throw new Error('Payment capture failed');
+      }
     } catch (err: any) {
       setPaymentStatus('failed');
       setPaymentError(err.message || (isVi ? 'Thanh toán thất bại. Vui lòng thử lại.' : 'Payment failed. Please try again.'));
       toast.error(t?.paymentFailed || 'Payment failed. Please try again.');
     }
-  }, [navigate, t, refreshProfile, orderCode, pollOrderStatus, isVi]);
+  }, [navigate, t, refreshProfile, orderCode, isVi]);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
