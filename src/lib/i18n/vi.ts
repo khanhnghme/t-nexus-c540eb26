@@ -2310,18 +2310,18 @@ export const vi: Translations = {
     ch3s3Examples: [
       {
         day: 'Ngày 1',
-        title: 'Mua gói Business ($30)',
+        title: 'Mua gói Business ($24)',
         details: [
-          'Bạn mua gói Business với giá $30/tháng.',
+          'Bạn mua gói Business với giá $24/tháng.',
           'Chu kỳ thanh toán 30 ngày bắt đầu.',
         ],
       },
       {
         day: 'Ngày 10',
-        title: 'Hạ gói xuống Pro ($10)',
+        title: 'Hạ gói xuống Pro ($12)',
         details: [
           'Bạn quyết định hạ xuống gói Pro.',
-          '💰 $10 được thu ngay (cho chu kỳ tiếp theo).',
+          '💰 $12 được thu ngay (cho chu kỳ tiếp theo).',
           'Bạn tiếp tục dùng Business đến hết Ngày 30.',
           'Đã lên lịch: Chuyển sang Pro vào Ngày 31.',
         ],
@@ -2330,10 +2330,10 @@ export const vi: Translations = {
         day: 'Ngày 15',
         title: 'Đổi ý — muốn giữ Business',
         details: [
-          '💰 Bạn trả thêm $30 cho Business.',
-          '❌ $10 đã trả cho Pro KHÔNG được hoàn lại.',
+          '💰 Bạn trả thêm $24 cho Business.',
+          '❌ $12 đã trả cho Pro KHÔNG được hoàn lại.',
           'Lịch chuyển gói được cập nhật sang Business.',
-          'Kết quả: Bạn đã trả tổng cộng $30 + $10 + $30 = $70.',
+          'Kết quả: Bạn đã trả tổng cộng $24 + $12 + $24 = $60.',
         ],
       },
     ],
@@ -2928,6 +2928,7 @@ export const vi: Translations = {
     freeBasic: 'Gói miễn phí cơ bản',
     viewDetails: 'Xem chi tiết',
     upgrade: 'Nâng cấp',
+    nextPlanFrom: '→ {plan} từ {date}',
   },
 
   servicePlanFeatures: {
@@ -3063,6 +3064,9 @@ export const vi: Translations = {
     failedMessage: 'Đã xảy ra lỗi. Vui lòng thử lại.',
     tryAgain: 'Thử lại',
     invalidPlan: 'Gói không hợp lệ',
+    downgradeWarning: '⚠️ Lưu ý hạ gói',
+    downgradeWarningDesc: 'Bạn sẽ được thu tiền ngay nhưng gói mới chỉ áp dụng khi hết chu kỳ hiện tại. Không hoàn tiền.',
+    existingScheduleWarning: 'Bạn đã lên lịch chuyển sang gói {plan}. Nếu tiếp tục, khoản thanh toán trước đó không được hoàn lại.',
   },
   paymentResult: {
     successTitle: 'Thanh toán thành công!',
