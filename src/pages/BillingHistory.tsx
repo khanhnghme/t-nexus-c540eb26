@@ -180,7 +180,17 @@ export default function BillingHistory() {
               ) : filtered.map(row => {
                 const displayAmount = row.final_amount ?? row.amount;
                 return (
-                  <tr key={`${row.source}-${row.id}`} className="hover:bg-muted/50 transition-colors">
+                  <tr
+                    key={`${row.source}-${row.id}`}
+                    className={`hover:bg-muted/50 transition-colors ${['completed', 'failed', 'cancelled', 'expired'].includes(row.status) ? 'cursor-pointer' : ''}`}
+                    onClick={() => {
+                      const finalStatuses = ['completed', 'failed', 'cancelled', 'expired'];
+                      if (finalStatuses.includes(row.status)) {
+                        const oid = row.order_id || row.id;
+                        navigate(`/checkout/${oid}/summary`);
+                      }
+                    }}
+                  >
                     <td className="px-5 py-3 text-sm whitespace-nowrap">{formatDateTime(row.created_at)}</td>
                     <td className="px-5 py-3 text-sm font-mono text-xs text-muted-foreground">
                       #{(row.order_id || row.id).slice(0, 8).toUpperCase()}
