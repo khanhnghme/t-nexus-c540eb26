@@ -177,14 +177,22 @@ export default function SubmissionButton({
   // Multiple items
   const hasFiles = items.some(i => i.type === 'file');
   const hasLinks = items.some(i => i.type === 'link');
+  const hasDrive = items.some(i => i.type === 'drive');
   const filesCount = items.filter(i => i.type === 'file').length;
   const linksCount = items.filter(i => i.type === 'link').length;
+  const driveCount = items.filter(i => i.type === 'drive').length;
   
   let label = `Xem (${items.length})`;
-  if (hasFiles && hasLinks) {
-    label = `${filesCount}F+${linksCount}L`;
+  const parts: string[] = [];
+  if (filesCount > 0) parts.push(`${filesCount}F`);
+  if (driveCount > 0) parts.push(`${driveCount}D`);
+  if (linksCount > 0) parts.push(`${linksCount}L`);
+  if (parts.length > 1) {
+    label = parts.join('+');
   } else if (hasFiles) {
     label = `${filesCount} file`;
+  } else if (hasDrive) {
+    label = `${driveCount} drive`;
   } else {
     label = `${linksCount} link`;
   }
@@ -210,13 +218,20 @@ export default function SubmissionButton({
       <DropdownMenuContent align="end" className="z-50 bg-popover min-w-[200px]">
         {items.map((item, i) => {
           const isFile = item.type === 'file';
+          const isDrive = item.type === 'drive';
           return (
             <DropdownMenuItem 
               key={i}
               onClick={(e) => handleOpenItem(item, e)}
               className="text-xs cursor-pointer"
             >
-              {isFile ? (
+              {isDrive ? (
+                <>
+                  <img src={item.icon_url || "https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png"} alt="" className="w-3 h-3" />
+                  <span className="ml-2 truncate">{item.title || 'Drive file'}</span>
+                  <ExternalLink className="w-3 h-3 ml-auto opacity-50" />
+                </>
+              ) : isFile ? (
                 <>
                   {getFileIcon(item.file_name || 'file')}
                   <span className="ml-2 truncate">{item.title || item.file_name || 'File'}</span>
