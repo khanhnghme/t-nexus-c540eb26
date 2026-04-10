@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Bell, Trash2, Check, Clock, CheckCircle2, Send, UserPlus, Edit, X as XIcon, MailOpen, Loader2, Inbox, Filter, Shield, Eye, Calendar, User, ChevronDown, ChevronUp } from 'lucide-react';
+import { Bell, Trash2, Check, Clock, CheckCircle2, Send, UserPlus, Edit, X as XIcon, MailOpen, Loader2, Inbox, Filter, Shield, Eye, Calendar, User, ChevronDown, ChevronUp, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -49,7 +49,7 @@ interface SystemNotification {
   target_user_ids: string[] | null;
 }
 
-type TabFilter = 'all' | 'unread' | 'read';
+type TabFilter = 'all' | 'unread' | 'read' | 'email';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   task_assigned: <UserPlus className="w-4 h-4 text-primary" />,
