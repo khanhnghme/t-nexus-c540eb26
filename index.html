@@ -58,51 +58,8 @@
       window.__pwaInstalled = true;
       window.__pwaInstallPrompt = null;
     });
-
-    (function () {
-      function updateHomeLegalLinks() {
-        var el = document.getElementById('home-legal-links');
-        if (!el) return;
-        var pathname = (window.location.pathname || '/').replace(/\/+$/, '') || '/';
-        var isHomePage = pathname === '/' || pathname === '/vi';
-        el.style.display = isHomePage ? 'flex' : 'none';
-      }
-
-      var originalPushState = history.pushState;
-      var originalReplaceState = history.replaceState;
-
-      history.pushState = function () {
-        var result = originalPushState.apply(this, arguments);
-        window.requestAnimationFrame(updateHomeLegalLinks);
-        return result;
-      };
-
-      history.replaceState = function () {
-        var result = originalReplaceState.apply(this, arguments);
-        window.requestAnimationFrame(updateHomeLegalLinks);
-        return result;
-      };
-
-      window.addEventListener('popstate', updateHomeLegalLinks);
-      window.addEventListener('DOMContentLoaded', updateHomeLegalLinks);
-      updateHomeLegalLinks();
-    })();
   </script>
   <div id="root"></div>
-  <div
-    id="home-legal-links"
-    aria-label="Homepage legal links"
-    style="position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:2147483647;display:flex;max-width:calc(100vw - 32px);align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:10px 14px;border-radius:999px;background:rgba(0,54,58,0.92);backdrop-filter:blur(10px);box-shadow:0 16px 40px rgba(0,0,0,0.22);font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-    <a href="/guide/privacy" style="color:#ffffff;text-decoration:underline;text-underline-offset:4px;font-size:14px;font-weight:600;">Privacy Policy</a>
-    <span aria-hidden="true" style="color:rgba(255,255,255,0.6)">•</span>
-    <a href="/guide/terms" style="color:rgba(255,255,255,0.86);text-decoration:underline;text-underline-offset:4px;font-size:14px;">Terms of Service</a>
-  </div>
-  <noscript>
-    <div style="padding:20px;text-align:center;">
-      <a href="/guide/privacy">Privacy Policy</a> |
-      <a href="/guide/terms">Terms of Service</a>
-    </div>
-  </noscript>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 
