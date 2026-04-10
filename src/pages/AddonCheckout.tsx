@@ -138,13 +138,14 @@ export default function AddonCheckout() {
       setPaymentStatus('success');
       userAddons.refresh();
       accountLimits.refresh();
+      await refreshProfile();
       toast({ title: '✅', description: isVi ? 'Mua add-on thành công!' : 'Add-on purchased successfully!' });
       navigate(`/checkout/result?status=success&order_id=${data.orderId || ''}`, { replace: true });
     } catch (err: any) {
       setPaymentStatus('failed');
       toast({ title: 'Error', description: err.message || 'Payment failed', variant: 'destructive' });
     }
-  }, [navigate, isVi, userAddons, accountLimits]);
+  }, [navigate, isVi, userAddons, accountLimits, refreshProfile]);
 
   /* ═══ Order Summary Card (shared between steps) ═══ */
   const OrderSummaryCard = () => (

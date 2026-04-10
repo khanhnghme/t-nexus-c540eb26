@@ -208,13 +208,14 @@ export default function Checkout() {
 
       setPaymentStatus('success');
       toast.success(t?.paymentSuccess || 'Payment successful!');
+      await refreshProfile();
       navigate(`/checkout/result?status=success&order_id=${res.data.orderId || ''}`);
     } catch {
       setPaymentStatus('failed');
       toast.error(t?.paymentFailed || 'Payment failed. Please try again.');
       navigate('/checkout/result?status=failed');
     }
-  }, [navigate, t]);
+  }, [navigate, t, refreshProfile]);
 
   if (!prices) {
     return (
