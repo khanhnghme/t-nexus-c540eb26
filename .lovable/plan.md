@@ -1,97 +1,48 @@
 
 
-## Giai đoạn 3.5: Nâng cấp tab "Current Plan" trong ServicePlan — Chi tiết hóa tiện ích
+## Nâng cấp tab "Tổng quan" — Hiển thị chi tiết subscription
 
-### Vấn đề hiện tại
-Tab "Current Plan" chỉ hiển thị danh sách features dạng flat list với checkmark, không phân loại, không có số liệu cụ thể — khó phân biệt giá trị giữa các tính năng.
+### Vấn đề
+Tab "Current Plan" chỉ hiển thị tên gói + badge Active/Free + 3 con số (workspace/project/member) + feature groups. Thiếu hoàn toàn thông tin subscription: ngày hết hạn, chu kỳ thanh toán, auto-renew, ngày bắt đầu, và gói downgrade đã lên lịch.
 
 ### Giải pháp
-Thay thế flat list bằng **grouped feature cards** — chia features thành các nhóm có icon + giới hạn cụ thể, tương tự bảng comparison ở trang Upgrade nhưng chỉ hiển thị cột của gói hiện tại.
+Thêm **Subscription Details Card** ngay dưới card gói hiện tại (trước feature groups), hiển thị rõ ràng:
 
-### Thay đổi
-
-**1. `src/lib/i18n/en.ts` + `vi.ts` — Thêm `servicePlanFeatureGroups`**
-
-Thay thế `servicePlanFullFeatures` (flat list) bằng structured data theo nhóm:
-
-```ts
-servicePlanFeatureGroups: {
-  plan_free: [
-    {
-      category: 'Account & Workspaces',
-      icon: 'building',
-      items: [
-        { label: 'Workspaces', value: '1' },
-        { label: 'Total storage', value: '500 MB' },
-        { label: 'Max upload per file', value: '5 MB' },
-      ]
-    },
-    {
-      category: 'Projects & Members',
-      icon: 'folder',
-      items: [
-        { label: 'Total projects', value: '5' },
-        { label: 'Total unique seats', value: '5' },
-      ]
-    },
-    {
-      category: 'Meetings & Communication',
-      icon: 'video',
-      items: [
-        { label: 'Meeting duration', value: '15 min' },
-        { label: 'Activity logs', value: '—' },
-      ]
-    },
-    {
-      category: 'Tools & Features',
-      icon: 'sparkles',
-      items: [
-        { label: 'Basic task management', value: '✓' },
-        { label: 'Group chat', value: '✓' },
-        { label: 'Full data export', value: '—' },
-        { label: 'Add-ons', value: '—' },
-      ]
-    },
-    {
-      category: 'Support',
-      icon: 'headset',
-      items: [
-        { label: 'Support level', value: 'Standard Email' },
-      ]
-    },
-  ],
-  // plan_plus, plan_pro, plan_business, plan_custom tương tự với giá trị đúng theo bảng comparison
-}
+```text
+┌─────────────────────────────────────────────────┐
+│  📋 Subscription Details                        │
+│                                                 │
+│  Started        │  01/04/2026                   │
+│  Expires        │  01/05/2026                   │
+│  Billing Cycle  │  Monthly                      │
+│  Auto Renew     │  ✓ Enabled / ✗ Disabled       │
+│  Plan Source    │  PayPal / Admin / System       │
+│                                                 │
+│  ⚠️ Scheduled Downgrade                         │
+│  → Plus from 01/05/2026                         │
+└─────────────────────────────────────────────────┘
 ```
 
-Giữ lại `servicePlanFullFeatures` cũ để backward-compatible nhưng UI sẽ ưu tiên dùng `servicePlanFeatureGroups`.
-
-**2. `src/pages/ServicePlan.tsx` — Redesign phần features trong tab "plan"**
-
-Thay block hiện tại (lines 316-329) — flat grid checkmarks — bằng:
-
-- **Grouped cards**: Mỗi nhóm là 1 mini-card với header (icon + category name) và danh sách items dạng label-value pairs
-- Layout: `grid grid-cols-1 md:grid-cols-2 gap-4`
-- Mỗi item trong card: flex row với label bên trái, value bên phải (bold), dùng Separator giữa các items
-- Icon mapping: `building` → `Building2`, `folder` → `FolderKanban`, `video` → `Video`, `sparkles` → `Sparkles`, `headset` → `Shield`
-- Value `✓` render thành `Check` icon màu emerald, value `—` render thành text muted
-
-**3. Tương thích tiếng Việt**
-
-Thêm `servicePlanFeatureGroups` tương ứng trong `vi.ts` với labels và category names tiếng Việt.
-
----
+- Nếu `plan_free` → ẩn card này (không có subscription)
+- Nếu `plan_expires_at` đã gần (< 7 ngày) → highlight ngày hết hạn bằng `text-orange-500`
+- Nếu `next_plan` tồn tại → hiển thị dòng cảnh báo downgrade trong card (thay vì card riêng bên dưới)
+- Nếu `auto_renew = false` → hiển thị warning nhỏ "Will not auto-renew"
 
 ### Files sửa
 
 | File | Thay đổi |
 |------|----------|
-| `src/lib/i18n/en.ts` | Thêm `servicePlanFeatureGroups` (structured data cho 5 plans) |
-| `src/lib/i18n/vi.ts` | Thêm `servicePlanFeatureGroups` tiếng Việt |
-| `src/pages/ServicePlan.tsx` | Redesign features section → grouped cards với label-value pairs |
+| `src/lib/i18n/en.ts` | Thêm keys: `subscriptionDetails`, `startedAt`, `expiresAt`, `billingCycle`, `autoRenew`, `autoRenewEnabled`, `autoRenewDisabled`, `planSource`, `scheduledDowngrade`, `willNotRenew`, `monthly`, `yearly` |
+| `src/lib/i18n/vi.ts` | Tương ứng tiếng Việt |
+| `src/pages/ServicePlan.tsx` | Thêm Subscription Details Card giữa plan info card và feature groups. Tích hợp `next_plan` warning vào card này thay vì card riêng. Logic highlight ngày gần hết hạn. |
 
-### Không thay đổi
-- Database, edge functions, các trang khác
-- Tab Usage, Add-ons, Billing giữ nguyên
-- `servicePlanFullFeatures` giữ lại (backward-compatible)
+### Chi tiết kỹ thuật
+
+**ServicePlan.tsx** — Thêm block mới sau line 314 (sau stats row, trước Separator + features):
+
+- Render card chỉ khi `isPremium`
+- Đọc từ `profile`: `plan_started_at`, `plan_expires_at`, `billing_cycle`, `auto_renew`, `plan_source`, `next_plan`
+- Dùng `CalendarDays`, `RefreshCw`, `CreditCard` icons
+- Layout: grid 2 cols với label-value pairs
+- Tích hợp `next_plan` info trực tiếp vào card → loại bỏ hoặc giữ card riêng ở line 368-389 tùy context
 
