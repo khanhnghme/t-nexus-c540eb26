@@ -120,6 +120,7 @@ export function MemberAuthForm() {
   const ta = translations.auth;
   const dateLocale = locale === 'vi' ? viLocale : enUS;
   const localizedPolicyPath = localizedPath('/guide/terms');
+  const localizedPrivacyPath = localizedPath('/guide/privacy');
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -747,11 +748,10 @@ export function MemberAuthForm() {
                 <PolicyCheckbox
                   checked={loginPolicyAgreed}
                   onCheckedChange={setLoginPolicyAgreed}
-                  policyUpdatedAt={policyUpdatedAt}
                   error={errors.policy}
                   ta={ta}
-                  dateLocale={dateLocale}
                   localizedPolicyPath={localizedPolicyPath}
+                  localizedPrivacyPath={localizedPrivacyPath}
                 />
 
                 <TurnstileWidget
@@ -1251,11 +1251,10 @@ export function MemberAuthForm() {
                 <PolicyCheckbox
                   checked={regPolicyAgreed}
                   onCheckedChange={setRegPolicyAgreed}
-                  policyUpdatedAt={policyUpdatedAt}
                   error={errors.policy}
                   ta={ta}
-                  dateLocale={dateLocale}
                   localizedPolicyPath={localizedPolicyPath}
+                  localizedPrivacyPath={localizedPrivacyPath}
                 />
 
 
