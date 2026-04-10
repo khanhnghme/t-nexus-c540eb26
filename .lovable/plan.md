@@ -1,135 +1,106 @@
 
 
-## Chuyển đổi sang PayPal Subscriptions API
-
-### Tổng quan thay đổi
-
-Hệ thống hiện tại dùng **Orders API** (thanh toán 1 lần) + cron `process-plan-cycle` để quản lý chu kỳ thủ công. Chuyển sang **Subscriptions API** để PayPal tự động thu phí định kỳ (monthly/yearly), giảm phức tạp server-side.
-
----
+## Giai đoạn 1: Backend Infrastructure — PayPal Subscriptions API
 
 ### 1. Database Migration
 
-Thêm cột mới vào bảng `profiles`:
-- `paypal_subscription_id` (text, nullable) — ID subscription từ PayPal
-- `paypal_plan_id` (text, nullable) — ID plan PayPal đang active
-
-Thêm cột mới vào bảng `orders`:
-- `paypal_subscription_id` (text, nullable) — thay thế `paypal_order_id` cho subscription orders
-
-Tạo bảng `paypal_plans` để map plan_key → PayPal Plan ID:
-- `id`, `plan_key` (plan_plus, plan_pro, plan_business), `billing_cycle` (monthly/yearly), `paypal_plan_id`, `paypal_product_id`, `is_welcome` (boolean — giá welcome riêng), `price`, `created_at`
-
-### 2. Edge Function: `setup-paypal-plans` (mới, chạy 1 lần)
-
-Script khởi tạo Products & Plans trên PayPal:
-- Tạo 1 Product ("T-Nexus Subscription")
-- Tạo 6 Plans (3 gói × 2 chu kỳ) với giá tương ứng từ `PLAN_PRICES`
-- Tạo thêm 6 Welcome Plans (giá khuyến mãi cho lần đầu)
-- Lưu tất cả Plan IDs vào bảng `paypal_plans`
-
-### 3. Edge Function: `create-paypal-order` → Đổi thành `create-paypal-subscription`
-
-Thay đổi logic:
-- Thay vì tạo Order, gọi `POST /v1/billing/subscriptions` với `plan_id` tương ứng
-- Tra cứu `paypal_plans` để lấy đúng PayPal Plan ID theo (plan_key, billing_cycle, is_welcome)
-- Response trả về `subscriptionID` + `approve_url` thay vì `orderID`
-- Vẫn lưu order vào DB với status `pending` + `paypal_subscription_id`
-- Coupon: áp dụng qua `plan.override` trong subscription request (giảm giá trực tiếp trên PayPal)
-
-### 4. Edge Function: `capture-paypal-order` → Xóa hoặc giữ tương thích
-
-- Subscriptions API **không cần capture** — PayPal tự thu tiền
-- Giữ lại function nhưng chuyển sang chỉ xác nhận subscription status (gọi `GET /v1/billing/subscriptions/:id`)
-- Nếu status = `ACTIVE` → cập nhật order + profile
-
-### 5. Edge Function: `paypal-webhook` → Cập nhật events
-
-Xử lý 4 events mới:
-
-**`BILLING.SUBSCRIPTION.ACTIVATED`**:
-- Tìm order theo `paypal_subscription_id`
-- Cập nhật order → `completed`, profile → `user_plan`, `plan_status=active`, `paypal_subscription_id`
-- Tính `plan_expires_at` (now + 1 month/1 year)
-- Cập nhật workspace limits, payment_history, plan_change_logs
-
-**`PAYMENT.SALE.COMPLETED`**:
-- Kiểm tra `billing_agreement_id` trong resource → tìm profile theo `paypal_subscription_id`
-- Nếu là lần gia hạn (không phải lần đầu): gia hạn `plan_expires_at` thêm 1 chu kỳ
-- Ghi payment_history mới
-
-**`BILLING.SUBSCRIPTION.CANCELLED`**:
-- Tìm profile theo subscription ID
-- Set `plan_status = 'cancelled'`, giữ plan đến hết `plan_expires_at`
-- Khi hết hạn, `process-plan-cycle` sẽ chuyển về Free
-
-**`BILLING.SUBSCRIPTION.PAYMENT.FAILED`**:
-- Ghi log, gửi notification cho user
-- Có thể set `plan_status = 'payment_failed'` để hiển thị cảnh báo
-
-### 6. Client-side: `CheckoutPayment.tsx` + `AddonCheckoutPayment.tsx`
-
-**Không đổi UI**, chỉ đổi logic PayPal Buttons:
-- `createOrder` → thay bằng `createSubscription` prop của `<PayPalButtons>`
-- Gọi `create-paypal-subscription` thay vì `create-paypal-order`
-- `onApprove` → nhận `subscriptionID` thay vì `orderID`, gọi API xác nhận subscription active
-- Background polling vẫn giữ nguyên (poll order status)
-
-```text
-// PayPalButtons prop thay đổi:
-<PayPalButtons
-  createSubscription={async () => subscriptionId}   // thay vì createOrder
-  onApprove={async (data) => handleSubscriptionApproved(data.subscriptionID)}
-  ...
-/>
-// PayPalScriptProvider options thêm vault=true, intent=subscription
+**Bảng mới `paypal_plans`:**
+```sql
+CREATE TABLE paypal_plans (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  plan_key text NOT NULL,           -- plan_plus, plan_pro, plan_business
+  billing_cycle text NOT NULL,       -- monthly, yearly
+  paypal_product_id text NOT NULL,
+  paypal_plan_id text NOT NULL,
+  is_welcome boolean DEFAULT false,
+  price numeric NOT NULL,
+  created_at timestamptz DEFAULT now(),
+  UNIQUE(plan_key, billing_cycle, is_welcome)
+);
 ```
 
-### 7. `Checkout.tsx`, `AddonCheckout.tsx`, `FirstTimeOnboarding.tsx`
+**Thêm cột vào `profiles`:**
+- `paypal_subscription_id text` (nullable)
+- `paypal_plan_id text` (nullable)
 
-Tương tự: thay `createOrder` → `createSubscription`, cập nhật `onApprove` handler.
-
-### 8. `process-plan-cycle` — Đơn giản hóa
-
-- Vẫn xử lý hết hạn (downgrade to Free khi `plan_expires_at` qua và `plan_status = 'cancelled'`)
-- Bỏ logic tự gia hạn (PayPal tự làm qua webhook `PAYMENT.SALE.COMPLETED`)
-- Giữ logic scheduled downgrade (`next_plan`)
-
-### 9. `get-paypal-config` — Cập nhật
-
-Thêm `intent: 'subscription'` và `vault: true` vào response để client config đúng.
-
-### 10. Addon-only orders
-
-Addon không phải subscription (mua 1 lần). Giữ nguyên Orders API cho addon:
-- `AddonCheckoutPayment.tsx` vẫn dùng `createOrder` + `capture`
-- Chỉ plan orders chuyển sang Subscriptions
+**Thêm cột vào `orders`:**
+- `paypal_subscription_id text` (nullable)
 
 ---
 
-### Cần cấu hình trên PayPal Dashboard
+### 2. Edge Function mới: `setup-paypal-plans`
 
-Sau khi deploy `setup-paypal-plans`, cập nhật Webhook URL với events mới:
-- `BILLING.SUBSCRIPTION.ACTIVATED`
-- `PAYMENT.SALE.COMPLETED`
-- `BILLING.SUBSCRIPTION.CANCELLED`
-- `BILLING.SUBSCRIPTION.PAYMENT.FAILED`
+Chạy 1 lần để khởi tạo trên PayPal:
+- Tạo 1 Product ("T-Nexus Subscription") via `POST /v1/catalogs/products`
+- Tạo 12 Plans (3 gói × 2 chu kỳ × 2 giá regular/welcome) via `POST /v1/billing/plans`
+- Lưu tất cả Plan IDs vào bảng `paypal_plans`
+- Giá lấy từ `PLAN_PRICES` và `WELCOME_PRICES` hiện có
 
-### Files cần tạo/sửa
+---
+
+### 3. Viết lại `create-paypal-order/index.ts` → Subscription logic
+
+Thay đổi chính:
+- Tra cứu `paypal_plans` để lấy `paypal_plan_id` theo (plan_key, billing_cycle, is_welcome)
+- Gọi `POST /v1/billing/subscriptions` thay vì `POST /v2/checkout/orders`
+- Coupon → dùng `plan.billing_cycles[].pricing_scheme.fixed_price` override để giảm giá chu kỳ đầu
+- Addon cũng tạo subscription (tạo PayPal plan addon riêng nếu cần, hoặc dùng `setup_fee`)
+- Response trả `subscriptionID` + approve link
+- Lưu order với `paypal_subscription_id` thay vì `paypal_order_id`
+
+---
+
+### 4. Viết lại `capture-paypal-order/index.ts` → Verify Subscription
+
+- Xóa logic capture cũ
+- Gọi `GET /v1/billing/subscriptions/:id` để kiểm tra status
+- Nếu `ACTIVE` → cập nhật order `completed`, profile plan/subscription_id
+- Đây là fallback cho webhook — nếu webhook đã xử lý rồi thì skip (idempotent)
+
+---
+
+### 5. Viết lại hoàn toàn `paypal-webhook/index.ts`
+
+Xóa handlers cũ (`CHECKOUT.ORDER.APPROVED`, `PAYMENT.CAPTURE.COMPLETED`, `PAYMENT.CAPTURE.DENIED/REFUNDED`).
+
+4 handlers mới:
+
+| Event | Logic |
+|-------|-------|
+| `BILLING.SUBSCRIPTION.ACTIVATED` | Tìm order → completed, update profile (plan, expires_at, paypal_subscription_id), workspace limits, payment_history, plan_change_logs |
+| `PAYMENT.SALE.COMPLETED` | Tìm profile qua `billing_agreement_id` → gia hạn `plan_expires_at` thêm 1 chu kỳ, ghi payment_history |
+| `BILLING.SUBSCRIPTION.CANCELLED` | Set `plan_status='cancelled'`, giữ plan đến hết expires_at |
+| `BILLING.SUBSCRIPTION.PAYMENT.FAILED` | Set `plan_status='payment_failed'`, ghi log |
+
+Giữ nguyên signature verification logic.
+
+---
+
+### 6. Đơn giản hóa `process-plan-cycle/index.ts`
+
+- Giữ: downgrade to Free khi `plan_expires_at` qua + `plan_status IN ('cancelled', 'payment_failed')`
+- Giữ: scheduled downgrade (`next_plan`)
+- Bỏ: logic auto_renew (PayPal tự lo qua `PAYMENT.SALE.COMPLETED`)
+
+---
+
+### 7. Cập nhật `get-paypal-config/index.ts`
+
+Thêm `vault: true` và `intent: 'subscription'` vào response.
+
+---
+
+### Tổng kết files
 
 | File | Hành động |
 |------|-----------|
-| `paypal_plans` table | Tạo mới (migration) |
-| `profiles` table | Thêm 2 cột |
+| DB migration | Tạo bảng `paypal_plans`, thêm 3 cột |
 | `supabase/functions/setup-paypal-plans/index.ts` | Tạo mới |
-| `supabase/functions/create-paypal-order/index.ts` | Đổi thành subscription logic |
-| `supabase/functions/capture-paypal-order/index.ts` | Đổi thành verify subscription |
-| `supabase/functions/paypal-webhook/index.ts` | Thay events hoàn toàn |
+| `supabase/functions/create-paypal-order/index.ts` | Viết lại |
+| `supabase/functions/capture-paypal-order/index.ts` | Viết lại |
+| `supabase/functions/paypal-webhook/index.ts` | Viết lại hoàn toàn |
 | `supabase/functions/process-plan-cycle/index.ts` | Đơn giản hóa |
-| `supabase/functions/get-paypal-config/index.ts` | Thêm vault/intent |
-| `src/pages/CheckoutPayment.tsx` | Đổi PayPal logic (giữ UI) |
-| `src/pages/AddonCheckoutPayment.tsx` | Giữ nguyên (addon = 1 lần) |
-| `src/pages/Checkout.tsx` | Đổi PayPal logic (giữ UI) |
-| `src/pages/AddonCheckout.tsx` | Giữ nguyên |
-| `src/components/FirstTimeOnboarding.tsx` | Đổi PayPal logic (giữ UI) |
+| `supabase/functions/get-paypal-config/index.ts` | Cập nhật response |
+
+Frontend không đổi trong giai đoạn này.
 
