@@ -1,54 +1,60 @@
 
 
-## Plan: Fix Onboarding Checkout UI & Prevent Back-Navigation After Payment
+## Plan: Fix Onboarding Payment Flow — 401 Error, Plan Reset Bug & Auto-Advance
 
 ### Issues Found
 
-**Issue 1: User can navigate back to checkout after successful payment**
-On the **finish** step (line 1808), the "Back" button calls `goBack()` which navigates back to the **checkout** step. After a successful payment, this allows users to see the payment form again and potentially re-submit. The `goBack` function has no guard against this.
+**Issue 1: Edge function 401 — stale deployed code**
+The deployed `create-paypal-order` function contains `supabase.auth.getClaims()` which doesn't exist. The local code is correct but hasn't been deployed. Both PayPal functions need redeployment.
 
-**Issue 2: Checkout step visible in sidebar even after payment completes**
-When `paymentStatus === 'success'` and the user is on the finish step, the checkout step still appears clickable in the sidebar stepper. There's no logic to mark checkout as "done" or prevent re-entry.
+**Issue 2: CRITICAL — `handleFinish` resets plan to Free**
+Line 378 in `FirstTimeOnboarding.tsx` hardcodes `user_plan: 'plan_free'` in the profile update. When the user clicks "Enter System" after paying, it **overwrites** the plan that `capture-paypal-order` just set. This is why the user loses their paid plan.
+
+**Issue 3: Stuck on checkout step after payment success**
+After `onApprove` succeeds, `goNext()` is called to advance to the finish step, but the checkout sub-step 2 UI doesn't show a success state before transitioning — user just sees "Confirm & Pay" with a brief flash.
 
 ### Solution
 
-#### 1. Block back-navigation after payment success (`FirstTimeOnboarding.tsx`)
-- In `goBack()`: if `paymentStatus === 'success'` and `currentStep === 'finish'`, skip the checkout step and go directly to the **plan** step instead.
-- Alternatively, hide the "Back" button entirely on the finish step when payment was successful (user already paid, no reason to go back).
+#### 1. Redeploy edge functions
+Deploy both `create-paypal-order` and `capture-paypal-order` to sync local code → production.
 
-#### 2. Disable checkout step re-entry after payment
-- When `paymentStatus === 'success'`, prevent the sidebar stepper from allowing click-navigation back to the checkout step.
-- On the finish step after paid plan: remove or disable the "Back" button, or change it to only go back to info/plan (skip checkout).
+#### 2. Fix plan reset in `handleFinish` (`FirstTimeOnboarding.tsx`, line 378)
+- Remove the hardcoded `user_plan: 'plan_free'` line
+- If user paid (paymentStatus === 'success'), do NOT touch `user_plan` — it's already set by the edge function
+- Only set `user_plan: 'plan_free'` if the user chose Free plan and didn't pay
 
-#### 3. Show payment confirmation on finish step
-- When the user paid successfully, show a small confirmation badge (e.g., green "Payment Confirmed" badge) next to the plan info on the finish step, so they know the payment was processed.
+#### 3. Auto-advance checkout after payment success
+- In `onApprove`, after successful capture, show a brief "Payment successful" state on the checkout step (1-2 seconds) before calling `goNext()` to finish step
+- Call `refreshProfile` (from props/onComplete) so the finish step shows the correct plan badge
+
+#### 4. Refresh profile after payment
+- After `capture-paypal-order` succeeds, fetch the updated profile so the plan badge on the finish step reflects the purchased plan (not the old Free plan)
 
 ### Technical Details
 
 **File: `src/components/FirstTimeOnboarding.tsx`**
 
-1. **`goBack` function (line 228-237)**: Add a guard:
+1. **Line 378** — Change from:
    ```typescript
-   const goBack = () => {
-     // After payment success, skip checkout step when going back from finish
-     if (currentStep === 'finish' && paymentStatus === 'success') {
-       // Go back to plan step (skip checkout)
-       const planIndex = allSteps.indexOf('plan');
-       if (planIndex >= 0) {
-         setCurrentStepIndex(planIndex);
-         return;
-       }
-     }
-     // ... existing logic
-   };
+   user_plan: 'plan_free' as const,
+   ```
+   To conditional logic:
+   ```typescript
+   ...(paymentStatus !== 'success' && selectedPlan === 'plan_free' 
+     ? { user_plan: 'plan_free' } 
+     : {}),
    ```
 
-2. **Finish step UI (line 1807-1810)**: When `paymentStatus === 'success'`, either hide the Back button or show a "Payment Confirmed" indicator instead.
+2. **`onApprove` callback (line 460-479)** — After successful capture:
+   - Call a profile refresh to get updated plan data
+   - Add a small delay before `goNext()` to show success state on checkout
+   - Update local plan display state
 
-3. **Sidebar stepper**: Disable clicking on the checkout step when `paymentStatus === 'success'`.
+3. **Checkout sub-step 2 UI** — When `paymentStatus === 'success'`, replace the payment form with a success confirmation card (green checkmark + "Payment Confirmed" message) before auto-advancing to finish.
 
 ### Files to Edit
 | File | Change |
 |------|--------|
-| `src/components/FirstTimeOnboarding.tsx` | Block back-nav after payment, update finish step UI |
+| `src/components/FirstTimeOnboarding.tsx` | Fix plan reset, add success UI on checkout, refresh profile after payment |
+| Edge functions (deploy only) | Redeploy `create-paypal-order` and `capture-paypal-order` |
 
