@@ -1,25 +1,37 @@
 
 
-## Plan: Chuyển mua Add-on thành 2-step checkout riêng biệt
+## Plan: Nâng cấp Billing History — Chi tiết hơn + Xuất hóa đơn in
 
-### Vấn đề
-Hiện tại tab Add-on trên ServicePlan có cả chọn số lượng + hiển thị giá + nút "Proceed to Payment" → navigate sang AddonCheckout. Nhưng user muốn flow giống hệt trang Checkout plan: **trang Add-on chỉ có nút "Mua thêm Add-on"** → nhảy sang **trang checkout 2 step** (Step 1: chọn số lượng + xem giá, Step 2: xác nhận + PayPal).
+### Tổng quan
+Hiện tại tab Billing chỉ hiển thị bảng đơn giản (ngày, mã GD, gói, số tiền, trạng thái). Cần nâng cấp:
+1. **Fetch đầy đủ dữ liệu** từ `payment_history` (hiện chỉ select 5 cột, bảng có 18 cột)
+2. **Click vào dòng → mở dialog chi tiết** (tái sử dụng pattern từ `PaymentDetailDialog` admin)
+3. **Nút "Xuất hóa đơn"** trong dialog → tạo invoice PDF có thể in/tải
 
-### Giải pháp
+### Chi tiết kỹ thuật
 
-**1. `src/pages/ServicePlan.tsx` — Tab Add-on**
-- Giữ phần "Current Add-ons" (tổng quan hiện có) như cũ
-- **Xoá** toàn bộ phần "Purchase More" (cards +/- chọn số lượng, purchase summary, nút navigate)
-- Thay bằng **1 nút đơn giản**: "Mua thêm gói bổ sung" → navigate `/addon-checkout`
-- Nút này nổi bật, có icon Package
+**1. `src/pages/ServicePlan.tsx` — Billing tab**
+- Thay đổi query `payment_history` từ `select('id, transaction_id, created_at, plan_purchased, amount, final_amount, status, payment_method')` → `select('*')` để lấy toàn bộ dữ liệu
+- Thêm cột `payment_method` vào bảng
+- Mỗi dòng clickable → mở dialog chi tiết
+- Thêm RLS policy cho user xem được payment_history của chính mình (hiện chỉ có system_admin select)
 
-**2. `src/pages/AddonCheckout.tsx` — Chuyển thành 2-step**
-- **Step 1**: Chọn số lượng add-on (3 cards +/- giống hiện tại ở ServicePlan) + Order Summary bên phải (giá gốc, tiết kiệm, tổng) + nút "Tiếp tục"
-- **Step 2**: Bảng xác nhận đơn hàng (read-only) + PayPal buttons + secure badge
-- Layout 2 cột giống Checkout.tsx (trái: nội dung chính, phải: tóm tắt đơn hàng)
-- Step indicator trên cùng (Step 1 / Step 2)
+**2. `src/components/billing/UserPaymentDetailDialog.tsx` — Dialog chi tiết (mới)**
+- Tái sử dụng layout từ `PaymentDetailDialog` admin nhưng bỏ system_note
+- Hiển thị: Transaction ID, Order ID, Invoice ID, Plan, Status, Method, Original Amount, Discount, Coupon, Final Amount, Paid At
+- Nút **"Print Invoice / Download PDF"** ở cuối dialog
 
-### Files cần sửa
-- `src/pages/ServicePlan.tsx` — Đơn giản hoá tab addon, chỉ giữ overview + nút mua
-- `src/pages/AddonCheckout.tsx` — Redesign thành 2-step layout (tham khảo Checkout.tsx)
+**3. `src/components/billing/InvoiceTemplate.tsx` — Template hóa đơn (mới)**
+- Component React dùng cho print: logo, thông tin người mua (từ profile: full_name, email), thông tin GD, bảng chi tiết giá
+- Sử dụng `window.print()` với CSS `@media print` để in trực tiếp từ trình duyệt — không cần thư viện PDF bên ngoài
+- Layout: Header (logo + "INVOICE") → Buyer/Seller info → Line items table → Total → Footer
+
+**4. Database: Thêm RLS policy**
+- Thêm policy cho `payment_history`: Users can view own payment history (`user_id = auth.uid()`)
+
+### Files cần tạo/sửa
+- `src/pages/ServicePlan.tsx` — Mở rộng query + clickable rows + dialog state
+- `src/components/billing/UserPaymentDetailDialog.tsx` — **Mới** — Dialog chi tiết cho user
+- `src/components/billing/InvoiceTemplate.tsx` — **Mới** — Template hóa đơn in
+- Migration: Thêm RLS policy cho user đọc payment_history của mình
 
