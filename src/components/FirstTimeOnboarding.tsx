@@ -451,7 +451,6 @@ export default function FirstTimeOnboarding({
     password: t.stepSecurity,
     info: t.stepInfo,
     plan: t.stepPlan,
-    checkout: t.stepCheckout,
     finish: t.stepFinish,
   };
 
@@ -461,7 +460,6 @@ export default function FirstTimeOnboarding({
     password: t.stepSecurityDesc,
     info: t.stepInfoDesc,
     plan: t.stepPlanDesc,
-    checkout: t.stepCheckoutDesc,
     finish: t.stepFinishDesc,
   };
 
