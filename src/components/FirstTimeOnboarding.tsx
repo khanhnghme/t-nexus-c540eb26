@@ -107,11 +107,15 @@ export default function FirstTimeOnboarding({
   const allSteps: StepId[] = useMemo(() => {
     const base: StepId[] = ['language', 'welcome'];
     if (mustChangePassword) base.push('password');
-    base.push('info', 'plan');
-    if (selectedPlan !== 'plan_free') base.push('checkout');
+    base.push('info');
+    // After successful payment, remove plan & checkout steps entirely
+    if (paymentStatus !== 'success') {
+      base.push('plan');
+      if (selectedPlan !== 'plan_free') base.push('checkout');
+    }
     base.push('finish');
     return base;
-  }, [mustChangePassword, selectedPlan]);
+  }, [mustChangePassword, selectedPlan, paymentStatus]);
 
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const currentStep = allSteps[currentStepIndex] ?? 'language';
@@ -226,6 +230,10 @@ export default function FirstTimeOnboarding({
 
   const goNext = () => setCurrentStepIndex(i => Math.min(i + 1, allSteps.length - 1));
   const goBack = () => {
+    // After successful payment, block going back from finish step
+    if (paymentStatus === 'success' && currentStep === 'finish') {
+      return;
+    }
     if (currentStep === 'checkout' && checkoutSubStep === 2) {
       setCheckoutSubStep(1);
       return;
@@ -367,8 +375,11 @@ export default function FirstTimeOnboarding({
         bio: bio.trim() || null,
         onboarding_completed: true,
         must_change_password: false,
-        user_plan: 'plan_free' as const,
       };
+      // Only set plan to free if no successful payment (backend already updated plan on payment)
+      if (paymentStatus !== 'success') {
+        updateData.user_plan = 'plan_free';
+      }
       if (avatarUrl) updateData.avatar_url = avatarUrl;
       if (needsStudentId) updateData.student_id = editStudentId.trim();
       updateData.full_name = editFullName.trim();
@@ -461,9 +472,10 @@ export default function FirstTimeOnboarding({
       }
 
       setPaymentStatus('success');
+      // Refresh profile from backend to get updated plan immediately
+      onComplete();
       toast({ title: isVi ? 'Thanh toán thành công!' : 'Payment successful!' });
-      // Go to finish step
-      goNext();
+      // goNext will be triggered by allSteps recalculation (plan/checkout removed, lands on finish)
     } catch {
       setPaymentStatus('failed');
       toast({ title: isVi ? 'Thanh toán thất bại. Vui lòng thử lại.' : 'Payment failed. Please try again.', variant: 'destructive' });
