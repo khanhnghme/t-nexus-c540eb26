@@ -12,6 +12,41 @@ import { getPlanLabel } from '@/lib/planConfig';
 const STEP_LABELS_EN = ['Order', 'Payment', 'Summary'];
 const STEP_LABELS_VI = ['Đặt hàng', 'Thanh toán', 'Kết quả'];
 
+const STEP3_STATUS_STYLES: Record<string, { circle: string; text: string; line: string }> = {
+  completed: { circle: 'bg-emerald-500 text-white', text: 'text-emerald-600 dark:text-emerald-400', line: 'bg-emerald-500' },
+  failed: { circle: 'bg-destructive text-destructive-foreground', text: 'text-destructive', line: 'bg-destructive' },
+  cancelled: { circle: 'bg-amber-500 text-white', text: 'text-amber-600 dark:text-amber-400', line: 'bg-amber-500' },
+  expired: { circle: 'bg-muted-foreground text-white', text: 'text-muted-foreground', line: 'bg-muted-foreground' },
+};
+
+function StepProgress({ isVi, status }: { isVi: boolean; status?: string }) {
+  const labels = isVi ? STEP_LABELS_VI : STEP_LABELS_EN;
+  const s3 = STEP3_STATUS_STYLES[status || ''] || STEP3_STATUS_STYLES.completed;
+  return (
+    <div className="flex items-center justify-center w-full max-w-md mx-auto mb-6">
+      {labels.map((label, i) => {
+        const isLast = i === labels.length - 1;
+        const circleClass = isLast ? s3.circle : 'bg-primary text-primary-foreground';
+        const textClass = isLast ? s3.text : '';
+        const lineClass = isLast ? '' : (i === labels.length - 2 ? s3.line : 'bg-primary');
+        return (
+          <div key={i} className="flex items-center" style={{ flex: isLast ? 'none' : 1 }}>
+            <div className="flex flex-col items-center">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${circleClass}`}>
+                {i + 1}
+              </div>
+              <span className={`text-xs mt-1 font-medium whitespace-nowrap ${textClass}`}>{label}</span>
+            </div>
+            {!isLast && (
+              <div className={`h-0.5 flex-1 mx-1 -mt-4 ${lineClass}`} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 const ADDON_TYPES = [
   { type: 'projects', emoji: '📁', unitLabel: '+5 projects', unitLabelVi: '+5 dự án' },
   { type: 'storage', emoji: '💾', unitLabel: '+5 GB storage', unitLabelVi: '+5 GB lưu trữ' },
@@ -19,27 +54,6 @@ const ADDON_TYPES = [
 ];
 
 const ADDON_PRICE_MONTHLY = 2.49;
-
-function StepProgress({ isVi }: { isVi: boolean }) {
-  const labels = isVi ? STEP_LABELS_VI : STEP_LABELS_EN;
-  return (
-    <div className="flex items-center justify-center w-full max-w-md mx-auto mb-6">
-      {labels.map((label, i) => (
-        <div key={i} className="flex items-center" style={{ flex: i < labels.length - 1 ? 1 : 'none' }}>
-          <div className="flex flex-col items-center">
-            <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold shrink-0">
-              {i + 1}
-            </div>
-            <span className="text-xs mt-1 font-medium whitespace-nowrap">{label}</span>
-          </div>
-          {i < labels.length - 1 && (
-            <div className="h-0.5 flex-1 bg-primary mx-1 -mt-4" />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
 
 const STATUS_CONFIG = {
   completed: {
@@ -164,7 +178,7 @@ export default function CheckoutSummary() {
 
   return (
     <div className="max-w-2xl mx-auto py-8 px-4 space-y-6">
-      <StepProgress isVi={isVi} />
+      <StepProgress isVi={isVi} status={status} />
 
       {/* Section 1: Status Header */}
       <div className="flex flex-col items-center text-center space-y-3">
