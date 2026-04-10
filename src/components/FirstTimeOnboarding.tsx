@@ -928,37 +928,52 @@ export default function FirstTimeOnboarding({
                       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {[
-                        { id: 'editFullName', label: isVi ? 'Họ tên' : 'Full Name', icon: <User className="w-4 h-4" />, placeholder: isVi ? 'Nhập họ tên' : 'Enter full name', value: editFullName, setter: setEditFullName },
-                        ...(needsStudentId ? [{ id: 'editStudentId', label: isVi ? 'MSSV' : 'Student ID', icon: <GraduationCap className="w-4 h-4" />, placeholder: isVi ? 'Nhập MSSV' : 'Enter Student ID', value: editStudentId, setter: setEditStudentId }] : []),
-                        { id: 'yearBatch', label: t.fieldBatch, icon: <GraduationCap className="w-4 h-4" />, placeholder: t.fieldBatchPlaceholder, value: yearBatch, setter: setYearBatch },
-                        { id: 'major', label: t.fieldMajor, icon: <BookOpen className="w-4 h-4" />, placeholder: t.fieldMajorPlaceholder, value: major, setter: setMajor },
-                        { id: 'phone', label: t.fieldPhone, icon: <Phone className="w-4 h-4" />, placeholder: t.fieldPhonePlaceholder, value: phone, setter: setPhone },
-                        { id: 'skills', label: t.fieldSkills, icon: <Award className="w-4 h-4" />, placeholder: t.fieldSkillsPlaceholder, value: skills, setter: setSkills },
-                      ].map(field => (
-                        <div key={field.id} className={cn(
-                          'rounded-xl border p-3 transition-all',
-                          infoErrors[field.id] ? 'border-destructive bg-destructive/5' : 'bg-card hover:shadow-sm'
-                        )}>
-                          <Label htmlFor={field.id} className="text-xs flex items-center gap-1.5 mb-1.5 font-semibold">
-                            <span className="text-primary">{field.icon}</span>
-                            {field.label} <span className="text-destructive">*</span>
+                    {/* Nhóm 1: Hồ sơ cá nhân */}
+                    <div className="rounded-xl border bg-card p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-sm font-semibold">
+                        <User className="w-4 h-4 text-primary" />
+                        {isVi ? 'Hồ sơ cá nhân' : 'Personal Profile'}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <Label htmlFor="editFullName" className="text-xs font-semibold mb-1.5 block">
+                            {isVi ? 'Họ tên' : 'Full Name'} <span className="text-destructive">*</span>
                           </Label>
-                          <Input id={field.id} placeholder={field.placeholder}
-                            value={field.value}
-                            onChange={(e) => { field.setter(e.target.value); setInfoErrors(p => ({ ...p, [field.id]: false })); }}
-                            className={cn('h-9 border-0 bg-muted/50 rounded-lg focus-visible:ring-1', infoErrors[field.id] && 'bg-destructive/10')} />
+                          <Input id="editFullName" placeholder={isVi ? 'Nhập họ tên' : 'Enter full name'}
+                            value={editFullName}
+                            onChange={(e) => { setEditFullName(e.target.value); setInfoErrors(p => ({ ...p, editFullName: false })); }}
+                            className={cn('h-9 border-0 bg-muted/50 rounded-lg focus-visible:ring-1', infoErrors.editFullName && 'bg-destructive/10')} />
                         </div>
-                      ))}
+                        <div>
+                          <Label htmlFor="emailReadonly" className="text-xs font-semibold mb-1.5 block">
+                            Email
+                          </Label>
+                          <Input id="emailReadonly" value={userEmail} disabled
+                            className="h-9 border-0 bg-muted/50 rounded-lg opacity-60 cursor-not-allowed" />
+                        </div>
+                      </div>
+                      {needsStudentId && (
+                        <div>
+                          <Label htmlFor="editStudentId" className="text-xs font-semibold mb-1.5 block">
+                            {isVi ? 'MSSV' : 'Student ID'} <span className="text-destructive">*</span>
+                          </Label>
+                          <Input id="editStudentId" placeholder={isVi ? 'Nhập MSSV' : 'Enter Student ID'}
+                            value={editStudentId}
+                            onChange={(e) => { setEditStudentId(e.target.value); setInfoErrors(p => ({ ...p, editStudentId: false })); }}
+                            className={cn('h-9 border-0 bg-muted/50 rounded-lg focus-visible:ring-1', infoErrors.editStudentId && 'bg-destructive/10')} />
+                        </div>
+                      )}
+                    </div>
 
-                      {/* Institution dropdown */}
-                      <div className={cn(
-                        'rounded-xl border p-3 transition-all',
-                        infoErrors.editInstitution ? 'border-destructive bg-destructive/5' : 'bg-card hover:shadow-sm'
-                      )}>
-                        <Label className="text-xs flex items-center gap-1.5 mb-1.5 font-semibold">
-                          <span className="text-primary"><Building2 className="w-4 h-4" /></span>
+                    {/* Nhóm 2: Thông tin học vấn */}
+                    <div className="rounded-xl border bg-card p-4 space-y-3 mt-3">
+                      <div className="flex items-center gap-2 text-sm font-semibold">
+                        <GraduationCap className="w-4 h-4 text-primary" />
+                        {isVi ? 'Thông tin học vấn' : 'Academic Information'}
+                      </div>
+                      {/* Institution dropdown - full width */}
+                      <div>
+                        <Label className="text-xs font-semibold mb-1.5 block">
                           {isVi ? 'Đơn vị đào tạo' : 'Institution'} <span className="text-destructive">*</span>
                         </Label>
                         <Popover open={institutionOpen} onOpenChange={setInstitutionOpen}>
@@ -1015,16 +1030,63 @@ export default function FirstTimeOnboarding({
                           </PopoverContent>
                         </Popover>
                       </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <Label htmlFor="yearBatch" className="text-xs font-semibold mb-1.5 block">
+                            {t.fieldBatch} <span className="text-destructive">*</span>
+                          </Label>
+                          <Input id="yearBatch" placeholder={t.fieldBatchPlaceholder}
+                            value={yearBatch}
+                            onChange={(e) => { setYearBatch(e.target.value); setInfoErrors(p => ({ ...p, yearBatch: false })); }}
+                            className={cn('h-9 border-0 bg-muted/50 rounded-lg focus-visible:ring-1', infoErrors.yearBatch && 'bg-destructive/10')} />
+                        </div>
+                        <div>
+                          <Label htmlFor="major" className="text-xs font-semibold mb-1.5 block">
+                            {t.fieldMajor} <span className="text-destructive">*</span>
+                          </Label>
+                          <Input id="major" placeholder={t.fieldMajorPlaceholder}
+                            value={major}
+                            onChange={(e) => { setMajor(e.target.value); setInfoErrors(p => ({ ...p, major: false })); }}
+                            className={cn('h-9 border-0 bg-muted/50 rounded-lg focus-visible:ring-1', infoErrors.major && 'bg-destructive/10')} />
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="mt-3 rounded-xl border bg-card p-3">
-                      <Label htmlFor="bio" className="text-xs font-semibold flex items-center gap-1.5 mb-1.5">
-                        <Sparkles className="w-4 h-4 text-primary" /> {t.fieldBio}
-                        <span className="text-muted-foreground font-normal">{t.fieldBioOptional}</span>
-                      </Label>
-                      <Textarea id="bio" placeholder={t.fieldBioPlaceholder}
-                        value={bio} onChange={(e) => setBio(e.target.value)}
-                        rows={2} className="resize-none border-0 bg-muted/50 rounded-lg focus-visible:ring-1" />
+                    {/* Nhóm 3: Liên hệ & Kỹ năng */}
+                    <div className="rounded-xl border bg-card p-4 space-y-3 mt-3">
+                      <div className="flex items-center gap-2 text-sm font-semibold">
+                        <Phone className="w-4 h-4 text-primary" />
+                        {isVi ? 'Liên hệ & Kỹ năng' : 'Contact & Skills'}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <Label htmlFor="phone" className="text-xs font-semibold mb-1.5 block">
+                            {t.fieldPhone} <span className="text-destructive">*</span>
+                          </Label>
+                          <Input id="phone" placeholder={t.fieldPhonePlaceholder}
+                            value={phone}
+                            onChange={(e) => { setPhone(e.target.value); setInfoErrors(p => ({ ...p, phone: false })); }}
+                            className={cn('h-9 border-0 bg-muted/50 rounded-lg focus-visible:ring-1', infoErrors.phone && 'bg-destructive/10')} />
+                        </div>
+                        <div>
+                          <Label htmlFor="skills" className="text-xs font-semibold mb-1.5 block">
+                            {t.fieldSkills} <span className="text-destructive">*</span>
+                          </Label>
+                          <Input id="skills" placeholder={t.fieldSkillsPlaceholder}
+                            value={skills}
+                            onChange={(e) => { setSkills(e.target.value); setInfoErrors(p => ({ ...p, skills: false })); }}
+                            className={cn('h-9 border-0 bg-muted/50 rounded-lg focus-visible:ring-1', infoErrors.skills && 'bg-destructive/10')} />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="bio" className="text-xs font-semibold flex items-center gap-1.5 mb-1.5">
+                          <Sparkles className="w-4 h-4 text-primary" /> {t.fieldBio}
+                          <span className="text-muted-foreground font-normal">{t.fieldBioOptional}</span>
+                        </Label>
+                        <Textarea id="bio" placeholder={t.fieldBioPlaceholder}
+                          value={bio} onChange={(e) => setBio(e.target.value)}
+                          rows={2} className="resize-none border-0 bg-muted/50 rounded-lg focus-visible:ring-1" />
+                      </div>
                     </div>
 
                     <div className="flex gap-3 mt-4">
