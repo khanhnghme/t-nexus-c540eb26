@@ -11,7 +11,6 @@ Deno.serve(async (req) => {
   const userId = url.searchParams.get("state");
   const error = url.searchParams.get("error");
 
-  // Determine the app origin for redirect
   const appOrigin = SUPABASE_URL.includes("supabase.co")
     ? "https://t-nexus.lovable.app"
     : "http://localhost:5173";
@@ -44,6 +43,20 @@ Deno.serve(async (req) => {
 
     const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000).toISOString();
 
+    // Fetch the user's email from Google
+    let emailAddress: string | null = null;
+    try {
+      const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      });
+      if (userInfoRes.ok) {
+        const userInfo = await userInfoRes.json();
+        emailAddress = userInfo.email || null;
+      }
+    } catch {
+      // ignore — email is optional
+    }
+
     // Save tokens using service role
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -55,6 +68,7 @@ Deno.serve(async (req) => {
         refresh_token: tokenData.refresh_token,
         expires_at: expiresAt,
         calendar_id: "primary",
+        email_address: emailAddress,
       }, { onConflict: "user_id" });
 
     if (upsertError) {

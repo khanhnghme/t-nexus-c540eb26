@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
       client_id: GOOGLE_CLIENT_ID,
       redirect_uri: redirectUri,
       response_type: "code",
-      scope: "https://www.googleapis.com/auth/drive.readonly",
+      scope: "https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/userinfo.email",
       access_type: "offline",
       prompt: "consent",
       state,
