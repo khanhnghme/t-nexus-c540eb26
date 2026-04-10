@@ -41,7 +41,6 @@ async function getValidToken(supabase: any, userId: string): Promise<{ accessTok
     return { accessToken: tokenRow.access_token, calendarId: tokenRow.calendar_id };
   }
 
-  // Refresh
   const refreshed = await refreshAccessToken(tokenRow.refresh_token);
   if (!refreshed) return null;
 
@@ -151,6 +150,9 @@ Deno.serve(async (req) => {
 
     const syncMapByLocal = new Map((syncMap || []).map((s: any) => [`${s.local_event_type}:${s.local_event_id}`, s]));
 
+    // Track all known google_event_ids (initial + newly pushed)
+    const allKnownGoogleIds = new Set((syncMap || []).map((s: any) => s.google_event_id));
+
     // Push personal events
     for (const ev of (personalEvents || [])) {
       const key = `personal:${ev.id}`;
@@ -169,13 +171,16 @@ Deno.serve(async (req) => {
           pushResults.updated++;
         } else {
           const created = await gcalRequest(accessToken, `/calendars/${calendarId}/events`, "POST", gcalEvent);
-          await supabase.from("calendar_sync_map").insert({
+          await supabase.from("calendar_sync_map").upsert({
             user_id: userId,
             local_event_id: ev.id,
             local_event_type: "personal",
             google_event_id: created.id,
             google_calendar_id: calendarId,
-          });
+            last_synced_at: new Date().toISOString(),
+          }, { onConflict: "user_id,local_event_id,local_event_type" });
+          // Track the newly pushed google event id
+          allKnownGoogleIds.add(created.id);
           pushResults.created++;
         }
       } catch (e) {
@@ -203,13 +208,15 @@ Deno.serve(async (req) => {
           pushResults.updated++;
         } else {
           const created = await gcalRequest(accessToken, `/calendars/${calendarId}/events`, "POST", gcalEvent);
-          await supabase.from("calendar_sync_map").insert({
+          await supabase.from("calendar_sync_map").upsert({
             user_id: userId,
             local_event_id: task.id,
             local_event_type: "task",
             google_event_id: created.id,
             google_calendar_id: calendarId,
-          });
+            last_synced_at: new Date().toISOString(),
+          }, { onConflict: "user_id,local_event_id,local_event_type" });
+          allKnownGoogleIds.add(created.id);
           pushResults.created++;
         }
       } catch (e) {
@@ -231,10 +238,9 @@ Deno.serve(async (req) => {
         `/calendars/${calendarId}/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&maxResults=250`
       );
 
-      const existingGoogleIds = new Set((syncMap || []).map((s: any) => s.google_event_id));
-
       for (const gev of (gcalEvents.items || [])) {
-        if (existingGoogleIds.has(gev.id)) {
+        // Check against ALL known google ids (initial + newly pushed)
+        if (allKnownGoogleIds.has(gev.id)) {
           pullResults.skipped++;
           continue;
         }
@@ -262,13 +268,15 @@ Deno.serve(async (req) => {
             .single();
 
           if (newEvent) {
-            await supabase.from("calendar_sync_map").insert({
+            await supabase.from("calendar_sync_map").upsert({
               user_id: userId,
               local_event_id: newEvent.id,
               local_event_type: "personal",
               google_event_id: gev.id,
               google_calendar_id: calendarId,
-            });
+              last_synced_at: new Date().toISOString(),
+            }, { onConflict: "user_id,google_event_id" });
+            allKnownGoogleIds.add(gev.id);
             pullResults.created++;
           }
         } catch (e) {
