@@ -1,41 +1,54 @@
 
 
-## Plan: Add Connected Tools section to all plan-related pages
+## Plan: Fix Onboarding Checkout UI & Prevent Back-Navigation After Payment
 
-### Summary
-Extract the Connected Tools data (Google integrations) into a shared constant/component, then add the "Connected Tools" section to all pages that display plan features — matching the exact style from the Pricing page.
+### Issues Found
 
-### Pages to update
+**Issue 1: User can navigate back to checkout after successful payment**
+On the **finish** step (line 1808), the "Back" button calls `goBack()` which navigates back to the **checkout** step. After a successful payment, this allows users to see the payment form again and potentially re-submit. The `goBack` function has no guard against this.
 
-1. **Upgrade.tsx** — Add Connected Tools below the feature list in `PlanColumn` for Pro, Business, and Enterprise plans. Also add to the comparison table (`UpgradePlansAndFeatures`).
+**Issue 2: Checkout step visible in sidebar even after payment completes**
+When `paymentStatus === 'success'` and the user is on the finish step, the checkout step still appears clickable in the sidebar stepper. There's no logic to mark checkout as "done" or prevent re-entry.
 
-2. **ServicePlan.tsx** — Add Connected Tools in the "Plan Benefits" section (Tab 1: Current Plan) when the user's plan is Pro, Business, or Custom.
+### Solution
 
-3. **ServicePlanSection.tsx** — Add a compact Connected Tools list below the features list, only visible for Pro/Business/Custom plans.
+#### 1. Block back-navigation after payment success (`FirstTimeOnboarding.tsx`)
+- In `goBack()`: if `paymentStatus === 'success'` and `currentStep === 'finish'`, skip the checkout step and go directly to the **plan** step instead.
+- Alternatively, hide the "Back" button entirely on the finish step when payment was successful (user already paid, no reason to go back).
 
-4. **FirstTimeOnboarding.tsx** — Add Connected Tools below each plan card's feature list for Pro and Business plans during onboarding.
+#### 2. Disable checkout step re-entry after payment
+- When `paymentStatus === 'success'`, prevent the sidebar stepper from allowing click-navigation back to the checkout step.
+- On the finish step after paid plan: remove or disable the "Back" button, or change it to only go back to info/plan (skip checkout).
 
-### Shared code
-Create a reusable `ConnectedToolsList` component or shared constant in a new file (e.g., `src/lib/connectedTools.ts`) containing:
-- Gmail logo, Google Drive logo, Google Calendar logo imports
-- Labels: "Email Integration", "Google Drive", "Calendar Sync"
-- A React component that renders the "Connected Tools" header + checkmark + logo + label rows
+#### 3. Show payment confirmation on finish step
+- When the user paid successfully, show a small confirmation badge (e.g., green "Payment Confirmed" badge) next to the plan info on the finish step, so they know the payment was processed.
 
-### Style
-- Matches Pricing page exactly: border-top separator, "Connected Tools" title (13px, 600 weight), Check icon (blue, 15px), logo (16x16), label (13px)
-- Adapts to each page's styling context (inline styles on Pricing/Upgrade Notion-style pages, Tailwind classes on ServicePlan/Settings pages)
+### Technical Details
 
-### Technical details
-- No logic, API, or database changes
-- Only UI additions — existing layouts remain untouched
-- `showIntegrations` condition: plan key includes `pro`, `business`, `custom`, or `enterprise`
+**File: `src/components/FirstTimeOnboarding.tsx`**
 
-### Files to create/edit
-| File | Action |
+1. **`goBack` function (line 228-237)**: Add a guard:
+   ```typescript
+   const goBack = () => {
+     // After payment success, skip checkout step when going back from finish
+     if (currentStep === 'finish' && paymentStatus === 'success') {
+       // Go back to plan step (skip checkout)
+       const planIndex = allSteps.indexOf('plan');
+       if (planIndex >= 0) {
+         setCurrentStepIndex(planIndex);
+         return;
+       }
+     }
+     // ... existing logic
+   };
+   ```
+
+2. **Finish step UI (line 1807-1810)**: When `paymentStatus === 'success'`, either hide the Back button or show a "Payment Confirmed" indicator instead.
+
+3. **Sidebar stepper**: Disable clicking on the checkout step when `paymentStatus === 'success'`.
+
+### Files to Edit
+| File | Change |
 |------|--------|
-| `src/components/ConnectedToolsBadge.tsx` | **Create** — shared component |
-| `src/pages/Upgrade.tsx` | **Edit** — add to PlanColumn + comparison table |
-| `src/pages/ServicePlan.tsx` | **Edit** — add to plan benefits section |
-| `src/components/personal/ServicePlanSection.tsx` | **Edit** — add below features |
-| `src/components/FirstTimeOnboarding.tsx` | **Edit** — add to plan cards |
+| `src/components/FirstTimeOnboarding.tsx` | Block back-nav after payment, update finish step UI |
 
