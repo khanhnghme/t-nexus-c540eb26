@@ -361,7 +361,7 @@ function ToggleBtn({ active, onClick, label }: { active: boolean; onClick: () =>
 
 /* ═══════════════════════ Plan Column ═══════════════════════ */
 
-function PlanColumn({ plan, yearly, tp, disabled, onSelect, isFirstTimeBuyer = false }: { plan: Plan; yearly: boolean; tp: any; disabled: boolean; onSelect: (planKey?: string) => void; isFirstTimeBuyer?: boolean }) {
+function PlanColumn({ plan, yearly, tp, disabled, onSelect, isFirstTimeBuyer = false, isScheduled = false }: { plan: Plan; yearly: boolean; tp: any; disabled: boolean; onSelect: (planKey?: string) => void; isFirstTimeBuyer?: boolean; isScheduled?: boolean }) {
   const price = formatPrice(plan.monthlyPrice, yearly);
   const isCustom = plan.monthlyPrice === null;
   const planKey = `plan_${plan.key}`;
@@ -372,7 +372,12 @@ function PlanColumn({ plan, yearly, tp, disabled, onSelect, isFirstTimeBuyer = f
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div className="flex items-center gap-2 mb-2.5 min-h-[24px]">
         <span className="text-base font-semibold text-foreground">{plan.name}</span>
-        {plan.recommended && (
+        {isScheduled && (
+          <span className="text-[11px] font-semibold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded">
+            🔄 {plan.cta}
+          </span>
+        )}
+        {plan.recommended && !isScheduled && (
           <span className="text-[11px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded">
             {tp.recommended}
           </span>
@@ -407,7 +412,7 @@ function PlanColumn({ plan, yearly, tp, disabled, onSelect, isFirstTimeBuyer = f
       <div className="mb-5">
         <button
           onClick={() => onSelect(plan.key)}
-          disabled={disabled || plan.isCurrent}
+          disabled={disabled || plan.isCurrent || isScheduled}
           className={`w-full py-1.5 px-3.5 text-sm font-medium rounded-lg cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed ${plan.isCurrent
             ? 'bg-primary/10 text-primary border border-primary/30'
             : plan.ctaStyle === 'primary'
