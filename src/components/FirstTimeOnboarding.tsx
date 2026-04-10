@@ -96,7 +96,7 @@ export default function FirstTimeOnboarding({
   const [couponError, setCouponError] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'failed'>('idle');
-  const [checkoutSubStep, setCheckoutSubStep] = useState<1>(1);
+  const [checkoutSubStep] = useState<1>(1);
   const [isFirstTimeBuyer, setIsFirstTimeBuyer] = useState(true);
   const navigate = useNavigate();
 
