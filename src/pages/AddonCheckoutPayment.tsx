@@ -244,7 +244,10 @@ export default function AddonCheckoutPayment() {
       {/* Order Summary */}
       <Card>
         <CardContent className="pt-5 pb-5">
-          <h3 className="text-base font-semibold mb-4">{isVi ? 'Tóm tắt đơn hàng' : 'Order Summary'}</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold">{isVi ? 'Tóm tắt đơn hàng' : 'Order Summary'}</h3>
+            <code className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{order?.order_code || orderCode}</code>
+          </div>
 
           <div className="text-xs text-muted-foreground mb-3">
             {isVi ? 'Gói hiện tại' : 'Current plan'}: <span className="font-medium text-foreground">{formatPlanName(plan)}</span>
