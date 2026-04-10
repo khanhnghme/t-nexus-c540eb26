@@ -74,6 +74,10 @@ export default function CheckoutPayment() {
         return;
       }
       setOrder(orderRes.data);
+      // Store expires_at for layout's back confirmation dialog
+      if (orderRes.data.expires_at) {
+        sessionStorage.setItem('checkout_payment_expires_at', orderRes.data.expires_at);
+      }
       if (paypalRes.data?.clientId) setPaypalClientId(paypalRes.data.clientId);
 
       const o = orderRes.data;
