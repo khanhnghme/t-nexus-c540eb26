@@ -13,7 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
-import { PLAN_CONFIG, getPlanLabel, getWelcomePrice, type PlanKey, PLAN_ORDER } from '@/lib/planConfig';
+import { PLAN_CONFIG, getPlanLabel, getPlanRank, getWelcomePrice, type PlanKey, PLAN_ORDER } from '@/lib/planConfig';
 
 /* ═══ Constants ═══ */
 
@@ -53,11 +53,18 @@ export default function Checkout() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { translations: { checkout: t, common: tc } } = useLanguage();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const [plan, setPlan] = useState(searchParams.get('plan') || 'plan_pro');
   const [cycle, setCycle] = useState<'monthly' | 'yearly'>((searchParams.get('cycle') || 'monthly') as 'monthly' | 'yearly');
   const isVi = tc?.language === 'vi' || document.documentElement.lang === 'vi';
+
+  // Detect downgrade vs upgrade
+  const currentPlan = profile?.user_plan || 'plan_free';
+  const currentRank = getPlanRank(currentPlan);
+  const selectedRank = getPlanRank(plan);
+  const isDowngrade = selectedRank < currentRank && currentPlan !== 'plan_free';
+  const existingNextPlan = (profile as any)?.next_plan || null;
 
   const [step, setStep] = useState(1);
   const [addons, setAddons] = useState<Record<string, number>>({});
