@@ -39,6 +39,8 @@ export default function CheckoutPayment() {
   const [paymentMethodOpen, setPaymentMethodOpen] = useState(true);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancellingOrder, setCancellingOrder] = useState(false);
+  const [showBackDialog, setShowBackDialog] = useState(false);
+  const [backDialogTimeLeft, setBackDialogTimeLeft] = useState('');
 
   // Background polling: detect webhook-completed orders
   useEffect(() => {
@@ -169,16 +171,35 @@ export default function CheckoutPayment() {
     }
   }, [navigate, t, refreshProfile, orderCode, isVi]);
 
+  const handleBeforeUnload = useCallback((e: BeforeUnloadEvent) => {
+    if (paymentStatus === 'processing') {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  }, [paymentStatus]);
+
   useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (paymentStatus === 'processing') {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [paymentStatus]);
+  }, [handleBeforeUnload]);
+
+  // Compute remaining time for back dialog
+  useEffect(() => {
+    if (!showBackDialog || !order?.expires_at) return;
+    const update = () => {
+      const diff = new Date(order.expires_at).getTime() - Date.now();
+      if (diff <= 0) {
+        setBackDialogTimeLeft('00:00');
+        return;
+      }
+      const mm = Math.floor(diff / 60000);
+      const ss = Math.floor((diff % 60000) / 1000);
+      setBackDialogTimeLeft(`${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`);
+    };
+    update();
+    const iv = setInterval(update, 1000);
+    return () => clearInterval(iv);
+  }, [showBackDialog, order?.expires_at]);
 
   if (loading) {
     return (
@@ -233,6 +254,17 @@ export default function CheckoutPayment() {
 
   return (
     <div className="max-w-5xl mx-auto py-6 px-4 space-y-5">
+      {/* Back button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="gap-1.5 text-muted-foreground hover:text-foreground -ml-2"
+        onClick={() => setShowBackDialog(true)}
+      >
+        <ArrowLeft className="w-4 h-4" />
+        <span className="text-sm">{isVi ? 'Quay lại' : 'Back'}</span>
+      </Button>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -313,7 +345,31 @@ export default function CheckoutPayment() {
         </DialogContent>
       </Dialog>
 
-      {/* Order Summary Table */}
+      {/* Back Confirmation Dialog */}
+      <Dialog open={showBackDialog} onOpenChange={setShowBackDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{isVi ? 'Rời khỏi trang thanh toán?' : 'Leave payment page?'}</DialogTitle>
+            <DialogDescription>
+              {isVi
+                ? `Bạn còn đơn hàng chưa thanh toán. Có thể hoàn tất sau trong lịch sử. Còn lại: ${backDialogTimeLeft}.`
+                : `You have an unpaid order. You can complete it later in history. Remaining: ${backDialogTimeLeft}.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowBackDialog(false);
+              navigate(-1);
+            }}>
+              {isVi ? 'Quay lại' : 'Go back'}
+            </Button>
+            <Button onClick={() => setShowBackDialog(false)}>
+              {isVi ? 'Tiếp tục thanh toán' : 'Continue payment'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Card>
         <CardContent className="pt-5 pb-5">
           <div className="flex items-center justify-between mb-4">
