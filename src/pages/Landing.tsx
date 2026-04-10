@@ -1429,12 +1429,12 @@ export default function Landing() {
                     <div className="mt-4 flex flex-col gap-3">
                       {column.links.map((linkItem) =>
                         linkItem.external === false ? (
-                          <Link key={linkItem.label} to={linkItem.href} className="text-sm transition-colors whitespace-nowrap" style={{ color: colorVar('--landing-hero-muted') }}>
-                            {linkItem.label}
+                          <Link key={linkItem.label} to={linkItem.href} className={`text-sm transition-colors whitespace-nowrap ${linkItem.bold ? 'font-bold' : ''}`} style={{ color: colorVar('--landing-hero-muted') }}>
+                            {linkItem.bold ? 'Explore more →' : linkItem.label}
                           </Link>
                         ) : (
-                          <a key={linkItem.label} href={linkItem.href} className="text-sm transition-colors whitespace-nowrap" style={{ color: colorVar('--landing-hero-muted') }}>
-                            {linkItem.label}
+                          <a key={linkItem.label} href={linkItem.href} className={`text-sm transition-colors whitespace-nowrap ${linkItem.bold ? 'font-bold' : ''}`} style={{ color: colorVar('--landing-hero-muted') }}>
+                            {linkItem.bold ? 'Explore more →' : linkItem.label}
                           </a>
                         )
                       )}
