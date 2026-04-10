@@ -498,7 +498,7 @@ export function MemberAuthForm() {
           password: regPassword,
           student_id: regStudentId.trim(),
           full_name: regFullName.trim(),
-          institution: regInstitution,
+          institution: regInstitution === '__other__' ? regCustomInstitution.trim() : regInstitution,
         },
       });
 
