@@ -1544,6 +1544,8 @@ export type Database = {
           major: string | null
           must_change_password: boolean
           nav_hidden_pages: Json
+          next_billing_cycle: string | null
+          next_plan: string | null
           onboarding_completed: boolean
           phone: string | null
           plan: string
@@ -1584,6 +1586,8 @@ export type Database = {
           major?: string | null
           must_change_password?: boolean
           nav_hidden_pages?: Json
+          next_billing_cycle?: string | null
+          next_plan?: string | null
           onboarding_completed?: boolean
           phone?: string | null
           plan?: string
@@ -1624,6 +1628,8 @@ export type Database = {
           major?: string | null
           must_change_password?: boolean
           nav_hidden_pages?: Json
+          next_billing_cycle?: string | null
+          next_plan?: string | null
           onboarding_completed?: boolean
           phone?: string | null
           plan?: string
