@@ -132,6 +132,7 @@ export function MemberAuthForm() {
   const [password, setPassword] = useState('');
   const [loginPolicyAgreed, setLoginPolicyAgreed] = useState(true);
   const [rememberLogin, setRememberLogin] = useState(true);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   // Register fields
   const [regStudentId, setRegStudentId] = useState('');
