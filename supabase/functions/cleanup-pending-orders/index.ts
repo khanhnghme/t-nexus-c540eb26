@@ -16,13 +16,13 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+    const nowISO = new Date().toISOString();
 
     const { data: expired, error } = await supabase
       .from("orders")
       .update({ status: "expired" })
       .eq("status", "pending")
-      .lt("created_at", twoHoursAgo)
+      .lte("expires_at", nowISO)
       .select("id");
 
     if (error) {

@@ -258,7 +258,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Save order to DB
+    // Save order to DB with expiration
+    const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+
     await serviceClient.from("orders").insert({
       user_id: user.id,
       order_type,
@@ -274,6 +276,7 @@ Deno.serve(async (req) => {
       paypal_order_id: paypalOrder.id,
       status: "pending",
       welcome_discount: welcomeDiscountAmount,
+      expires_at: expiresAt,
     });
 
     return new Response(
