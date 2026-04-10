@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
       }
 
       // Fetch details in parallel batches of 10
-      const BATCH_SIZE = 10;
+      const BATCH_SIZE = 25;
       const messages = [];
       for (let i = 0; i < messageIds.length; i += BATCH_SIZE) {
         const batch = messageIds.slice(i, i + BATCH_SIZE);
