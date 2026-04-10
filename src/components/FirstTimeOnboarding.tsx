@@ -318,6 +318,7 @@ export default function FirstTimeOnboarding({
     if (needsStudentId && !editStudentId.trim()) errors.editStudentId = true;
     if (!editFullName.trim()) errors.editFullName = true;
     if (!editInstitution.trim()) errors.editInstitution = true;
+    if (editInstitution === '__other__' && !customInstitution.trim()) errors.customInstitution = true;
     setInfoErrors(errors);
     return Object.keys(errors).length === 0;
   };
