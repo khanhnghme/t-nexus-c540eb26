@@ -951,6 +951,70 @@ export default function FirstTimeOnboarding({
                             className={cn('h-9 border-0 bg-muted/50 rounded-lg focus-visible:ring-1', infoErrors[field.id] && 'bg-destructive/10')} />
                         </div>
                       ))}
+
+                      {/* Institution dropdown */}
+                      <div className={cn(
+                        'rounded-xl border p-3 transition-all',
+                        infoErrors.editInstitution ? 'border-destructive bg-destructive/5' : 'bg-card hover:shadow-sm'
+                      )}>
+                        <Label className="text-xs flex items-center gap-1.5 mb-1.5 font-semibold">
+                          <span className="text-primary"><Building2 className="w-4 h-4" /></span>
+                          {isVi ? 'Đơn vị đào tạo' : 'Institution'} <span className="text-destructive">*</span>
+                        </Label>
+                        <Popover open={institutionOpen} onOpenChange={setInstitutionOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={institutionOpen}
+                              className={cn(
+                                'w-full justify-between h-9 border-0 bg-muted/50 rounded-lg font-normal text-sm',
+                                !editInstitution && 'text-muted-foreground',
+                                infoErrors.editInstitution && 'bg-destructive/10'
+                              )}
+                            >
+                              <span className="truncate">
+                                {editInstitution || (isVi ? 'Chọn đơn vị đào tạo...' : 'Select institution...')}
+                              </span>
+                              <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[340px] p-0" align="start">
+                            <Command shouldFilter={false}>
+                              <CommandInput
+                                placeholder={isVi ? 'Tìm kiếm...' : 'Search...'}
+                                value={institutionSearch}
+                                onValueChange={setInstitutionSearch}
+                              />
+                              <CommandList>
+                                <CommandEmpty>{isVi ? 'Không tìm thấy' : 'No results found'}</CommandEmpty>
+                                <ScrollArea className="h-[240px]">
+                                  {Array.from(institutionsByRegion.entries()).map(([region, items]) => (
+                                    <CommandGroup key={region} heading={region}>
+                                      {items.map(inst => (
+                                        <CommandItem
+                                          key={inst.code}
+                                          value={inst.code}
+                                          onSelect={() => {
+                                            setEditInstitution(inst.name);
+                                            setInstitutionOpen(false);
+                                            setInstitutionSearch('');
+                                            setInfoErrors(p => ({ ...p, editInstitution: false }));
+                                          }}
+                                        >
+                                          <Check className={cn('mr-2 h-4 w-4', editInstitution === inst.name ? 'opacity-100' : 'opacity-0')} />
+                                          <span className="truncate">{inst.name}</span>
+                                          <span className="ml-auto text-[10px] text-muted-foreground">{inst.code}</span>
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  ))}
+                                </ScrollArea>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
                     </div>
 
                     <div className="mt-3 rounded-xl border bg-card p-3">
