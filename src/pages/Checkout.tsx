@@ -13,6 +13,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { OrderCountdown } from '@/components/OrderCountdown';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 
 import { PLAN_CONFIG, getPlanLabel, getPlanRank, getWelcomePrice, type PlanKey, PLAN_ORDER } from '@/lib/planConfig';
 
@@ -79,6 +81,8 @@ export default function Checkout() {
   const [isFirstTimeBuyer, setIsFirstTimeBuyer] = useState(true);
   const [orderReservation, setOrderReservation] = useState<{ orderId: string; expiresAt: string } | null>(null);
   const [orderExpired, setOrderExpired] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [agreedToPolicy, setAgreedToPolicy] = useState(false);
 
   useEffect(() => {
     supabase.functions.invoke('get-paypal-config').then(({ data }) => {
@@ -531,12 +535,56 @@ export default function Checkout() {
               <p className="text-xs text-muted-foreground">{t?.total || 'Total'}</p>
               <p className="text-2xl font-bold">${totalAmount.toFixed(2)}</p>
             </div>
-            <Button size="lg" className="gap-2 px-10 text-base" onClick={() => setStep(2)}>
+            <Button size="lg" className="gap-2 px-10 text-base" onClick={() => { setShowConfirmDialog(true); setAgreedToPolicy(false); }}>
               {isVi ? 'Thanh toán' : 'Continue to Pay'}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
+
+        {/* Policy Confirmation Dialog */}
+        <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{isVi ? 'Xác nhận trước khi thanh toán' : 'Confirm before payment'}</DialogTitle>
+              <DialogDescription>
+                {isVi ? 'Vui lòng xác nhận bạn đã đọc và đồng ý với các chính sách của chúng tôi.' : 'Please confirm you have read and agree to our policies.'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex items-start gap-3 py-4">
+              <Checkbox
+                id="policy-agree"
+                checked={agreedToPolicy}
+                onCheckedChange={(v) => setAgreedToPolicy(v === true)}
+                className="mt-0.5"
+              />
+              <label htmlFor="policy-agree" className="text-sm leading-relaxed cursor-pointer">
+                {isVi ? (
+                  <>Tôi đã đọc và đồng ý với{' '}
+                    <a href="/guide/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">Điều khoản dịch vụ</a>
+                    {' '}và{' '}
+                    <a href="/guide/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">Chính sách bảo mật</a>
+                  </>
+                ) : (
+                  <>I have read and agree to the{' '}
+                    <a href="/guide/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">Terms of Service</a>
+                    {' '}and{' '}
+                    <a href="/guide/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">Privacy Policy</a>
+                  </>
+                )}
+              </label>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
+                {isVi ? 'Hủy' : 'Cancel'}
+              </Button>
+              <Button disabled={!agreedToPolicy} onClick={() => { setShowConfirmDialog(false); setStep(2); }}>
+                {isVi ? 'Tiếp tục thanh toán' : 'Continue to Payment'}
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
@@ -547,11 +595,8 @@ export default function Checkout() {
      ═══════════════════════════════════════════════ */
   return (
     <div className="max-w-5xl mx-auto py-6 px-4 space-y-5">
-      {/* Header */}
+      {/* Header — no back button in Step 2 */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => { setStep(1); setOrderReservation(null); setOrderExpired(false); }}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
         <div>
           <h1 className="text-2xl font-bold">{isVi ? 'Xác nhận & Thanh toán' : 'Confirm & Pay'}</h1>
           <p className="text-sm text-muted-foreground">
@@ -567,7 +612,6 @@ export default function Checkout() {
           orderId={orderReservation.orderId}
           isVi={isVi}
           onExpired={() => setOrderExpired(true)}
-          onCreateNew={() => { setStep(1); setOrderReservation(null); setOrderExpired(false); }}
         />
       )}
 

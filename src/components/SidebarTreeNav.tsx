@@ -76,6 +76,8 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
       setExpanded('projects');
     } else if (path === '/personal-info' || path === '/account-settings') {
       setExpanded('account');
+    } else if (path === '/service-plan' || path === '/billing-history') {
+      setExpanded('billing');
     }
   }, [location.pathname]);
 
@@ -153,7 +155,7 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
           <TreeItemCollapsed key={item.href} icon={item.icon} label={item.name} href={item.href} active={isPathActive(item.href)} />
         ))}
         <TreeItemCollapsed icon={UserCircle} label={t?.account || 'Account'} href="/personal-info" active={isPathActive('/personal-info') || isPathActive('/account-settings')} />
-        <TreeItemCollapsed icon={CreditCard} label={t?.servicePlan || 'Service Plan'} href="/service-plan" active={isPathActive('/service-plan')} />
+        <TreeItemCollapsed icon={CreditCard} label={t?.servicePlan || 'Service Plan'} href="/service-plan" active={isPathActive('/service-plan') || isPathActive('/billing-history')} />
 
         {/* Admin — single item */}
         {isAdmin && (
@@ -286,14 +288,35 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
             </div>
           )}
 
-          {/* Service Plan — standalone item */}
-          <Link
-            to="/service-plan"
-            className={cn('sidebar-nav-item', isPathActive('/service-plan') && 'active')}
+          {/* Service Plan — tree with billing history */}
+          <button
+            onClick={() => toggle('billing')}
+            className={cn(
+              'sidebar-nav-item w-full text-left group',
+              (isPathActive('/service-plan') || isPathActive('/billing-history')) && expanded !== 'billing' && 'semi-active'
+            )}
           >
+            <ChevronRight className={cn('nav-chevron', expanded === 'billing' && 'expanded')} />
             <CreditCard className="nav-icon" strokeWidth={1.8} />
             <span className="nav-label">{t?.servicePlan || 'Service Plan'}</span>
-          </Link>
+          </button>
+
+          {expanded === 'billing' && (
+            <div className="tree-children tree-level-1">
+              <Link
+                to="/service-plan"
+                className={cn('sidebar-nav-item', isPathActive('/service-plan') && 'active')}
+              >
+                <span className="nav-label">{t?.myPlan || 'My Plan'}</span>
+              </Link>
+              <Link
+                to="/billing-history"
+                className={cn('sidebar-nav-item', isPathActive('/billing-history') && 'active')}
+              >
+                <span className="nav-label">{t?.billingHistory || 'Billing History'}</span>
+              </Link>
+            </div>
+          )}
         </>
       )}
 

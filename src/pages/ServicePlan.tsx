@@ -61,27 +61,11 @@ export default function ServicePlan() {
   const [wsUsages, setWsUsages] = useState<WorkspaceUsage[]>([]);
   const [planLimits, setPlanLimits] = useState<PlanLimitsData | null>(null);
   const [uniqueMemberCount, setUniqueMemberCount] = useState(0);
-  const [billingHistory, setBillingHistory] = useState<PaymentRecord[]>([]);
-  const [billingLoading, setBillingLoading] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState<PaymentRecord | null>(null);
+  // billingHistory state removed — now in BillingHistory page
 
   // newAddons state removed — selection now in AddonCheckout
 
-  // Fetch billing history
-  useEffect(() => {
-    if (!user) return;
-    setBillingLoading(true);
-    supabase
-      .from('payment_history')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(20)
-      .then(({ data }) => {
-        setBillingHistory((data as PaymentRecord[]) || []);
-        setBillingLoading(false);
-      });
-  }, [user]);
+  // Billing history fetch removed — now in BillingHistory page
 
   useEffect(() => {
     if (!user) return;
@@ -254,7 +238,6 @@ export default function ServicePlan() {
           <TabsTrigger value="usage">{t.usageTab}</TabsTrigger>
           <TabsTrigger value="addon">{t.addonTab || '🧩 Add-ons'}</TabsTrigger>
           <TabsTrigger value="cleanup">{t.cleanupTab}</TabsTrigger>
-          <TabsTrigger value="billing">{t.billingTab}</TabsTrigger>
         </TabsList>
 
         {/* TAB 1: Current plan */}
@@ -840,72 +823,7 @@ export default function ServicePlan() {
           <AccountCleanupPanel onCleanupComplete={fetchUsages} />
         </TabsContent>
 
-        {/* TAB: Billing history */}
-        <TabsContent value="billing" className="space-y-4">
-          <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
-            <Receipt className="w-5 h-5 text-muted-foreground" />
-            {t.billingHistory}
-          </h2>
-
-          <Card>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.dateCol}</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.txnCol}</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.planCol}</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{'Method'}</th>
-                    <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.amountCol}</th>
-                    <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.statusCol}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {billingLoading ? (
-                    <tr><td colSpan={6} className="text-center py-8"><Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" /></td></tr>
-                  ) : billingHistory.length === 0 ? (
-                    <tr><td colSpan={6} className="text-center py-8 text-sm text-muted-foreground">{t.noTransactions || 'No transactions yet'}</td></tr>
-                  ) : billingHistory.map(row => {
-                    const date = new Date(row.created_at);
-                    const formattedDate = `${date.getDate().toString().padStart(2,'0')}/${(date.getMonth()+1).toString().padStart(2,'0')}/${date.getFullYear()}`;
-                    const displayAmount = row.final_amount ?? row.amount;
-                    const statusLabel = row.status === 'completed' ? 'Paid' : row.status === 'pending' ? 'Pending' : row.status;
-                    return (
-                      <tr key={row.id} className="hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setSelectedPayment(row)}>
-                        <td className="px-5 py-3 text-sm">{formattedDate}</td>
-                        <td className="px-5 py-3 text-sm font-mono text-xs text-muted-foreground">{row.transaction_id || row.id.slice(0,13)}</td>
-                        <td className="px-5 py-3 text-sm font-medium">{formatPlanName(row.plan_purchased)}</td>
-                        <td className="px-5 py-3 text-sm text-muted-foreground">{row.payment_method || '—'}</td>
-                        <td className="px-5 py-3 text-sm text-right tabular-nums">${displayAmount.toFixed(2)}</td>
-                        <td className="px-5 py-3 text-right">
-                          <Badge
-                            variant={statusLabel === 'Paid' ? 'default' : 'secondary'}
-                            className={`text-[10px] ${
-                              statusLabel === 'Paid' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-none' :
-                              statusLabel === 'Pending' ? 'bg-amber-500/15 text-amber-600 border-none' :
-                              'bg-muted text-muted-foreground border-none'
-                            }`}
-                          >
-                            {statusLabel}
-                          </Badge>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <div className="px-5 py-3 border-t border-border">
-              <p className="text-xs text-muted-foreground text-center">{t.showingRecent}</p>
-            </div>
-          </Card>
-
-          <UserPaymentDetailDialog
-            payment={selectedPayment}
-            open={!!selectedPayment}
-            onClose={() => setSelectedPayment(null)}
-          />
-        </TabsContent>
+        {/* Billing tab removed — now at /billing-history */}
       </Tabs>
     </div>
   );
