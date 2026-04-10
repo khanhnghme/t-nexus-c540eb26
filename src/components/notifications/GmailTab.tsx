@@ -268,7 +268,7 @@ export default function GmailTab() {
                 <PaginationContent>
                   <PaginationItem>
                     <PaginationPrevious
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                       className={cn(currentPage === 1 && "pointer-events-none opacity-50", "cursor-pointer")}
                     />
                   </PaginationItem>
@@ -291,7 +291,7 @@ export default function GmailTab() {
                   )}
                   <PaginationItem>
                     <PaginationNext
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                       className={cn(currentPage === totalPages && "pointer-events-none opacity-50", "cursor-pointer")}
                     />
                   </PaginationItem>
