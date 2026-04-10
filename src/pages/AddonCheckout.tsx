@@ -141,7 +141,7 @@ export default function AddonCheckout() {
       welcome_discount: 0,
       total_amount: totalAmount,
       addons: items as any,
-      addons_applied: true,
+      addons_applied: false,
       payment_method: 'paypal',
       status: 'pending',
       expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),

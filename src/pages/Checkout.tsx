@@ -201,9 +201,9 @@ export default function Checkout() {
       welcome_discount: welcomeDiscount,
       total_amount: totalAmount,
       addons: addonsList as any,
-      addons_applied: addonFinal > 0,
+      addons_applied: false,
       coupon_code: couponDiscount ? couponDiscount.code : null,
-      coupon_applied: !!couponDiscount,
+      coupon_applied: false,
       payment_method: 'paypal',
       status: 'pending',
       expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
@@ -260,18 +260,44 @@ export default function Checkout() {
         setPaymentStatus('success');
         toast.success(t?.paymentSuccess || 'Payment successful!');
         await refreshProfile();
-        navigate(`/checkout/result?status=success&order_id=${res.data.orderId || ''}`);
+        // Use the order_code from reservation to navigate to summary
+        const targetOrderCode = orderReservation?.orderId ? undefined : res.data.orderId;
+        // Poll briefly to find the order_code if needed
+        if (orderReservation?.orderId) {
+          const { data: orderData } = await supabase.from('orders').select('order_code').eq('id', orderReservation.orderId).single();
+          if (orderData?.order_code) {
+            navigate(`/checkout/summary/${orderData.order_code}`, { replace: true });
+          } else {
+            navigate(`/checkout/result?status=success&order_id=${res.data.orderId || ''}`, { replace: true });
+          }
+        } else {
+          navigate(`/checkout/result?status=success&order_id=${res.data.orderId || ''}`, { replace: true });
+        }
       } else if (res.data?.success && res.data?.pending) {
         // Subscription approved but not ACTIVE yet — wait for webhook
         toast.success(isVi ? 'Đã xác nhận! Đang chờ PayPal kích hoạt...' : 'Confirmed! Waiting for PayPal activation...');
-        // Keep processing — when webhook completes, order status changes and we can redirect
+        // Start polling for completion
+        if (orderReservation?.orderId) {
+          const pollForCompletion = async () => {
+            for (let i = 0; i < 15; i++) {
+              await new Promise(r => setTimeout(r, 3000));
+              const { data: od } = await supabase.from('orders').select('status, order_code').eq('id', orderReservation.orderId).single();
+              if (od && od.status === 'completed') {
+                setPaymentStatus('success');
+                await refreshProfile();
+                navigate(`/checkout/summary/${od.order_code}`, { replace: true });
+                return;
+              }
+            }
+          };
+          pollForCompletion();
+        }
       } else {
         throw new Error('Payment capture failed');
       }
     } catch {
       setPaymentStatus('failed');
       toast.error(t?.paymentFailed || 'Payment failed. Please try again.');
-      navigate(`/checkout/result?status=failed&order_id=${orderReservation?.orderId || ''}`);
     }
   }, [navigate, t, refreshProfile, isVi, orderReservation]);
 

@@ -123,8 +123,38 @@ export default function CheckoutSummary() {
           return;
         }
         if (data.status === 'pending') {
-          const route = data.order_type === 'addon' ? `/addon-checkout/${orderCode}` : `/checkout/payment/${orderCode}`;
-          navigate(route, { replace: true });
+          // Don't redirect immediately — poll briefly in case webhook is about to complete
+          let resolved = false;
+          for (let i = 0; i < 8; i++) {
+            await new Promise(r => setTimeout(r, 3000));
+            const { data: fresh } = await supabase
+              .from('orders')
+              .select('status')
+              .eq('order_code', orderCode)
+              .eq('user_id', user.id)
+              .maybeSingle();
+            if (fresh && fresh.status !== 'pending') {
+              // Re-fetch full order
+              const { data: fullOrder } = await supabase
+                .from('orders')
+                .select('*')
+                .eq('order_code', orderCode)
+                .eq('user_id', user.id)
+                .single();
+              if (fullOrder) {
+                setOrder(fullOrder);
+                if (fullOrder.status === 'completed') refreshProfile();
+                setLoading(false);
+                resolved = true;
+                break;
+              }
+            }
+          }
+          if (!resolved) {
+            // Still pending after ~24s — redirect back to payment
+            const route = data.order_type === 'addon' ? `/addon-checkout/${orderCode}` : `/checkout/payment/${orderCode}`;
+            navigate(route, { replace: true });
+          }
           return;
         }
         setOrder(data);
