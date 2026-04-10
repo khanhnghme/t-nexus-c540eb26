@@ -173,6 +173,21 @@ export default function AddonCheckoutPayment() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [paymentStatus]);
 
+  // Compute remaining time for back dialog
+  useEffect(() => {
+    if (!showBackDialog || !order?.expires_at) return;
+    const update = () => {
+      const diff = new Date(order.expires_at).getTime() - Date.now();
+      if (diff <= 0) { setBackDialogTimeLeft('00:00'); return; }
+      const mm = Math.floor(diff / 60000);
+      const ss = Math.floor((diff % 60000) / 1000);
+      setBackDialogTimeLeft(`${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`);
+    };
+    update();
+    const iv = setInterval(update, 1000);
+    return () => clearInterval(iv);
+  }, [showBackDialog, order?.expires_at]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -185,7 +200,16 @@ export default function AddonCheckoutPayment() {
 
   return (
     <div className="max-w-5xl mx-auto py-6 px-4 space-y-5">
-      {/* Payment failure banner */}
+      {/* Back button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="gap-1.5 text-muted-foreground hover:text-foreground -ml-2"
+        onClick={() => setShowBackDialog(true)}
+      >
+        <ArrowLeft className="w-4 h-4" />
+        <span className="text-sm">{isVi ? 'Quay lại' : 'Back'}</span>
+      </Button>
       {paymentStatus === 'failed' && paymentError && (
         <div className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
           <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
