@@ -15,6 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import { logActivity } from '@/lib/activityLogger';
 import { cn } from '@/lib/utils';
 import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
+import { useGoogleDriveConnect } from '@/hooks/useGoogleDriveConnect';
+import { useGoogleDrivePicker, DriveFile } from '@/hooks/useGoogleDrivePicker';
 import {
   Upload,
   File,
@@ -34,6 +36,8 @@ import {
   Info,
   CheckCircle2,
   AlertCircle,
+  HardDrive,
+  ExternalLink,
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -83,6 +87,14 @@ interface PendingLink {
   id: string;
   name: string;
   url: string;
+  category: string;
+  status: 'pending' | 'uploading' | 'done' | 'error';
+  error?: string;
+}
+
+interface PendingDriveFile {
+  id: string;
+  driveFile: DriveFile;
   category: string;
   status: 'pending' | 'uploading' | 'done' | 'error';
   error?: string;
