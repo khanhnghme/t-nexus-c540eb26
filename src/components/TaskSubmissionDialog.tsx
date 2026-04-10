@@ -1415,6 +1415,20 @@ export default function TaskSubmissionDialog({
                         ))}
                       </div>
                     )}
+                    {driveFilesCount > 0 && (
+                      <div className="space-y-1">
+                        <span className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                          <img src="https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png" alt="" className="w-3.5 h-3.5" />
+                          {driveFilesCount} file Drive
+                        </span>
+                        {driveFiles.map((df, i) => (
+                          <div key={i} className="text-xs text-muted-foreground pl-5 flex items-center gap-1.5 min-w-0 overflow-hidden">
+                            {df.icon_url ? <img src={df.icon_url} alt="" className="w-3 h-3 shrink-0" /> : <FileText className="w-3 h-3 shrink-0 opacity-60" />}
+                            <span className="truncate min-w-0 flex-1" title={df.title}>{df.title}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     {hasExistingSubmission && (
                       <div className="flex items-center gap-1.5 text-xs text-blue-600 mt-1">
                         <Upload className="w-3 h-3" />
