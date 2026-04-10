@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
 interface OrderData {
@@ -27,6 +28,7 @@ export default function PaymentResult() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { translations: { paymentResult: t } } = useLanguage();
+  const { refreshProfile } = useAuth();
 
   const status = searchParams.get('status') || 'failed';
   const orderId = searchParams.get('order_id');
