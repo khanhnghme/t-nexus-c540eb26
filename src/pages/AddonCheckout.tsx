@@ -70,7 +70,6 @@ export default function AddonCheckout() {
   const { translations: { app: { servicePlan: t } } } = useLanguage();
   const { user, profile, refreshProfile } = useAuth();
   const userAddons = useUserAddons();
-  const accountLimits = useAccountLimitsCheck();
 
   const isVi = (profile as any)?.preferred_locale === 'vi' || document.documentElement.lang === 'vi';
   const plan = profile?.user_plan || 'plan_free';
@@ -80,27 +79,14 @@ export default function AddonCheckout() {
   const unitPrice = addonBasePrice * (1 - discount.pct);
   const cycleLabel = billingCycle === 'yearly' ? (isVi ? 'năm' : 'year') : (isVi ? 'tháng' : 'month');
 
-  const [step, setStep] = useState(1);
   const [addons, setAddons] = useState<Record<AddonType, number>>({
     projects: 0,
     storage: 0,
     members: 0,
   });
-  const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
-  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'failed'>('idle');
-  const [orderReservation, setOrderReservation] = useState<{ orderId: string; expiresAt: string } | null>(null);
-  const [orderExpired, setOrderExpired] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [agreedToPolicy, setAgreedToPolicy] = useState(false);
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [cancellingOrder, setCancellingOrder] = useState(false);
   const [creatingReservation, setCreatingReservation] = useState(false);
-
-  useEffect(() => {
-    supabase.functions.invoke('get-paypal-config').then(({ data }) => {
-      if (data?.clientId) setPaypalClientId(data.clientId);
-    });
-  }, []);
 
   const updateAddon = (type: AddonType, delta: number) => {
     setAddons(prev => ({
