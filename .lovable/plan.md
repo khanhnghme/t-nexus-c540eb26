@@ -1,30 +1,42 @@
 
 
-## Thiết kế lại section "Data & Privacy" gọn hơn & sửa lỗi màu chữ
+## Tùy chỉnh trang chủ đáp ứng yêu cầu Google OAuth Verification
 
-### Vấn đề hiện tại
-- Section quá dài với grid 2x2 cards + badge + heading + subtitle + 2 buttons
-- Màu chữ `--landing-hero-muted` (xám nhạt) trên nền `--landing-night` (navy đậm) có thể bị trùng/khó đọc ở một số chỗ
+### Phân tích hiện trạng
 
-### Giải pháp: Thu gọn thành 1 dải compact
+Trang chủ (Landing.tsx) hiện có:
+- ✅ Logo & brand nhận diện T-Nexus
+- ✅ Mô tả chức năng app (hero description, feature sections)
+- ✅ Link Privacy Policy & Terms of Service ở footer
+- ✅ Hosted trên domain riêng (t-nexus.lovable.app / t-nexus.io.vn)
+- ✅ Không yêu cầu login để xem trang chủ
 
-Thay vì grid 4 cards, thiết kế lại thành **1 dải ngang đơn giản**:
-- Một hàng ngang chứa icon Shield + tiêu đề ngắn + mô tả 1 dòng tóm tắt + 2 link (Privacy Policy & Terms)
-- Padding giảm từ `py-16 md:py-20` xuống `py-8 md:py-10`
-- Có border-top nhẹ để phân tách với phần trên
-- Bỏ grid 4 cards, bỏ badge "Privacy & Security"
-- Màu chữ dùng `--landing-hero-foreground` (trắng) cho tiêu đề, `--landing-hero-muted` cho mô tả nhưng tăng opacity
-- Link dùng `--landing-blue` để nổi bật
+### Còn thiếu / cần cải thiện
 
-### Layout mới
-```text
-─────────────────────────────────────────────────
-🛡 Your data, your control
-   We use Google Sign-In solely for authentication...
-   Privacy Policy · Terms of Service
-─────────────────────────────────────────────────
-```
+1. **Chưa giải thích minh bạch mục đích thu thập dữ liệu người dùng** — Google yêu cầu trang chủ phải nêu rõ lý do app yêu cầu quyền truy cập dữ liệu người dùng (ví dụ: Google login dùng để xác thực, email dùng để gửi thông báo).
 
-### Files chỉnh sửa
-- `src/pages/Landing.tsx` — thay section Data & Privacy bằng layout compact
+2. **Link Privacy Policy cần dễ thấy hơn** — Hiện chỉ nằm ở cuối footer, nên thêm vào vị trí nổi bật hơn.
+
+### Kế hoạch thực hiện
+
+**Bước 1: Thêm section "Data & Privacy" trên trang chủ**
+- Thêm một section mới (trước footer hoặc sau social proof) với tiêu đề như "Your data, your control" / "Dữ liệu của bạn, quyền kiểm soát của bạn"
+- Nội dung giải thích ngắn gọn:
+  - App sử dụng Google Sign-In chỉ để xác thực danh tính
+  - Dữ liệu dự án được mã hóa và lưu trữ an toàn
+  - Không chia sẻ dữ liệu với bên thứ ba
+  - Người dùng có quyền xóa tài khoản và dữ liệu
+- Kèm link nổi bật đến Privacy Policy và Terms of Service
+- Thiết kế phù hợp dark theme hiện tại, icon Lock/Shield
+
+**Bước 2: Cập nhật translations (en.ts & vi.ts)**
+- Thêm các key mới cho section Data & Privacy (cả EN và VI)
+
+**Bước 3: Đảm bảo Privacy Policy link khớp với Google consent screen**
+- Link `/guide/privacy` và `/guide/terms` đã có sẵn ở footer — section mới sẽ link cùng đường dẫn
+
+### Files cần chỉnh sửa
+- `src/pages/Landing.tsx` — thêm section Data & Privacy
+- `src/lib/i18n/en.ts` — thêm translations EN
+- `src/lib/i18n/vi.ts` — thêm translations VI
 
