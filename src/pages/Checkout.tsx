@@ -612,7 +612,15 @@ export default function Checkout() {
               <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
                 {isVi ? 'Hủy' : 'Cancel'}
               </Button>
-              <Button disabled={!agreedToPolicy} onClick={() => { setShowConfirmDialog(false); setStep(2); }}>
+              <Button disabled={!agreedToPolicy} onClick={async () => {
+                setShowConfirmDialog(false);
+                try {
+                  await createReservation();
+                  setStep(2);
+                } catch (e) {
+                  toast.error(isVi ? 'Không thể tạo đơn hàng. Vui lòng thử lại.' : 'Failed to create order. Please try again.');
+                }
+              }}>
                 {isVi ? 'Tiếp tục thanh toán' : 'Continue to Payment'}
                 <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
