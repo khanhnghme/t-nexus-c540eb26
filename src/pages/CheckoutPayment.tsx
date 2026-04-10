@@ -345,7 +345,31 @@ export default function CheckoutPayment() {
         </DialogContent>
       </Dialog>
 
-      {/* Order Summary Table */}
+      {/* Back Confirmation Dialog */}
+      <Dialog open={showBackDialog} onOpenChange={setShowBackDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{isVi ? 'Rời khỏi trang thanh toán?' : 'Leave payment page?'}</DialogTitle>
+            <DialogDescription>
+              {isVi
+                ? `Bạn còn đơn hàng chưa thanh toán. Có thể hoàn tất sau trong lịch sử. Còn lại: ${backDialogTimeLeft}.`
+                : `You have an unpaid order. You can complete it later in history. Remaining: ${backDialogTimeLeft}.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowBackDialog(false);
+              navigate(-1);
+            }}>
+              {isVi ? 'Quay lại' : 'Go back'}
+            </Button>
+            <Button onClick={() => setShowBackDialog(false)}>
+              {isVi ? 'Tiếp tục thanh toán' : 'Continue payment'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Card>
         <CardContent className="pt-5 pb-5">
           <div className="flex items-center justify-between mb-4">
