@@ -532,7 +532,7 @@ export default function ResourceUploadDialog({
 
         <div className="flex-1 overflow-hidden flex flex-col px-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="grid w-full grid-cols-3 shrink-0 my-3">
+            <TabsList className="grid w-full grid-cols-4 shrink-0 my-3">
               <TabsTrigger value="file" className="gap-2">
                 <Upload className="w-4 h-4" />
                 Tải file
@@ -552,6 +552,13 @@ export default function ResourceUploadDialog({
                 Tải thư mục
                 {pendingFiles.filter(f => f.source === 'folder').length > 0 && (
                   <Badge variant="secondary" className="ml-1 text-[10px] px-1.5">{pendingFiles.filter(f => f.source === 'folder').length}</Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="drive" className="gap-2">
+                <HardDrive className="w-4 h-4" />
+                Google Drive
+                {pendingDriveFiles.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 text-[10px] px-1.5">{pendingDriveFiles.length}</Badge>
                 )}
               </TabsTrigger>
             </TabsList>
