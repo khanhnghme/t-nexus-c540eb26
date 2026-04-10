@@ -22,6 +22,7 @@ import {
   Video, Minus, CalendarDays, CreditCard, ArrowDown, ArrowUp,
 } from 'lucide-react';
 import { getPlanLabel } from '@/lib/planConfig';
+import { ConnectedToolsTailwind, shouldShowIntegrations } from '@/components/ConnectedToolsBadge';
 import { UserPaymentDetailDialog } from '@/components/billing/UserPaymentDetailDialog';
 
 interface WorkspaceUsage {
@@ -473,6 +474,12 @@ export default function ServicePlan() {
                       </div>
                     );
                   })()}
+
+                  {shouldShowIntegrations(plan) && (
+                    <div className="mt-4">
+                      <ConnectedToolsTailwind />
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

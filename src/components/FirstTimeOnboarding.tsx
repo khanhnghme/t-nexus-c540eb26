@@ -33,6 +33,7 @@ import {
   ArrowRight, ArrowLeft, ChevronUp, ChevronDown, Building2, ChevronsUpDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ConnectedToolsMini, shouldShowIntegrations } from '@/components/ConnectedToolsBadge';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
@@ -1242,6 +1243,10 @@ export default function FirstTimeOnboarding({
                               </li>
                             ))}
                           </ul>
+
+                          {shouldShowIntegrations(card.key) && (
+                            <ConnectedToolsMini color={card.color} />
+                          )}
 
                           {isSelected && (
                             <div className={cn('absolute top-2.5 right-2.5 w-5 h-5 rounded-full flex items-center justify-center', card.checkColor)}>
