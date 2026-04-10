@@ -406,11 +406,12 @@ export default function TaskSubmissionDialog({
 
       // Determine submission type for history: 'file', 'link', or 'mixed'
       const hasFiles = uploadedFiles.length > 0;
+      const hasDriveFiles = driveFiles.length > 0;
       const hasLinks = validLinks.length > 0;
       let historyType: 'file' | 'link' | 'mixed' = 'link';
-      if (hasFiles && hasLinks) {
+      if ((hasFiles || hasDriveFiles) && hasLinks) {
         historyType = 'mixed';
-      } else if (hasFiles) {
+      } else if (hasFiles || hasDriveFiles) {
         historyType = 'file';
       } else {
         historyType = 'link';
