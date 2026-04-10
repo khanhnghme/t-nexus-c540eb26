@@ -1,34 +1,33 @@
 
 
-## Thêm trường "Đơn vị đào tạo" vào Onboarding cho Google Login
+## Fix Google Login: tự chọn tài khoản + xử lý lỗi
 
 ### Vấn đề
-Khi đăng nhập lần đầu bằng Google, form onboarding (step "info") thiếu trường chọn đơn vị đào tạo (institution). Trường này là bắt buộc trong hệ thống.
+1. Khi bấm "Đăng nhập bằng Google", nó tự chọn tài khoản mặc định thay vì cho user chọn
+2. Sau khi redirect về, có thể báo lỗi đỏ hoặc văng ra sảnh
+
+### Nguyên nhân
+- Thiếu `prompt: "select_account"` trong Google OAuth params → Google tự chọn account đã login sẵn
+- Sau khi Google redirect về, `onAuthStateChange` fire `SIGNED_IN` nhưng nếu profile chưa load xong hoặc user chưa approved → hiển thị lỗi hoặc bị redirect sai
 
 ### Thay đổi
 
-**File: `src/components/FirstTimeOnboarding.tsx`**
+**File: `src/components/MemberAuthForm.tsx`**
 
-1. Thêm import `INSTITUTIONS`, `searchInstitutions` từ `@/lib/institutions`, và các component `Popover`, `Command`, `ScrollArea`, `Check` (giống MemberAuthForm)
+Thêm `extraParams: { prompt: "select_account" }` vào lời gọi `signInWithOAuth`:
 
-2. Thêm state mới:
-   - `editInstitution` (string, init từ profile hoặc rỗng)
-   - `institutionOpen` (boolean)  
-   - `institutionSearch` (string)
+```typescript
+const result = await lovable.auth.signInWithOAuth("google", {
+  redirect_uri: window.location.origin,
+  extraParams: {
+    prompt: "select_account",
+  },
+});
+```
 
-3. Thêm prop `userInstitution` vào component (truyền từ Onboarding.tsx)
+Điều này buộc Google luôn hiện màn hình chọn tài khoản, ngay cả khi chỉ có 1 account.
 
-4. Trong grid fields của step "info", thêm trường Institution dạng Popover/Command searchable dropdown (copy pattern từ MemberAuthForm) — đặt sau Student ID
-
-5. Validation: thêm check `if (!editInstitution.trim()) errors.editInstitution = true`
-
-6. Save: thêm `institution: editInstitution` vào `updateData`
-
-**File: `src/pages/Onboarding.tsx`**
-
-- Truyền thêm `userInstitution={profile.institution}` vào `<FirstTimeOnboarding>`
-
-### Ghi chú kỹ thuật
-- Dùng cùng component `Popover + Command + ScrollArea` và data source `INSTITUTIONS` + `searchInstitutions` như form đăng ký
-- Trường institution là dropdown searchable (không phải text input), nhóm theo vùng miền giống form đăng ký
+### Không thay đổi
+- AuthContext (logic đã đúng)
+- Routing/redirect logic (đã xử lý approved/onboarding flow)
 
