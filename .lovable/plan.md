@@ -1,31 +1,46 @@
 
 
-## Nâng cấp trạng thái "Processing" tại Step 2
+## Root Cause Analysis
 
-### Vấn đề hiện tại
-- **CheckoutPayment.tsx**: Có full-screen processing overlay nhưng chỉ hiển thị "Đang xử lý thanh toán..." -- thiếu cảnh báo không thoát trang
-- **AddonCheckoutPayment.tsx**: Processing chỉ hiển thị spinner nhỏ trong payment card, không có cảnh báo
+The problem is that PayPal's `onApprove` JS callback **never fires** on the client side. The user approves payment in PayPal's popup, but the browser doesn't receive the callback (common in iframe/popup-blocked environments like Lovable preview).
 
-### Thay đổi
+Currently:
+- `CHECKOUT.ORDER.APPROVED` webhook arrives → **webhook does nothing** (only handles `PAYMENT.CAPTURE.COMPLETED`)
+- `PAYMENT.CAPTURE.COMPLETED` never arrives because capture was never called
+- Order stays `pending` forever
 
-#### 1. Nâng cấp Processing UI trong `CheckoutPayment.tsx` (dòng 157-163)
-Thay thế overlay đơn giản bằng một Card chuyên nghiệp hơn:
-- Spinner lớn hơn với animation
-- Tiêu đề: "Đang xác nhận thanh toán với PayPal" / "Confirming payment with PayPal"
-- Cảnh báo vàng (amber): "⚠️ Vui lòng không thoát hoặc tải lại trang" / "Please do not leave or reload this page"
-- Hiển thị mã đơn hàng đang xử lý
-- Thanh progress animation (indeterminate) để user thấy hệ thống đang hoạt động
+## Solution: Server-side Auto-Capture via Webhook
 
-#### 2. Nâng cấp Processing UI trong `AddonCheckoutPayment.tsx` (dòng 309-313)
-Tương tự CheckoutPayment, thay spinner nhỏ bằng UI processing rõ ràng hơn:
-- Spinner + text mô tả đang xác nhận với PayPal
-- Cảnh báo không thoát trang
-- Hiển thị order code
+### 1. Update `paypal-webhook/index.ts` — Handle `CHECKOUT.ORDER.APPROVED`
 
-#### 3. Thêm `beforeunload` event listener
-Trong cả 2 file, khi `paymentStatus === 'processing'`, đăng ký `window.addEventListener('beforeunload')` để hiện cảnh báo trình duyệt khi user cố thoát/reload trang.
+When PayPal sends `CHECKOUT.ORDER.APPROVED`, the webhook should:
+- Find the matching order in DB
+- If still `pending`, **auto-capture** the payment by calling PayPal's capture API server-side
+- Then apply the same completion logic (update profile, plan, addons, etc.)
 
-### Files cần sửa
-- `src/pages/CheckoutPayment.tsx`
-- `src/pages/AddonCheckoutPayment.tsx`
+This makes the webhook a reliable fallback when `onApprove` fails client-side.
+
+```text
+CHECKOUT.ORDER.APPROVED webhook received
+  → Find order by paypal_order_id
+  → If status = 'pending' → Call PayPal capture API server-side
+  → If capture succeeds → Run same completion logic as PAYMENT.CAPTURE.COMPLETED
+```
+
+### 2. Add client-side polling fallback in `CheckoutPayment.tsx` and `AddonCheckoutPayment.tsx`
+
+After the PayPal button renders and user opens PayPal popup, start a background poller:
+- Poll the order status from DB every 3-5 seconds
+- If order status changes to `completed` (via webhook auto-capture), redirect to summary
+- This ensures the UI reacts even if `onApprove` never fires
+
+### Files to modify
+- `supabase/functions/paypal-webhook/index.ts` — Add `CHECKOUT.ORDER.APPROVED` handler with server-side capture
+- `src/pages/CheckoutPayment.tsx` — Add background polling after PayPal buttons are shown
+- `src/pages/AddonCheckoutPayment.tsx` — Same polling logic
+
+### Why this works
+- **Webhook auto-capture**: Even if the browser loses the callback, PayPal's webhook reliably notifies us. We capture server-side.
+- **Client polling**: The UI detects the order was completed (by webhook) and redirects accordingly.
+- **Double protection**: If `onApprove` DOES fire, the existing capture flow works. The webhook will see `already completed` and skip. Fully idempotent.
 
