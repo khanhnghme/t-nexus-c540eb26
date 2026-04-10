@@ -136,7 +136,7 @@ export default function ResourceUploadDialog({
 
   // Google Drive
   const { isConnected: isDriveConnected, isChecking: isDriveChecking, connect: connectDrive, getPickerToken } = useGoogleDriveConnect();
-  const { openPicker, isLoading: isPickerLoading } = useGoogleDrivePicker({
+  const { openPicker, isLoading: isPickerLoading, isOpen: isDrivePickerOpen } = useGoogleDrivePicker({
     getPickerToken,
     onFilesPicked: (files) => {
       const newItems: PendingDriveFile[] = files.map(f => ({
@@ -493,11 +493,24 @@ export default function ResourceUploadDialog({
     onClose?.();
   };
 
+  const handleDialogCloseRequest = () => {
+    if (isSubmitting || isDrivePickerOpen) return;
+    resetAndClose();
+  };
+
   const allDone = totalItems > 0 && totalDone === totalItems;
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o && !isSubmitting) resetAndClose(); }}>
-      <DialogContent className="max-w-[1280px] w-[95vw] h-[720px] max-h-[90vh] overflow-hidden flex flex-col p-0">
+    <Dialog open={open} modal={!isDrivePickerOpen} onOpenChange={(o) => { if (!o) handleDialogCloseRequest(); }}>
+      <DialogContent
+        className="max-w-[1280px] w-[95vw] h-[720px] max-h-[90vh] overflow-hidden flex flex-col p-0"
+        onInteractOutside={(event) => {
+          if (isDrivePickerOpen) event.preventDefault();
+        }}
+        onEscapeKeyDown={(event) => {
+          if (isDrivePickerOpen) event.preventDefault();
+        }}
+      >
         {/* Hidden inputs */}
         <input
           ref={fileInputRef}
@@ -977,7 +990,7 @@ export default function ResourceUploadDialog({
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="outline" onClick={resetAndClose} disabled={isSubmitting}>
+            <Button variant="outline" onClick={handleDialogCloseRequest} disabled={isSubmitting || isDrivePickerOpen}>
               {allDone ? 'Đóng' : 'Hủy'}
             </Button>
             <Button

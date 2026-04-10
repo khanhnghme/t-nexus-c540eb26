@@ -71,7 +71,14 @@ interface UseGoogleDrivePickerOptions {
 export function useGoogleDrivePicker({ getPickerToken, onFilesPicked }: UseGoogleDrivePickerOptions) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const pickerVisible = useRef(false);
+
+  const closePickerState = useCallback(() => {
+    pickerVisible.current = false;
+    setIsOpen(false);
+    setIsLoading(false);
+  }, []);
 
   const openPicker = useCallback(async () => {
     if (isLoading || pickerVisible.current) return;
@@ -97,6 +104,11 @@ export function useGoogleDrivePicker({ getPickerToken, onFilesPicked }: UseGoogl
       }
 
       pickerVisible.current = true;
+      setIsOpen(true);
+
+      await new Promise<void>((resolve) => {
+        window.requestAnimationFrame(() => resolve());
+      });
 
       const view = new google.picker.DocsView(google.picker.ViewId.DOCS);
 
@@ -120,8 +132,7 @@ export function useGoogleDrivePicker({ getPickerToken, onFilesPicked }: UseGoogl
             onFilesPicked(files);
           }
           if (data.action === google.picker.Action.PICKED || data.action === google.picker.Action.CANCEL) {
-            pickerVisible.current = false;
-            setIsLoading(false);
+            closePickerState();
           }
         })
         .build();
@@ -130,10 +141,9 @@ export function useGoogleDrivePicker({ getPickerToken, onFilesPicked }: UseGoogl
     } catch (err) {
       console.error('Picker error:', err);
       toast({ title: 'Lỗi mở Google Drive Picker', variant: 'destructive' });
-      pickerVisible.current = false;
-      setIsLoading(false);
+      closePickerState();
     }
-  }, [getPickerToken, onFilesPicked, toast, isLoading]);
+  }, [closePickerState, getPickerToken, onFilesPicked, toast, isLoading]);
 
-  return { openPicker, isLoading };
+  return { openPicker, isLoading, isOpen };
 }
