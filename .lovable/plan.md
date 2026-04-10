@@ -1,91 +1,97 @@
 
 
-## Giai đoạn 3: Thiết kế lại UI + Fix giá ví dụ Chapter 3
+## Giai đoạn 3.5: Nâng cấp tab "Current Plan" trong ServicePlan — Chi tiết hóa tiện ích
 
-### Tổng quan
-Cập nhật UI các trang để hiển thị trạng thái `next_plan` (gói đã lên lịch chuyển) một cách trực quan, đồng thời fix giá sai trong ví dụ Chapter 3 tại `/guide/pricing`.
+### Vấn đề hiện tại
+Tab "Current Plan" chỉ hiển thị danh sách features dạng flat list với checkmark, không phân loại, không có số liệu cụ thể — khó phân biệt giá trị giữa các tính năng.
+
+### Giải pháp
+Thay thế flat list bằng **grouped feature cards** — chia features thành các nhóm có icon + giới hạn cụ thể, tương tự bảng comparison ở trang Upgrade nhưng chỉ hiển thị cột của gói hiện tại.
+
+### Thay đổi
+
+**1. `src/lib/i18n/en.ts` + `vi.ts` — Thêm `servicePlanFeatureGroups`**
+
+Thay thế `servicePlanFullFeatures` (flat list) bằng structured data theo nhóm:
+
+```ts
+servicePlanFeatureGroups: {
+  plan_free: [
+    {
+      category: 'Account & Workspaces',
+      icon: 'building',
+      items: [
+        { label: 'Workspaces', value: '1' },
+        { label: 'Total storage', value: '500 MB' },
+        { label: 'Max upload per file', value: '5 MB' },
+      ]
+    },
+    {
+      category: 'Projects & Members',
+      icon: 'folder',
+      items: [
+        { label: 'Total projects', value: '5' },
+        { label: 'Total unique seats', value: '5' },
+      ]
+    },
+    {
+      category: 'Meetings & Communication',
+      icon: 'video',
+      items: [
+        { label: 'Meeting duration', value: '15 min' },
+        { label: 'Activity logs', value: '—' },
+      ]
+    },
+    {
+      category: 'Tools & Features',
+      icon: 'sparkles',
+      items: [
+        { label: 'Basic task management', value: '✓' },
+        { label: 'Group chat', value: '✓' },
+        { label: 'Full data export', value: '—' },
+        { label: 'Add-ons', value: '—' },
+      ]
+    },
+    {
+      category: 'Support',
+      icon: 'headset',
+      items: [
+        { label: 'Support level', value: 'Standard Email' },
+      ]
+    },
+  ],
+  // plan_plus, plan_pro, plan_business, plan_custom tương tự với giá trị đúng theo bảng comparison
+}
+```
+
+Giữ lại `servicePlanFullFeatures` cũ để backward-compatible nhưng UI sẽ ưu tiên dùng `servicePlanFeatureGroups`.
+
+**2. `src/pages/ServicePlan.tsx` — Redesign phần features trong tab "plan"**
+
+Thay block hiện tại (lines 316-329) — flat grid checkmarks — bằng:
+
+- **Grouped cards**: Mỗi nhóm là 1 mini-card với header (icon + category name) và danh sách items dạng label-value pairs
+- Layout: `grid grid-cols-1 md:grid-cols-2 gap-4`
+- Mỗi item trong card: flex row với label bên trái, value bên phải (bold), dùng Separator giữa các items
+- Icon mapping: `building` → `Building2`, `folder` → `FolderKanban`, `video` → `Video`, `sparkles` → `Sparkles`, `headset` → `Shield`
+- Value `✓` render thành `Check` icon màu emerald, value `—` render thành text muted
+
+**3. Tương thích tiếng Việt**
+
+Thêm `servicePlanFeatureGroups` tương ứng trong `vi.ts` với labels và category names tiếng Việt.
 
 ---
 
-### A. Fix giá ví dụ Chapter 3 (PricingDocs)
-
-Giá hiện tại trong ví dụ đang sai:
-- Business: `$30` → sửa thành `$24`
-- Pro: `$10` → sửa thành `$12`
-- Tổng: `$30 + $10 + $30 = $70` → sửa thành `$24 + $12 + $24 = $60`
-
-**Files sửa:**
-- `src/lib/i18n/en.ts` — `ch3s3Examples` (3 mục: Day 1, Day 10, Day 15)
-- `src/lib/i18n/vi.ts` — `ch3s3Examples` tương ứng
-
----
-
-### B. Checkout.tsx — Banner cảnh báo Downgrade
-
-Thêm logic detect upgrade vs downgrade bằng cách fetch profile hiện tại (`user_plan`) và so sánh rank với gói đang chọn.
-
-- **Nếu Downgrade**: hiển thị banner vàng phía trên PayPal buttons: *"Bạn sẽ được thu tiền ngay nhưng gói mới chỉ áp dụng khi hết chu kỳ hiện tại. Không hoàn tiền."*
-- **Nếu đã có `next_plan`**: hiển thị warning bổ sung: *"Bạn đã lên lịch chuyển sang [gói X]. Nếu tiếp tục, khoản thanh toán trước đó không được hoàn lại."*
-- Import `getPlanRank`, `getPlanLabel` từ `planConfig`
-
-**File sửa:** `src/pages/Checkout.tsx`
-
----
-
-### C. Upgrade.tsx — Badge "Scheduled" trên gói đã lên lịch
-
-- Fetch `next_plan` từ profile
-- Nếu gói nào trùng với `next_plan` → hiển thị badge `🔄 Scheduled` trên card gói đó
-- Nút gói đã lên lịch → text "Đã lên lịch" thay vì "Nâng cấp/Hạ cấp"
-
-**File sửa:** `src/pages/Upgrade.tsx`
-
----
-
-### D. ServicePlan.tsx — Card hiển thị gói tiếp theo
-
-Trong tab "Current Plan", thêm card/banner bên dưới card gói hiện tại:
-- Nếu profile có `next_plan`: hiển thị info card với icon `🔄`, tên gói tiếp theo, và ngày chuyển dự kiến (`plan_expires_at`)
-- Text: *"Gói tiếp theo: Pro — có hiệu lực từ [ngày]"*
-- Dùng border-style amber/blue tùy theo context
-
-**File sửa:** `src/pages/ServicePlan.tsx`
-
----
-
-### E. ServicePlanSection.tsx — Dòng nhỏ "next plan" bên dưới badge
-
-- Nếu profile có `next_plan`: hiển thị 1 dòng text nhỏ (text-xs) bên dưới badge gói hiện tại: *"→ Pro from [date]"*
-
-**File sửa:** `src/components/personal/ServicePlanSection.tsx`
-
----
-
-### F. i18n keys mới (EN + VI)
-
-Thêm keys cho các banner/label mới:
-- `downgradeWarning`, `downgradeWarningDesc`
-- `existingScheduleWarning`
-- `scheduledBadge`, `scheduledPlanLabel`
-- `nextPlanInfo`, `nextPlanEffectiveFrom`
-
-**Files sửa:** `src/lib/i18n/en.ts`, `src/lib/i18n/vi.ts`
-
----
-
-### Tóm tắt files
+### Files sửa
 
 | File | Thay đổi |
 |------|----------|
-| `src/lib/i18n/en.ts` | Fix giá ví dụ Ch3 + thêm i18n keys mới cho UI |
-| `src/lib/i18n/vi.ts` | Fix giá ví dụ Ch3 + thêm i18n keys mới cho UI |
-| `src/pages/Checkout.tsx` | Banner downgrade warning + existing schedule warning |
-| `src/pages/Upgrade.tsx` | Badge "Scheduled" trên gói đã lên lịch |
-| `src/pages/ServicePlan.tsx` | Card thông tin gói tiếp theo |
-| `src/components/personal/ServicePlanSection.tsx` | Dòng "next plan" dưới badge |
+| `src/lib/i18n/en.ts` | Thêm `servicePlanFeatureGroups` (structured data cho 5 plans) |
+| `src/lib/i18n/vi.ts` | Thêm `servicePlanFeatureGroups` tiếng Việt |
+| `src/pages/ServicePlan.tsx` | Redesign features section → grouped cards với label-value pairs |
 
 ### Không thay đổi
-- Database, edge functions (đã xong ở Giai đoạn 2)
-- PricingDocs.tsx layout (chỉ fix data i18n)
-- Admin pages
+- Database, edge functions, các trang khác
+- Tab Usage, Add-ons, Billing giữ nguyên
+- `servicePlanFullFeatures` giữ lại (backward-compatible)
 
