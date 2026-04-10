@@ -20,6 +20,7 @@ import {
   ArrowRight, Loader2, Infinity, Receipt,
   Check, Users, Shield, Sparkles, BarChart3, Package, AlertTriangle,
 } from 'lucide-react';
+import { UserPaymentDetailDialog } from '@/components/billing/UserPaymentDetailDialog';
 
 interface WorkspaceUsage {
   id: string;
@@ -40,16 +41,8 @@ interface PlanLimitsData {
   max_storage_mb: number;
 }
 
-interface PaymentRecord {
-  id: string;
-  transaction_id: string | null;
-  created_at: string;
-  plan_purchased: string;
-  amount: number;
-  final_amount: number | null;
-  status: string;
-  payment_method: string | null;
-}
+// PaymentRecord now uses full payment_history columns
+type PaymentRecord = any;
 
 // Addon discount removed — now handled in AddonCheckout
 
@@ -67,6 +60,7 @@ export default function ServicePlan() {
   const [uniqueMemberCount, setUniqueMemberCount] = useState(0);
   const [billingHistory, setBillingHistory] = useState<PaymentRecord[]>([]);
   const [billingLoading, setBillingLoading] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<PaymentRecord | null>(null);
 
   // newAddons state removed — selection now in AddonCheckout
 
@@ -76,7 +70,7 @@ export default function ServicePlan() {
     setBillingLoading(true);
     supabase
       .from('payment_history')
-      .select('id, transaction_id, created_at, plan_purchased, amount, final_amount, status, payment_method')
+      .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(20)
