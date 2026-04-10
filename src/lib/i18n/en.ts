@@ -3082,6 +3082,129 @@ export const en = {
     ],
   },
 
+  servicePlanFeatureGroups: {
+    plan_free: [
+      { category: 'Account & Workspaces', icon: 'building', items: [
+        { label: 'Workspaces', value: '1' },
+        { label: 'Total storage', value: '500 MB' },
+        { label: 'Max upload per file', value: '5 MB' },
+      ]},
+      { category: 'Projects & Members', icon: 'folder', items: [
+        { label: 'Total projects', value: '5' },
+        { label: 'Total unique seats', value: '5' },
+      ]},
+      { category: 'Meetings & Communication', icon: 'video', items: [
+        { label: 'Meeting duration', value: '15 min' },
+        { label: 'Activity logs', value: '—' },
+      ]},
+      { category: 'Tools & Features', icon: 'sparkles', items: [
+        { label: 'Basic task management', value: '✓' },
+        { label: 'Group chat', value: '✓' },
+        { label: 'Member scoring', value: '—' },
+        { label: 'Full data export', value: '—' },
+        { label: 'Add-ons', value: '—' },
+      ]},
+      { category: 'Support', icon: 'headset', items: [
+        { label: 'Support level', value: 'Standard Email' },
+      ]},
+    ],
+    plan_plus: [
+      { category: 'Account & Workspaces', icon: 'building', items: [
+        { label: 'Workspaces', value: '5' },
+        { label: 'Total storage', value: '10 GB' },
+        { label: 'Max upload per file', value: '100 MB' },
+      ]},
+      { category: 'Projects & Members', icon: 'folder', items: [
+        { label: 'Total projects', value: '15' },
+        { label: 'Total unique seats', value: '15' },
+      ]},
+      { category: 'Meetings & Communication', icon: 'video', items: [
+        { label: 'Meeting duration', value: '60 min' },
+        { label: 'Activity logs', value: '30 days' },
+      ]},
+      { category: 'Tools & Features', icon: 'sparkles', items: [
+        { label: 'Basic task management', value: '✓' },
+        { label: 'Group chat', value: '✓' },
+        { label: 'Member scoring', value: '✓' },
+        { label: 'Full data export', value: '✓' },
+        { label: 'Add-ons', value: 'Available' },
+      ]},
+      { category: 'Support', icon: 'headset', items: [
+        { label: 'Support level', value: 'Standard Email' },
+      ]},
+    ],
+    plan_pro: [
+      { category: 'Account & Workspaces', icon: 'building', items: [
+        { label: 'Workspaces', value: '20' },
+        { label: 'Total storage', value: '50 GB' },
+        { label: 'Max upload per file', value: '5 GB' },
+      ]},
+      { category: 'Projects & Members', icon: 'folder', items: [
+        { label: 'Total projects', value: '50' },
+        { label: 'Total unique seats', value: '50' },
+      ]},
+      { category: 'Meetings & Communication', icon: 'video', items: [
+        { label: 'Meeting duration', value: 'Unlimited' },
+        { label: 'Activity logs', value: 'Unlimited' },
+      ]},
+      { category: 'Tools & Features', icon: 'sparkles', items: [
+        { label: 'All Plus features', value: '✓' },
+        { label: 'Stage management', value: '✓' },
+        { label: 'Advanced scoring', value: '✓' },
+        { label: 'Add-ons', value: 'Bundled, 10% off' },
+      ]},
+      { category: 'Support', icon: 'headset', items: [
+        { label: 'Support level', value: 'Priority (24h-48h)' },
+      ]},
+    ],
+    plan_business: [
+      { category: 'Account & Workspaces', icon: 'building', items: [
+        { label: 'Workspaces', value: '50' },
+        { label: 'Total storage', value: '200 GB' },
+        { label: 'Max upload per file', value: '5 GB' },
+      ]},
+      { category: 'Projects & Members', icon: 'folder', items: [
+        { label: 'Total projects', value: '500' },
+        { label: 'Total unique seats', value: '200' },
+      ]},
+      { category: 'Meetings & Communication', icon: 'video', items: [
+        { label: 'Meeting duration', value: 'Unlimited' },
+        { label: 'Activity logs', value: 'Unlimited' },
+      ]},
+      { category: 'Tools & Features', icon: 'sparkles', items: [
+        { label: 'All Pro features', value: '✓' },
+        { label: 'System administration', value: '✓' },
+        { label: 'Add-ons', value: 'Bundled, 20% off' },
+      ]},
+      { category: 'Support', icon: 'headset', items: [
+        { label: 'Support level', value: 'Express (same day)' },
+      ]},
+    ],
+    plan_custom: [
+      { category: 'Account & Workspaces', icon: 'building', items: [
+        { label: 'Workspaces', value: 'Unlimited' },
+        { label: 'Total storage', value: 'Unlimited' },
+        { label: 'Max upload per file', value: '5 GB' },
+      ]},
+      { category: 'Projects & Members', icon: 'folder', items: [
+        { label: 'Total projects', value: 'Unlimited' },
+        { label: 'Total unique seats', value: 'Unlimited' },
+      ]},
+      { category: 'Meetings & Communication', icon: 'video', items: [
+        { label: 'Meeting duration', value: 'Unlimited' },
+        { label: 'Activity logs', value: 'Unlimited' },
+      ]},
+      { category: 'Tools & Features', icon: 'sparkles', items: [
+        { label: 'All Business features', value: '✓' },
+        { label: 'Private deployment', value: '✓' },
+        { label: 'SLA commitment', value: '✓' },
+      ]},
+      { category: 'Support', icon: 'headset', items: [
+        { label: 'Support level', value: 'Dedicated 24/7' },
+      ]},
+    ],
+  },
+
   projectNav: {
     overview: 'Overview',
     tasks: 'Tasks',
