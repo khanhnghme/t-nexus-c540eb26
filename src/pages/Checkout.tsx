@@ -64,7 +64,7 @@ export default function Checkout() {
   const currentRank = getPlanRank(currentPlan);
   const selectedRank = getPlanRank(plan);
   const isDowngrade = selectedRank < currentRank && currentPlan !== 'plan_free';
-  const existingNextPlan = (profile as any)?.next_plan || null;
+  const existingNextPlan = profile?.next_plan || null;
 
   const [step, setStep] = useState(1);
   const [addons, setAddons] = useState<Record<string, number>>({});

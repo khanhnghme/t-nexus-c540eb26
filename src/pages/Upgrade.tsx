@@ -87,7 +87,7 @@ export default function Upgrade() {
   };
 
   const currentPlanKey: string = effectivePlan ? effectivePlan.replace(/^plan_/, '') : 'free';
-  const nextPlan = (profile as any)?.next_plan || null;
+  const nextPlan = profile?.next_plan || null;
   const nextPlanKey = nextPlan ? nextPlan.replace(/^plan_/, '') : null;
   const scheduledCta = isVi ? 'Đã lên lịch' : 'Scheduled';
   const upgradeCta = isVi ? 'Nâng cấp' : 'Upgrade';
