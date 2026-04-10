@@ -302,7 +302,7 @@ export default function Checkout() {
           <div>
             <h1 className="text-2xl font-bold">{t?.title || 'Checkout'}</h1>
             <p className="text-sm text-muted-foreground">
-              {isVi ? 'Bước 1/2 — Chọn gói & tùy chỉnh' : 'Step 1/2 — Select plan & customize'}
+              {isVi ? 'Bước 1/3 — Chọn gói & tùy chỉnh' : 'Step 1/3 — Select plan & customize'}
             </p>
           </div>
         </div>

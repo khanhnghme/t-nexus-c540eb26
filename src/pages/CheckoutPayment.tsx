@@ -54,10 +54,11 @@ export default function CheckoutPayment() {
       setOrder(orderRes.data);
       if (paypalRes.data?.clientId) setPaypalClientId(paypalRes.data.clientId);
 
-      // Check if already completed/cancelled/expired
       const o = orderRes.data;
-      if (o.status === 'completed' || o.status === 'cancelled') {
-        // Show status but don't redirect immediately
+      // If order is finished, redirect to summary
+      if (['completed', 'cancelled', 'expired'].includes(o.status)) {
+        navigate(`/checkout/${orderId}/summary`, { replace: true });
+        return;
       }
       if (o.expires_at && new Date(o.expires_at).getTime() <= Date.now() && o.status === 'pending') {
         setOrderExpired(true);
@@ -116,11 +117,11 @@ export default function CheckoutPayment() {
       setPaymentStatus('success');
       toast.success(t?.paymentSuccess || 'Payment successful!');
       await refreshProfile();
-      navigate(`/checkout/result?status=success&order_id=${res.data.orderId || ''}`, { replace: true });
+      navigate(`/checkout/${orderId}/summary`, { replace: true });
     } catch {
       setPaymentStatus('failed');
       toast.error(t?.paymentFailed || 'Payment failed. Please try again.');
-      navigate('/checkout/result?status=failed', { replace: true });
+      navigate(`/checkout/${orderId}/summary`, { replace: true });
     }
   }, [navigate, t, refreshProfile]);
 
@@ -134,31 +135,7 @@ export default function CheckoutPayment() {
 
   if (!order) return null;
 
-  const isCompleted = order.status === 'completed';
-  const isCancelled = order.status === 'cancelled';
   const hasAddons = addons.length > 0;
-
-  if (isCompleted || isCancelled) {
-    return (
-      <div className="max-w-lg mx-auto py-12 px-4 text-center space-y-4">
-        <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full ${isCompleted ? 'bg-emerald-500/10' : 'bg-destructive/10'}`}>
-          {isCompleted ? <ShieldCheck className="w-6 h-6 text-emerald-600" /> : <AlertTriangle className="w-6 h-6 text-destructive" />}
-        </div>
-        <h1 className="text-xl font-bold">
-          {isCompleted
-            ? (isVi ? 'Đơn hàng đã hoàn tất' : 'Order Completed')
-            : (isVi ? 'Đơn hàng đã bị hủy' : 'Order Cancelled')}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {isVi ? 'Mã đơn hàng:' : 'Order ID:'} #{orderId?.slice(0, 8).toUpperCase()}
-        </p>
-        <Button variant="outline" onClick={() => navigate('/billing-history')}>
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          {isVi ? 'Lịch sử thanh toán' : 'Billing History'}
-        </Button>
-      </div>
-    );
-  }
 
   if (paymentStatus === 'success' || paymentStatus === 'failed') {
     return (
@@ -175,7 +152,7 @@ export default function CheckoutPayment() {
         <div>
           <h1 className="text-2xl font-bold">{isVi ? 'Xác nhận & Thanh toán' : 'Confirm & Pay'}</h1>
           <p className="text-sm text-muted-foreground">
-            {isVi ? 'Bước 2/2 — Kiểm tra và thanh toán' : 'Step 2/2 — Review and pay'}
+            {isVi ? 'Bước 2/3 — Kiểm tra và thanh toán' : 'Step 2/3 — Review and pay'}
           </p>
         </div>
         {!orderExpired && (

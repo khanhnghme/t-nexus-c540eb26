@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Receipt, CreditCard } from 'lucide-react';
-import { UserPaymentDetailDialog } from '@/components/billing/UserPaymentDetailDialog';
+
 
 type BillingRecord = {
   id: string;
@@ -47,7 +47,7 @@ export default function BillingHistory() {
   const [records, setRecords] = useState<BillingRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
-  const [selectedPayment, setSelectedPayment] = useState<any>(null);
+  
 
   useEffect(() => {
     if (!user) return;
@@ -180,7 +180,7 @@ export default function BillingHistory() {
               ) : filtered.map(row => {
                 const displayAmount = row.final_amount ?? row.amount;
                 return (
-                  <tr key={`${row.source}-${row.id}`} className="hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setSelectedPayment(row.raw)}>
+                  <tr key={`${row.source}-${row.id}`} className="hover:bg-muted/50 transition-colors">
                     <td className="px-5 py-3 text-sm whitespace-nowrap">{formatDateTime(row.created_at)}</td>
                     <td className="px-5 py-3 text-sm font-mono text-xs text-muted-foreground">
                       #{(row.order_id || row.id).slice(0, 8).toUpperCase()}
@@ -219,11 +219,6 @@ export default function BillingHistory() {
         </div>
       </Card>
 
-      <UserPaymentDetailDialog
-        payment={selectedPayment}
-        open={!!selectedPayment}
-        onClose={() => setSelectedPayment(null)}
-      />
     </div>
   );
 }
