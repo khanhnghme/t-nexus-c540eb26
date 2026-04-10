@@ -143,7 +143,7 @@ export default function BillingHistory() {
   const getStatusBadge = (status: string) => {
     const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.failed;
     return (
-      <Badge variant="secondary" className={`text-[10px] ${cfg.className}`}>
+      <Badge variant="secondary" className={`text-[10px] whitespace-nowrap ${cfg.className}`}>
         {isVi ? cfg.labelVi : cfg.label}
       </Badge>
     );
