@@ -300,9 +300,9 @@ function ToggleBtn({ active, onClick, label }: { active: boolean; onClick: () =>
 /* ═══════════════════════ Plan Column ═══════════════════════ */
 
 const GOOGLE_INTEGRATIONS = [
-  { logo: gmailLogo, label: 'Email Integration', desc: 'Connect your email to view and manage messages directly in one place.' },
-  { logo: googleDriveLogo, label: 'Google Drive Integration', desc: 'Access files and submit documents seamlessly from your Drive.' },
-  { logo: googleCalendarLogo, label: 'Calendar Sync (Two-way)', desc: 'Keep schedules in sync with real-time updates across both platforms.' },
+  { logo: gmailLogo, label: 'Email Integration — View & manage emails in one place' },
+  { logo: googleDriveLogo, label: 'Google Drive — Access & submit files from Drive' },
+  { logo: googleCalendarLogo, label: 'Calendar Sync — Two-way real-time sync' },
 ];
 
 function PlanColumn({ plan, yearly, tp }: { plan: Plan; yearly: boolean; tp: any }) {
