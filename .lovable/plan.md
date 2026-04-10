@@ -1,46 +1,135 @@
 
 
-## Root Cause Analysis
+## Chuyển đổi sang PayPal Subscriptions API
 
-The problem is that PayPal's `onApprove` JS callback **never fires** on the client side. The user approves payment in PayPal's popup, but the browser doesn't receive the callback (common in iframe/popup-blocked environments like Lovable preview).
+### Tổng quan thay đổi
 
-Currently:
-- `CHECKOUT.ORDER.APPROVED` webhook arrives → **webhook does nothing** (only handles `PAYMENT.CAPTURE.COMPLETED`)
-- `PAYMENT.CAPTURE.COMPLETED` never arrives because capture was never called
-- Order stays `pending` forever
+Hệ thống hiện tại dùng **Orders API** (thanh toán 1 lần) + cron `process-plan-cycle` để quản lý chu kỳ thủ công. Chuyển sang **Subscriptions API** để PayPal tự động thu phí định kỳ (monthly/yearly), giảm phức tạp server-side.
 
-## Solution: Server-side Auto-Capture via Webhook
+---
 
-### 1. Update `paypal-webhook/index.ts` — Handle `CHECKOUT.ORDER.APPROVED`
+### 1. Database Migration
 
-When PayPal sends `CHECKOUT.ORDER.APPROVED`, the webhook should:
-- Find the matching order in DB
-- If still `pending`, **auto-capture** the payment by calling PayPal's capture API server-side
-- Then apply the same completion logic (update profile, plan, addons, etc.)
+Thêm cột mới vào bảng `profiles`:
+- `paypal_subscription_id` (text, nullable) — ID subscription từ PayPal
+- `paypal_plan_id` (text, nullable) — ID plan PayPal đang active
 
-This makes the webhook a reliable fallback when `onApprove` fails client-side.
+Thêm cột mới vào bảng `orders`:
+- `paypal_subscription_id` (text, nullable) — thay thế `paypal_order_id` cho subscription orders
+
+Tạo bảng `paypal_plans` để map plan_key → PayPal Plan ID:
+- `id`, `plan_key` (plan_plus, plan_pro, plan_business), `billing_cycle` (monthly/yearly), `paypal_plan_id`, `paypal_product_id`, `is_welcome` (boolean — giá welcome riêng), `price`, `created_at`
+
+### 2. Edge Function: `setup-paypal-plans` (mới, chạy 1 lần)
+
+Script khởi tạo Products & Plans trên PayPal:
+- Tạo 1 Product ("T-Nexus Subscription")
+- Tạo 6 Plans (3 gói × 2 chu kỳ) với giá tương ứng từ `PLAN_PRICES`
+- Tạo thêm 6 Welcome Plans (giá khuyến mãi cho lần đầu)
+- Lưu tất cả Plan IDs vào bảng `paypal_plans`
+
+### 3. Edge Function: `create-paypal-order` → Đổi thành `create-paypal-subscription`
+
+Thay đổi logic:
+- Thay vì tạo Order, gọi `POST /v1/billing/subscriptions` với `plan_id` tương ứng
+- Tra cứu `paypal_plans` để lấy đúng PayPal Plan ID theo (plan_key, billing_cycle, is_welcome)
+- Response trả về `subscriptionID` + `approve_url` thay vì `orderID`
+- Vẫn lưu order vào DB với status `pending` + `paypal_subscription_id`
+- Coupon: áp dụng qua `plan.override` trong subscription request (giảm giá trực tiếp trên PayPal)
+
+### 4. Edge Function: `capture-paypal-order` → Xóa hoặc giữ tương thích
+
+- Subscriptions API **không cần capture** — PayPal tự thu tiền
+- Giữ lại function nhưng chuyển sang chỉ xác nhận subscription status (gọi `GET /v1/billing/subscriptions/:id`)
+- Nếu status = `ACTIVE` → cập nhật order + profile
+
+### 5. Edge Function: `paypal-webhook` → Cập nhật events
+
+Xử lý 4 events mới:
+
+**`BILLING.SUBSCRIPTION.ACTIVATED`**:
+- Tìm order theo `paypal_subscription_id`
+- Cập nhật order → `completed`, profile → `user_plan`, `plan_status=active`, `paypal_subscription_id`
+- Tính `plan_expires_at` (now + 1 month/1 year)
+- Cập nhật workspace limits, payment_history, plan_change_logs
+
+**`PAYMENT.SALE.COMPLETED`**:
+- Kiểm tra `billing_agreement_id` trong resource → tìm profile theo `paypal_subscription_id`
+- Nếu là lần gia hạn (không phải lần đầu): gia hạn `plan_expires_at` thêm 1 chu kỳ
+- Ghi payment_history mới
+
+**`BILLING.SUBSCRIPTION.CANCELLED`**:
+- Tìm profile theo subscription ID
+- Set `plan_status = 'cancelled'`, giữ plan đến hết `plan_expires_at`
+- Khi hết hạn, `process-plan-cycle` sẽ chuyển về Free
+
+**`BILLING.SUBSCRIPTION.PAYMENT.FAILED`**:
+- Ghi log, gửi notification cho user
+- Có thể set `plan_status = 'payment_failed'` để hiển thị cảnh báo
+
+### 6. Client-side: `CheckoutPayment.tsx` + `AddonCheckoutPayment.tsx`
+
+**Không đổi UI**, chỉ đổi logic PayPal Buttons:
+- `createOrder` → thay bằng `createSubscription` prop của `<PayPalButtons>`
+- Gọi `create-paypal-subscription` thay vì `create-paypal-order`
+- `onApprove` → nhận `subscriptionID` thay vì `orderID`, gọi API xác nhận subscription active
+- Background polling vẫn giữ nguyên (poll order status)
 
 ```text
-CHECKOUT.ORDER.APPROVED webhook received
-  → Find order by paypal_order_id
-  → If status = 'pending' → Call PayPal capture API server-side
-  → If capture succeeds → Run same completion logic as PAYMENT.CAPTURE.COMPLETED
+// PayPalButtons prop thay đổi:
+<PayPalButtons
+  createSubscription={async () => subscriptionId}   // thay vì createOrder
+  onApprove={async (data) => handleSubscriptionApproved(data.subscriptionID)}
+  ...
+/>
+// PayPalScriptProvider options thêm vault=true, intent=subscription
 ```
 
-### 2. Add client-side polling fallback in `CheckoutPayment.tsx` and `AddonCheckoutPayment.tsx`
+### 7. `Checkout.tsx`, `AddonCheckout.tsx`, `FirstTimeOnboarding.tsx`
 
-After the PayPal button renders and user opens PayPal popup, start a background poller:
-- Poll the order status from DB every 3-5 seconds
-- If order status changes to `completed` (via webhook auto-capture), redirect to summary
-- This ensures the UI reacts even if `onApprove` never fires
+Tương tự: thay `createOrder` → `createSubscription`, cập nhật `onApprove` handler.
 
-### Files to modify
-- `supabase/functions/paypal-webhook/index.ts` — Add `CHECKOUT.ORDER.APPROVED` handler with server-side capture
-- `src/pages/CheckoutPayment.tsx` — Add background polling after PayPal buttons are shown
-- `src/pages/AddonCheckoutPayment.tsx` — Same polling logic
+### 8. `process-plan-cycle` — Đơn giản hóa
 
-### Why this works
-- **Webhook auto-capture**: Even if the browser loses the callback, PayPal's webhook reliably notifies us. We capture server-side.
-- **Client polling**: The UI detects the order was completed (by webhook) and redirects accordingly.
-- **Double protection**: If `onApprove` DOES fire, the existing capture flow works. The webhook will see `already completed` and skip. Fully idempotent.
+- Vẫn xử lý hết hạn (downgrade to Free khi `plan_expires_at` qua và `plan_status = 'cancelled'`)
+- Bỏ logic tự gia hạn (PayPal tự làm qua webhook `PAYMENT.SALE.COMPLETED`)
+- Giữ logic scheduled downgrade (`next_plan`)
+
+### 9. `get-paypal-config` — Cập nhật
+
+Thêm `intent: 'subscription'` và `vault: true` vào response để client config đúng.
+
+### 10. Addon-only orders
+
+Addon không phải subscription (mua 1 lần). Giữ nguyên Orders API cho addon:
+- `AddonCheckoutPayment.tsx` vẫn dùng `createOrder` + `capture`
+- Chỉ plan orders chuyển sang Subscriptions
+
+---
+
+### Cần cấu hình trên PayPal Dashboard
+
+Sau khi deploy `setup-paypal-plans`, cập nhật Webhook URL với events mới:
+- `BILLING.SUBSCRIPTION.ACTIVATED`
+- `PAYMENT.SALE.COMPLETED`
+- `BILLING.SUBSCRIPTION.CANCELLED`
+- `BILLING.SUBSCRIPTION.PAYMENT.FAILED`
+
+### Files cần tạo/sửa
+
+| File | Hành động |
+|------|-----------|
+| `paypal_plans` table | Tạo mới (migration) |
+| `profiles` table | Thêm 2 cột |
+| `supabase/functions/setup-paypal-plans/index.ts` | Tạo mới |
+| `supabase/functions/create-paypal-order/index.ts` | Đổi thành subscription logic |
+| `supabase/functions/capture-paypal-order/index.ts` | Đổi thành verify subscription |
+| `supabase/functions/paypal-webhook/index.ts` | Thay events hoàn toàn |
+| `supabase/functions/process-plan-cycle/index.ts` | Đơn giản hóa |
+| `supabase/functions/get-paypal-config/index.ts` | Thêm vault/intent |
+| `src/pages/CheckoutPayment.tsx` | Đổi PayPal logic (giữ UI) |
+| `src/pages/AddonCheckoutPayment.tsx` | Giữ nguyên (addon = 1 lần) |
+| `src/pages/Checkout.tsx` | Đổi PayPal logic (giữ UI) |
+| `src/pages/AddonCheckout.tsx` | Giữ nguyên |
+| `src/components/FirstTimeOnboarding.tsx` | Đổi PayPal logic (giữ UI) |
 
