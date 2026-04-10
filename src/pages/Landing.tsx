@@ -1383,15 +1383,17 @@ export default function Landing() {
                 </p>
               </div>
 
-              <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5 lg:gap-8 xl:gap-12">
+              <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8 xl:gap-12">
                 {[
                   {
-                    title: tl.footerProduct,
+                    title: tl.footerCompanyTitle,
                     links: [
-                      { label: tl.footerProductLinks[0], href: '#workspace-grid' },
-                      { label: tl.footerProductLinks[1], href: '#workspace-grid' },
-                      { label: tl.footerProductLinks[2], href: '#assistant-grid' },
-                      { label: tl.footerProductLinks[3], href: '#social-proof' },
+                      { label: tl.footerCompanyLinks[0], href: '#top' },
+                      { label: tl.footerCompanyLinks[1], href: '#top' },
+                      { label: tl.footerCompanyLinks[2], href: '#top' },
+                      { label: tl.footerCompanyLinks[3], href: '#top' },
+                      { label: tl.footerTermsAndPrivacy, href: lp('/guide/terms'), external: false },
+                      { label: tl.footerYourPrivacyRights, href: lp('/guide/privacy'), external: false },
                     ],
                   },
                   {
@@ -1416,17 +1418,6 @@ export default function Landing() {
                       { label: adminEmail || tl.footerComingSoon, href: adminEmail ? `mailto:${adminEmail}` : '#resources' },
                       { label: tc.login, href: lp('/auth'), external: false },
                       { label: tc.installApp, href: lp('/download'), external: false },
-                    ],
-                  },
-                  {
-                    title: tl.footerCompanyTitle,
-                    links: [
-                      { label: tl.footerCompanyLinks[0], href: '#top' },
-                      { label: tl.footerCompanyLinks[1], href: '#top' },
-                      { label: tl.footerCompanyLinks[2], href: '#top' },
-                      { label: tl.footerCompanyLinks[3], href: '#top' },
-                      { label: tl.footerTermsAndPrivacy, href: lp('/guide/terms'), external: false },
-                      { label: tl.footerYourPrivacyRights, href: lp('/guide/privacy'), external: false },
                     ],
                   },
                 ].map((column) => (
