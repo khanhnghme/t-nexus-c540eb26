@@ -593,65 +593,6 @@ export default function CheckoutPayment() {
           </Card>
         </div>
       </div>
-                    ) : (
-                      <div className="text-center py-4 text-sm text-muted-foreground">
-                        {t?.paypalNotConfigured || 'Payment system is being configured. Please try again later.'}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* MoMo - disabled */}
-              <div className="border rounded-xl p-3 opacity-50">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30" />
-                  <span className="font-medium text-sm">🟣 MoMo</span>
-                  <Badge variant="outline" className="text-[10px] ml-auto">{t?.comingSoon || 'Coming soon'}</Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Pay Box */}
-        <div className="lg:col-span-2">
-          <Card className="border-primary/30 bg-primary/5">
-            <CardContent className="pt-5 pb-5 space-y-4">
-              <div className="text-center space-y-1">
-                <p className="text-sm text-muted-foreground">{isVi ? 'Tổng thanh toán' : 'Amount Due'}</p>
-                <p className="text-3xl font-bold">${totalAmount.toFixed(2)}</p>
-                <p className="text-[11px] text-muted-foreground">
-                  {cycle === 'yearly'
-                    ? (t?.yearlyNote || 'Billed once per year')
-                    : (t?.monthlyNote || 'Billed once per month')}
-                </p>
-              </div>
-              <Separator />
-              {/* Countdown integrated */}
-              {order.expires_at && !orderExpired && (
-                <OrderCountdown
-                  expiresAt={order.expires_at}
-                  orderId={order.id}
-                  orderCode={order.order_code}
-                  isVi={isVi}
-                  onExpired={() => setOrderExpired(true)}
-                  onCreateNew={() => navigate('/checkout?plan=' + plan + '&cycle=' + cycle)}
-                />
-              )}
-              {orderExpired && (
-                <div className="text-center text-sm text-destructive font-medium">
-                  {isVi ? 'Đơn hàng đã hết hạn' : 'Order has expired'}
-                </div>
-              )}
-              <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground pt-1">
-                <ShieldCheck className="h-3.5 w-3.5" />
-                {t?.securePayment || 'Secure payment powered by PayPal'}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
     </div>
   );
 }
