@@ -133,6 +133,17 @@ export default function AddonCheckoutPayment() {
     }
   }, [navigate, isVi, userAddons, accountLimits, refreshProfile, orderCode, pollOrderStatus]);
 
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (paymentStatus === 'processing') {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [paymentStatus]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
