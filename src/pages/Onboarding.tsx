@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import FirstTimeOnboarding from '@/components/FirstTimeOnboarding';
@@ -5,6 +6,13 @@ import FirstTimeOnboarding from '@/components/FirstTimeOnboarding';
 
 export default function Onboarding() {
   const { user, profile, isLoading, mustChangePassword, refreshProfile } = useAuth();
+
+  // Refresh profile when returning from checkout to get updated plan
+  useEffect(() => {
+    if (sessionStorage.getItem('checkout_from') === 'onboarding') {
+      refreshProfile();
+    }
+  }, [refreshProfile]);
 
   if (isLoading) return null;
   if (!user || !profile) return <Navigate to="/auth" replace />;
