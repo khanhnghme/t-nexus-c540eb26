@@ -365,7 +365,7 @@ export default function CheckoutPayment() {
           <DialogFooter>
             <Button variant="outline" onClick={() => {
               setShowBackDialog(false);
-              navigate(-1);
+              navigate('/checkout', { replace: true });
             }}>
               {isVi ? 'Quay lại' : 'Go back'}
             </Button>

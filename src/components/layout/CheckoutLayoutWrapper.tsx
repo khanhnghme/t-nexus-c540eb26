@@ -22,7 +22,7 @@ function DashboardCheckout() {
 function MinimalCheckoutLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const isPaymentPage = location.pathname.startsWith('/checkout/payment');
+  const isPaymentPage = location.pathname.startsWith('/checkout/payment') || location.pathname.startsWith('/addon-checkout/payment');
   const isVi = document.documentElement.lang === 'vi';
 
   const [showBackConfirm, setShowBackConfirm] = useState(false);
@@ -49,6 +49,15 @@ function MinimalCheckoutLayout() {
   const handleBackClick = () => {
     if (isPaymentPage) {
       setShowBackConfirm(true);
+    } else {
+      navigate('/onboarding');
+    }
+  };
+
+  const handleConfirmBack = () => {
+    setShowBackConfirm(false);
+    if (location.pathname.startsWith('/addon-checkout/')) {
+      navigate('/addon-checkout', { replace: true });
     } else {
       navigate('/onboarding');
     }
@@ -87,10 +96,7 @@ function MinimalCheckoutLayout() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setShowBackConfirm(false);
-              navigate('/onboarding');
-            }}>
+            <Button variant="outline" onClick={handleConfirmBack}>
               {isVi ? 'Quay lại' : 'Go back'}
             </Button>
             <Button onClick={() => setShowBackConfirm(false)}>
