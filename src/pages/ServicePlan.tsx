@@ -324,7 +324,7 @@ export default function ServicePlan() {
                       building: Building2, folder: FolderKanban, video: Video,
                       sparkles: Sparkles, headset: Shield,
                     };
-                    const featureGroups = (t as any).servicePlanFeatureGroups?.[planKey as string] || [];
+                    const featureGroups = (t as any).servicePlanFeatureGroups?.[plan] || [];
                     return (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {featureGroups.map((group: any, gi: number) => {
