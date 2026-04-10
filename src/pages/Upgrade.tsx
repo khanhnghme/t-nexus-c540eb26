@@ -1,6 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Check, ArrowLeft, Plus, Minus, AlertTriangle, Zap } from 'lucide-react';
+import { ConnectedToolsInline, shouldShowIntegrations, GOOGLE_INTEGRATIONS } from '@/components/ConnectedToolsBadge';
+import gmailLogo from '@/assets/gmail-logo.png';
+import googleDriveLogo from '@/assets/google-drive-logo.png';
+import googleCalendarLogo from '@/assets/google-calendar-logo.png';
 import { supabase } from '@/integrations/supabase/client';
 import { getWelcomePrice } from '@/lib/planConfig';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -126,7 +130,15 @@ export default function Upgrade() {
   ], [tp, currentPlanKey, currentRank]);
 
   const ADDONS: AddOn[] = useMemo(() => tp.addOns, [tp]);
-  const COMPARISON: FeatureCategory[] = useMemo(() => tp.comparisonCategories, [tp]);
+  const CONNECTED_TOOLS_CATEGORY: FeatureCategory = {
+    category: 'Connected Tools',
+    rows: [
+      { label: 'Email Integration', free: false, plus: false, pro: true, business: true, enterprise: true },
+      { label: 'Google Drive', free: false, plus: false, pro: true, business: true, enterprise: true },
+      { label: 'Calendar Sync (Two-way)', free: false, plus: false, pro: true, business: true, enterprise: true },
+    ],
+  };
+  const COMPARISON: FeatureCategory[] = useMemo(() => [...tp.comparisonCategories, CONNECTED_TOOLS_CATEGORY], [tp]);
   const FAQ_DATA: FAQItem[] = useMemo(() => tp.faqItems, [tp]);
 
   const PLAN_COLS = useMemo(() => [
@@ -434,6 +446,8 @@ function PlanColumn({ plan, yearly, tp, disabled, onSelect, isFirstTimeBuyer = f
           </li>
         ))}
       </ul>
+
+      {shouldShowIntegrations(plan.key) && <ConnectedToolsInline />}
     </div>
   );
 }
@@ -500,7 +514,14 @@ function UpgradePlansAndFeatures({ yearly, planCols, comparison, tp, disabled, o
         </thead>
 
         <tbody>
-          {comparison.map(cat => (
+          {comparison.map(cat => {
+            const isToolsCat = cat.category === 'Connected Tools';
+            const logoMap: Record<string, string> = {
+              'Email Integration': gmailLogo,
+              'Google Drive': googleDriveLogo,
+              'Calendar Sync (Two-way)': googleCalendarLogo,
+            };
+            return (
             <>
               <tr key={`cat-${cat.category}`}>
                 <td colSpan={6} className="px-2 pt-6 pb-2 text-[13px] font-bold text-muted-foreground tracking-wide border-b border-border">
@@ -510,7 +531,12 @@ function UpgradePlansAndFeatures({ yearly, planCols, comparison, tp, disabled, o
               {cat.rows.map((row: FeatureRow, rIdx: number) => (
                 <tr key={row.label} className={rIdx % 2 === 1 ? 'bg-muted/30' : ''}>
                   <td className="px-2 py-2.5 text-[13px] font-medium text-foreground border-b border-border/50">
-                    {row.label}
+                    <span className="flex items-center gap-2">
+                      {isToolsCat && logoMap[row.label] && (
+                        <img src={logoMap[row.label]} alt="" className="w-4 h-4 object-contain" />
+                      )}
+                      {row.label}
+                    </span>
                   </td>
                   {planCols.map((col: any) => (
                     <td key={col.key} className="px-2 py-2.5 border-b border-border/50 align-middle">
@@ -520,7 +546,8 @@ function UpgradePlansAndFeatures({ yearly, planCols, comparison, tp, disabled, o
                 </tr>
               ))}
             </>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
