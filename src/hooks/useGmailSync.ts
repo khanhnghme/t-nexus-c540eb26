@@ -90,16 +90,16 @@ export function useGmailSync() {
     }
   }, [user?.id, t]);
 
-  const syncEmails = useCallback(async () => {
-    if (!user?.id || !isConnected) return;
+  const syncEmails = useCallback(async (pageToken?: string | null) => {
+    if (!user?.id || !isConnected) return null;
     setIsSyncing(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) return null;
 
       const res = await supabase.functions.invoke('gmail-sync', {
         headers: { Authorization: `Bearer ${session.access_token}` },
-        body: { action: 'sync' },
+        body: { action: 'sync', pageToken: pageToken || undefined },
       });
 
       if (res.error) throw res.error;
@@ -113,6 +113,7 @@ export function useGmailSync() {
     } catch (err: any) {
       toast.error(t?.gmail?.syncError || 'Gmail sync failed');
       console.error(err);
+      return null;
     } finally {
       setIsSyncing(false);
     }
