@@ -1,61 +1,70 @@
 
 
-## Plan: Chuẩn hóa flow 3 bước & cải thiện trang kết quả
+## Plan: Chuẩn hóa mã đơn hàng `ORD-YYYYMM-XXXXXXXXX`
 
 ### Tổng quan
-1. Xóa popup chi tiết giao dịch ở Billing History
-2. Chuyển `PaymentResult` thành Step 3 (Summary) với route `/checkout/:orderId/summary`
-3. Step 3 hiển thị kết quả cuối cùng cho mọi trạng thái (success/failed/cancelled/expired)
-4. Thêm progress bar 3 bước (Order → Payment → Summary)
+Thêm cột `order_code` vào bảng `orders`, tự động generate mã theo format `ORD-YYYYMM-XXXXXXXXX` khi tạo order. Hiển thị mã này thay vì UUID trên toàn hệ thống.
 
-### Thay đổi chi tiết
+### Thay đổi
 
-#### 1. `src/pages/BillingHistory.tsx` — Xóa popup chi tiết
-- Xóa import `UserPaymentDetailDialog`
-- Xóa state `selectedPayment`
-- Xóa `onClick={() => setSelectedPayment(row.raw)}` trên mỗi `<tr>`
-- Xóa component `<UserPaymentDetailDialog />`
-- Xóa `cursor-pointer` class trên `<tr>`
+#### 1. Database Migration
+- Thêm cột `order_code TEXT UNIQUE` vào bảng `orders`
+- Tạo function `generate_order_code()` dùng PL/pgSQL:
+  - Format: `ORD-YYYYMM-XXXXXXXXX` (9 ký tự A-Z, 0-9)
+  - Loop kiểm tra trùng, generate lại nếu trùng
+- Tạo trigger `BEFORE INSERT` gán `order_code` tự động
+- Backfill các order cũ chưa có `order_code`
 
-#### 2. Tạo `src/pages/CheckoutSummary.tsx` — Step 3 (Summary)
-- Route: `/checkout/:orderId/summary`
-- Load order từ DB, kiểm tra user ownership
-- Nếu order vẫn `pending` → redirect về `/checkout/:orderId` (vẫn ở step 2)
-- Progress UI: 3 bước Order → Payment → Summary (luôn ở bước 3)
-- Hiển thị theo status:
-  - **success**: icon xanh, chi tiết đơn hàng đầy đủ (mã đơn, plan, giá gốc/giảm/tổng, thời gian tạo, thời gian thanh toán), nút "Đi đến Dashboard" + "Xem gói"
-  - **failed**: icon đỏ, chi tiết đơn + thời gian thất bại, nút "Thanh toán lại"
-  - **cancelled**: icon cam, chi tiết + thời gian hủy, nút "Tạo đơn mới"
-  - **expired**: icon xám, chi tiết + thời gian hết hạn, nút "Tạo đơn mới"
+#### 2. Edge Function: `create-paypal-order/index.ts`
+- Sau khi insert order, query lại `order_code` từ DB
+- Trả về `order_code` trong response
 
-#### 3. `src/pages/CheckoutPayment.tsx` — Redirect sang Summary
-- Khi `onApprove` thành công → navigate `/checkout/:orderId/summary` thay vì `/checkout/result?...`
-- Khi failed → navigate `/checkout/:orderId/summary`
-- Khi order đã completed/cancelled/expired → redirect sang `/checkout/:orderId/summary`
-- Thêm progress bar 3 bước ở header (đang ở bước 2)
+#### 3. Frontend — Hiển thị `order_code` thay UUID
 
-#### 4. `src/pages/AddonCheckoutPayment.tsx` — Tương tự
-- Redirect sang `/checkout/:orderId/summary` cho mọi kết quả
+| File | Thay đổi |
+|---|---|
+| `src/pages/CheckoutPayment.tsx` | Hiển thị `order.order_code` thay vì `orderId.slice(0,8)` |
+| `src/pages/AddonCheckoutPayment.tsx` | Tương tự |
+| `src/pages/CheckoutSummary.tsx` | Hiển thị `order.order_code` thay vì `order.id.slice(0,8)` |
+| `src/pages/BillingHistory.tsx` | Hiển thị `order_code` thay vì `id.slice(0,8)` |
+| `src/components/OrderCountdown.tsx` | Nhận thêm prop `orderCode`, hiển thị thay `truncatedId` |
 
-#### 5. `src/pages/Checkout.tsx` — Thêm progress bước 1
-- Thêm progress UI 3 bước (đang ở bước 1)
+### Chi tiết kỹ thuật
 
-#### 6. `src/App.tsx` — Cập nhật routes
-- Thêm `/checkout/:orderId/summary` → `CheckoutSummary`
-- Giữ `/checkout/result` tạm thời để backward-compatible, redirect sang summary
-
-#### 7. Xóa `src/pages/PaymentResult.tsx` (hoặc chuyển thành redirect)
-- Chuyển thành redirect component: đọc query params → redirect sang `/checkout/:orderId/summary`
+**SQL Function:**
+```sql
+CREATE OR REPLACE FUNCTION generate_order_code()
+RETURNS TRIGGER AS $$
+DECLARE
+  chars TEXT := 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  result TEXT;
+  i INT;
+  exists_check BOOLEAN;
+BEGIN
+  LOOP
+    result := 'ORD-' || to_char(NOW(), 'YYYYMM') || '-';
+    FOR i IN 1..9 LOOP
+      result := result || substr(chars, floor(random()*36)::int + 1, 1);
+    END LOOP;
+    SELECT EXISTS(SELECT 1 FROM orders WHERE order_code = result) INTO exists_check;
+    IF NOT exists_check THEN
+      NEW.order_code := result;
+      RETURN NEW;
+    END IF;
+  END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+```
 
 ### Files
 
 | File | Action |
 |---|---|
-| `src/pages/CheckoutSummary.tsx` | Create — Step 3 Summary page |
-| `src/pages/CheckoutPayment.tsx` | Edit — redirect to summary, add progress |
-| `src/pages/AddonCheckoutPayment.tsx` | Edit — redirect to summary |
-| `src/pages/Checkout.tsx` | Edit — add step progress |
-| `src/pages/BillingHistory.tsx` | Edit — remove popup dialog |
-| `src/pages/PaymentResult.tsx` | Edit — convert to redirect |
-| `src/App.tsx` | Edit — add summary route |
+| Migration SQL | Create — add `order_code` column + trigger |
+| `supabase/functions/create-paypal-order/index.ts` | Edit — return `order_code` |
+| `src/pages/CheckoutPayment.tsx` | Edit — display `order_code` |
+| `src/pages/AddonCheckoutPayment.tsx` | Edit — display `order_code` |
+| `src/pages/CheckoutSummary.tsx` | Edit — display `order_code` |
+| `src/pages/BillingHistory.tsx` | Edit — display `order_code` |
+| `src/components/OrderCountdown.tsx` | Edit — accept + display `orderCode` prop |
 
