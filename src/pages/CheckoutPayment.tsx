@@ -34,6 +34,7 @@ export default function CheckoutPayment() {
   const [loading, setLoading] = useState(true);
   const [orderExpired, setOrderExpired] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'failed'>('idle');
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
   const [paymentMethodOpen, setPaymentMethodOpen] = useState(true);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -56,9 +57,14 @@ export default function CheckoutPayment() {
 
       const o = orderRes.data;
       // If order is finished, redirect to summary
-      if (['completed', 'cancelled', 'expired', 'failed'].includes(o.status)) {
+      if (['completed', 'cancelled', 'expired'].includes(o.status)) {
         navigate(`/checkout/summary/${orderCode}`, { replace: true });
         return;
+      }
+      // If failed, stay on payment page to allow retry
+      if (o.status === 'failed') {
+        setPaymentStatus('failed');
+        setPaymentError(isVi ? 'Thanh toán trước đó thất bại. Vui lòng thử lại.' : 'Previous payment failed. Please try again.');
       }
       if (o.expires_at && new Date(o.expires_at).getTime() <= Date.now() && o.status === 'pending') {
         setOrderExpired(true);
@@ -116,6 +122,7 @@ export default function CheckoutPayment() {
 
   const onApprove = useCallback(async (data: { orderID: string }) => {
     setPaymentStatus('processing');
+    setPaymentError(null);
     try {
       const res = await supabase.functions.invoke('capture-paypal-order', {
         body: { orderID: data.orderID },
@@ -128,14 +135,12 @@ export default function CheckoutPayment() {
       // Poll to ensure DB status is updated before redirect
       await pollOrderStatus(orderCode!);
       navigate(`/checkout/summary/${orderCode}`, { replace: true });
-    } catch {
+    } catch (err: any) {
       setPaymentStatus('failed');
+      setPaymentError(err.message || (isVi ? 'Thanh toán thất bại. Vui lòng thử lại.' : 'Payment failed. Please try again.'));
       toast.error(t?.paymentFailed || 'Payment failed. Please try again.');
-      // Poll then redirect to summary regardless
-      await pollOrderStatus(orderCode!).catch(() => {});
-      navigate(`/checkout/summary/${orderCode}`, { replace: true });
     }
-  }, [navigate, t, refreshProfile, orderCode, pollOrderStatus]);
+  }, [navigate, t, refreshProfile, orderCode, pollOrderStatus, isVi]);
 
   if (loading) {
     return (
@@ -149,7 +154,7 @@ export default function CheckoutPayment() {
 
   const hasAddons = addons.length > 0;
 
-  if (paymentStatus === 'processing' || paymentStatus === 'success') {
+  if (paymentStatus === 'processing') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -182,6 +187,24 @@ export default function CheckoutPayment() {
         )}
       </div>
 
+      {/* Payment failure banner */}
+      {paymentStatus === 'failed' && paymentError && (
+        <div className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+          <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-medium text-destructive">{isVi ? 'Thanh toán thất bại' : 'Payment Failed'}</p>
+            <p className="text-sm text-muted-foreground mt-1">{paymentError}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3"
+              onClick={() => { setPaymentStatus('idle'); setPaymentError(null); }}
+            >
+              {isVi ? 'Thử lại' : 'Try Again'}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Cancel Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
