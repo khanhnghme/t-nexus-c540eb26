@@ -1,66 +1,54 @@
 
-Đã xác định đúng lỗi gốc: frontend đang theo dõi 1 order, còn backend lại hoàn tất 1 order khác, nên step 2 không thể tự qua step 3 dù đã báo “thanh toán thành công”.
 
-```text
-Step 1 tạo reservation:      Order A (order_code hiện tại)
-Step 2 poll theo route:      luôn đọc Order A
-create-paypal-order hiện tại tạo thêm: Order B
-capture/webhook hoàn tất:    Order B
-summary/payment page đọc:    Order A vẫn pending
-=> bị kẹt ở step 2 hoặc bị bật ngược từ summary về payment
-```
+## Kế hoạch: Thống nhất tất cả luồng thanh toán về chuẩn 3-step
 
-Nguyên nhân chính đã thấy trong code:
-- `src/pages/CheckoutPayment.tsx` chỉ tự chuyển step khi order theo `order_code` hiện tại chuyển `completed`
-- `src/pages/CheckoutSummary.tsx` thấy `pending` thì lập tức redirect ngược về step 2
-- `supabase/functions/create-paypal-order/index.ts` đang bỏ qua `internal_order_id` và luôn `insert` order mới
-- log/network cho thấy order hiện tại vẫn `pending`, nhưng profile đã `active`, và `paypal_subscription_id` giữa profile và order đang mở không khớp
+### Phân tích hiện trạng
 
-Kế hoạch fix
+| Luồng | Hiện tại | Vấn đề |
+|-------|----------|--------|
+| **Plan checkout** (`/checkout` → `/checkout/payment` → `/checkout/summary`) | ✅ Chuẩn | Không sửa |
+| **Addon checkout** (`/addon-checkout` → `/addon-checkout/:orderCode` → `/checkout/summary`) | ⚠️ Gần chuẩn | `AddonCheckout.tsx` còn code cũ dùng `orderID` thay vì `subscriptionID`, navigate đến `/checkout/result` — dead code nhưng cần dọn |
+| **Onboarding** (`FirstTimeOnboarding.tsx`) | ❌ Lệch chuẩn | Có PayPal buttons nhúng trực tiếp trong component, tự xử lý capture/polling riêng, không dùng route `/checkout/*` |
 
-1. Sửa backend để 1 phiên checkout chỉ dùng 1 order
-- File: `supabase/functions/create-paypal-order/index.ts`
-- Nếu có `internal_order_id`:
-  - lấy đúng order pending của user
-  - update chính row đó thay vì insert row mới
-  - ghi `paypal_subscription_id`, amount, coupon, addons theo tính toán backend
-  - reset các cờ xử lý sau thanh toán: `addons_applied = false`, `coupon_applied = false`
-- Chỉ insert order mới cho flow không có reservation trước, như onboarding
+### Thay đổi cần thực hiện
 
-2. Sửa reservation hiện tại đang set sai idempotency flags
-- File: `src/pages/Checkout.tsx`
-- File: `src/pages/AddonCheckout.tsx`
-- Khi tạo reservation ban đầu, không được set `addons_applied: true` hoặc `coupon_applied: true`
-- Các cờ này chỉ được bật sau khi capture/webhook đã áp dụng tài nguyên thực sự
+**1. `src/components/FirstTimeOnboarding.tsx` — Loại bỏ PayPal inline, redirect sang `/checkout`**
 
-3. Giữ step 2 luôn bám đúng order hiện tại
-- File: `src/pages/CheckoutPayment.tsx`
-- File: `src/pages/AddonCheckoutPayment.tsx`
-- Giữ polling trên đúng `order_code` đang mở
-- Sau khi capture thành công, có thể refetch order hiện tại trước khi navigate để tránh race ngắn
-- Bỏ false-error từ PayPal `"Detected popup close"` trong `onError`, vì popup đóng sau approve không nên bị coi là thanh toán lỗi
+- Xóa toàn bộ checkout sub-step 2 (PayPal buttons, `createSubscription`, `onApprove`, payment processing UI)
+- Giữ checkout sub-step 1 (chọn cycle, addons, coupon) làm bước cấu hình
+- Khi user bấm "Tiếp tục thanh toán" ở sub-step 1 → redirect sang `/checkout?plan=X&cycle=Y&addons=...&coupon=...&from=onboarding`
+- Xóa import `PayPalScriptProvider`, `PayPalButtons`
+- Giữ step "plan" (chọn gói) và step "finish" nguyên vẹn
+- Khi quay về từ `/checkout/summary` thành công → `/onboarding` sẽ detect profile đã có plan mới → bỏ qua plan/checkout steps, nhảy thẳng finish
 
-4. Không cho summary bật ngược quá sớm
-- File: `src/pages/CheckoutSummary.tsx`
-- Nếu order vẫn `pending`, không redirect ngược ngay
-- Hiển thị trạng thái “đang đồng bộ thanh toán” và poll ngắn
-- Chỉ quay lại step 2 nếu quá timeout hoặc order thật sự chưa hoàn tất
+**2. `src/pages/Checkout.tsx` — Hỗ trợ query params từ onboarding**
 
-5. Đồng bộ các flow cũ để không còn route kết quả lệch chuẩn
-- File: `src/pages/Checkout.tsx`
-- File: `src/pages/AddonCheckout.tsx`
-- File: `src/pages/PaymentResult.tsx`
-- Rà lại logic cũ `/checkout/result` để tất cả flow cuối cùng đều resolve về `/checkout/summary/:orderCode`
-- Giữ onboarding tương thích với backend mới nhưng không làm phát sinh duplicate order
+- Đọc query params `from=onboarding`, `plan`, `cycle`, `addons`, `coupon` để pre-fill form
+- Sau khi hoàn tất checkout summary → nếu `from=onboarding`, redirect về `/onboarding` thay vì `/dashboard`
 
-Kiểm tra sau khi triển khai
-- Thanh toán plan ở `/checkout/payment/:orderCode` phải tự sang `/checkout/summary/:orderCode`
-- Thanh toán add-on ở `/addon-checkout/:orderCode` phải tự sang summary
-- Billing history phải mở đúng summary của chính order vừa thanh toán
-- Không còn trường hợp profile đã active nhưng order đang mở vẫn `pending`
-- Không còn toast/log lỗi giả từ `"Detected popup close"`
+**3. `src/pages/CheckoutSummary.tsx` — Hỗ trợ redirect về onboarding**
 
-Chi tiết kỹ thuật cần giữ
-- `internal_order_id` phải trở thành khóa liên kết thật giữa step 1 và step 2
-- backend phải là nguồn dữ liệu cuối cùng cho amount/coupon/addons, nhưng phải update vào chính reservation row
-- `addons_applied` / `coupon_applied` là cờ hậu xử lý, không phải cờ “order có addon/coupon”
+- Nếu detect `from=onboarding` (qua query param hoặc sessionStorage) → nút "Về Dashboard" đổi thành "Tiếp tục thiết lập" → navigate `/onboarding`
+
+**4. `src/pages/AddonCheckout.tsx` — Dọn dead code**
+
+- Xóa `createOrder` và `captureOrder` callbacks (dead code từ khi tách Step 2 sang `AddonCheckoutPayment.tsx`)
+- Xóa import `PayPalScriptProvider`, `PayPalButtons` (không còn dùng)
+- Giữ nguyên Step 1 UI và `createReservation` logic
+
+### Không sửa (giữ nguyên)
+
+- `src/pages/CheckoutPayment.tsx`
+- `src/pages/AddonCheckoutPayment.tsx`  
+- `src/pages/CheckoutSummary.tsx` (chỉ thêm logic redirect onboarding nhỏ)
+- `supabase/functions/*` (backend không đổi)
+
+### Files cần sửa
+
+| File | Thay đổi |
+|------|----------|
+| `src/components/FirstTimeOnboarding.tsx` | Xóa PayPal inline, redirect sang `/checkout` |
+| `src/pages/Checkout.tsx` | Đọc query params onboarding để pre-fill |
+| `src/pages/CheckoutSummary.tsx` | Thêm nút redirect về onboarding |
+| `src/pages/AddonCheckout.tsx` | Dọn dead code PayPal |
+
