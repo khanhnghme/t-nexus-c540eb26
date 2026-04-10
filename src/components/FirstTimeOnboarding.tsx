@@ -1286,7 +1286,7 @@ export default function FirstTimeOnboarding({
             {currentStep === 'finish' && (
               <div className="h-full flex flex-col">
                 <div className="relative bg-gradient-to-br from-primary/5 via-accent/10 to-primary/5 px-8 pt-6 pb-2 flex justify-center overflow-hidden">
-                  <img src={completeImg} alt="Complete" className="h-36 md:h-44 object-contain drop-shadow-lg" />
+                  <img src={finishImage} alt="Complete" className="h-36 md:h-44 object-contain drop-shadow-lg" width={512} height={512} />
                   <div className="absolute top-6 left-[20%] w-2 h-2 rounded-full bg-primary/30 animate-bounce" />
                   <div className="absolute top-10 right-[25%] w-3 h-3 rounded-full bg-accent/30 animate-bounce delay-300" />
                   <div className="absolute bottom-4 left-[30%] w-2 h-2 rounded-sm bg-warning/30 animate-bounce delay-500 rotate-45" />
