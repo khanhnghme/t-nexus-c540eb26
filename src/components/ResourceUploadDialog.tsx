@@ -220,6 +220,10 @@ export default function ResourceUploadDialog({
     setPendingLinks(prev => prev.filter(l => l.id !== id));
   };
 
+  const removeDriveFile = (id: string) => {
+    setPendingDriveFiles(prev => prev.filter(d => d.id !== id));
+  };
+
   const updateFileName = (id: string, name: string) => {
     setPendingFiles(prev => prev.map(f => f.id === id ? { ...f, customName: name } : f));
   };
@@ -232,9 +236,13 @@ export default function ResourceUploadDialog({
     setPendingLinks(prev => prev.map(l => l.id === id ? { ...l, category } : l));
   };
 
-  const totalPending = pendingFiles.filter(f => f.status === 'pending').length + pendingLinks.filter(l => l.status === 'pending').length;
-  const totalDone = pendingFiles.filter(f => f.status === 'done').length + pendingLinks.filter(l => l.status === 'done').length;
-  const totalItems = pendingFiles.length + pendingLinks.length;
+  const updateDriveFileCategory = (id: string, category: string) => {
+    setPendingDriveFiles(prev => prev.map(d => d.id === id ? { ...d, category } : d));
+  };
+
+  const totalPending = pendingFiles.filter(f => f.status === 'pending').length + pendingLinks.filter(l => l.status === 'pending').length + pendingDriveFiles.filter(d => d.status === 'pending').length;
+  const totalDone = pendingFiles.filter(f => f.status === 'done').length + pendingLinks.filter(l => l.status === 'done').length + pendingDriveFiles.filter(d => d.status === 'done').length;
+  const totalItems = pendingFiles.length + pendingLinks.length + pendingDriveFiles.length;
 
   const { guardAction: guardReadOnly } = useReadOnlyGuard();
 
