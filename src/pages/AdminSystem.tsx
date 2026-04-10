@@ -92,7 +92,7 @@ export default function AdminSystem() {
   const [editingNotif, setEditingNotif] = useState<any>(null);
   const [notifTitle, setNotifTitle] = useState('');
   const [notifContent, setNotifContent] = useState('');
-  const [notifMode, setNotifMode] = useState<'pre_login' | 'post_login'>('post_login');
+  const notifMode = 'post_login';
   const [notifMinSeconds, setNotifMinSeconds] = useState(15);
   const [notifExpiresAt, setNotifExpiresAt] = useState('');
   const [savingNotif, setSavingNotif] = useState(false);
@@ -620,7 +620,7 @@ export default function AdminSystem() {
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold truncate">{notif.title}</p>
                             <div className="flex items-center flex-wrap gap-2 text-[11px] text-muted-foreground mt-0.5">
-                              <span>{notif.display_mode === 'pre_login' ? '🔓 Trước ĐN' : '🔒 Sau ĐN'}</span>
+                              <span>🔒 Sau ĐN</span>
                               <span className="inline-flex items-center gap-0.5"><Clock className="w-3 h-3" />{notif.min_view_seconds}s</span>
                               {notif.expires_at && <span>⏳ {format(new Date(notif.expires_at), "dd/MM/yy", { locale: locale === "vi" ? viLocale : undefined })}</span>}
                               <span>📅 {format(new Date(notif.created_at), "dd/MM/yy HH:mm", { locale: locale === "vi" ? viLocale : undefined })}</span>
@@ -992,13 +992,7 @@ export default function AdminSystem() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Chế độ hiển thị</Label>
-                <Select value={notifMode} onValueChange={(v: any) => setNotifMode(v)}>
-                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pre_login" className="text-xs">Trước đăng nhập</SelectItem>
-                    <SelectItem value="post_login" className="text-xs">Sau đăng nhập</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="h-8 flex items-center text-xs text-muted-foreground px-3 border rounded-md bg-muted/30">Sau đăng nhập</div>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Thời gian xem tối thiểu (giây)</Label>
