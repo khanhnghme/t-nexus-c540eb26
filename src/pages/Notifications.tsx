@@ -17,6 +17,7 @@ import { deleteWithUndo } from '@/lib/deleteWithUndo';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
+import GmailTab from '@/components/notifications/GmailTab';
 
 interface Notification {
   id: string;
@@ -417,6 +418,10 @@ export default function Notifications() {
             <TabsTrigger value="read" className="gap-1.5 text-xs px-3">
               <CheckCircle2 className="w-3.5 h-3.5" />
               {t.readTab}
+            </TabsTrigger>
+            <TabsTrigger value="email" className="gap-1.5 text-xs px-3">
+              <Mail className="w-3.5 h-3.5" />
+              Email
             </TabsTrigger>
           </TabsList>
         </Tabs>
