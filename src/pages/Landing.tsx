@@ -1378,61 +1378,37 @@ export default function Landing() {
         </main>
 
         {/* ── Data & Privacy Section ── */}
-        <section className="px-6 py-16 md:py-20" style={{ backgroundColor: colorVar('--landing-night') }}>
-          <div className="mx-auto max-w-[1240px]">
-            <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 mb-6" style={{ borderColor: colorVar('--landing-hero-muted', 0.2), color: colorVar('--landing-hero-muted') }}>
-                <Shield className="h-4 w-4" />
-                <span className="text-sm font-medium">Privacy & Security</span>
-              </div>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4" style={{ color: colorVar('--landing-hero-fg') }}>
+        <section
+          className="px-6 py-8 md:py-10"
+          style={{
+            backgroundColor: colorVar('--landing-night'),
+            borderTop: `1px solid ${colorVar('--landing-hero-muted', 0.12)}`,
+          }}
+        >
+          <div className="mx-auto max-w-[1240px] flex flex-col md:flex-row items-center gap-4 md:gap-6">
+            <div className="flex items-center gap-3 shrink-0">
+              <Shield className="h-5 w-5" style={{ color: colorVar('--landing-blue') }} />
+              <span className="text-base font-semibold" style={{ color: colorVar('--landing-hero-foreground') }}>
                 {tl.dataPrivacyTitle}
-              </h2>
-              <p className="text-lg max-w-2xl mx-auto" style={{ color: colorVar('--landing-hero-muted') }}>
-                {tl.dataPrivacySubtitle}
-              </p>
+              </span>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-              {[
-                { icon: Globe, text: tl.dataPrivacyGoogleAuth },
-                { icon: Lock, text: tl.dataPrivacyEncrypted },
-                { icon: Shield, text: tl.dataPrivacyNoSharing },
-                { icon: Users, text: tl.dataPrivacyUserRights },
-              ].map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-4 rounded-xl border p-5"
-                  style={{
-                    borderColor: colorVar('--landing-hero-muted', 0.15),
-                    backgroundColor: colorVar('--landing-hero-muted', 0.04),
-                  }}
-                >
-                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: colorVar('--landing-blue', 0.12) }}>
-                    <item.icon className="h-4.5 w-4.5" style={{ color: colorVar('--landing-blue') }} />
-                  </div>
-                  <p className="text-[15px] leading-relaxed" style={{ color: colorVar('--landing-hero-muted') }}>
-                    {item.text}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-4 mt-10">
+            <p className="text-sm text-center md:text-left flex-1" style={{ color: colorVar('--landing-hero-foreground', 0.65) }}>
+              {tl.dataPrivacySubtitle}
+            </p>
+            <div className="flex items-center gap-3 shrink-0">
               <Link
                 to={lp('/guide/privacy')}
-                className="inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-medium transition-colors hover:opacity-80"
-                style={{ borderColor: colorVar('--landing-blue'), color: colorVar('--landing-blue') }}
+                className="text-sm font-medium hover:underline"
+                style={{ color: colorVar('--landing-blue') }}
               >
-                <Lock className="h-4 w-4" />
                 {tl.dataPrivacyLearnMore}
               </Link>
+              <span style={{ color: colorVar('--landing-hero-foreground', 0.3) }}>·</span>
               <Link
                 to={lp('/guide/terms')}
-                className="inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-medium transition-colors hover:opacity-80"
-                style={{ borderColor: colorVar('--landing-hero-muted', 0.3), color: colorVar('--landing-hero-muted') }}
+                className="text-sm font-medium hover:underline"
+                style={{ color: colorVar('--landing-blue') }}
               >
-                <Shield className="h-4 w-4" />
                 {tl.dataPrivacyTerms}
               </Link>
             </div>
