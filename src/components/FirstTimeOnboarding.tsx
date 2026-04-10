@@ -73,7 +73,7 @@ const stepIcons: Record<StepId, React.ReactNode> = {
   password: <Key className="w-4 h-4" />,
   info: <User className="w-4 h-4" />,
   plan: <Crown className="w-4 h-4" />,
-  checkout: <CreditCard className="w-4 h-4" />,
+  checkout: <Crown className="w-4 h-4" />,
   finish: <Rocket className="w-4 h-4" />,
 };
 
