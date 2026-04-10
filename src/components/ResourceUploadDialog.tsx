@@ -418,12 +418,41 @@ export default function ResourceUploadDialog({
         }
       }
 
+      // Save Drive files as link resources
+      for (const item of pendingDriveFiles) {
+        if (item.status !== 'pending') continue;
+        setPendingDriveFiles(prev => prev.map(d => d.id === item.id ? { ...d, status: 'uploading' } : d));
+        try {
+          const { error: insertError } = await (supabase
+            .from('project_resources')
+            .insert({
+              group_id: groupId,
+              name: item.driveFile.title,
+              file_path: null,
+              storage_name: null,
+              file_size: item.driveFile.file_size || 0,
+              file_type: item.driveFile.mime_type,
+              category: item.category,
+              description: null,
+              uploaded_by: userData.user.id,
+              folder_id: folderId,
+              resource_type: 'link',
+              link_url: item.driveFile.url,
+            } as any) as any);
+          if (insertError) throw insertError;
+          setPendingDriveFiles(prev => prev.map(d => d.id === item.id ? { ...d, status: 'done' } : d));
+        } catch (err: any) {
+          setPendingDriveFiles(prev => prev.map(d => d.id === item.id ? { ...d, status: 'error', error: err.message } : d));
+        }
+      }
+
       toast({ title: 'Hoàn tất', description: 'Đã xử lý tất cả tài nguyên' });
 
       // Log uploaded files and links
       const uploadedFiles = pendingFiles.filter(f => f.status === 'done');
       const uploadedLinks = pendingLinks.filter(l => l.status === 'done');
-      const totalUploaded = uploadedFiles.length + uploadedLinks.length;
+      const uploadedDrive = pendingDriveFiles.filter(d => d.status === 'done');
+      const totalUploaded = uploadedFiles.length + uploadedLinks.length + uploadedDrive.length;
       if (totalUploaded > 0 && userData.user) {
         const descriptions: string[] = [];
         if (uploadedFiles.length > 0) {
@@ -431,6 +460,9 @@ export default function ResourceUploadDialog({
         }
         if (uploadedLinks.length > 0) {
           descriptions.push(`${uploadedLinks.length} link (${uploadedLinks.map(l => l.name).join(', ')})`);
+        }
+        if (uploadedDrive.length > 0) {
+          descriptions.push(`${uploadedDrive.length} file Drive (${uploadedDrive.map(d => d.driveFile.title).join(', ')})`);
         }
         await logActivity({
           userId: userData.user.id,
