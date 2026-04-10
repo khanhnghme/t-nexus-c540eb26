@@ -1345,9 +1345,11 @@ export type Database = {
         Row: {
           addon_amount: number
           addons: Json | null
+          addons_applied: boolean | null
           base_amount: number
           billing_cycle: string
           completed_at: string | null
+          coupon_applied: boolean | null
           coupon_code: string | null
           created_at: string
           discount_amount: number
@@ -1364,9 +1366,11 @@ export type Database = {
         Insert: {
           addon_amount?: number
           addons?: Json | null
+          addons_applied?: boolean | null
           base_amount?: number
           billing_cycle?: string
           completed_at?: string | null
+          coupon_applied?: boolean | null
           coupon_code?: string | null
           created_at?: string
           discount_amount?: number
@@ -1383,9 +1387,11 @@ export type Database = {
         Update: {
           addon_amount?: number
           addons?: Json | null
+          addons_applied?: boolean | null
           base_amount?: number
           billing_cycle?: string
           completed_at?: string | null
+          coupon_applied?: boolean | null
           coupon_code?: string | null
           created_at?: string
           discount_amount?: number

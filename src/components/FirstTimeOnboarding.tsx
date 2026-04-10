@@ -468,7 +468,7 @@ export default function FirstTimeOnboarding({
       setPaymentStatus('failed');
       toast({ title: isVi ? 'Thanh toán thất bại. Vui lòng thử lại.' : 'Payment failed. Please try again.', variant: 'destructive' });
     }
-  }, [isVi, toast]);
+  }, [isVi, toast, onComplete]);
 
   const stepLabels: Record<StepId, string> = {
     language: t.stepLang,

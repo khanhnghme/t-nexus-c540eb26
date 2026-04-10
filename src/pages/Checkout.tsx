@@ -53,7 +53,7 @@ export default function Checkout() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { translations: { checkout: t, common: tc } } = useLanguage();
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
 
   const [plan, setPlan] = useState(searchParams.get('plan') || 'plan_pro');
   const [cycle, setCycle] = useState<'monthly' | 'yearly'>((searchParams.get('cycle') || 'monthly') as 'monthly' | 'yearly');
@@ -208,13 +208,14 @@ export default function Checkout() {
 
       setPaymentStatus('success');
       toast.success(t?.paymentSuccess || 'Payment successful!');
+      await refreshProfile();
       navigate(`/checkout/result?status=success&order_id=${res.data.orderId || ''}`);
     } catch {
       setPaymentStatus('failed');
       toast.error(t?.paymentFailed || 'Payment failed. Please try again.');
       navigate('/checkout/result?status=failed');
     }
-  }, [navigate, t]);
+  }, [navigate, t, refreshProfile]);
 
   if (!prices) {
     return (

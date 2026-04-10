@@ -31,11 +31,29 @@ async function getPayPalAccessToken(): Promise<string> {
   return data.access_token;
 }
 
-async function updateUserAddons(
+/* ═══ Idempotent Addon Update ═══ */
+async function applyAddonsIfNeeded(
   serviceClient: any,
+  orderId: string,
   userId: string,
-  addons: Array<{ type: string; quantity: number }>
+  addons: Array<{ type: string; quantity: number }> | null
 ) {
+  if (!addons || addons.length === 0) return;
+
+  // Atomically check and set flag
+  const { data: updated, error } = await serviceClient
+    .from("orders")
+    .update({ addons_applied: true })
+    .eq("id", orderId)
+    .eq("addons_applied", false)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !updated) {
+    console.log(`[capture] Addons already applied for order ${orderId}, skipping`);
+    return;
+  }
+
   for (const addon of addons) {
     const { data: existing } = await serviceClient
       .from("user_addons")
@@ -55,6 +73,36 @@ async function updateUserAddons(
         quantity: addon.quantity,
       });
     }
+  }
+}
+
+/* ═══ Idempotent Coupon Update ═══ */
+async function applyCouponIfNeeded(serviceClient: any, orderId: string, couponCode: string | null) {
+  if (!couponCode) return;
+
+  const { data: updated, error } = await serviceClient
+    .from("orders")
+    .update({ coupon_applied: true })
+    .eq("id", orderId)
+    .eq("coupon_applied", false)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !updated) {
+    console.log(`[capture] Coupon already applied for order ${orderId}, skipping`);
+    return;
+  }
+
+  const { data: coupon } = await serviceClient
+    .from("coupons")
+    .select("id, used_count")
+    .eq("code", couponCode)
+    .single();
+
+  if (coupon) {
+    await serviceClient.from("coupons").update({
+      used_count: (coupon.used_count || 0) + 1,
+    }).eq("id", coupon.id);
   }
 }
 
@@ -150,16 +198,11 @@ Deno.serve(async (req) => {
       completed_at: now,
     }).eq("id", order.id);
 
-    // 2. Update user addons (for both plan and addon orders)
+    // 2. Idempotent addon application
     const addons = order.addons as Array<{ type: string; quantity: number }> | null;
-    if (addons && addons.length > 0) {
-      await updateUserAddons(serviceClient, user.id, addons);
-    }
+    await applyAddonsIfNeeded(serviceClient, order.id, user.id, addons);
 
     if (isAddonOrder) {
-      // ADDON-ONLY: skip profile/plan update, just log payment + history
-      const planLabel = (order.plan || "addon").replace("plan_", "").toUpperCase();
-
       await serviceClient.from("payment_history").insert({
         user_id: user.id,
         plan_purchased: order.plan || "addon",
@@ -212,7 +255,6 @@ Deno.serve(async (req) => {
     const oldRank = PLAN_RANK[oldPlan] ?? 0;
     const newRank = PLAN_RANK[order.plan] ?? 0;
 
-    // Determine transition type
     const isUpgrade = newRank > oldRank || oldPlan === "plan_free";
     const isDowngrade = newRank < oldRank && oldPlan !== "plan_free";
     const isRenew = newRank === oldRank && oldPlan !== "plan_free";
@@ -221,21 +263,15 @@ Deno.serve(async (req) => {
     let actionType: string;
 
     if (isDowngrade) {
-      // DOWNGRADE: schedule for next cycle, keep current plan active
       const profileUpdate: Record<string, any> = {
         next_plan: order.plan,
         next_billing_cycle: order.billing_cycle,
         updated_at: now,
       };
-
-      // If user already had a scheduled plan (change of mind), just overwrite
       actionType = hasScheduledPlan ? "change_scheduled_plan" : "downgrade_scheduled";
-
       await serviceClient.from("profiles").update(profileUpdate).eq("id", user.id);
     } else {
-      // UPGRADE or RENEW: immediate switch
       actionType = isUpgrade ? "upgrade" : "renew";
-
       await serviceClient.from("profiles").update({
         user_plan: order.plan,
         plan_status: "active",
@@ -278,21 +314,10 @@ Deno.serve(async (req) => {
       performed_by: user.id,
     });
 
-    if (order.coupon_code) {
-      const { data: coupon } = await serviceClient
-        .from("coupons")
-        .select("id, used_count")
-        .eq("code", order.coupon_code)
-        .single();
+    // Idempotent coupon increment
+    await applyCouponIfNeeded(serviceClient, order.id, order.coupon_code);
 
-      if (coupon) {
-        await serviceClient.from("coupons").update({
-          used_count: (coupon.used_count || 0) + 1,
-        }).eq("id", coupon.id);
-      }
-    }
-
-    // Only update workspace limits for upgrade/renew (not scheduled downgrades)
+    // Only update workspace limits for upgrade/renew
     if (!isDowngrade) {
       const { data: planLimits } = await serviceClient
         .from("plan_limits")
