@@ -254,16 +254,18 @@ export default function CheckoutPayment() {
 
   return (
     <div className="max-w-5xl mx-auto py-6 px-4 space-y-5">
-      {/* Back button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="gap-1.5 text-muted-foreground hover:text-foreground -ml-2"
-        onClick={() => setShowBackDialog(true)}
-      >
-        <ArrowLeft className="w-4 h-4" />
-        <span className="text-sm">{isVi ? 'Quay lại' : 'Back'}</span>
-      </Button>
+      {/* Back button — only in dashboard layout (onboarding layout has its own) */}
+      {sessionStorage.getItem('checkout_from') !== 'onboarding' && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5 text-muted-foreground hover:text-foreground -ml-2"
+          onClick={() => setShowBackDialog(true)}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm">{isVi ? 'Quay lại' : 'Back'}</span>
+        </Button>
+      )}
 
       {/* Header */}
       <div className="flex items-center justify-between">
