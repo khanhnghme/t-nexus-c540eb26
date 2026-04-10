@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import confetti from 'canvas-confetti';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +28,7 @@ import {
   GraduationCap, BookOpen, Phone, Sparkles, Shield,
   Rocket, Eye, EyeOff, Mail, ListChecks, Users, FolderKanban,
   Award, MessageSquare, ChevronLeft, Globe, Crown, Zap,
-  Tag, Plus, Minus, Package, CreditCard, ShieldCheck,
+  Tag, Plus, Minus, Package,
   ArrowRight, ArrowLeft, ChevronUp, ChevronDown, Building2, ChevronsUpDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -98,9 +97,7 @@ export default function FirstTimeOnboarding({
   const [couponError, setCouponError] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'failed'>('idle');
-  const [checkoutSubStep, setCheckoutSubStep] = useState<1 | 2>(1);
-  const [paymentMethodOpen, setPaymentMethodOpen] = useState(true);
-  const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
+  const [checkoutSubStep, setCheckoutSubStep] = useState<1>(1);
   const [isFirstTimeBuyer, setIsFirstTimeBuyer] = useState(true);
   const navigate = useNavigate();
 
