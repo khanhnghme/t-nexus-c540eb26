@@ -10,11 +10,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { r2Storage } from '@/lib/r2Storage';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PLAN_CONFIG, getPlanLabel as getPlanLabelFromConfig, getWelcomePrice, type PlanKey } from '@/lib/planConfig';
+import { REGIONS, searchInstitutions } from '@/lib/institutions';
 import tNexusTextWhite from '@/assets/t-nexus-text-white.png';
 import welcomeImg from '@/assets/onboarding-welcome.png';
 import securityImg from '@/assets/onboarding-security.png';
@@ -26,7 +30,7 @@ import {
   Rocket, Eye, EyeOff, Mail, ListChecks, Users, FolderKanban,
   Award, MessageSquare, ChevronLeft, Globe, Crown, Zap,
   Tag, Plus, Minus, Package, CreditCard, ShieldCheck,
-  ArrowRight, ArrowLeft, ChevronUp, ChevronDown,
+  ArrowRight, ArrowLeft, ChevronUp, ChevronDown, Building2, ChevronsUpDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

@@ -16,6 +16,7 @@ export default function Onboarding() {
       userFullName={profile.full_name}
       userEmail={profile.email}
       userStudentId={profile.student_id}
+      userInstitution={profile.institution}
       userPlan={profile.user_plan}
       mustChangePassword={mustChangePassword}
       onComplete={() => {
