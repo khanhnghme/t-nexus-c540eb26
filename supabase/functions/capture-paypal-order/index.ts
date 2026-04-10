@@ -292,18 +292,21 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { data: planLimits } = await serviceClient
-      .from("plan_limits")
-      .select("*")
-      .eq("plan", order.plan)
-      .single();
+    // Only update workspace limits for upgrade/renew (not scheduled downgrades)
+    if (!isDowngrade) {
+      const { data: planLimits } = await serviceClient
+        .from("plan_limits")
+        .select("*")
+        .eq("plan", order.plan)
+        .single();
 
-    if (planLimits) {
-      await serviceClient.from("workspaces").update({
-        max_projects: planLimits.max_projects_per_workspace,
-        max_members: planLimits.max_members_per_workspace,
-        max_storage_mb: planLimits.max_storage_mb,
-      }).eq("owner_id", user.id);
+      if (planLimits) {
+        await serviceClient.from("workspaces").update({
+          max_projects: planLimits.max_projects_per_workspace,
+          max_members: planLimits.max_members_per_workspace,
+          max_storage_mb: planLimits.max_storage_mb,
+        }).eq("owner_id", user.id);
+      }
     }
 
     return new Response(

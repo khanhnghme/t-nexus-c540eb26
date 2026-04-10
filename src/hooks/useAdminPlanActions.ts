@@ -137,7 +137,7 @@ export function useAdminPlanActions() {
       .from('plan_change_logs')
       .insert({
         user_id: userId,
-        action_type: action,
+        action_type: (action === 'downgrade' && newPlan !== 'plan_free') ? 'downgrade_scheduled' : action,
         old_plan: currentPlan || null,
         new_plan: logNewPlan,
         old_expires_at: currentExpiresAt || null,
