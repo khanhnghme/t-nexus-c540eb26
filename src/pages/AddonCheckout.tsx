@@ -406,9 +406,9 @@ export default function AddonCheckout() {
               <Button disabled={!agreedToPolicy || creatingReservation} onClick={async () => {
                 setCreatingReservation(true);
                 try {
-                  await createReservation();
+                  const newOrderId = await createReservation();
                   setShowConfirmDialog(false);
-                  setStep(2);
+                  navigate('/addon-checkout/' + newOrderId);
                 } catch (e) {
                   toast({ title: 'Error', description: isVi ? 'Không thể tạo đơn hàng' : 'Failed to create order', variant: 'destructive' });
                 } finally {
@@ -426,10 +426,10 @@ export default function AddonCheckout() {
     );
   }
 
-  /* ═══════════════════════════════════════════════
-     STEP 2: Confirm + PayPal
-     ═══════════════════════════════════════════════ */
-  return (
+  /* Step 2 is now a separate route: /addon-checkout/:orderId */
+  return null;
+}
+
     <div className="max-w-5xl mx-auto py-6 px-4 space-y-5">
       {/* Header — no back button in Step 2 */}
       <div className="flex items-center justify-between">

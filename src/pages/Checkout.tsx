@@ -616,9 +616,9 @@ export default function Checkout() {
               <Button disabled={!agreedToPolicy || creatingReservation} onClick={async () => {
                 setCreatingReservation(true);
                 try {
-                  await createReservation();
+                  const newOrderId = await createReservation();
                   setShowConfirmDialog(false);
-                  setStep(2);
+                  navigate('/checkout/' + newOrderId);
                 } catch (e) {
                   toast.error(isVi ? 'Không thể tạo đơn hàng. Vui lòng thử lại.' : 'Failed to create order. Please try again.');
                 } finally {
@@ -636,11 +636,10 @@ export default function Checkout() {
     );
   }
 
-  /* ═══════════════════════════════════════════════
-     STEP 2: Top: order summary | Bottom: 2 cols (payment method + pay box)
-     No quantity editing
-     ═══════════════════════════════════════════════ */
-  return (
+  /* Step 2 is now a separate route: /checkout/:orderId */
+  return null;
+}
+
     <div className="max-w-5xl mx-auto py-6 px-4 space-y-5">
       {/* Header — no back button in Step 2 */}
       <div className="flex items-center justify-between">
