@@ -297,6 +297,8 @@ export default function FirstTimeOnboarding({
     if (!major.trim()) errors.major = true;
     if (!phone.trim()) errors.phone = true;
     if (!skills.trim()) errors.skills = true;
+    if (needsStudentId && !editStudentId.trim()) errors.editStudentId = true;
+    if (needsFullName && !editFullName.trim()) errors.editFullName = true;
     setInfoErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -347,6 +349,8 @@ export default function FirstTimeOnboarding({
         user_plan: 'plan_free' as const,
       };
       if (avatarUrl) updateData.avatar_url = avatarUrl;
+      if (needsStudentId) updateData.student_id = editStudentId.trim();
+      if (needsFullName) updateData.full_name = editFullName.trim();
 
       const { error } = await supabase.from('profiles').update(updateData).eq('id', userId);
       if (error) throw error;
