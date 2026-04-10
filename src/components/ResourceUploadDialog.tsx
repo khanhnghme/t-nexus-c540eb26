@@ -484,6 +484,7 @@ export default function ResourceUploadDialog({
   const resetAndClose = () => {
     setPendingFiles([]);
     setPendingLinks([]);
+    setPendingDriveFiles([]);
     setLinkName('');
     setLinkUrl('');
     setGlobalCategory('general');
