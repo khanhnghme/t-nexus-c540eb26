@@ -39,6 +39,8 @@ export default function CheckoutPayment() {
   const [paymentMethodOpen, setPaymentMethodOpen] = useState(true);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancellingOrder, setCancellingOrder] = useState(false);
+  const [showBackDialog, setShowBackDialog] = useState(false);
+  const [backDialogTimeLeft, setBackDialogTimeLeft] = useState('');
 
   // Background polling: detect webhook-completed orders
   useEffect(() => {
