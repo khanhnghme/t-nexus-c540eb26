@@ -585,7 +585,6 @@ export default function Checkout() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-        </div>
       </div>
     );
   }
