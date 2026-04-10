@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import confetti from 'canvas-confetti';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +28,7 @@ import {
   GraduationCap, BookOpen, Phone, Sparkles, Shield,
   Rocket, Eye, EyeOff, Mail, ListChecks, Users, FolderKanban,
   Award, MessageSquare, ChevronLeft, Globe, Crown, Zap,
-  Tag, Plus, Minus, Package, CreditCard, ShieldCheck,
+  Tag, Plus, Minus, Package,
   ArrowRight, ArrowLeft, ChevronUp, ChevronDown, Building2, ChevronsUpDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -74,7 +73,7 @@ const stepIcons: Record<StepId, React.ReactNode> = {
   password: <Key className="w-4 h-4" />,
   info: <User className="w-4 h-4" />,
   plan: <Crown className="w-4 h-4" />,
-  checkout: <CreditCard className="w-4 h-4" />,
+  checkout: <Crown className="w-4 h-4" />,
   finish: <Rocket className="w-4 h-4" />,
 };
 
@@ -98,9 +97,7 @@ export default function FirstTimeOnboarding({
   const [couponError, setCouponError] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'failed'>('idle');
-  const [checkoutSubStep, setCheckoutSubStep] = useState<1 | 2>(1);
-  const [paymentMethodOpen, setPaymentMethodOpen] = useState(true);
-  const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
+  const [checkoutSubStep, setCheckoutSubStep] = useState<1>(1);
   const [isFirstTimeBuyer, setIsFirstTimeBuyer] = useState(true);
   const navigate = useNavigate();
 
@@ -160,14 +157,12 @@ export default function FirstTimeOnboarding({
     return map;
   }, [filteredInstitutions]);
 
-  // Load PayPal config when checkout step is possible
+  // Check if user already paid (returning from /checkout)
   useEffect(() => {
-    if (selectedPlan !== 'plan_free' && !paypalClientId) {
-      supabase.functions.invoke('get-paypal-config').then(({ data }) => {
-        if (data?.clientId) setPaypalClientId(data.clientId);
-      });
+    if (userPlan && userPlan !== 'plan_free') {
+      setPaymentStatus('success');
     }
-  }, [selectedPlan, paypalClientId]);
+  }, [userPlan]);
 
   // Check if user is first-time buyer (no completed orders)
   useEffect(() => {
@@ -233,13 +228,6 @@ export default function FirstTimeOnboarding({
     // After successful payment, block going back from finish step
     if (paymentStatus === 'success' && currentStep === 'finish') {
       return;
-    }
-    if (currentStep === 'checkout' && checkoutSubStep === 2) {
-      setCheckoutSubStep(1);
-      return;
-    }
-    if (currentStep === 'checkout') {
-      setCheckoutSubStep(1);
     }
     setCurrentStepIndex(i => Math.max(i - 1, 0));
   };
@@ -439,67 +427,25 @@ export default function FirstTimeOnboarding({
     }
   }, [couponCode, selectedPlan, isVi, toast]);
 
-  const createSubscription = useCallback(async () => {
+  // Redirect to standard checkout flow instead of inline PayPal
+  const handleCheckoutRedirect = useCallback(() => {
     const addonsList = Object.entries(addons)
       .filter(([, qty]) => qty > 0)
-      .map(([type, quantity]) => ({ type, quantity }));
+      .map(([type, quantity]) => `${type}:${quantity}`);
 
-    const res = await supabase.functions.invoke('create-paypal-order', {
-      body: {
-        plan: selectedPlan,
-        billing_cycle: cycle,
-        addons: addonsList,
-        coupon_code: couponDiscount ? couponDiscount.code : undefined,
-      },
+    const params = new URLSearchParams({
+      plan: selectedPlan,
+      cycle,
+      from: 'onboarding',
     });
+    if (addonsList.length > 0) params.set('addons', addonsList.join(','));
+    if (couponDiscount) params.set('coupon', couponDiscount.code);
 
-    if (res.error || !res.data?.subscriptionID) {
-      throw new Error(res.error?.message || 'Failed to create subscription');
-    }
+    // Store onboarding flag in sessionStorage for summary page
+    sessionStorage.setItem('checkout_from', 'onboarding');
 
-    return res.data.subscriptionID;
-  }, [selectedPlan, cycle, addons, couponDiscount]);
-
-  const onApprove = useCallback(async (data: { subscriptionID?: string; orderID?: string }) => {
-    setPaymentStatus('processing');
-    try {
-      const res = await supabase.functions.invoke('capture-paypal-order', {
-        body: { subscriptionID: data.subscriptionID },
-      });
-
-      if (res.error) {
-        throw new Error(res.error?.message || 'Payment capture failed');
-      }
-
-      if (res.data?.success && !res.data?.pending) {
-        setPaymentStatus('success');
-        onComplete();
-        toast({ title: isVi ? 'Thanh toán thành công!' : 'Payment successful!' });
-      } else if (res.data?.success && res.data?.pending) {
-        // Subscription approved but not ACTIVE yet — keep processing
-        toast({ title: isVi ? 'Đã xác nhận! Đang chờ kích hoạt...' : 'Confirmed! Waiting for activation...' });
-        // Poll for completion
-        const pollInterval = setInterval(async () => {
-          const checkRes = await supabase.functions.invoke('capture-paypal-order', {
-            body: { subscriptionID: data.subscriptionID },
-          });
-          if (checkRes.data?.success && !checkRes.data?.pending) {
-            clearInterval(pollInterval);
-            setPaymentStatus('success');
-            onComplete();
-            toast({ title: isVi ? 'Thanh toán thành công!' : 'Payment successful!' });
-          }
-        }, 4000);
-        // Auto-stop after 2 minutes
-        setTimeout(() => clearInterval(pollInterval), 120000);
-      } else {
-        throw new Error('Payment capture failed');
-      }
-    } catch {
-      setPaymentStatus('failed');
-      toast({ title: isVi ? 'Thanh toán thất bại. Vui lòng thử lại.' : 'Payment failed. Please try again.', variant: 'destructive' });
-    }
-  }, [isVi, toast, onComplete]);
+    navigate(`/checkout?${params.toString()}`);
+  }, [selectedPlan, cycle, addons, couponDiscount, navigate]);
 
   const stepLabels: Record<StepId, string> = {
     language: t.stepLang,
@@ -1316,22 +1262,18 @@ export default function FirstTimeOnboarding({
               </div>
             )}
 
-            {/* ===== CHECKOUT (inline) ===== */}
+            {/* ===== CHECKOUT (config only — payment redirects to /checkout) ===== */}
             {currentStep === 'checkout' && (
               <div className="h-full flex flex-col">
                 <div className="px-6 md:px-10 pt-6 pb-3 text-center">
                   <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                    <CreditCard className="w-7 h-7 text-primary" />
+                    <Crown className="w-7 h-7 text-primary" />
                   </div>
                   <h2 className="text-2xl font-extrabold mb-1">
-                    {checkoutSubStep === 1
-                      ? (isVi ? 'Thanh toán' : 'Checkout')
-                      : (isVi ? 'Xác nhận & Thanh toán' : 'Confirm & Pay')}
+                    {isVi ? 'Tùy chỉnh đơn hàng' : 'Customize Order'}
                   </h2>
                   <p className="text-muted-foreground text-sm">
-                    {checkoutSubStep === 1
-                      ? (isVi ? `Bước 1/2 — Chọn gói & tùy chỉnh` : `Step 1/2 — Select plan & customize`)
-                      : (isVi ? `Bước 2/2 — Kiểm tra và thanh toán` : `Step 2/2 — Review and pay`)}
+                    {isVi ? 'Chọn chu kỳ, add-on và mã giảm giá' : 'Select billing cycle, add-ons and coupon'}
                   </p>
                 </div>
 
@@ -1573,196 +1515,9 @@ export default function FirstTimeOnboarding({
                           <Button variant="outline" onClick={goBack} className="h-10 gap-2 rounded-xl text-sm">
                             <ChevronLeft className="w-4 h-4" /> {isVi ? 'Quay lại' : 'Back'}
                           </Button>
-                          <Button size="lg" className="gap-2 px-8 text-base" onClick={() => setCheckoutSubStep(2)}>
+                          <Button size="lg" className="gap-2 px-8 text-base" onClick={handleCheckoutRedirect}>
                             {isVi ? 'Thanh toán' : 'Continue to Pay'}
                             <ArrowRight className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {/* ═══ SUB-STEP 2: Order Summary Table + Payment Method + Pay Box ═══ */}
-                  {checkoutSubStep === 2 && (
-                    <>
-                      {/* Order Summary Table */}
-                      <div className="max-w-4xl mx-auto">
-                        <Card>
-                          <CardContent className="pt-5 pb-5">
-                            <h3 className="text-base font-semibold mb-4">{isVi ? 'Tóm tắt đơn hàng' : 'Order Summary'}</h3>
-
-                            {/* Table header */}
-                            <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground pb-2 border-b">
-                              <div className="col-span-6">{isVi ? 'Sản phẩm' : 'Item'}</div>
-                              <div className="col-span-2 text-right">{isVi ? 'Đơn giá' : 'Price'}</div>
-                              <div className="col-span-2 text-center">{isVi ? 'SL' : 'Qty'}</div>
-                              <div className="col-span-2 text-right">{isVi ? 'Thành tiền' : 'Total'}</div>
-                            </div>
-
-                            {/* Plan row — show original price */}
-                            <div className="grid grid-cols-12 gap-2 items-center py-3 text-sm border-b border-dashed">
-                              <div className="col-span-6">
-                                <p className="font-medium">{getPlanLabelFromConfig(selectedPlan)} Plan</p>
-                                <p className="text-[11px] text-muted-foreground">
-                                  {cycle === 'yearly' ? (isVi ? 'Theo năm' : 'Billed yearly') : (isVi ? 'Theo tháng' : 'Billed monthly')}
-                                </p>
-                              </div>
-                              <div className="col-span-2 text-right text-muted-foreground">${originalBaseAmount.toFixed(2)}</div>
-                              <div className="col-span-2 text-center text-muted-foreground">1</div>
-                              <div className="col-span-2 text-right font-medium">${originalBaseAmount.toFixed(2)}</div>
-                            </div>
-
-                            {/* Addon rows — show original prices */}
-                            {ADDON_TYPES.map(addon => {
-                              const qty = addons[addon.type] || 0;
-                              if (qty === 0) return null;
-                              const unitOriginal = cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
-                              const lineTotal = unitOriginal * qty;
-                              return (
-                                <div key={addon.type} className="grid grid-cols-12 gap-2 items-center py-2.5 text-sm border-b border-dashed">
-                                  <div className="col-span-6 flex items-center gap-2">
-                                    <span>{addon.emoji}</span>
-                                    <span>{isVi ? addon.unitLabelVi : addon.unitLabel}</span>
-                                  </div>
-                                  <div className="col-span-2 text-right text-muted-foreground">${unitOriginal.toFixed(2)}</div>
-                                  <div className="col-span-2 text-center text-muted-foreground">{qty}</div>
-                                  <div className="col-span-2 text-right font-medium">${lineTotal.toFixed(2)}</div>
-                                </div>
-                              );
-                            })}
-
-                            {/* Subtotal / Discounts / Total */}
-                            <div className="pt-3 space-y-1.5">
-                              <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">{isVi ? 'Tạm tính' : 'Subtotal'}</span>
-                                <span>${(originalBaseAmount + addonOriginal).toFixed(2)}</span>
-                              </div>
-                              {welcomeDiscount > 0 && (
-                                <div className="flex justify-between text-sm text-emerald-600">
-                                  <span>🎉 {isVi ? 'Ưu đãi chào mừng' : 'Welcome Offer'}</span>
-                                  <span>-${welcomeDiscount.toFixed(2)}</span>
-                                </div>
-                              )}
-                              {addonSaving > 0 && (
-                                <div className="flex justify-between text-sm text-emerald-600">
-                                  <span>{isVi ? `Tiết kiệm add-on (${addonDiscountRate * 100}%)` : `Add-on savings (${addonDiscountRate * 100}%)`}</span>
-                                  <span>-${addonSaving.toFixed(2)}</span>
-                                </div>
-                              )}
-                              {discountAmount > 0 && (
-                                <div className="flex justify-between text-sm text-emerald-600">
-                                  <span className="flex items-center gap-1">
-                                    <Tag className="h-3 w-3" />
-                                    {isVi ? 'Mã giảm giá' : 'Coupon'} ({couponDiscount?.code})
-                                  </span>
-                                  <span>-${discountAmount.toFixed(2)}</span>
-                                </div>
-                              )}
-                              <Separator />
-                              <div className="flex justify-between font-bold text-lg pt-1">
-                                <span>{isVi ? 'Tổng' : 'Total'}</span>
-                                <span>${totalAmount.toFixed(2)}</span>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-
-                        {/* Bottom: 2-column — Payment Method | Pay Box */}
-                        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 mt-5">
-                          {/* Left: Payment Methods */}
-                          <div className="lg:col-span-3">
-                            <Card>
-                              <CardContent className="pt-5 pb-5 space-y-4">
-                                <h4 className="text-base font-semibold flex items-center gap-2">
-                                  <CreditCard className="h-4 w-4" />
-                                  {isVi ? 'Phương thức thanh toán' : 'Payment Method'}
-                                </h4>
-
-                                {/* PayPal - collapsible */}
-                                <div className="border rounded-xl overflow-hidden">
-                                  <button
-                                    onClick={() => setPaymentMethodOpen(!paymentMethodOpen)}
-                                    className="w-full flex items-center justify-between p-3 hover:bg-muted/30 transition-colors"
-                                  >
-                                    <div className="flex items-center gap-2.5">
-                                      <div className="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                                      </div>
-                                      <span className="font-medium text-sm">PayPal</span>
-                                    </div>
-                                    {paymentMethodOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                                  </button>
-                                  {paymentMethodOpen && (
-                                    <div className="px-3 pb-3 pt-1">
-                                      {paymentStatus === 'processing' ? (
-                                        <div className="flex items-center justify-center py-6 gap-2">
-                                          <Loader2 className="h-5 w-5 animate-spin" />
-                                          <span className="text-sm text-muted-foreground">{isVi ? 'Đang xử lý thanh toán...' : 'Processing payment...'}</span>
-                                        </div>
-                                      ) : paypalClientId ? (
-                                        <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD', vault: true, intent: 'subscription' }}>
-                                          <PayPalButtons
-                                            style={{ layout: 'vertical', shape: 'rect', label: 'subscribe', height: 40 }}
-                                            createSubscription={async () => createSubscription()}
-                                            onApprove={async (data) => onApprove(data)}
-                                            onError={(err) => {
-                                              console.error('PayPal error:', err);
-                                              toast({ title: isVi ? 'PayPal gặp lỗi' : 'PayPal encountered an error', variant: 'destructive' });
-                                            }}
-                                            onCancel={() => {
-                                              toast({ title: isVi ? 'Đã hủy thanh toán' : 'Payment cancelled' });
-                                            }}
-                                          />
-                                        </PayPalScriptProvider>
-                                      ) : (
-                                        <div className="text-center py-4 text-sm text-muted-foreground">
-                                          <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
-                                          {isVi ? 'Đang tải hệ thống thanh toán...' : 'Loading payment system...'}
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* MoMo - disabled */}
-                                <div className="border rounded-xl p-3 opacity-50">
-                                  <div className="flex items-center gap-2.5">
-                                    <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30" />
-                                    <span className="font-medium text-sm">🟣 MoMo</span>
-                                    <Badge variant="outline" className="text-[10px] ml-auto">{isVi ? 'Sắp ra mắt' : 'Coming soon'}</Badge>
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          </div>
-
-                          {/* Right: Pay Box */}
-                          <div className="lg:col-span-2">
-                            <Card className="border-primary/30 bg-primary/5">
-                              <CardContent className="pt-5 pb-5 space-y-4">
-                                <div className="text-center space-y-1">
-                                  <p className="text-sm text-muted-foreground">{isVi ? 'Tổng thanh toán' : 'Amount Due'}</p>
-                                  <p className="text-3xl font-bold">${totalAmount.toFixed(2)}</p>
-                                  <p className="text-[11px] text-muted-foreground">
-                                    {cycle === 'yearly'
-                                      ? (isVi ? 'Thanh toán 1 lần / năm' : 'Billed once per year')
-                                      : (isVi ? 'Thanh toán 1 lần / tháng' : 'Billed once per month')}
-                                  </p>
-                                </div>
-
-                                <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground pt-2">
-                                  <ShieldCheck className="h-3.5 w-3.5" />
-                                  {isVi ? 'Thanh toán bảo mật qua PayPal' : 'Secure payment powered by PayPal'}
-                                </div>
-                              </CardContent>
-                            </Card>
-                          </div>
-                        </div>
-
-                        {/* Back button */}
-                        <div className="flex justify-center mt-5">
-                          <Button variant="outline" onClick={() => setCheckoutSubStep(1)} className="h-10 gap-2 rounded-xl text-sm">
-                            <ArrowLeft className="w-4 h-4" /> {isVi ? 'Quay lại tùy chỉnh' : 'Back to configuration'}
                           </Button>
                         </div>
                       </div>
@@ -1771,7 +1526,6 @@ export default function FirstTimeOnboarding({
                 </div>
               </div>
             )}
-
             {/* ===== FINISH ===== */}
             {currentStep === 'finish' && (
               <div className="h-full flex flex-col">

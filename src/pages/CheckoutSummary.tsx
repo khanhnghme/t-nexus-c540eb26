@@ -384,10 +384,17 @@ export default function CheckoutSummary() {
               <Printer className="w-4 h-4 mr-2" />
               {isVi ? 'In hóa đơn' : 'Print Invoice'}
             </Button>
-            <Button onClick={() => navigate('/dashboard')} className="flex-1">
-              <Home className="w-4 h-4 mr-2" />
-              {isVi ? 'Về Dashboard' : 'Go to Dashboard'}
-            </Button>
+            {sessionStorage.getItem('checkout_from') === 'onboarding' ? (
+              <Button onClick={() => { sessionStorage.removeItem('checkout_from'); navigate('/onboarding'); }} className="flex-1">
+                <ArrowRight className="w-4 h-4 mr-2" />
+                {isVi ? 'Tiếp tục thiết lập' : 'Continue Setup'}
+              </Button>
+            ) : (
+              <Button onClick={() => navigate('/dashboard')} className="flex-1">
+                <Home className="w-4 h-4 mr-2" />
+                {isVi ? 'Về Dashboard' : 'Go to Dashboard'}
+              </Button>
+            )}
           </>
         ) : status === 'failed' ? (
           <>

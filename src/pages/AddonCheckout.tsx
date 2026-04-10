@@ -1,9 +1,8 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import {
-  ArrowLeft, ArrowRight, ShieldCheck, Loader2,
-  FolderKanban, HardDrive, Users, Plus, Minus, Package, AlertTriangle,
+  ArrowLeft, ArrowRight, Loader2,
+  FolderKanban, HardDrive, Users, Plus, Minus, Package,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,10 +11,8 @@ import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserAddons, AddonType } from '@/hooks/useUserAddons';
-import { useAccountLimitsCheck } from '@/hooks/useAccountLimitsCheck';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPlanName } from '@/hooks/useWorkspaceBilling';
-import { OrderCountdown } from '@/components/OrderCountdown';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -73,7 +70,6 @@ export default function AddonCheckout() {
   const { translations: { app: { servicePlan: t } } } = useLanguage();
   const { user, profile, refreshProfile } = useAuth();
   const userAddons = useUserAddons();
-  const accountLimits = useAccountLimitsCheck();
 
   const isVi = (profile as any)?.preferred_locale === 'vi' || document.documentElement.lang === 'vi';
   const plan = profile?.user_plan || 'plan_free';
@@ -83,27 +79,14 @@ export default function AddonCheckout() {
   const unitPrice = addonBasePrice * (1 - discount.pct);
   const cycleLabel = billingCycle === 'yearly' ? (isVi ? 'năm' : 'year') : (isVi ? 'tháng' : 'month');
 
-  const [step, setStep] = useState(1);
   const [addons, setAddons] = useState<Record<AddonType, number>>({
     projects: 0,
     storage: 0,
     members: 0,
   });
-  const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
-  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'failed'>('idle');
-  const [orderReservation, setOrderReservation] = useState<{ orderId: string; expiresAt: string } | null>(null);
-  const [orderExpired, setOrderExpired] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [agreedToPolicy, setAgreedToPolicy] = useState(false);
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [cancellingOrder, setCancellingOrder] = useState(false);
   const [creatingReservation, setCreatingReservation] = useState(false);
-
-  useEffect(() => {
-    supabase.functions.invoke('get-paypal-config').then(({ data }) => {
-      if (data?.clientId) setPaypalClientId(data.clientId);
-    });
-  }, []);
 
   const updateAddon = (type: AddonType, delta: number) => {
     setAddons(prev => ({
@@ -148,45 +131,8 @@ export default function AddonCheckout() {
     }).select('id, expires_at, order_code').single();
 
     if (error || !data) throw new Error(error?.message || 'Failed to create order');
-
-    setOrderReservation({ orderId: data.id, expiresAt: data.expires_at! });
-    setOrderExpired(false);
     return data.order_code;
   }, [user, addons, billingCycle, subtotal, totalAmount, saving]);
-
-  const createOrder = useCallback(async (): Promise<string> => {
-    const { data, error } = await supabase.functions.invoke('create-paypal-order', {
-      body: {
-        order_type: 'addon',
-        billing_cycle: billingCycle,
-        addons: addonItems,
-        internal_order_id: orderReservation?.orderId,
-      },
-    });
-    if (error || !data?.orderID) throw new Error(error?.message || 'Failed to create order');
-
-    return data.orderID;
-  }, [billingCycle, addonItems, orderReservation]);
-
-  const captureOrder = useCallback(async (orderID: string) => {
-    setPaymentStatus('processing');
-    try {
-      const { data, error } = await supabase.functions.invoke('capture-paypal-order', {
-        body: { orderID },
-      });
-      if (error || !data?.success) throw new Error(error?.message || 'Capture failed');
-
-      setPaymentStatus('success');
-      userAddons.refresh();
-      accountLimits.refresh();
-      await refreshProfile();
-      toast({ title: '✅', description: isVi ? 'Mua add-on thành công!' : 'Add-on purchased successfully!' });
-      navigate(`/checkout/result?status=success&order_id=${data.orderId || orderReservation?.orderId || ''}`, { replace: true });
-    } catch (err: any) {
-      setPaymentStatus('failed');
-      toast({ title: 'Error', description: err.message || 'Payment failed', variant: 'destructive' });
-    }
-  }, [navigate, isVi, userAddons, accountLimits, refreshProfile]);
 
   /* ═══ Order Summary Card (shared between steps) ═══ */
   const OrderSummaryCard = () => (
@@ -260,8 +206,7 @@ export default function AddonCheckout() {
   /* ═══════════════════════════════════════════════
      STEP 1: Select addons + summary
      ═══════════════════════════════════════════════ */
-  if (step === 1) {
-    return (
+  return (
       <div className="max-w-6xl mx-auto py-6 px-4 space-y-5">
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -424,8 +369,4 @@ export default function AddonCheckout() {
         </Dialog>
       </div>
     );
-  }
-
-  /* Step 2 is now a separate route: /addon-checkout/:orderId */
-  return null;
 }
