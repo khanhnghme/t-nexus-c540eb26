@@ -19,6 +19,7 @@ import {
   Crown, Zap, Building2, FolderKanban, HardDrive,
   ArrowRight, Loader2, Infinity, Receipt,
   Check, Users, Shield, Sparkles, BarChart3, Package, AlertTriangle, RefreshCw,
+  Video, Minus,
 } from 'lucide-react';
 import { getPlanLabel } from '@/lib/planConfig';
 import { UserPaymentDetailDialog } from '@/components/billing/UserPaymentDetailDialog';
