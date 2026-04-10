@@ -159,10 +159,10 @@ export default function FirstTimeOnboarding({
 
   // Check if user already paid (returning from /checkout)
   useEffect(() => {
-    if (profile && profile.user_plan !== 'plan_free' && profile.plan_status === 'active') {
+    if (userPlan && userPlan !== 'plan_free') {
       setPaymentStatus('success');
     }
-  }, []);
+  }, [userPlan]);
 
   // Check if user is first-time buyer (no completed orders)
   useEffect(() => {
