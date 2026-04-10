@@ -47,8 +47,6 @@ function NavCustomizationCard({ userId, locale }: { userId?: string; locale: Loc
     window.dispatchEvent(new Event('nav-visibility-changed'));
   };
 
-  const pages = TOGGLEABLE_PAGES;
-
   const renderPageItem = (page: typeof TOGGLEABLE_PAGES[0]) => {
     const PageIcon = page.icon;
     const isVisible = !hiddenPages.includes(page.href);
@@ -87,7 +85,7 @@ function NavCustomizationCard({ userId, locale }: { userId?: string; locale: Loc
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          {pages.map(renderPageItem)}
+          {TOGGLEABLE_PAGES.map(renderPageItem)}
         </div>
         {hiddenPages.length > 0 && (
           <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5">
@@ -163,12 +161,13 @@ function LanguageCard({ locale, setLocale: setLocaleFn }: { locale: Locale; setL
 }
 
 export default function AccountSettings() {
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   const { locale, setLocale } = useLanguage();
   const isVi = locale === 'vi';
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-8 px-1">
+      {/* Page header */}
       <div>
         <h1 className="text-2xl font-heading font-bold tracking-tight flex items-center gap-2">
           <Settings className="w-6 h-6 text-primary" />
@@ -179,9 +178,11 @@ export default function AccountSettings() {
         </p>
       </div>
 
+      {/* Connected Services — full width */}
       <ConnectedServicesCard />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Preferences row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <LanguageCard locale={locale} setLocale={setLocale} />
         <NavCustomizationCard userId={user?.id} locale={locale} />
       </div>
