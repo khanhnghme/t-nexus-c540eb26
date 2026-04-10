@@ -53,7 +53,7 @@ export default function Checkout() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { translations: { checkout: t, common: tc } } = useLanguage();
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
 
   const [plan, setPlan] = useState(searchParams.get('plan') || 'plan_pro');
   const [cycle, setCycle] = useState<'monthly' | 'yearly'>((searchParams.get('cycle') || 'monthly') as 'monthly' | 'yearly');

@@ -68,7 +68,7 @@ const ADDON_CARDS = [
 export default function AddonCheckout() {
   const navigate = useNavigate();
   const { translations: { app: { servicePlan: t } } } = useLanguage();
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const userAddons = useUserAddons();
   const accountLimits = useAccountLimitsCheck();
 
