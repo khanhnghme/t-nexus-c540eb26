@@ -201,12 +201,12 @@ function AppRoutes() {
           <Route path="/upgrade" element={<Upgrade />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/checkout/result" element={<PaymentResult />} />
-          <Route path="/checkout/:orderId/summary" element={<CheckoutSummary />} />
-          <Route path="/checkout/:orderId" element={<CheckoutPayment />} />
+          <Route path="/checkout/summary/:orderCode" element={<CheckoutSummary />} />
+          <Route path="/checkout/payment/:orderCode" element={<CheckoutPayment />} />
           <Route path="/service-plan" element={<ServicePlan />} />
           <Route path="/billing-history" element={<BillingHistory />} />
           <Route path="/addon-checkout" element={<AddonCheckout />} />
-          <Route path="/addon-checkout/:orderId" element={<AddonCheckoutPayment />} />
+          <Route path="/addon-checkout/:orderCode" element={<AddonCheckoutPayment />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

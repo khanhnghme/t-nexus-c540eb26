@@ -207,7 +207,7 @@ export default function Checkout() {
       payment_method: 'paypal',
       status: 'pending',
       expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-    }).select('id, expires_at').single();
+    }).select('id, expires_at, order_code').single();
 
     if (error || !data) {
       throw new Error(error?.message || 'Failed to create order');
@@ -218,7 +218,7 @@ export default function Checkout() {
       expiresAt: data.expires_at!,
     });
     setOrderExpired(false);
-    return data.id;
+    return data.order_code;
   }, [user, plan, cycle, addons, originalBaseAmount, addonFinal, discountAmount, welcomeDiscount, addonSaving, totalAmount, couponDiscount]);
 
   const createOrder = useCallback(async () => {
@@ -264,7 +264,7 @@ export default function Checkout() {
     } catch {
       setPaymentStatus('failed');
       toast.error(t?.paymentFailed || 'Payment failed. Please try again.');
-      navigate('/checkout/result?status=failed');
+      navigate(`/checkout/result?status=failed&order_id=${orderReservation?.orderId || ''}`);
     }
   }, [navigate, t, refreshProfile]);
 
@@ -618,7 +618,7 @@ export default function Checkout() {
                 try {
                   const newOrderId = await createReservation();
                   setShowConfirmDialog(false);
-                  navigate('/checkout/' + newOrderId);
+                  navigate('/checkout/payment/' + newOrderId);
                 } catch (e) {
                   toast.error(isVi ? 'Không thể tạo đơn hàng. Vui lòng thử lại.' : 'Failed to create order. Please try again.');
                 } finally {
