@@ -1395,23 +1395,6 @@ export default function Landing() {
             <p className="text-sm text-center md:text-left flex-1" style={{ color: colorVar('--landing-hero-foreground', 0.65) }}>
               {tl.dataPrivacySubtitle}
             </p>
-            <div className="flex items-center gap-3 shrink-0">
-              <Link
-                to={lp('/guide/privacy')}
-                className="text-sm font-medium hover:underline"
-                style={{ color: colorVar('--landing-blue') }}
-              >
-                {tl.dataPrivacyLearnMore}
-              </Link>
-              <span style={{ color: colorVar('--landing-hero-foreground', 0.3) }}>·</span>
-              <Link
-                to={lp('/guide/terms')}
-                className="text-sm font-medium hover:underline"
-                style={{ color: colorVar('--landing-blue') }}
-              >
-                {tl.dataPrivacyTerms}
-              </Link>
-            </div>
           </div>
         </section>
 
