@@ -154,7 +154,7 @@ export default function CheckoutPayment() {
 
   const hasAddons = addons.length > 0;
 
-  if (paymentStatus === 'processing' || paymentStatus === 'success') {
+  if (paymentStatus === 'processing') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
