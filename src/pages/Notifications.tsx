@@ -222,11 +222,7 @@ function SystemNotificationsBanner({ userId, locale }: { userId: string; locale:
                     </ReactMarkdown>
                   </div>
                 </div>
-                <div className="px-4 py-2.5 border-t border-blue-200/60 dark:border-blue-800/30 bg-muted/20 flex items-center justify-between">
-                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                    <Eye className="w-3 h-3" />
-                    {isVi ? `${notif.min_view_seconds}s bắt buộc` : `${notif.min_view_seconds}s required`}
-                  </span>
+                <div className="px-4 py-2.5 border-t border-blue-200/60 dark:border-blue-800/30 bg-muted/20 flex items-center justify-end">
                   <Button
                     size="sm"
                     variant="outline"
