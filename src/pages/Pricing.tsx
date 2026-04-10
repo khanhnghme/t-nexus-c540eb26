@@ -299,9 +299,20 @@ function ToggleBtn({ active, onClick, label }: { active: boolean; onClick: () =>
 
 /* ═══════════════════════ Plan Column ═══════════════════════ */
 
+const GOOGLE_INTEGRATIONS = [
+  { logo: gmailLogo, label: 'Email Integration', desc: 'Connect your email to view and manage messages directly in one place.' },
+  { logo: googleDriveLogo, label: 'Google Drive Integration', desc: 'Access files and submit documents seamlessly from your Drive.' },
+  { logo: googleCalendarLogo, label: 'Calendar Sync (Two-way)', desc: 'Keep schedules in sync with real-time updates across both platforms.' },
+];
+
 function PlanColumn({ plan, yearly, tp }: { plan: Plan; yearly: boolean; tp: any }) {
   const price = formatPrice(plan.monthlyPrice, yearly);
   const isCustom = plan.monthlyPrice === null;
+
+  // Show integrations for Pro, Business, Enterprise
+  const showIntegrations = plan.name === tp.plans.pro.name
+    || plan.name === tp.plans.business.name
+    || plan.name === tp.plans.enterprise.name;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -318,7 +329,7 @@ function PlanColumn({ plan, yearly, tp }: { plan: Plan; yearly: boolean; tp: any
         )}
       </div>
 
-      {/* Price line — fixed height so buttons align */}
+      {/* Price line */}
       <div style={{ minHeight: 56, marginBottom: 8, display: 'flex', alignItems: 'baseline', flexWrap: 'wrap' }}>
         <span style={{ fontSize: 30, fontWeight: 700, color: '#37352f', letterSpacing: '-0.02em', lineHeight: 1 }}>
           {price}
@@ -333,12 +344,12 @@ function PlanColumn({ plan, yearly, tp }: { plan: Plan; yearly: boolean; tp: any
         )}
       </div>
 
-      {/* Description — exactly 3 lines allowance so buttons align perfectly */}
+      {/* Description */}
       <p style={{ fontSize: 13, color: '#787774', lineHeight: 1.5, margin: '0 0 14px', minHeight: 60 }}>
         {plan.description}
       </p>
 
-      {/* CTA — sits at consistent position */}
+      {/* CTA */}
       <div style={{ marginBottom: 20 }}>
         {plan.ctaStyle === 'primary' ? (
           <button
@@ -384,6 +395,21 @@ function PlanColumn({ plan, yearly, tp }: { plan: Plan; yearly: boolean; tp: any
           </li>
         ))}
       </ul>
+
+      {/* Google Integrations — Pro / Business / Enterprise only */}
+      {showIntegrations && (
+        <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid rgba(55,53,47,0.09)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {GOOGLE_INTEGRATIONS.map(item => (
+            <div key={item.label} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+              <img src={item.logo} alt={item.label} style={{ width: 18, height: 18, flexShrink: 0, marginTop: 1, objectFit: 'contain' }} />
+              <div style={{ minWidth: 0 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#37352f', lineHeight: 1.3, display: 'block' }}>{item.label}</span>
+                <span style={{ fontSize: 12, color: '#a5a29a', lineHeight: 1.4 }}>{item.desc}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
