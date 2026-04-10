@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Bell, Trash2, Check, Clock, CheckCircle2, Send, UserPlus, Edit, X as XIcon, MailOpen, Loader2, Inbox, Filter, Shield, Eye, Calendar, User, ChevronDown, ChevronUp } from 'lucide-react';
+import { Bell, Trash2, Check, Clock, CheckCircle2, Send, UserPlus, Edit, X as XIcon, MailOpen, Loader2, Inbox, Filter, Shield, Eye, Calendar, User, ChevronDown, ChevronUp, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,6 +17,7 @@ import { deleteWithUndo } from '@/lib/deleteWithUndo';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
+import GmailTab from '@/components/notifications/GmailTab';
 
 interface Notification {
   id: string;
@@ -49,7 +50,7 @@ interface SystemNotification {
   target_user_ids: string[] | null;
 }
 
-type TabFilter = 'all' | 'unread' | 'read';
+type TabFilter = 'all' | 'unread' | 'read' | 'email';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   task_assigned: <UserPlus className="w-4 h-4 text-primary" />,
@@ -418,23 +419,35 @@ export default function Notifications() {
               <CheckCircle2 className="w-3.5 h-3.5" />
               {t.readTab}
             </TabsTrigger>
+            <TabsTrigger value="email" className="gap-1.5 text-xs px-3">
+              <Mail className="w-3.5 h-3.5" />
+              Email
+            </TabsTrigger>
           </TabsList>
         </Tabs>
 
-        <Select value={wsFilter} onValueChange={setWsFilter}>
-          <SelectTrigger className="w-full sm:w-[220px] h-9">
-            <SelectValue placeholder={t.allWorkspaces} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t.allWorkspaces}</SelectItem>
-            {workspaces.map(ws => (
-              <SelectItem key={ws.id} value={ws.id}>{ws.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {tab !== 'email' && (
+          <Select value={wsFilter} onValueChange={setWsFilter}>
+            <SelectTrigger className="w-full sm:w-[220px] h-9">
+              <SelectValue placeholder={t.allWorkspaces} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t.allWorkspaces}</SelectItem>
+              {workspaces.map(ws => (
+                <SelectItem key={ws.id} value={ws.id}>{ws.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
-      {/* Content */}
+      {/* Gmail Tab */}
+      {tab === 'email' ? (
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <GmailTab />
+        </div>
+      ) : (
+      /* Notification Content */
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
@@ -535,6 +548,7 @@ export default function Notifications() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
