@@ -227,9 +227,13 @@ export const vi: Translations = {
     footerResourcesLinks: ['Demo sản phẩm', 'Hiệu suất', 'Đánh giá'],
     footerContactTitle: 'Liên hệ',
     footerComingSoon: 'Sắp ra mắt',
+    footerCompanyTitle: 'Công ty',
+    footerCompanyLinks: ['Về chúng tôi', 'Tuyển dụng', 'Bảo mật', 'Trạng thái'],
     footerDesignedFor: 'Thiết kế cho quy trình đồ án, nghiên cứu và khóa luận tốt nghiệp.',
     footerPrivacyPolicy: 'Chính sách bảo mật',
     footerTermsOfService: 'Điều khoản sử dụng',
+    footerTermsAndPrivacy: 'Điều khoản & Bảo mật',
+    footerYourPrivacyRights: 'Quyền riêng tư của bạn',
 
     // Intro modal
     introTitle: 'Giới thiệu T-Nexus',
