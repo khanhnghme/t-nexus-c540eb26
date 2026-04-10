@@ -1,49 +1,41 @@
 
 
-## Redesign Account Settings — Integration Management Hub
+## Plan: Add Connected Tools section to all plan-related pages
 
-### Overview
-Add a new "Connected Services" section to the Account Settings page with individual cards for Google Calendar, Gmail, and Google Drive. Each card shows connection status and provides connect/disconnect actions. The existing connect/disconnect logic from the hooks remains unchanged — only the UI presentation is centralized here.
+### Summary
+Extract the Connected Tools data (Google integrations) into a shared constant/component, then add the "Connected Tools" section to all pages that display plan features — matching the exact style from the Pricing page.
 
-### Changes
+### Pages to update
 
-**1. Create `src/components/settings/ConnectedServicesCard.tsx`**
-- A new component rendering 3 service cards in a grid
-- Each card includes: service icon, name, short description, connection status badge, and a Connect or Disconnect button
-- Uses the existing hooks: `useGoogleCalendarSync`, `useGmailSync`, `useGoogleDriveConnect`
-- Disconnect triggers a confirmation dialog (reusing AlertDialog pattern already in the codebase)
-- Connected state shows green badge + email if available (Gmail, Drive)
-- Loading/checking state shows a subtle skeleton/spinner
+1. **Upgrade.tsx** — Add Connected Tools below the feature list in `PlanColumn` for Pro, Business, and Enterprise plans. Also add to the comparison table (`UpgradePlansAndFeatures`).
 
-**2. Update `src/pages/AccountSettings.tsx`**
-- Import and render `ConnectedServicesCard` in the page layout
-- Place it prominently (above or below the existing Language/Nav cards)
-- Update page subtitle to mention integrations
-- Layout: full-width card spanning the grid, containing 3 sub-cards for each service
+2. **ServicePlan.tsx** — Add Connected Tools in the "Plan Benefits" section (Tab 1: Current Plan) when the user's plan is Pro, Business, or Custom.
 
-**3. No changes to other pages**
-- The hooks (`useGoogleCalendarSync`, `useGmailSync`, `useGoogleDriveConnect`) remain as-is
-- Other pages that currently show connect buttons (e.g., `GoogleCalendarConnect`, `GmailConnect`) will continue to use the hooks for status checks only — their connect/disconnect UX is not modified in this task (per user request: "Không thay đổi logic ở các trang khác")
+3. **ServicePlanSection.tsx** — Add a compact Connected Tools list below the features list, only visible for Pro/Business/Custom plans.
 
-### Technical Details
+4. **FirstTimeOnboarding.tsx** — Add Connected Tools below each plan card's feature list for Pro and Business plans during onboarding.
 
-```text
-AccountSettings page layout:
-┌─────────────────────────────────────────┐
-│ Settings                                │
-│ Customize interface, language & services│
-├─────────────────────────────────────────┤
-│ Connected Services (full-width card)    │
-│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
-│ │ Calendar │ │  Gmail   │ │  Drive   │ │
-│ │ ✓ Active │ │ Connect  │ │ ✓ Active │ │
-│ └──────────┘ └──────────┘ └──────────┘ │
-├───────────────────┬─────────────────────┤
-│ Language          │ Nav Customization   │
-└───────────────────┴─────────────────────┘
-```
+### Shared code
+Create a reusable `ConnectedToolsList` component or shared constant in a new file (e.g., `src/lib/connectedTools.ts`) containing:
+- Gmail logo, Google Drive logo, Google Calendar logo imports
+- Labels: "Email Integration", "Google Drive", "Calendar Sync"
+- A React component that renders the "Connected Tools" header + checkmark + logo + label rows
 
-- Each service card: icon (Google product icon or Lucide), title, 1-line description, status badge, action button
-- Disconnect: AlertDialog confirmation before executing
-- After connect redirect, URL params are already handled by existing hooks
+### Style
+- Matches Pricing page exactly: border-top separator, "Connected Tools" title (13px, 600 weight), Check icon (blue, 15px), logo (16x16), label (13px)
+- Adapts to each page's styling context (inline styles on Pricing/Upgrade Notion-style pages, Tailwind classes on ServicePlan/Settings pages)
+
+### Technical details
+- No logic, API, or database changes
+- Only UI additions — existing layouts remain untouched
+- `showIntegrations` condition: plan key includes `pro`, `business`, `custom`, or `enterprise`
+
+### Files to create/edit
+| File | Action |
+|------|--------|
+| `src/components/ConnectedToolsBadge.tsx` | **Create** — shared component |
+| `src/pages/Upgrade.tsx` | **Edit** — add to PlanColumn + comparison table |
+| `src/pages/ServicePlan.tsx` | **Edit** — add to plan benefits section |
+| `src/components/personal/ServicePlanSection.tsx` | **Edit** — add below features |
+| `src/components/FirstTimeOnboarding.tsx` | **Edit** — add to plan cards |
 
