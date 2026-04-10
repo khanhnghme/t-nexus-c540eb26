@@ -1377,6 +1377,68 @@ export default function Landing() {
           </section>
         </main>
 
+        {/* ── Data & Privacy Section ── */}
+        <section className="px-6 py-16 md:py-20" style={{ backgroundColor: colorVar('--landing-night') }}>
+          <div className="mx-auto max-w-[1240px]">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 mb-6" style={{ borderColor: colorVar('--landing-hero-muted', 0.2), color: colorVar('--landing-hero-muted') }}>
+                <Shield className="h-4 w-4" />
+                <span className="text-sm font-medium">Privacy & Security</span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4" style={{ color: colorVar('--landing-hero-fg') }}>
+                {tl.dataPrivacyTitle}
+              </h2>
+              <p className="text-lg max-w-2xl mx-auto" style={{ color: colorVar('--landing-hero-muted') }}>
+                {tl.dataPrivacySubtitle}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              {[
+                { icon: Globe, text: tl.dataPrivacyGoogleAuth },
+                { icon: Lock, text: tl.dataPrivacyEncrypted },
+                { icon: Shield, text: tl.dataPrivacyNoSharing },
+                { icon: Users, text: tl.dataPrivacyUserRights },
+              ].map((item, i) => (
+                <div
+                  key={i}
+                  className="flex items-start gap-4 rounded-xl border p-5"
+                  style={{
+                    borderColor: colorVar('--landing-hero-muted', 0.15),
+                    backgroundColor: colorVar('--landing-hero-muted', 0.04),
+                  }}
+                >
+                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: colorVar('--landing-blue', 0.12) }}>
+                    <item.icon className="h-4.5 w-4.5" style={{ color: colorVar('--landing-blue') }} />
+                  </div>
+                  <p className="text-[15px] leading-relaxed" style={{ color: colorVar('--landing-hero-muted') }}>
+                    {item.text}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-4 mt-10">
+              <Link
+                to={lp('/guide/privacy')}
+                className="inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-medium transition-colors hover:opacity-80"
+                style={{ borderColor: colorVar('--landing-blue'), color: colorVar('--landing-blue') }}
+              >
+                <Lock className="h-4 w-4" />
+                {tl.dataPrivacyLearnMore}
+              </Link>
+              <Link
+                to={lp('/guide/terms')}
+                className="inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-medium transition-colors hover:opacity-80"
+                style={{ borderColor: colorVar('--landing-hero-muted', 0.3), color: colorVar('--landing-hero-muted') }}
+              >
+                <Shield className="h-4 w-4" />
+                {tl.dataPrivacyTerms}
+              </Link>
+            </div>
+          </div>
+        </section>
+
         <footer id="resources" className="px-6 pb-12 pt-14 md:pt-16" style={{ backgroundColor: colorVar('--landing-night') }}>
           <div className="mx-auto max-w-[1240px]">
             <div className="flex flex-col gap-12 lg:flex-row lg:justify-between lg:items-start">

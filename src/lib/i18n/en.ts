@@ -229,6 +229,16 @@ export const en = {
     footerPrivacyPolicy: 'Privacy Policy',
     footerTermsOfService: 'Terms of Service',
 
+    // Data & Privacy section
+    dataPrivacyTitle: 'Your data, your control',
+    dataPrivacySubtitle: 'We are committed to protecting your privacy and being transparent about how we use your data.',
+    dataPrivacyGoogleAuth: 'Google Sign-In is used solely for identity verification — we only access your name, email, and profile photo.',
+    dataPrivacyEncrypted: 'Your project data is stored securely with encryption at rest and in transit.',
+    dataPrivacyNoSharing: 'We never sell or share your personal data with third parties for advertising or marketing purposes.',
+    dataPrivacyUserRights: 'You can request to delete your account and all associated data at any time.',
+    dataPrivacyLearnMore: 'Read our Privacy Policy',
+    dataPrivacyTerms: 'Terms of Service',
+
     // Intro modal
     introTitle: 'Introducing T-Nexus',
     introPage: 'Page',
