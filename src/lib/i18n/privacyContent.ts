@@ -126,7 +126,7 @@ Việc tiếp tục sử dụng T-Nexus sau khi chính sách được cập nh�
 
 Nếu bạn có câu hỏi hoặc yêu cầu liên quan đến Chính sách Quyền riêng tư, vui lòng liên hệ:
 
-- **Email:** khanhngh.work@gmail.com
+- **Email:** support@t-nexus.io.vn
 - **Hệ thống phản hồi:** Sử dụng tính năng Phản hồi trong T-Nexus.
 - **Website:** [https://t-nexus.io.vn](https://t-nexus.io.vn)
 
@@ -263,7 +263,7 @@ Continued use of T-Nexus after the policy is updated means you accept the change
 
 If you have questions or requests regarding this Privacy Policy, please contact:
 
-- **Email:** khanhngh.work@gmail.com
+- **Email:** support@t-nexus.io.vn
 - **Feedback system:** Use the Feedback feature within T-Nexus.
 - **Website:** [https://t-nexus.io.vn](https://t-nexus.io.vn)
 
