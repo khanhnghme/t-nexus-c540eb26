@@ -623,7 +623,7 @@ export default function TaskSubmissionDialog({
                   <span className="font-bold">Nộp bài</span>
                   {hasContent && (
                     <Badge variant="secondary" className="h-5 px-1.5 text-[10px] bg-background/80">
-                      {filesCount + validLinksCount}
+                      {filesCount + validLinksCount + driveFilesCount}
                     </Badge>
                   )}
                 </TabsTrigger>
