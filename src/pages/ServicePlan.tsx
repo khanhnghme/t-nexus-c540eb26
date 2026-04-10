@@ -296,17 +296,32 @@ export default function ServicePlan() {
 
                   <div className="flex gap-6 md:gap-8">
                     <div className="text-center">
-                      <div className="text-xl font-bold tabular-nums">{wsUsages.length}</div>
+                      <div className="text-xl font-bold tabular-nums">
+                        {wsUsages.length}
+                        <span className="text-sm font-normal text-muted-foreground">
+                          /{accountLimits.maxWorkspaces ?? '∞'}
+                        </span>
+                      </div>
                       <div className="text-xs text-muted-foreground">{t.workspace}</div>
                     </div>
                     <Separator orientation="vertical" className="h-10" />
                     <div className="text-center">
-                      <div className="text-xl font-bold tabular-nums">{totalProjects}</div>
+                      <div className="text-xl font-bold tabular-nums">
+                        {totalProjects}
+                        <span className="text-sm font-normal text-muted-foreground">
+                          /{accountLimits.maxProjects ?? '∞'}
+                        </span>
+                      </div>
                       <div className="text-xs text-muted-foreground">{t.projects}</div>
                     </div>
                     <Separator orientation="vertical" className="h-10" />
                     <div className="text-center">
-                      <div className="text-xl font-bold tabular-nums">{totalMembers}</div>
+                      <div className="text-xl font-bold tabular-nums">
+                        {totalMembers}
+                        <span className="text-sm font-normal text-muted-foreground">
+                          /{accountLimits.maxMembers ?? '∞'}
+                        </span>
+                      </div>
                       <div className="text-xs text-muted-foreground">{t.members}</div>
                     </div>
                   </div>
