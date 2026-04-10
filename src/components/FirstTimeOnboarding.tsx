@@ -948,7 +948,7 @@ export default function FirstTimeOnboarding({
                           <Label htmlFor="emailReadonly" className="text-xs font-semibold mb-1.5 block">
                             Email
                           </Label>
-                          <Input id="emailReadonly" value={user?.email || ''} disabled
+                          <Input id="emailReadonly" value={userEmail} disabled
                             className="h-9 border-0 bg-muted/50 rounded-lg opacity-60 cursor-not-allowed" />
                         </div>
                       </div>
