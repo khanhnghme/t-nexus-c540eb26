@@ -42,26 +42,20 @@ export function OrderCountdown({ expiresAt, orderId, orderCode, onExpired, onCre
   const pad = (n: number) => n.toString().padStart(2, '0');
   const totalMinutes = timeLeft.h * 60 + timeLeft.m;
   const isUrgent = !timeLeft.expired && totalMinutes < 10;
-  const displayCode = orderCode || `#${orderId.slice(0, 8).toUpperCase()}`;
 
   if (timeLeft.expired) {
     return (
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-xl border border-destructive/30 bg-destructive/5">
+      <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-destructive/30 bg-destructive/5">
         <div className="flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-destructive">
-              {isVi ? 'Đơn hàng đã hết hạn' : 'Order has expired'}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {isVi ? 'Mã đơn' : 'Order'}: {displayCode}
-            </p>
-          </div>
+          <span className="text-sm font-medium text-destructive">
+            {isVi ? 'Đơn hàng đã hết hạn' : 'Order expired'}
+          </span>
         </div>
         {onCreateNew && (
-          <Button variant="outline" size="sm" onClick={onCreateNew} className="gap-1.5 shrink-0">
-            <RotateCcw className="w-3.5 h-3.5" />
-            {isVi ? 'Tạo đơn mới' : 'Create new order'}
+          <Button variant="outline" size="sm" onClick={onCreateNew} className="gap-1 shrink-0 h-7 text-xs">
+            <RotateCcw className="w-3 h-3" />
+            {isVi ? 'Tạo mới' : 'New order'}
           </Button>
         )}
       </div>
@@ -69,29 +63,22 @@ export function OrderCountdown({ expiresAt, orderId, orderCode, onExpired, onCre
   }
 
   return (
-    <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 rounded-xl border ${
+    <div className={`flex items-center justify-between gap-2 p-2.5 rounded-xl border ${
       isUrgent ? 'border-destructive/30 bg-destructive/5' : 'border-border bg-muted/30'
     }`}>
       <div className="flex items-center gap-2">
         <Clock className={`w-4 h-4 shrink-0 ${isUrgent ? 'text-destructive' : 'text-muted-foreground'}`} />
-        <div>
-          <div className="flex items-center gap-2">
-            <span className={`text-sm font-medium tabular-nums ${isUrgent ? 'text-destructive' : 'text-foreground'}`}>
-              {isVi ? 'Hết hạn sau' : 'Expires in'}: {pad(timeLeft.h)}:{pad(timeLeft.m)}:{pad(timeLeft.s)}
-            </span>
-            {isUrgent && (
-              <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-                {isVi ? 'Sắp hết hạn' : 'Expiring soon'}
-              </Badge>
-            )}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {isVi ? 'Mã đơn' : 'Order'}: {displayCode}
-          </p>
-        </div>
+        <span className={`text-sm font-medium tabular-nums ${isUrgent ? 'text-destructive' : 'text-foreground'}`}>
+          {pad(timeLeft.h)}:{pad(timeLeft.m)}:{pad(timeLeft.s)}
+        </span>
+        {isUrgent && (
+          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+            {isVi ? 'Sắp hết' : 'Urgent'}
+          </Badge>
+        )}
       </div>
       <Badge variant="secondary" className="text-[10px] shrink-0">
-        ⏳ {isVi ? 'Đang chờ thanh toán' : 'Pending payment'}
+        ⏳ {isVi ? 'Chờ thanh toán' : 'Pending'}
       </Badge>
     </div>
   );

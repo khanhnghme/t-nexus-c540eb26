@@ -169,11 +169,6 @@ export default function CheckoutPayment() {
         )}
       </div>
 
-      {/* Order ID */}
-      <div className="flex items-center gap-2 text-sm">
-        <span className="text-muted-foreground">{isVi ? 'Mã đơn hàng:' : 'Order ID:'}</span>
-        <code className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{order?.order_code || orderCode}</code>
-      </div>
 
       {/* Cancel Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
