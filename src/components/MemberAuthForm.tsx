@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { TNexusLogo } from '@/components/TNexusLogo';
 import { OtpVerifyScreen } from '@/components/OtpVerifyScreen';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -24,6 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { INSTITUTIONS, REGIONS, searchInstitutions } from '@/lib/institutions';
 import { cn } from '@/lib/utils';
 import { TurnstileWidget, type TurnstileWidgetRef } from '@/components/TurnstileWidget';
+import { lovable } from '@/integrations/lovable/index';
 
 import { format, type Locale } from 'date-fns';
 import { vi as viLocale, enUS } from 'date-fns/locale';
