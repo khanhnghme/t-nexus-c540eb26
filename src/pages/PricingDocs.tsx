@@ -6,7 +6,7 @@ import LanguageToggle from '@/components/LanguageToggle';
 import {
   ArrowLeft, Users, CreditCard, Database, Package, HelpCircle,
   Lightbulb, ArrowRight, Lock, Clock, AlertTriangle, BookOpen,
-  Check, X, Menu, ChevronRight,
+  Check, X, Menu, ChevronRight, ArrowUpCircle, ArrowDownCircle, RefreshCw,
 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
@@ -32,6 +32,10 @@ const TOC_ENTRIES: TocEntry[] = [
   { id: 'read-only', labelKey: 'ch2s1', level: 2 },
   { id: 'grace-period', labelKey: 'ch2s2', level: 2 },
   { id: 'hard-delete', labelKey: 'ch2s3', level: 2 },
+  { id: 'chapter-3', labelKey: 'ch3Label', level: 1, chapter: 3 },
+  { id: 'upgrade-policy', labelKey: 'ch3s1', level: 2 },
+  { id: 'downgrade-policy', labelKey: 'ch3s2', level: 2 },
+  { id: 'change-mind', labelKey: 'ch3s3', level: 2 },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -307,6 +311,99 @@ export default function PricingDocs() {
             </div>
           </DocSection>
 
+          {/* ═══════════ CHAPTER 3 ═══════════ */}
+          <div style={{ borderTop: '1px solid #e8e5e0', marginTop: 40, paddingTop: 32 }}>
+            <ChapterHeading id="chapter-3" title={d.ch3Label} variant="accent" />
+            <p className="pdoc-p">{d.ch3Subtitle}</p>
+          </div>
+
+          {/* 3.1 Upgrade */}
+          <DocSection icon={ArrowUpCircle} title={d.ch3s1Title} id="upgrade-policy">
+            <p className="pdoc-p">{d.ch3s1Desc}</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 16 }}>
+              {d.ch3s1Steps?.map((step: { title: string; desc: string; icon: string }, i: number) => (
+                <div key={i} style={{ border: '1px solid rgba(35,131,226,0.2)', borderRadius: 8, padding: 16, background: 'rgba(35,131,226,0.03)' }}>
+                  <div style={{ fontSize: 22, marginBottom: 8 }}>{step.icon}</div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: '#37352f', marginBottom: 4 }}>{step.title}</div>
+                  <div style={{ fontSize: 13, color: '#6b6b6b', lineHeight: 1.5 }}>{step.desc}</div>
+                </div>
+              ))}
+            </div>
+            <DocCallout>{d.ch3s1Callout}</DocCallout>
+          </DocSection>
+
+          {/* 3.2 Downgrade */}
+          <DocSection icon={ArrowDownCircle} title={d.ch3s2Title} id="downgrade-policy">
+            <p className="pdoc-p">{d.ch3s2Desc}</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 16 }}>
+              {d.ch3s2Steps?.map((step: { title: string; desc: string; icon: string }, i: number) => (
+                <div key={i} style={{ border: '1px solid rgba(227,166,37,0.3)', borderRadius: 8, padding: 16, background: 'rgba(227,166,37,0.04)' }}>
+                  <div style={{ fontSize: 22, marginBottom: 8 }}>{step.icon}</div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: '#37352f', marginBottom: 4 }}>{step.title}</div>
+                  <div style={{ fontSize: 13, color: '#6b6b6b', lineHeight: 1.5 }}>{step.desc}</div>
+                </div>
+              ))}
+            </div>
+            {/* Auto-cycle sub-section */}
+            <div style={{
+              border: '1px solid rgba(35,131,226,0.15)', borderRadius: 8, padding: 16,
+              background: 'rgba(35,131,226,0.03)', marginBottom: 16,
+            }}>
+              <div style={{ fontWeight: 600, fontSize: 14, color: '#37352f', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <RefreshCw size={15} style={{ color: '#2383e2' }} />
+                {d.ch3s2AutoTitle}
+              </div>
+              <ul style={{ margin: 0, paddingLeft: 20 }}>
+                {d.ch3s2AutoSteps?.map((s: string, i: number) => (
+                  <li key={i} style={{ fontSize: 13, color: '#37352f', marginBottom: 4, lineHeight: 1.5 }}>{s}</li>
+                ))}
+              </ul>
+            </div>
+            {/* Warning callout */}
+            <div style={{
+              display: 'flex', alignItems: 'flex-start', gap: 10,
+              border: '1px solid rgba(227,166,37,0.4)', borderRadius: 8, padding: 14,
+              background: 'rgba(227,166,37,0.06)',
+            }}>
+              <AlertTriangle size={16} style={{ color: '#e3a625', flexShrink: 0, marginTop: 1 }} />
+              <p style={{ fontSize: 13, color: '#37352f', lineHeight: 1.6, margin: 0, fontWeight: 500 }}>{d.ch3s2Callout}</p>
+            </div>
+          </DocSection>
+
+          {/* 3.3 Change of Mind */}
+          <DocSection icon={RefreshCw} title={d.ch3s3Title} id="change-mind">
+            <p className="pdoc-p">{d.ch3s3Desc}</p>
+            {/* Timeline examples */}
+            <div style={{ position: 'relative', paddingLeft: 24, borderLeft: '2px solid #e8e5e0', display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 16 }}>
+              {d.ch3s3Examples?.map((ex: { day: string; title: string; details: string[] }, i: number) => (
+                <div key={i} style={{ position: 'relative' }}>
+                  <div style={{
+                    position: 'absolute', left: -31, top: 4, width: 16, height: 16, borderRadius: '50%',
+                    background: i === 2 ? '#eb5757' : '#2383e2', border: '2px solid #fff',
+                  }} />
+                  <div style={{ border: '1px solid #e8e5e0', borderRadius: 8, padding: 16, background: '#f7f6f3' }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#2383e2', textTransform: 'uppercase', marginBottom: 4 }}>{ex.day}</div>
+                    <div style={{ fontWeight: 600, fontSize: 14, color: '#37352f', marginBottom: 8 }}>{ex.title}</div>
+                    <ul style={{ margin: 0, paddingLeft: 18 }}>
+                      {ex.details.map((d2: string, j: number) => (
+                        <li key={j} style={{ fontSize: 13, color: '#6b6b6b', marginBottom: 3, lineHeight: 1.5 }}>{d2}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Critical callout */}
+            <div style={{
+              display: 'flex', alignItems: 'flex-start', gap: 10,
+              border: '1px solid rgba(235,87,87,0.3)', borderRadius: 8, padding: 14,
+              background: 'rgba(235,87,87,0.04)',
+            }}>
+              <AlertTriangle size={16} style={{ color: '#eb5757', flexShrink: 0, marginTop: 1 }} />
+              <p style={{ fontSize: 13, color: '#37352f', lineHeight: 1.6, margin: 0, fontWeight: 500 }}>{d.ch3s3Callout}</p>
+            </div>
+          </DocSection>
+
           {/* CTA */}
           <div style={{ textAlign: 'center', marginTop: 48, paddingBottom: 40 }}>
             <p style={{ fontSize: 15, color: '#6b6b6b', marginBottom: 16 }}>{d.ch2CtaText || d.ctaText}</p>
@@ -363,8 +460,8 @@ export default function PricingDocs() {
 
 /* ═══════════════ Sub-components ═══════════════ */
 
-function ChapterHeading({ id, title, variant }: { id: string; title: string; variant?: 'destructive' }) {
-  const color = variant === 'destructive' ? '#eb5757' : '#2383e2';
+function ChapterHeading({ id, title, variant }: { id: string; title: string; variant?: 'destructive' | 'accent' }) {
+  const color = variant === 'destructive' ? '#eb5757' : variant === 'accent' ? '#e3a625' : '#2383e2';
   return (
     <h2 id={id} style={{ fontSize: 22, fontWeight: 700, color: '#37352f', margin: '0 0 16px', paddingBottom: 8, borderBottom: `2px solid ${color}`, scrollMarginTop: 90, display: 'flex', alignItems: 'center', gap: 8 }}>
       <BookOpen size={18} style={{ color }} />

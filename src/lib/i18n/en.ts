@@ -2293,6 +2293,7 @@ export const en = {
     tocTitle: 'Table of Contents',
     ch1Label: 'Chapter 1: Pricing Guide',
     ch2Label: 'Chapter 2: Expiration Policies',
+    ch3Label: 'Chapter 3: Upgrade & Downgrade',
     tocItems: {
       s1: '1.1 Owner-based Billing',
       s2: '1.2 Unique Seat Pool',
@@ -2303,6 +2304,9 @@ export const en = {
       ch2s1: '2.1 Read-only Mode',
       ch2s2: '2.2 30-Day Grace Period',
       ch2s3: '2.3 Permanent Deletion',
+      ch3s1: '3.1 Upgrade Policy',
+      ch3s2: '3.2 Downgrade Policy',
+      ch3s3: '3.3 Change of Mind',
     },
 
     ch2Title: 'Expiration Policies',
@@ -2333,6 +2337,68 @@ export const en = {
 
     ch2CtaText: 'Don\'t lose your important data!',
     ch2CtaButton: 'Renew your plan now',
+
+    // Chapter 3: Upgrade & Downgrade
+    ch3Subtitle: 'Our upgrade and downgrade policies are designed to be simple and transparent. Here\'s exactly what happens when you change your plan.',
+
+    ch3s1Title: 'Upgrade — Immediate Effect',
+    ch3s1Desc: 'When you upgrade to a higher plan, changes take effect immediately. Your billing cycle resets from the upgrade date.',
+    ch3s1Steps: [
+      { title: 'Plan switches instantly', desc: 'Your account is upgraded to the new plan right away. All new features and limits are available immediately.', icon: '✅' },
+      { title: 'Billing cycle resets', desc: 'A new 30-day cycle starts from the moment you upgrade. The old cycle is discarded.', icon: '🔄' },
+      { title: 'New plan charged', desc: 'You pay the full price of the new (higher) plan. No prorated credits from the old plan.', icon: '💰' },
+      { title: 'Old plan cancelled', desc: 'Your previous plan is immediately cancelled. The new plan fully replaces it.', icon: '❌' },
+    ],
+    ch3s1Callout: '💡 Upgrades are instant: You get access to all new features and higher limits right away. Your billing cycle starts fresh from the upgrade date.',
+
+    ch3s2Title: 'Downgrade — Scheduled for Next Cycle',
+    ch3s2Desc: 'When you downgrade to a lower plan, you are charged immediately for the new plan, but the switch only happens at the end of your current billing cycle.',
+    ch3s2Steps: [
+      { title: 'Keep current plan', desc: 'You continue using your current (higher) plan with all its features until the end of your billing cycle.', icon: '🛡️' },
+      { title: 'Charged immediately', desc: 'The price of the new (lower) plan is charged right away. This payment covers the next billing cycle.', icon: '💰' },
+      { title: 'Auto-switch next cycle', desc: 'When your current cycle ends, the system automatically switches you to the new plan. No additional charge — you already paid.', icon: '📅' },
+    ],
+    ch3s2AutoTitle: 'What happens at the next cycle?',
+    ch3s2AutoSteps: [
+      'Your plan automatically switches to the scheduled (lower) plan.',
+      'No additional payment is charged — you already paid when you downgraded.',
+      'The scheduled plan is cleared, and a new 30-day cycle begins.',
+    ],
+    ch3s2Callout: '⚠️ Downgrades are scheduled for the next billing cycle and charged immediately. No refunds.',
+
+    ch3s3Title: 'Change of Mind — No Refund Policy',
+    ch3s3Desc: 'If you\'ve already scheduled a downgrade but change your mind, you can switch to a different plan. However, the previous downgrade payment is not refunded. Changing your plan always means purchasing again from scratch.',
+    ch3s3Examples: [
+      {
+        day: 'Day 1',
+        title: 'Purchase Business plan ($30)',
+        details: [
+          'You buy the Business plan for $30/month.',
+          'Your 30-day billing cycle starts.',
+        ],
+      },
+      {
+        day: 'Day 10',
+        title: 'Downgrade to Pro ($10)',
+        details: [
+          'You decide to downgrade to Pro.',
+          '💰 $10 is charged immediately (for next cycle).',
+          'You continue using Business until Day 30.',
+          'Scheduled: Switch to Pro on Day 31.',
+        ],
+      },
+      {
+        day: 'Day 15',
+        title: 'Change mind — want Business again',
+        details: [
+          '💰 You pay $30 again for Business.',
+          '❌ The previous $10 Pro payment is NOT refunded.',
+          'Scheduled plan is updated to Business.',
+          'Result: You paid $30 + $10 + $30 = $70 total.',
+        ],
+      },
+    ],
+    ch3s3Callout: '⚠️ Important: Every plan change is a new purchase. Previous payments for scheduled downgrades are never refunded. Please choose carefully before confirming a downgrade.',
   },
 
   admin: {

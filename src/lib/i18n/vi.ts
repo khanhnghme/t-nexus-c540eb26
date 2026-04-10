@@ -2231,6 +2231,7 @@ export const vi: Translations = {
     tocTitle: 'Mục lục',
     ch1Label: 'Chương 1: Hướng dẫn Bảng giá',
     ch2Label: 'Chương 2: Chính sách khi hết hạn gói',
+    ch3Label: 'Chương 3: Chính sách Nâng/Hạ gói',
     tocItems: {
       s1: '1.1 Mô hình Chủ sở hữu trả tiền',
       s2: '1.2 Suất thành viên duy nhất',
@@ -2241,6 +2242,9 @@ export const vi: Translations = {
       ch2s1: '2.1 Khóa quyền chỉnh sửa',
       ch2s2: '2.2 Thời hạn 30 ngày',
       ch2s3: '2.3 Xóa vĩnh viễn',
+      ch3s1: '3.1 Chính sách Nâng cấp',
+      ch3s2: '3.2 Chính sách Hạ gói',
+      ch3s3: '3.3 Đổi ý & Ví dụ',
     },
 
     // Chapter 2
@@ -2272,6 +2276,68 @@ export const vi: Translations = {
 
     ch2CtaText: 'Đừng để mất dữ liệu quan trọng!',
     ch2CtaButton: 'Gia hạn gói ngay',
+
+    // Chapter 3: Upgrade & Downgrade
+    ch3Subtitle: 'Chính sách nâng cấp và hạ gói của chúng tôi được thiết kế đơn giản và minh bạch. Dưới đây là chính xác những gì sẽ xảy ra khi bạn thay đổi gói.',
+
+    ch3s1Title: 'Nâng cấp — Có hiệu lực ngay',
+    ch3s1Desc: 'Khi bạn nâng cấp lên gói cao hơn, thay đổi có hiệu lực ngay lập tức. Chu kỳ thanh toán được reset từ ngày nâng cấp.',
+    ch3s1Steps: [
+      { title: 'Đổi gói ngay lập tức', desc: 'Tài khoản được nâng cấp lên gói mới ngay. Tất cả tính năng và giới hạn mới có sẵn ngay lập tức.', icon: '✅' },
+      { title: 'Reset chu kỳ thanh toán', desc: 'Chu kỳ 30 ngày mới bắt đầu từ lúc nâng cấp. Chu kỳ cũ bị hủy bỏ.', icon: '🔄' },
+      { title: 'Thu tiền gói mới', desc: 'Bạn trả đầy đủ giá của gói mới (cao hơn). Không hoàn tiền gói cũ.', icon: '💰' },
+      { title: 'Hủy gói cũ', desc: 'Gói trước đó bị hủy ngay lập tức. Gói mới thay thế hoàn toàn.', icon: '❌' },
+    ],
+    ch3s1Callout: '💡 Nâng cấp có hiệu lực ngay: Bạn được sử dụng tất cả tính năng mới và giới hạn cao hơn ngay lập tức. Chu kỳ thanh toán bắt đầu lại từ ngày nâng cấp.',
+
+    ch3s2Title: 'Hạ gói — Lên lịch cho chu kỳ sau',
+    ch3s2Desc: 'Khi bạn hạ xuống gói thấp hơn, bạn sẽ bị thu tiền ngay cho gói mới, nhưng việc chuyển gói chỉ xảy ra khi hết chu kỳ thanh toán hiện tại.',
+    ch3s2Steps: [
+      { title: 'Giữ nguyên gói hiện tại', desc: 'Bạn tiếp tục sử dụng gói hiện tại (cao hơn) với đầy đủ tính năng cho đến hết chu kỳ thanh toán.', icon: '🛡️' },
+      { title: 'Thu tiền ngay', desc: 'Giá của gói mới (thấp hơn) được thu ngay lập tức. Khoản thanh toán này dành cho chu kỳ tiếp theo.', icon: '💰' },
+      { title: 'Tự động chuyển kỳ sau', desc: 'Khi chu kỳ hiện tại kết thúc, hệ thống tự động chuyển bạn sang gói mới. Không thu thêm tiền — bạn đã trả trước rồi.', icon: '📅' },
+    ],
+    ch3s2AutoTitle: 'Khi tới kỳ sau thì sao?',
+    ch3s2AutoSteps: [
+      'Gói của bạn tự động chuyển sang gói đã lên lịch (thấp hơn).',
+      'Không thu thêm tiền — bạn đã thanh toán khi hạ gói.',
+      'Lịch chuyển gói được xóa, và chu kỳ 30 ngày mới bắt đầu.',
+    ],
+    ch3s2Callout: '⚠️ Hạ gói được lên lịch cho chu kỳ tiếp theo và thu tiền ngay. Không hoàn tiền.',
+
+    ch3s3Title: 'Đổi ý — Chính sách Không hoàn tiền',
+    ch3s3Desc: 'Nếu bạn đã lên lịch hạ gói nhưng đổi ý, bạn có thể chuyển sang gói khác. Tuy nhiên, khoản tiền hạ gói trước đó không được hoàn lại. Mọi thay đổi gói đều được tính như mua mới từ đầu.',
+    ch3s3Examples: [
+      {
+        day: 'Ngày 1',
+        title: 'Mua gói Business ($30)',
+        details: [
+          'Bạn mua gói Business với giá $30/tháng.',
+          'Chu kỳ thanh toán 30 ngày bắt đầu.',
+        ],
+      },
+      {
+        day: 'Ngày 10',
+        title: 'Hạ gói xuống Pro ($10)',
+        details: [
+          'Bạn quyết định hạ xuống gói Pro.',
+          '💰 $10 được thu ngay (cho chu kỳ tiếp theo).',
+          'Bạn tiếp tục dùng Business đến hết Ngày 30.',
+          'Đã lên lịch: Chuyển sang Pro vào Ngày 31.',
+        ],
+      },
+      {
+        day: 'Ngày 15',
+        title: 'Đổi ý — muốn giữ Business',
+        details: [
+          '💰 Bạn trả thêm $30 cho Business.',
+          '❌ $10 đã trả cho Pro KHÔNG được hoàn lại.',
+          'Lịch chuyển gói được cập nhật sang Business.',
+          'Kết quả: Bạn đã trả tổng cộng $30 + $10 + $30 = $70.',
+        ],
+      },
+    ],
+    ch3s3Callout: '⚠️ Quan trọng: Mỗi lần đổi gói là một lần mua mới. Khoản tiền đã trả cho hạ gói trước đó không bao giờ được hoàn lại. Hãy cân nhắc kỹ trước khi xác nhận hạ gói.',
   },
 
   admin: {
