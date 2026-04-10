@@ -145,13 +145,13 @@ export default function AddonCheckout() {
       payment_method: 'paypal',
       status: 'pending',
       expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-    }).select('id, expires_at').single();
+    }).select('id, expires_at, order_code').single();
 
     if (error || !data) throw new Error(error?.message || 'Failed to create order');
 
     setOrderReservation({ orderId: data.id, expiresAt: data.expires_at! });
     setOrderExpired(false);
-    return data.id;
+    return data.order_code;
   }, [user, addons, billingCycle, subtotal, totalAmount, saving]);
 
   const createOrder = useCallback(async (): Promise<string> => {
@@ -181,7 +181,7 @@ export default function AddonCheckout() {
       accountLimits.refresh();
       await refreshProfile();
       toast({ title: '✅', description: isVi ? 'Mua add-on thành công!' : 'Add-on purchased successfully!' });
-      navigate(`/checkout/result?status=success&order_id=${data.orderId || ''}`, { replace: true });
+      navigate(`/checkout/result?status=success&order_id=${data.orderId || orderReservation?.orderId || ''}`, { replace: true });
     } catch (err: any) {
       setPaymentStatus('failed');
       toast({ title: 'Error', description: err.message || 'Payment failed', variant: 'destructive' });
@@ -406,9 +406,9 @@ export default function AddonCheckout() {
               <Button disabled={!agreedToPolicy || creatingReservation} onClick={async () => {
                 setCreatingReservation(true);
                 try {
-                  const newOrderId = await createReservation();
+                  const newOrderCode = await createReservation();
                   setShowConfirmDialog(false);
-                  navigate('/addon-checkout/' + newOrderId);
+                  navigate('/addon-checkout/' + newOrderCode);
                 } catch (e) {
                   toast({ title: 'Error', description: isVi ? 'Không thể tạo đơn hàng' : 'Failed to create order', variant: 'destructive' });
                 } finally {

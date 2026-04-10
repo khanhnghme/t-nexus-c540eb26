@@ -199,8 +199,8 @@ export default function BillingHistory() {
                     onClick={() => {
                       const finalStatuses = ['completed', 'failed', 'cancelled', 'expired'];
                       if (finalStatuses.includes(row.status)) {
-                        const oid = row.order_id || row.id;
-                        navigate(`/checkout/${oid}/summary`);
+                        const code = row.raw?.order_code;
+                        if (code) navigate(`/checkout/summary/${code}`);
                       }
                     }}
                   >
@@ -221,11 +221,12 @@ export default function BillingHistory() {
                           className="text-xs gap-1"
                           onClick={(e) => {
                             e.stopPropagation();
-                              const oid = row.order_id || row.id;
+                              const code = row.raw?.order_code;
+                              if (!code) return;
                               if (row.raw?.order_type === 'addon') {
-                                navigate(`/addon-checkout/${oid}`);
+                                navigate(`/addon-checkout/${code}`);
                               } else {
-                                navigate(`/checkout/${oid}`);
+                                navigate(`/checkout/payment/${code}`);
                               }
                           }}
                         >

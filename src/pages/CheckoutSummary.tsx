@@ -67,7 +67,7 @@ const STATUS_CONFIG = {
 type FinalStatus = keyof typeof STATUS_CONFIG;
 
 export default function CheckoutSummary() {
-  const { orderId } = useParams<{ orderId: string }>();
+  const { orderCode } = useParams<{ orderCode: string }>();
   const navigate = useNavigate();
   const { user, profile, refreshProfile } = useAuth();
   const isVi = (profile as any)?.preferred_locale === 'vi' || document.documentElement.lang === 'vi';
@@ -76,11 +76,11 @@ export default function CheckoutSummary() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user || !orderId) return;
+    if (!user || !orderCode) return;
     supabase
       .from('orders')
       .select('*')
-      .eq('id', orderId)
+      .eq('order_code', orderCode)
       .eq('user_id', user.id)
       .single()
       .then(({ data, error }) => {
@@ -90,7 +90,7 @@ export default function CheckoutSummary() {
         }
         // If still pending, go back to payment step
         if (data.status === 'pending') {
-          const route = data.order_type === 'addon' ? `/addon-checkout/${orderId}` : `/checkout/${orderId}`;
+          const route = data.order_type === 'addon' ? `/addon-checkout/${orderCode}` : `/checkout/payment/${orderCode}`;
           navigate(route, { replace: true });
           return;
         }
@@ -98,7 +98,7 @@ export default function CheckoutSummary() {
         if (data.status === 'completed') refreshProfile();
         setLoading(false);
       });
-  }, [user, orderId, navigate, refreshProfile]);
+  }, [user, orderCode, navigate, refreshProfile]);
 
   if (loading) {
     return (
@@ -252,7 +252,7 @@ export default function CheckoutSummary() {
           </>
         ) : status === 'failed' ? (
           <>
-            <Button onClick={() => navigate(`/checkout/${orderId}`)} className="w-full">
+            <Button onClick={() => navigate(`/checkout/payment/${orderCode}`)} className="w-full">
               <RotateCcw className="w-4 h-4 mr-2" />
               {isVi ? 'Thanh toán lại' : 'Retry Payment'}
             </Button>
