@@ -40,6 +40,25 @@ export default function CheckoutPayment() {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancellingOrder, setCancellingOrder] = useState(false);
 
+  // Background polling: detect webhook-completed orders
+  useEffect(() => {
+    if (!user || !orderCode || paymentStatus === 'success') return;
+    // Only poll when idle or processing (user may have opened PayPal popup)
+    if (paymentStatus !== 'idle' && paymentStatus !== 'processing') return;
+
+    const interval = setInterval(async () => {
+      const { data } = await supabase.from('orders').select('status').eq('order_code', orderCode).eq('user_id', user.id).maybeSingle();
+      if (data && data.status === 'completed') {
+        clearInterval(interval);
+        setPaymentStatus('success');
+        await refreshProfile();
+        navigate(`/checkout/summary/${orderCode}`, { replace: true });
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [user, orderCode, paymentStatus, navigate, refreshProfile]);
+
   // Load order + paypal config
   useEffect(() => {
     if (!user || !orderCode) return;

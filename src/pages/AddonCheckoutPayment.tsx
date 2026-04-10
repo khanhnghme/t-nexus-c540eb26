@@ -48,6 +48,26 @@ export default function AddonCheckoutPayment() {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancellingOrder, setCancellingOrder] = useState(false);
 
+  // Background polling: detect webhook-completed orders
+  useEffect(() => {
+    if (!user || !orderCode || paymentStatus === 'success') return;
+    if (paymentStatus !== 'idle' && paymentStatus !== 'processing') return;
+
+    const interval = setInterval(async () => {
+      const { data } = await supabase.from('orders').select('status').eq('order_code', orderCode).eq('user_id', user.id).maybeSingle();
+      if (data && data.status === 'completed') {
+        clearInterval(interval);
+        setPaymentStatus('success');
+        userAddons.refresh();
+        accountLimits.refresh();
+        await refreshProfile();
+        navigate(`/checkout/summary/${orderCode}`, { replace: true });
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [user, orderCode, paymentStatus, navigate, refreshProfile, userAddons, accountLimits]);
+
   useEffect(() => {
     if (!user || !orderCode) return;
 

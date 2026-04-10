@@ -174,6 +174,81 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+    /* ═══ CHECKOUT.ORDER.APPROVED — Server-side auto-capture fallback ═══ */
+    if (eventType === "CHECKOUT.ORDER.APPROVED") {
+      const paypalOrderId = resource?.id;
+      if (!paypalOrderId) {
+        console.log("[paypal-webhook] CHECKOUT.ORDER.APPROVED: No order ID in payload");
+        return new Response(JSON.stringify({ received: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: order } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("paypal_order_id", paypalOrderId)
+        .maybeSingle();
+
+      if (!order) {
+        console.log(`[paypal-webhook] CHECKOUT.ORDER.APPROVED: No order found for ${paypalOrderId}`);
+        return new Response(JSON.stringify({ received: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (order.status !== "pending") {
+        console.log(`[paypal-webhook] CHECKOUT.ORDER.APPROVED: Order ${order.id} status=${order.status}, skipping capture`);
+        return new Response(JSON.stringify({ received: true, skipped: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Server-side capture
+      console.log(`[paypal-webhook] CHECKOUT.ORDER.APPROVED: Auto-capturing order ${paypalOrderId}`);
+      const clientId = Deno.env.get("PAYPAL_CLIENT_ID")!;
+      const clientSecret = Deno.env.get("PAYPAL_CLIENT_SECRET")!;
+      const tokenRes = await fetch(`${PAYPAL_BASE}/v1/oauth2/token`, {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: "grant_type=client_credentials",
+      });
+      const tokenData = await tokenRes.json();
+      if (!tokenData.access_token) {
+        console.error("[paypal-webhook] Failed to get access token for auto-capture");
+        return new Response(JSON.stringify({ error: "Token failed" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const captureRes = await fetch(`${PAYPAL_BASE}/v2/checkout/orders/${paypalOrderId}/capture`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${tokenData.access_token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const captureData = await captureRes.json();
+
+      if (captureData.status !== "COMPLETED") {
+        console.error(`[paypal-webhook] Auto-capture failed for ${paypalOrderId}:`, captureData);
+        return new Response(JSON.stringify({ received: true, capture_failed: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      console.log(`[paypal-webhook] Auto-capture succeeded for ${paypalOrderId}, PAYMENT.CAPTURE.COMPLETED webhook will handle completion`);
+      // The capture will trigger a PAYMENT.CAPTURE.COMPLETED webhook from PayPal
+      // which will handle the actual order completion logic below
+      return new Response(JSON.stringify({ received: true, auto_captured: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (eventType === "PAYMENT.CAPTURE.COMPLETED") {
       const paypalOrderId = resource?.supplementary_data?.related_ids?.order_id || resource?.id;
       if (!paypalOrderId) {
