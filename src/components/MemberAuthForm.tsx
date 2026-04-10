@@ -632,6 +632,7 @@ export function MemberAuthForm() {
                 setRegStudentId('');
                 setRegFullName('');
                 setRegInstitution('');
+                setRegCustomInstitution('');
                 setRegEmail('');
                 setRegPassword('');
                 setRegConfirmPassword('');
