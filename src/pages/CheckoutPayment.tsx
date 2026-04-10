@@ -495,25 +495,27 @@ export default function CheckoutPayment() {
                         </Button>
                       </div>
                     ) : paypalClientId ? (
-                      <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD', vault: true, intent: 'subscription' }}>
-                        <PayPalButtons
-                          style={{ layout: 'vertical', shape: 'rect', label: 'subscribe', height: 40 }}
-                          createSubscription={async () => createSubscription()}
-                          onApprove={async (data) => onApprove(data)}
-                          onError={(err) => {
-                            const errStr = String(err);
-                            if (errStr.includes('popup close') || errStr.includes('Window is closed')) {
-                              console.warn('PayPal popup closed (may be normal after approval):', errStr);
-                              return;
-                            }
-                            console.error('PayPal error:', err);
-                            toast.error(t?.paypalError || 'PayPal encountered an error');
-                          }}
-                          onCancel={() => {
-                            toast.info(t?.paypalCancelled || 'Payment cancelled');
-                          }}
-                        />
-                      </PayPalScriptProvider>
+                      <div className={(showBackDialog || showCancelDialog) ? 'invisible' : ''}>
+                        <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD', vault: true, intent: 'subscription' }}>
+                          <PayPalButtons
+                            style={{ layout: 'vertical', shape: 'rect', label: 'subscribe', height: 40 }}
+                            createSubscription={async () => createSubscription()}
+                            onApprove={async (data) => onApprove(data)}
+                            onError={(err) => {
+                              const errStr = String(err);
+                              if (errStr.includes('popup close') || errStr.includes('Window is closed')) {
+                                console.warn('PayPal popup closed (may be normal after approval):', errStr);
+                                return;
+                              }
+                              console.error('PayPal error:', err);
+                              toast.error(t?.paypalError || 'PayPal encountered an error');
+                            }}
+                            onCancel={() => {
+                              toast.info(t?.paypalCancelled || 'Payment cancelled');
+                            }}
+                          />
+                        </PayPalScriptProvider>
+                      </div>
                     ) : (
                       <div className="text-center py-4 text-sm text-muted-foreground">
                         {t?.paypalNotConfigured || 'Payment system is being configured. Please try again later.'}
