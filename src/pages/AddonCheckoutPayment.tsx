@@ -143,6 +143,24 @@ export default function AddonCheckoutPayment() {
 
   if (!order) return null;
 
+      {/* Payment failure banner */}
+      {paymentStatus === 'failed' && paymentError && (
+        <div className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+          <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-medium text-destructive">{isVi ? 'Thanh toán thất bại' : 'Payment Failed'}</p>
+            <p className="text-sm text-muted-foreground mt-1">{paymentError}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3"
+              onClick={() => { setPaymentStatus('idle'); setPaymentError(null); }}
+            >
+              {isVi ? 'Thử lại' : 'Try Again'}
+            </Button>
+          </div>
+        </div>
+      )}
 
   return (
     <div className="max-w-5xl mx-auto py-6 px-4 space-y-5">
