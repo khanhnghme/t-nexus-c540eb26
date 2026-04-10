@@ -25,8 +25,11 @@ interface SubmissionItem {
   file_path?: string;
   file_name?: string;
   file_size?: number;
-  storage_name?: string; // Safe UUID-based storage name
-  type?: 'link' | 'file';
+  storage_name?: string;
+  drive_file_id?: string;
+  mime_type?: string;
+  icon_url?: string;
+  type?: 'link' | 'file' | 'drive';
 }
 
 interface SubmissionButtonProps {
@@ -73,7 +76,7 @@ export function parseSubmissionLinks(submissionLink: string | null): SubmissionI
     if (Array.isArray(parsed)) {
       return parsed.map(item => ({
         ...item,
-        type: item.file_path ? 'file' : 'link'
+        type: item.type || (item.file_path ? 'file' : item.drive_file_id ? 'drive' : 'link')
       }));
     }
     return [{ title: 'Bài nộp', url: submissionLink, type: 'link' }];
@@ -121,7 +124,9 @@ export default function SubmissionButton({
       e.stopPropagation();
     }
     
-    if (item.type === 'file' && item.file_path) {
+    if (item.type === 'drive' && item.url) {
+      window.open(item.url, '_blank', 'noopener,noreferrer');
+    } else if (item.type === 'file' && item.file_path) {
       const clickedIndex = siblingFiles.findIndex(f => f.file_path === item.file_path);
       const { data } = r2Storage.from('task-submissions').getPublicUrl(item.file_path);
       openFilePreview(data.publicUrl, item.file_name || 'file', {
