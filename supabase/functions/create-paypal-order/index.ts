@@ -261,7 +261,7 @@ Deno.serve(async (req) => {
     // Save order to DB with expiration
     const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
 
-    await serviceClient.from("orders").insert({
+    const { data: insertedOrder } = await serviceClient.from("orders").insert({
       user_id: user.id,
       order_type,
       plan: order_type === "addon" ? effectivePlan : plan,
@@ -277,10 +277,10 @@ Deno.serve(async (req) => {
       status: "pending",
       welcome_discount: welcomeDiscountAmount,
       expires_at: expiresAt,
-    });
+    }).select("order_code").single();
 
     return new Response(
-      JSON.stringify({ orderID: paypalOrder.id, expiresAt, internalOrderId: paypalOrder.id }),
+      JSON.stringify({ orderID: paypalOrder.id, expiresAt, internalOrderId: paypalOrder.id, orderCode: insertedOrder?.order_code }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

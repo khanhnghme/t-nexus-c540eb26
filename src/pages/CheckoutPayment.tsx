@@ -172,7 +172,7 @@ export default function CheckoutPayment() {
       {/* Order ID */}
       <div className="flex items-center gap-2 text-sm">
         <span className="text-muted-foreground">{isVi ? 'Mã đơn hàng:' : 'Order ID:'}</span>
-        <code className="font-mono text-xs bg-muted px-2 py-0.5 rounded">#{orderId?.slice(0, 8).toUpperCase()}</code>
+        <code className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{order?.order_code || `#${orderId?.slice(0, 8).toUpperCase()}`}</code>
       </div>
 
       {/* Cancel Dialog */}
@@ -390,6 +390,7 @@ export default function CheckoutPayment() {
                 <OrderCountdown
                   expiresAt={order.expires_at}
                   orderId={orderId!}
+                  orderCode={order.order_code}
                   isVi={isVi}
                   onExpired={() => setOrderExpired(true)}
                   onCreateNew={() => navigate('/checkout?plan=' + plan + '&cycle=' + cycle)}
