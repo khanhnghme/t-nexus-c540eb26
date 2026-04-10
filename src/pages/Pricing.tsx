@@ -421,7 +421,18 @@ function CellContent({ value }: { value: CellValue }) {
   return <span style={{ fontSize: 13, color: '#37352f', lineHeight: 1.4 }}>{value}</span>;
 }
 
+const CONNECTED_TOOLS_CATEGORY: FeatureCategory = {
+  category: 'Connected Tools',
+  rows: [
+    { label: 'Email Integration', free: false, plus: false, pro: true, business: true, enterprise: true },
+    { label: 'Google Drive', free: false, plus: false, pro: true, business: true, enterprise: true },
+    { label: 'Calendar Sync (Two-way)', free: false, plus: false, pro: true, business: true, enterprise: true },
+  ],
+};
+
 function PlansAndFeatures({ yearly, planCols, comparison, tp }: { yearly: boolean; planCols: any[]; comparison: FeatureCategory[]; tp: any }) {
+  const fullComparison = [...comparison, CONNECTED_TOOLS_CATEGORY];
+
   return (
     <div style={{ marginTop: 72, paddingBottom: 48 }}>
       <h2 style={{ fontSize: 'clamp(24px, 3vw, 36px)', fontWeight: 700, letterSpacing: '-0.03em', color: '#37352f', marginBottom: 32 }}>
@@ -436,13 +447,11 @@ function PlansAndFeatures({ yearly, planCols, comparison, tp }: { yearly: boolea
           tableLayout: 'fixed',
         }}
       >
-        {/* Fluid column sizing: label ~22%, each plan ~15.6% */}
         <colgroup>
           <col style={{ width: '22%' }} />
           {planCols.map((c: any) => <col key={c.key} style={{ width: '15.6%' }} />)}
         </colgroup>
 
-        {/* ── Sticky header ── */}
         <thead>
           <tr>
             <th style={{ padding: '16px 8px', textAlign: 'left', verticalAlign: 'bottom', borderBottom: '2px solid rgba(55,53,47,0.09)', background: '#fff', position: 'sticky', top: 52, zIndex: 10 }} />
@@ -486,55 +495,67 @@ function PlansAndFeatures({ yearly, planCols, comparison, tp }: { yearly: boolea
           </tr>
         </thead>
 
-        {/* ── Body ── */}
         <tbody>
-          {comparison.map(cat => (
-            <>
-              <tr key={`cat-${cat.category}`}>
-                <td
-                  colSpan={6}
-                  style={{
-                    padding: '24px 8px 8px',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: '#787774',
-                    letterSpacing: '0.01em',
-                    borderBottom: '1px solid rgba(55,53,47,0.09)',
-                  }}
-                >
-                  {cat.category}
-                </td>
-              </tr>
-              {cat.rows.map((row: FeatureRow, rIdx: number) => (
-                <tr
-                  key={row.label}
-                  style={{ background: rIdx % 2 === 1 ? 'rgba(55,53,47,0.024)' : 'transparent' }}
-                >
-                  <td style={{
-                    padding: '10px 8px',
-                    fontSize: 13,
-                    fontWeight: 500,
-                    color: '#37352f',
-                    borderBottom: '1px solid rgba(55,53,47,0.06)',
-                  }}>
-                    {row.label}
+          {fullComparison.map(cat => {
+            const isToolsCat = cat.category === 'Connected Tools';
+            const logoMap: Record<string, string> = {
+              'Email Integration': gmailLogo,
+              'Google Drive': googleDriveLogo,
+              'Calendar Sync (Two-way)': googleCalendarLogo,
+            };
+            return (
+              <>
+                <tr key={`cat-${cat.category}`}>
+                  <td
+                    colSpan={6}
+                    style={{
+                      padding: '24px 8px 8px',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: '#787774',
+                      letterSpacing: '0.01em',
+                      borderBottom: '1px solid rgba(55,53,47,0.09)',
+                    }}
+                  >
+                    {cat.category}
                   </td>
-                  {planCols.map((col: any) => (
-                    <td
-                      key={col.key}
-                      style={{
-                        padding: '10px 8px',
-                        borderBottom: '1px solid rgba(55,53,47,0.06)',
-                        verticalAlign: 'middle',
-                      }}
-                    >
-                      <CellContent value={row[col.key as keyof FeatureRow] as CellValue} />
-                    </td>
-                  ))}
                 </tr>
-              ))}
-            </>
-          ))}
+                {cat.rows.map((row: FeatureRow, rIdx: number) => (
+                  <tr
+                    key={row.label}
+                    style={{ background: rIdx % 2 === 1 ? 'rgba(55,53,47,0.024)' : 'transparent' }}
+                  >
+                    <td style={{
+                      padding: '10px 8px',
+                      fontSize: 13,
+                      fontWeight: 500,
+                      color: '#37352f',
+                      borderBottom: '1px solid rgba(55,53,47,0.06)',
+                    }}>
+                      {isToolsCat && logoMap[row.label] ? (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <img src={logoMap[row.label]} alt={row.label} style={{ width: 16, height: 16, objectFit: 'contain' }} />
+                          {row.label}
+                        </span>
+                      ) : row.label}
+                    </td>
+                    {planCols.map((col: any) => (
+                      <td
+                        key={col.key}
+                        style={{
+                          padding: '10px 8px',
+                          borderBottom: '1px solid rgba(55,53,47,0.06)',
+                          verticalAlign: 'middle',
+                        }}
+                      >
+                        <CellContent value={row[col.key as keyof FeatureRow] as CellValue} />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </>
+            );
+          })}
         </tbody>
       </table>
     </div>
