@@ -126,6 +126,7 @@ export default function ResourceUploadDialog({
   const [activeTab, setActiveTab] = useState('file');
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const [pendingLinks, setPendingLinks] = useState<PendingLink[]>([]);
+  const [pendingDriveFiles, setPendingDriveFiles] = useState<PendingDriveFile[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [globalCategory, setGlobalCategory] = useState('general');
 
@@ -133,6 +134,20 @@ export default function ResourceUploadDialog({
   const [linkName, setLinkName] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
 
+  // Google Drive
+  const { isConnected: isDriveConnected, isChecking: isDriveChecking, connect: connectDrive, getPickerToken } = useGoogleDriveConnect();
+  const { openPicker, isLoading: isPickerLoading } = useGoogleDrivePicker({
+    getPickerToken,
+    onFilesPicked: (files) => {
+      const newItems: PendingDriveFile[] = files.map(f => ({
+        id: genId(),
+        driveFile: f,
+        category: globalCategory,
+        status: 'pending' as const,
+      }));
+      setPendingDriveFiles(prev => [...prev, ...newItems]);
+    },
+  });
   const genId = () => Math.random().toString(36).substring(2, 10);
 
   const handleFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
