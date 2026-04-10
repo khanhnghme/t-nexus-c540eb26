@@ -305,13 +305,13 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
                 to="/service-plan"
                 className={cn('sidebar-nav-item', isPathActive('/service-plan') && 'active')}
               >
-                <span className="nav-label">{isVi ? 'Gói dịch vụ' : 'My Plan'}</span>
+                <span className="nav-label">{t?.myPlan || 'My Plan'}</span>
               </Link>
               <Link
                 to="/billing-history"
                 className={cn('sidebar-nav-item', isPathActive('/billing-history') && 'active')}
               >
-                <span className="nav-label">{isVi ? 'Lịch sử thanh toán' : 'Billing History'}</span>
+                <span className="nav-label">{t?.billingHistory || 'Billing History'}</span>
               </Link>
             </div>
           )}
