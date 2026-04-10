@@ -660,6 +660,51 @@ export type Database = {
           },
         ]
       }
+      gmail_messages: {
+        Row: {
+          created_at: string
+          from_email: string | null
+          from_name: string | null
+          gmail_message_id: string
+          id: string
+          is_read: boolean | null
+          labels: string[] | null
+          received_at: string | null
+          snippet: string | null
+          subject: string | null
+          thread_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_email?: string | null
+          from_name?: string | null
+          gmail_message_id: string
+          id?: string
+          is_read?: boolean | null
+          labels?: string[] | null
+          received_at?: string | null
+          snippet?: string | null
+          subject?: string | null
+          thread_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          from_email?: string | null
+          from_name?: string | null
+          gmail_message_id?: string
+          id?: string
+          is_read?: boolean | null
+          labels?: string[] | null
+          received_at?: string | null
+          snippet?: string | null
+          subject?: string | null
+          thread_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       google_calendar_tokens: {
         Row: {
           access_token: string
@@ -685,6 +730,39 @@ export type Database = {
           access_token?: string
           calendar_id?: string
           created_at?: string
+          expires_at?: string
+          id?: string
+          refresh_token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      google_gmail_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          email_address: string | null
+          expires_at: string
+          id: string
+          refresh_token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          email_address?: string | null
+          expires_at: string
+          id?: string
+          refresh_token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          email_address?: string | null
           expires_at?: string
           id?: string
           refresh_token?: string
