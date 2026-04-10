@@ -1,105 +1,91 @@
 
 
-## Giai đoạn 2: Database + Backend Logic cho Upgrade/Downgrade
+## Giai đoạn 3: Thiết kế lại UI + Fix giá ví dụ Chapter 3
 
 ### Tổng quan
-Thêm cột mới vào `profiles`, sửa logic `capture-paypal-order` để phân biệt upgrade vs downgrade, tạo edge function mới `process-plan-cycle` để tự động chuyển gói khi hết chu kỳ, và cập nhật admin hook.
+Cập nhật UI các trang để hiển thị trạng thái `next_plan` (gói đã lên lịch chuyển) một cách trực quan, đồng thời fix giá sai trong ví dụ Chapter 3 tại `/guide/pricing`.
 
 ---
 
-### 1. Database Migration — Thêm cột `next_plan` và `next_billing_cycle`
+### A. Fix giá ví dụ Chapter 3 (PricingDocs)
 
-```sql
-ALTER TABLE public.profiles
-  ADD COLUMN next_plan text DEFAULT NULL,
-  ADD COLUMN next_billing_cycle text DEFAULT NULL;
-```
+Giá hiện tại trong ví dụ đang sai:
+- Business: `$30` → sửa thành `$24`
+- Pro: `$10` → sửa thành `$12`
+- Tổng: `$30 + $10 + $30 = $70` → sửa thành `$24 + $12 + $24 = $60`
 
-Hai cột này lưu gói đã lên lịch (downgrade) và chu kỳ thanh toán tương ứng. Khi `plan_expires_at` hết hạn, `process-plan-cycle` sẽ đọc và áp dụng.
-
----
-
-### 2. Sửa `supabase/functions/capture-paypal-order/index.ts`
-
-Thêm `PLAN_RANK` map và phân nhánh logic tại block "PLAN ORDER" (line 187-243):
-
-- **Thêm rank map** ở đầu file:
-  ```
-  PLAN_RANK = { plan_free: 0, plan_plus: 1, plan_pro: 2, plan_business: 3, plan_custom: 4 }
-  ```
-
-- **Fetch profile hiện tại** (đã có ở line 196-201) — thêm lấy `next_plan`
-
-- **So sánh rank**:
-  - `newRank > oldRank` hoặc `oldPlan === 'plan_free'` → **UPGRADE**: giữ nguyên logic hiện tại (đổi plan ngay, reset chu kỳ, update workspace limits)
-  - `newRank < oldRank` → **DOWNGRADE**: 
-    - KHÔNG đổi `user_plan`
-    - Set `next_plan = order.plan`, `next_billing_cycle = order.billing_cycle`
-    - Giữ nguyên `plan_expires_at` cũ
-    - Log `action_type = 'downgrade_scheduled'`
-  - `newRank === oldRank` → **RENEW**: giữ logic hiện tại
-
-- **Đổi ý** (profile đã có `next_plan`): ghi đè `next_plan` mới, log `action_type = 'change_scheduled_plan'`
+**Files sửa:**
+- `src/lib/i18n/en.ts` — `ch3s3Examples` (3 mục: Day 1, Day 10, Day 15)
+- `src/lib/i18n/vi.ts` — `ch3s3Examples` tương ứng
 
 ---
 
-### 3. Tạo `supabase/functions/process-plan-cycle/index.ts` (MỚI)
+### B. Checkout.tsx — Banner cảnh báo Downgrade
 
-Edge function chạy theo lịch (cron daily 3:00 AM UTC), xử lý:
+Thêm logic detect upgrade vs downgrade bằng cách fetch profile hiện tại (`user_plan`) và so sánh rank với gói đang chọn.
 
-1. Query `profiles` có `next_plan IS NOT NULL AND plan_expires_at <= now()`
-2. Với mỗi profile:
-   - Đổi `user_plan = next_plan`, `plan = next_plan`
-   - Reset `plan_started_at = now()`, `plan_expires_at = now() + 30 ngày` (hoặc 1 năm nếu `next_billing_cycle = 'yearly'`)
-   - Xóa `next_plan = NULL`, `next_billing_cycle = NULL`
-   - Update workspace limits theo `plan_limits`
-   - Log vào `plan_change_logs` với `action_type = 'cycle_transition'`
-3. Nếu không có `next_plan` → xử lý bình thường (về free nếu hết hạn + không auto_renew)
+- **Nếu Downgrade**: hiển thị banner vàng phía trên PayPal buttons: *"Bạn sẽ được thu tiền ngay nhưng gói mới chỉ áp dụng khi hết chu kỳ hiện tại. Không hoàn tiền."*
+- **Nếu đã có `next_plan`**: hiển thị warning bổ sung: *"Bạn đã lên lịch chuyển sang [gói X]. Nếu tiếp tục, khoản thanh toán trước đó không được hoàn lại."*
+- Import `getPlanRank`, `getPlanLabel` từ `planConfig`
 
-**Cron setup** (dùng pg_cron + pg_net):
-```sql
-SELECT cron.schedule('process-plan-cycle-daily', '0 3 * * *', $$
-  SELECT net.http_post(
-    url:='https://xrlczmzgxlmdavhbwsah.supabase.co/functions/v1/process-plan-cycle',
-    headers:='{"Content-Type":"application/json","Authorization":"Bearer <anon_key>"}'::jsonb,
-    body:='{"time":"' || now() || '"}'::jsonb
-  ) as request_id;
-$$);
-```
+**File sửa:** `src/pages/Checkout.tsx`
 
 ---
 
-### 4. Sửa `src/hooks/useAdminPlanActions.ts`
+### C. Upgrade.tsx — Badge "Scheduled" trên gói đã lên lịch
 
-Cập nhật case `downgrade` (line 56-73):
-- Nếu `newPlan !== 'plan_free'`: set `next_plan` + `next_billing_cycle` thay vì đổi plan ngay, log `action_type = 'downgrade_scheduled'`
-- Nếu `newPlan === 'plan_free'`: giữ logic hiện tại (đổi ngay về free)
+- Fetch `next_plan` từ profile
+- Nếu gói nào trùng với `next_plan` → hiển thị badge `🔄 Scheduled` trên card gói đó
+- Nút gói đã lên lịch → text "Đã lên lịch" thay vì "Nâng cấp/Hạ cấp"
+
+**File sửa:** `src/pages/Upgrade.tsx`
 
 ---
 
-### 5. Cập nhật `src/types/database.ts` — Profile interface
+### D. ServicePlan.tsx — Card hiển thị gói tiếp theo
 
-Thêm 2 field:
-```ts
-next_plan: string | null;
-next_billing_cycle: string | null;
-```
+Trong tab "Current Plan", thêm card/banner bên dưới card gói hiện tại:
+- Nếu profile có `next_plan`: hiển thị info card với icon `🔄`, tên gói tiếp theo, và ngày chuyển dự kiến (`plan_expires_at`)
+- Text: *"Gói tiếp theo: Pro — có hiệu lực từ [ngày]"*
+- Dùng border-style amber/blue tùy theo context
+
+**File sửa:** `src/pages/ServicePlan.tsx`
+
+---
+
+### E. ServicePlanSection.tsx — Dòng nhỏ "next plan" bên dưới badge
+
+- Nếu profile có `next_plan`: hiển thị 1 dòng text nhỏ (text-xs) bên dưới badge gói hiện tại: *"→ Pro from [date]"*
+
+**File sửa:** `src/components/personal/ServicePlanSection.tsx`
+
+---
+
+### F. i18n keys mới (EN + VI)
+
+Thêm keys cho các banner/label mới:
+- `downgradeWarning`, `downgradeWarningDesc`
+- `existingScheduleWarning`
+- `scheduledBadge`, `scheduledPlanLabel`
+- `nextPlanInfo`, `nextPlanEffectiveFrom`
+
+**Files sửa:** `src/lib/i18n/en.ts`, `src/lib/i18n/vi.ts`
 
 ---
 
 ### Tóm tắt files
 
-| File | Hành động |
-|------|-----------|
-| Migration SQL | Thêm 2 cột `next_plan`, `next_billing_cycle` vào profiles |
-| `capture-paypal-order/index.ts` | Phân nhánh upgrade/downgrade/renew/đổi ý |
-| `process-plan-cycle/index.ts` | **MỚI** — cycle transition + cron |
-| `src/hooks/useAdminPlanActions.ts` | Downgrade → set next_plan |
-| `src/types/database.ts` | Thêm 2 fields Profile |
-| pg_cron SQL (insert tool) | Schedule daily job |
+| File | Thay đổi |
+|------|----------|
+| `src/lib/i18n/en.ts` | Fix giá ví dụ Ch3 + thêm i18n keys mới cho UI |
+| `src/lib/i18n/vi.ts` | Fix giá ví dụ Ch3 + thêm i18n keys mới cho UI |
+| `src/pages/Checkout.tsx` | Banner downgrade warning + existing schedule warning |
+| `src/pages/Upgrade.tsx` | Badge "Scheduled" trên gói đã lên lịch |
+| `src/pages/ServicePlan.tsx` | Card thông tin gói tiếp theo |
+| `src/components/personal/ServicePlanSection.tsx` | Dòng "next plan" dưới badge |
 
 ### Không thay đổi
-- Không sửa UI/UX (để Giai đoạn 3)
-- Không sửa PricingDocs, Checkout, Upgrade pages
-- Chapter 1, 2, 3 giữ nguyên
+- Database, edge functions (đã xong ở Giai đoạn 2)
+- PricingDocs.tsx layout (chỉ fix data i18n)
+- Admin pages
 
