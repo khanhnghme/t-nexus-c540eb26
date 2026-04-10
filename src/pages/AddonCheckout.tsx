@@ -207,7 +207,6 @@ export default function AddonCheckout() {
      STEP 1: Select addons + summary
      ═══════════════════════════════════════════════ */
   return (
-    return (
       <div className="max-w-6xl mx-auto py-6 px-4 space-y-5">
         {/* Header */}
         <div className="flex items-center gap-3">
