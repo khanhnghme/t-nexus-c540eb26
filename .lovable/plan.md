@@ -1,60 +1,68 @@
 
 
-## Plan: Chuyển URL checkout từ UUID sang Order Code
+## Plan: Nâng cấp toàn bộ UI Step 3 (Summary)
 
 ### Tổng quan
-Thay thế UUID trong URL checkout bằng `order_code` (ORD-YYYYMM-XXXXXXXXX). Tất cả routing, navigation, và data fetching sẽ dùng `order_code` thay vì `id`.
+Viết lại hoàn toàn `CheckoutSummary.tsx` với layout rộng hơn, chia thành các section rõ ràng, hiển thị đầy đủ thông tin giao dịch và responsive.
 
-### Thay đổi
+### Thay đổi — `src/pages/CheckoutSummary.tsx`
 
-#### 1. `src/App.tsx` — Đổi route params
-- `/checkout/:orderId` → `/checkout/payment/:orderCode`
-- `/checkout/:orderId/summary` → `/checkout/summary/:orderCode`
-- `/addon-checkout/:orderId` → `/addon-checkout/:orderCode` (giữ pattern nhưng dùng order_code)
+Thay thế toàn bộ nội dung bằng layout mới:
 
-#### 2. `src/pages/Checkout.tsx` — `createReservation` trả về `order_code`
-- Select thêm `order_code` khi insert order
-- Navigate dùng `order_code`: `navigate('/checkout/payment/' + data.order_code)`
+#### Layout tổng thể
+- `max-w-2xl` thay vì `max-w-lg` → tận dụng không gian
+- Step Progress bar vẫn giữ ở trên
+- Responsive: 1 cột trên mobile, grid 2 cột trên desktop cho phần thông tin
 
-#### 3. `src/pages/AddonCheckout.tsx` — Tương tự
-- Select thêm `order_code` khi insert
-- Navigate dùng `order_code`
+#### Section 1: Status Header (full width)
+- Icon lớn + animation ping cho success
+- Tiêu đề trạng thái (font lớn, bold)
+- Mô tả ngắn
+- Badge trạng thái + Mã đơn hàng (`order_code`) hiển thị nổi bật bằng `font-mono`
 
-#### 4. `src/pages/CheckoutPayment.tsx` — Fetch bằng `order_code`
-- `useParams` lấy `orderCode` thay vì `orderId`
-- Query: `.eq('order_code', orderCode)` thay vì `.eq('id', orderId)`
-- Tất cả navigate sang summary dùng `/checkout/summary/{orderCode}`
+#### Section 2: Grid 2 cột (desktop) — Thông tin thời gian + Thanh toán
 
-#### 5. `src/pages/AddonCheckoutPayment.tsx` — Tương tự
-- Fetch bằng `order_code`, navigate bằng `order_code`
+**Card trái — Thông tin thời gian:**
+- Thời gian tạo đơn (`created_at`)
+- Thời gian thanh toán (`completed_at`) — chỉ hiện khi success
+- Thời gian kết thúc (cancelled/expired) — tùy status
 
-#### 6. `src/pages/CheckoutSummary.tsx` — Fetch bằng `order_code`
-- `useParams` lấy `orderCode`
-- Query: `.eq('order_code', orderCode)`
-- Redirect pending → `/checkout/payment/{orderCode}` hoặc `/addon-checkout/{orderCode}`
-- Retry payment → dùng `order_code`
+**Card phải — Thông tin thanh toán:**
+- Phương thức thanh toán (`payment_method` — hiện "PayPal")
+- Transaction ID (`paypal_order_id`) — nếu có
+- Trạng thái đơn hàng (badge)
 
-#### 7. `src/pages/BillingHistory.tsx` — Navigate bằng `order_code`
-- Dùng `row.raw?.order_code` thay vì `row.order_id || row.id` khi navigate
-- Summary: `/checkout/summary/{order_code}`
-- Continue payment: `/checkout/payment/{order_code}` hoặc `/addon-checkout/{order_code}`
+#### Section 3: Bảng tóm tắt chi phí (full width Card)
+- Plan + billing cycle
+- Giá gốc (base_amount)
+- Add-ons: parse `addons` JSON, hiển thị từng item với giá
+- Giảm giá (discount + coupon code nếu có)
+- Welcome discount nếu > 0
+- Separator
+- **Tổng tiền** (font lớn, bold)
 
-#### 8. `src/pages/PaymentResult.tsx` — Cập nhật redirect
-- Redirect sang `/checkout/summary/{orderCode}` (cần query order_code từ order_id nếu có)
+#### Section 4: Actions (full width)
+- **Success:**
+  - "Tải hóa đơn" (Printer icon) — `window.print()` cho MVP
+  - "Đi đến Dashboard" (Home icon)
+- **Failed:**
+  - "Thanh toán lại" → navigate to payment
+  - "Lịch sử thanh toán"
+- **Cancelled / Expired:**
+  - "Tạo đơn mới"
+  - "Lịch sử thanh toán"
 
-#### 9. Edge function `create-paypal-order` — Đảm bảo trả `order_code`
-- Đã có từ lần trước, chỉ verify
+### Chi tiết kỹ thuật
+
+- Sử dụng `ADDON_TYPES` mapping để hiển thị tên addon dễ đọc
+- Parse `order.addons` (jsonb array) để liệt kê từng addon item
+- `window.print()` cho nút in hóa đơn (đơn giản, hiệu quả)
+- Giữ nguyên logic fetch bằng `order_code`, redirect pending → payment
+- Responsive grid: `grid-cols-1 md:grid-cols-2`
 
 ### Files
 
 | File | Action |
 |---|---|
-| `src/App.tsx` | Edit — đổi route paths |
-| `src/pages/Checkout.tsx` | Edit — select + navigate bằng order_code |
-| `src/pages/AddonCheckout.tsx` | Edit — select + navigate bằng order_code |
-| `src/pages/CheckoutPayment.tsx` | Edit — fetch + navigate bằng order_code |
-| `src/pages/AddonCheckoutPayment.tsx` | Edit — fetch + navigate bằng order_code |
-| `src/pages/CheckoutSummary.tsx` | Edit — fetch + navigate bằng order_code |
-| `src/pages/BillingHistory.tsx` | Edit — navigate bằng order_code |
-| `src/pages/PaymentResult.tsx` | Edit — redirect bằng order_code |
+| `src/pages/CheckoutSummary.tsx` | Rewrite — layout mới, đầy đủ thông tin |
 
