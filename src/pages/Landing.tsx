@@ -1383,7 +1383,7 @@ export default function Landing() {
                 </p>
               </div>
 
-              <div className="grid gap-8 sm:grid-cols-2 lg:flex lg:gap-10 xl:gap-16">
+              <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5 lg:gap-8 xl:gap-12">
                 {[
                   {
                     title: tl.footerProduct,
