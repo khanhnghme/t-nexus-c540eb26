@@ -97,6 +97,7 @@ export default function AddonCheckout() {
   const [agreedToPolicy, setAgreedToPolicy] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancellingOrder, setCancellingOrder] = useState(false);
+  const [creatingReservation, setCreatingReservation] = useState(false);
 
   useEffect(() => {
     supabase.functions.invoke('get-paypal-config').then(({ data }) => {
@@ -124,26 +125,48 @@ export default function AddonCheckout() {
   const totalAmount = Math.round(totalQty * unitPrice * 100) / 100;
   const hasItems = totalQty > 0;
 
+  // Create internal order reservation when entering Step 2
+  const createReservation = useCallback(async () => {
+    const items = (['projects', 'storage', 'members'] as AddonType[])
+      .filter(type => addons[type] > 0)
+      .map(type => ({ type, quantity: addons[type] }));
+
+    const { data, error } = await supabase.from('orders').insert({
+      user_id: user!.id,
+      order_type: 'addon',
+      billing_cycle: billingCycle,
+      base_amount: subtotal,
+      addon_amount: totalAmount,
+      discount_amount: saving,
+      welcome_discount: 0,
+      total_amount: totalAmount,
+      addons: items as any,
+      addons_applied: true,
+      payment_method: 'paypal',
+      status: 'pending',
+      expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+    }).select('id, expires_at').single();
+
+    if (error || !data) throw new Error(error?.message || 'Failed to create order');
+
+    setOrderReservation({ orderId: data.id, expiresAt: data.expires_at! });
+    setOrderExpired(false);
+    return data.id;
+  }, [user, addons, billingCycle, subtotal, totalAmount, saving]);
+
   const createOrder = useCallback(async (): Promise<string> => {
     const { data, error } = await supabase.functions.invoke('create-paypal-order', {
       body: {
         order_type: 'addon',
         billing_cycle: billingCycle,
         addons: addonItems,
+        internal_order_id: orderReservation?.orderId,
       },
     });
     if (error || !data?.orderID) throw new Error(error?.message || 'Failed to create order');
 
-    if (data.expiresAt || data.internalOrderId) {
-      setOrderReservation({
-        orderId: data.internalOrderId || data.orderID,
-        expiresAt: data.expiresAt || new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-      });
-      setOrderExpired(false);
-    }
-
     return data.orderID;
-  }, [billingCycle, addonItems]);
+  }, [billingCycle, addonItems, orderReservation]);
 
   const captureOrder = useCallback(async (orderID: string) => {
     setPaymentStatus('processing');
