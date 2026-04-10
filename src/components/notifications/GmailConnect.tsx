@@ -1,6 +1,23 @@
+import { useState } from 'react';
 import { Mail, Unplug, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface GmailConnectProps {
   isConnected: boolean;
@@ -13,6 +30,7 @@ interface GmailConnectProps {
 export default function GmailConnect({ isConnected, isChecking, connectedEmail, onConnect, onDisconnect }: GmailConnectProps) {
   const { translations: { app: t } } = useLanguage();
   const g = t?.gmail || {} as any;
+  const [showConfirm, setShowConfirm] = useState(false);
 
   if (isChecking) {
     return (
@@ -24,16 +42,46 @@ export default function GmailConnect({ isConnected, isChecking, connectedEmail, 
 
   if (isConnected) {
     return (
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Mail className="w-4 h-4 text-primary" />
-          <span className="hidden sm:inline">{connectedEmail || g.connected || 'Connected'}</span>
-        </div>
-        <Button variant="ghost" size="sm" onClick={onDisconnect} className="gap-1.5 text-xs text-destructive hover:text-destructive">
-          <Unplug className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">{g.disconnectGmail || 'Disconnect'}</span>
-        </Button>
-      </div>
+      <>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1.5 text-xs border-green-300 text-green-700 dark:border-green-700 dark:text-green-400"
+            >
+              <Mail className="w-3.5 h-3.5" />
+              {connectedEmail || g.connected || 'Đã kết nối'}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={() => setShowConfirm(true)} className="text-destructive">
+              <Unplug className="h-4 w-4 mr-2" />
+              {g.disconnectGmail || 'Ngắt kết nối'}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{g.disconnectConfirmTitle || 'Ngắt kết nối Gmail?'}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {g.disconnectConfirmDesc || 'Tất cả email đã đồng bộ sẽ bị xóa. Bạn có thể kết nối lại bất cứ lúc nào.'}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{g.cancel || 'Hủy'}</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => { onDisconnect(); setShowConfirm(false); }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {g.confirmDisconnect || 'Ngắt kết nối'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </>
     );
   }
 
