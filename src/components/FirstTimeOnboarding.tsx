@@ -427,67 +427,25 @@ export default function FirstTimeOnboarding({
     }
   }, [couponCode, selectedPlan, isVi, toast]);
 
-  const createSubscription = useCallback(async () => {
+  // Redirect to standard checkout flow instead of inline PayPal
+  const handleCheckoutRedirect = useCallback(() => {
     const addonsList = Object.entries(addons)
       .filter(([, qty]) => qty > 0)
-      .map(([type, quantity]) => ({ type, quantity }));
+      .map(([type, quantity]) => `${type}:${quantity}`);
 
-    const res = await supabase.functions.invoke('create-paypal-order', {
-      body: {
-        plan: selectedPlan,
-        billing_cycle: cycle,
-        addons: addonsList,
-        coupon_code: couponDiscount ? couponDiscount.code : undefined,
-      },
+    const params = new URLSearchParams({
+      plan: selectedPlan,
+      cycle,
+      from: 'onboarding',
     });
+    if (addonsList.length > 0) params.set('addons', addonsList.join(','));
+    if (couponDiscount) params.set('coupon', couponDiscount.code);
 
-    if (res.error || !res.data?.subscriptionID) {
-      throw new Error(res.error?.message || 'Failed to create subscription');
-    }
+    // Store onboarding flag in sessionStorage for summary page
+    sessionStorage.setItem('checkout_from', 'onboarding');
 
-    return res.data.subscriptionID;
-  }, [selectedPlan, cycle, addons, couponDiscount]);
-
-  const onApprove = useCallback(async (data: { subscriptionID?: string; orderID?: string }) => {
-    setPaymentStatus('processing');
-    try {
-      const res = await supabase.functions.invoke('capture-paypal-order', {
-        body: { subscriptionID: data.subscriptionID },
-      });
-
-      if (res.error) {
-        throw new Error(res.error?.message || 'Payment capture failed');
-      }
-
-      if (res.data?.success && !res.data?.pending) {
-        setPaymentStatus('success');
-        onComplete();
-        toast({ title: isVi ? 'Thanh toán thành công!' : 'Payment successful!' });
-      } else if (res.data?.success && res.data?.pending) {
-        // Subscription approved but not ACTIVE yet — keep processing
-        toast({ title: isVi ? 'Đã xác nhận! Đang chờ kích hoạt...' : 'Confirmed! Waiting for activation...' });
-        // Poll for completion
-        const pollInterval = setInterval(async () => {
-          const checkRes = await supabase.functions.invoke('capture-paypal-order', {
-            body: { subscriptionID: data.subscriptionID },
-          });
-          if (checkRes.data?.success && !checkRes.data?.pending) {
-            clearInterval(pollInterval);
-            setPaymentStatus('success');
-            onComplete();
-            toast({ title: isVi ? 'Thanh toán thành công!' : 'Payment successful!' });
-          }
-        }, 4000);
-        // Auto-stop after 2 minutes
-        setTimeout(() => clearInterval(pollInterval), 120000);
-      } else {
-        throw new Error('Payment capture failed');
-      }
-    } catch {
-      setPaymentStatus('failed');
-      toast({ title: isVi ? 'Thanh toán thất bại. Vui lòng thử lại.' : 'Payment failed. Please try again.', variant: 'destructive' });
-    }
-  }, [isVi, toast, onComplete]);
+    navigate(`/checkout?${params.toString()}`);
+  }, [selectedPlan, cycle, addons, couponDiscount, navigate]);
 
   const stepLabels: Record<StepId, string> = {
     language: t.stepLang,
