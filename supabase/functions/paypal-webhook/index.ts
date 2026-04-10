@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const PAYPAL_BASE = "https://api-m.sandbox.paypal.com";
+const PAYPAL_BASE = "https://api-m.paypal.com";
 
 /* ═══ PayPal Webhook Signature Verification ═══ */
 async function verifyWebhookSignature(req: Request, body: string): Promise<boolean> {
