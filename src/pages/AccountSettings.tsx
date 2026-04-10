@@ -175,9 +175,11 @@ export default function AccountSettings() {
           {isVi ? 'Cài đặt' : 'Settings'}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          {isVi ? 'Tùy chỉnh giao diện và ngôn ngữ hệ thống' : 'Customize interface and system language'}
+          {isVi ? 'Tùy chỉnh giao diện, ngôn ngữ và dịch vụ liên kết' : 'Customize interface, language & connected services'}
         </p>
       </div>
+
+      <ConnectedServicesCard />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <LanguageCard locale={locale} setLocale={setLocale} />
