@@ -996,7 +996,9 @@ export default function FirstTimeOnboarding({
                               )}
                             >
                               <span className="truncate">
-                                {editInstitution || (isVi ? 'Chọn đơn vị đào tạo...' : 'Select institution...')}
+                                {editInstitution === '__other__'
+                                  ? (isVi ? 'Đơn vị đào tạo khác' : 'Other institution')
+                                  : editInstitution || (isVi ? 'Chọn đơn vị đào tạo...' : 'Select institution...')}
                               </span>
                               <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
                             </Button>
@@ -1051,6 +1053,18 @@ export default function FirstTimeOnboarding({
                           </PopoverContent>
                         </Popover>
                       </div>
+                      {editInstitution === '__other__' && (
+                        <div>
+                          <Label htmlFor="customInstitution" className="text-xs font-semibold mb-1.5 block">
+                            {isVi ? 'Tên đơn vị đào tạo' : 'Institution name'} <span className="text-destructive">*</span>
+                          </Label>
+                          <Input id="customInstitution"
+                            placeholder={isVi ? 'Nhập tên đơn vị đào tạo...' : 'Enter institution name...'}
+                            value={customInstitution}
+                            onChange={(e) => { setCustomInstitution(e.target.value); setInfoErrors(p => ({ ...p, customInstitution: false })); }}
+                            className={cn('h-9 border-0 bg-muted/50 rounded-lg focus-visible:ring-1', infoErrors.customInstitution && 'bg-destructive/10')} />
+                        </div>
+                      )}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <Label htmlFor="yearBatch" className="text-xs font-semibold mb-1.5 block">
