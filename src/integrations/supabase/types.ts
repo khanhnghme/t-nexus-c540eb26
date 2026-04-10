@@ -710,6 +710,7 @@ export type Database = {
           access_token: string
           calendar_id: string
           created_at: string
+          email_address: string | null
           expires_at: string
           id: string
           refresh_token: string
@@ -720,6 +721,7 @@ export type Database = {
           access_token: string
           calendar_id?: string
           created_at?: string
+          email_address?: string | null
           expires_at: string
           id?: string
           refresh_token: string
@@ -730,6 +732,7 @@ export type Database = {
           access_token?: string
           calendar_id?: string
           created_at?: string
+          email_address?: string | null
           expires_at?: string
           id?: string
           refresh_token?: string

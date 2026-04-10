@@ -10,16 +10,18 @@ export function useGoogleCalendarSync() {
   const [isConnected, setIsConnected] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
+  const [connectedEmail, setConnectedEmail] = useState<string | null>(null);
 
   const checkConnection = useCallback(async () => {
     if (!user?.id) { setIsChecking(false); return; }
     try {
       const { data } = await supabase
         .from('google_calendar_tokens')
-        .select('id')
+        .select('id, email_address')
         .eq('user_id', user.id)
         .maybeSingle();
       setIsConnected(!!data);
+      setConnectedEmail((data as any)?.email_address || null);
     } catch {
       setIsConnected(false);
     } finally {
@@ -36,7 +38,7 @@ export function useGoogleCalendarSync() {
     if (gcal === 'connected') {
       toast.success('Google Calendar đã kết nối thành công!');
       setIsConnected(true);
-      // Clean URL
+      checkConnection();
       window.history.replaceState({}, '', window.location.pathname);
     } else if (gcal === 'error') {
       toast.error('Kết nối Google Calendar thất bại. Vui lòng thử lại.');
@@ -75,6 +77,7 @@ export function useGoogleCalendarSync() {
       });
 
       setIsConnected(false);
+      setConnectedEmail(null);
       toast.success('Đã ngắt kết nối Google Calendar');
     } catch (err: any) {
       toast.error('Không thể ngắt kết nối');
@@ -111,5 +114,5 @@ export function useGoogleCalendarSync() {
     }
   }, [user?.id, isConnected]);
 
-  return { isConnected, isSyncing, isChecking, connect, disconnect, sync, checkConnection };
+  return { isConnected, isSyncing, isChecking, connectedEmail, connect, disconnect, sync, checkConnection };
 }
