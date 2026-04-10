@@ -22,7 +22,10 @@ import tNexusTextWhite from '@/assets/t-nexus-text-white.png';
 import welcomeImg from '@/assets/onboarding-welcome.png';
 import securityImg from '@/assets/onboarding-security.png';
 import profileImg from '@/assets/onboarding-profile.png';
-import completeImg from '@/assets/onboarding-complete.png';
+import completeImgFree from '@/assets/onboarding-complete-free.png';
+import completeImgPlus from '@/assets/onboarding-complete-plus.png';
+import completeImgPro from '@/assets/onboarding-complete-pro.png';
+import completeImgBusiness from '@/assets/onboarding-complete-business.png';
 import {
   Loader2, Key, Camera, User, Check, ChevronRight,
   GraduationCap, BookOpen, Phone, Sparkles, Shield,
@@ -242,6 +245,7 @@ export default function FirstTimeOnboarding({
     switch (userPlan) {
       case 'plan_plus': return 'bg-blue-500/10 text-blue-600 border-blue-200';
       case 'plan_pro': return 'bg-violet-500/10 text-violet-600 border-violet-200';
+      case 'plan_business': return 'bg-amber-500/10 text-amber-600 border-amber-200';
       case 'plan_enterprise': return 'bg-amber-500/10 text-amber-600 border-amber-200';
       default: return 'bg-secondary text-secondary-foreground border-secondary';
     }
@@ -251,10 +255,18 @@ export default function FirstTimeOnboarding({
     switch (userPlan) {
       case 'plan_plus': return t.planPlus;
       case 'plan_pro': return t.planPro;
+      case 'plan_business': return t.planBusiness ?? 'Business';
       case 'plan_enterprise': return t.planEnterprise;
       default: return t.planFree;
     }
   };
+
+  const finishImage = {
+    plan_free: completeImgFree,
+    plan_plus: completeImgPlus,
+    plan_pro: completeImgPro,
+    plan_business: completeImgBusiness,
+  }[userPlan || 'plan_free'] || completeImgFree;
 
   const handleLanguageSelect = async (lang: 'en' | 'vi') => {
     setSelectedLang(lang);
@@ -1274,7 +1286,7 @@ export default function FirstTimeOnboarding({
             {currentStep === 'finish' && (
               <div className="h-full flex flex-col">
                 <div className="relative bg-gradient-to-br from-primary/5 via-accent/10 to-primary/5 px-8 pt-6 pb-2 flex justify-center overflow-hidden">
-                  <img src={completeImg} alt="Complete" className="h-36 md:h-44 object-contain drop-shadow-lg" />
+                  <img src={finishImage} alt="Complete" className="h-36 md:h-44 object-contain drop-shadow-lg" width={512} height={512} />
                   <div className="absolute top-6 left-[20%] w-2 h-2 rounded-full bg-primary/30 animate-bounce" />
                   <div className="absolute top-10 right-[25%] w-3 h-3 rounded-full bg-accent/30 animate-bounce delay-300" />
                   <div className="absolute bottom-4 left-[30%] w-2 h-2 rounded-sm bg-warning/30 animate-bounce delay-500 rotate-45" />
