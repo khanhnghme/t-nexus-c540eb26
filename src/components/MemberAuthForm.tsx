@@ -447,7 +447,7 @@ export function MemberAuthForm() {
     const result = registerSchema(ta).safeParse({
       studentId: regStudentId,
       fullName: regFullName,
-      institution: regInstitution,
+      institution: regInstitution === '__other__' ? regCustomInstitution : regInstitution,
       email: regEmail,
       password: regPassword,
       confirmPassword: regConfirmPassword,
