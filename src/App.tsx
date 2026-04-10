@@ -47,6 +47,7 @@ import Pricing from "./pages/Pricing";
 import PricingDocs from "./pages/PricingDocs";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import Guide from "./pages/Guide";
 import WorkspaceSettings from "./pages/WorkspaceSettings";
 import WorkspaceMembers from "./pages/WorkspaceMembers";
 import CreateWorkspace from "./pages/CreateWorkspace";
@@ -133,6 +134,7 @@ function AppRoutes() {
         <Route path="/auth" element={<ForceLightMode><Auth /></ForceLightMode>} />
         <Route path="/pricing" element={<ForceLightMode><Pricing /></ForceLightMode>} />
         <Route path="/download" element={<ForceLightMode><DownloadPage /></ForceLightMode>} />
+        <Route path="/guide" element={<ForceLightMode><Guide /></ForceLightMode>} />
         <Route path="/guide/terms" element={<ForceLightMode><Terms /></ForceLightMode>} />
         <Route path="/guide/pricing" element={<ForceLightMode><PricingDocs /></ForceLightMode>} />
         <Route path="/guide/privacy" element={<ForceLightMode><Privacy /></ForceLightMode>} />
@@ -143,6 +145,7 @@ function AppRoutes() {
           <Route path="auth" element={<ForceLightMode><Auth /></ForceLightMode>} />
           <Route path="pricing" element={<ForceLightMode><Pricing /></ForceLightMode>} />
           <Route path="download" element={<ForceLightMode><DownloadPage /></ForceLightMode>} />
+          <Route path="guide" element={<ForceLightMode><Guide /></ForceLightMode>} />
           <Route path="guide/terms" element={<ForceLightMode><Terms /></ForceLightMode>} />
           <Route path="guide/pricing" element={<ForceLightMode><PricingDocs /></ForceLightMode>} />
           <Route path="guide/privacy" element={<ForceLightMode><Privacy /></ForceLightMode>} />
