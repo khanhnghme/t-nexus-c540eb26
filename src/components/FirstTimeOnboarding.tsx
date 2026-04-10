@@ -59,6 +59,7 @@ interface FirstTimeOnboardingProps {
   userFullName: string;
   userEmail: string;
   userStudentId: string;
+  userInstitution?: string | null;
   userPlan?: string;
   mustChangePassword: boolean;
   onComplete: () => void;
