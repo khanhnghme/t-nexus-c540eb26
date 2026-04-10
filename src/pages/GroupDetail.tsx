@@ -30,7 +30,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Users, Loader2, ArrowLeft, Layers, Trash2, Calendar, Clock } from 'lucide-react';
-import LoadingScreen from '@/components/LoadingScreen';
+
 import AccessDenied from '@/components/AccessDenied';
 
 import ProcessScores from '@/components/scores/ProcessScores';
@@ -460,7 +460,7 @@ export default function GroupDetail() {
 
   
 
-  if (isLoading) return <><LoadingScreen message={gd.loading} /></>;
+  if (isLoading) return null;
   if (isAccessDenied) return <AccessDenied />;
   if (!group) return <><div className="text-center py-16"><h1 className="text-2xl font-bold mb-2">{gd.notFound}</h1><Link to="/groups"><Button>{gd.goBack}</Button></Link></div></>;
 

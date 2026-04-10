@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import LoadingScreen from '@/components/LoadingScreen';
+
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { r2Storage } from '@/lib/r2Storage';
@@ -157,9 +157,7 @@ export default function PublicProfile() {
     toast({ title: 'Đã sao chép liên kết!' });
   };
 
-  if (loading) {
-    return <LoadingScreen message="Đang tải trang cá nhân..." />;
-  }
+  if (loading) return null;
 
   if (notFound || !profile) {
     return (

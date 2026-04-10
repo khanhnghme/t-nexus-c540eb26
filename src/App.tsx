@@ -18,7 +18,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 
 import { supabase } from "@/integrations/supabase/client";
 import PageTransition from "@/components/PageTransition";
-import LoadingScreen from "@/components/LoadingScreen";
+
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
@@ -65,7 +65,7 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading, isApproved, profile } = useAuth();
-  if (isLoading) return <LoadingScreen />;
+  if (isLoading) return null;
   if (!user) return <Navigate to="/auth" replace />;
   if (profile && !profile.is_approved) return <Navigate to="/auth" replace />;
   return <>{children}</>;
@@ -86,7 +86,7 @@ function ProtectedLayoutInner() {
 function ProtectedLayout() {
   const { user, isLoading, profile } = useAuth();
 
-  if (isLoading) return <LoadingScreen />;
+  if (isLoading) return null;
   if (!user) return <Navigate to="/auth" replace />;
   if (profile && !profile.is_approved) return <Navigate to="/auth" replace />;
 

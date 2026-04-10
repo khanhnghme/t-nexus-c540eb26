@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import LoadingScreen from '@/components/LoadingScreen';
+
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { fixStorageUrl } from '@/lib/urlUtils';
@@ -178,9 +178,7 @@ export default function PublicProjectView() {
     ...(group?.show_activity_public ? [{ id: 'activity' as TabValue, name: 'Nhật ký', icon: Activity }] : []),
   ];
 
-  if (isLoading) {
-    return <LoadingScreen message="Đang tải dự án..." />;
-  }
+  if (isLoading) return null;
 
   if (error || !group) {
     return (
