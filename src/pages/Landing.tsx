@@ -321,11 +321,20 @@ function Page5Advanced() {
 const introPageComponents = [Page1Overview, Page2Tasks, Page3Scoring, Page4Project, Page5Advanced];
 
 export default function Landing() {
+  const { user, profile, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const { isLocked, isChecking, message: lockdownMessage, endAt: lockdownEndAt } = useFullLockdown();
   const { translations: t, localizedPath: lp, locale } = useLanguage();
   const tl = t.landing;
   const tc = t.common;
   const tn = t.nav;
+
+  // Safety redirect: if authenticated user lands on landing page, send to dashboard
+  useEffect(() => {
+    if (!authLoading && user && profile?.is_approved) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [authLoading, user, profile, navigate]);
   
   const [isInitializing, setIsInitializing] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
