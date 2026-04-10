@@ -20,6 +20,7 @@ import {
   ArrowRight, Loader2, Infinity, Receipt,
   Check, Users, Shield, Sparkles, BarChart3, Package, AlertTriangle,
 } from 'lucide-react';
+import { UserPaymentDetailDialog } from '@/components/billing/UserPaymentDetailDialog';
 
 interface WorkspaceUsage {
   id: string;
@@ -40,16 +41,8 @@ interface PlanLimitsData {
   max_storage_mb: number;
 }
 
-interface PaymentRecord {
-  id: string;
-  transaction_id: string | null;
-  created_at: string;
-  plan_purchased: string;
-  amount: number;
-  final_amount: number | null;
-  status: string;
-  payment_method: string | null;
-}
+// PaymentRecord now uses full payment_history columns
+type PaymentRecord = any;
 
 // Addon discount removed — now handled in AddonCheckout
 
@@ -67,6 +60,7 @@ export default function ServicePlan() {
   const [uniqueMemberCount, setUniqueMemberCount] = useState(0);
   const [billingHistory, setBillingHistory] = useState<PaymentRecord[]>([]);
   const [billingLoading, setBillingLoading] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<PaymentRecord | null>(null);
 
   // newAddons state removed — selection now in AddonCheckout
 
@@ -76,7 +70,7 @@ export default function ServicePlan() {
     setBillingLoading(true);
     supabase
       .from('payment_history')
-      .select('id, transaction_id, created_at, plan_purchased, amount, final_amount, status, payment_method')
+      .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(20)
@@ -706,25 +700,27 @@ export default function ServicePlan() {
                     <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.dateCol}</th>
                     <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.txnCol}</th>
                     <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.planCol}</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{'Method'}</th>
                     <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.amountCol}</th>
                     <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{t.statusCol}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {billingLoading ? (
-                    <tr><td colSpan={5} className="text-center py-8"><Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" /></td></tr>
+                    <tr><td colSpan={6} className="text-center py-8"><Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" /></td></tr>
                   ) : billingHistory.length === 0 ? (
-                    <tr><td colSpan={5} className="text-center py-8 text-sm text-muted-foreground">{t.noTransactions || 'No transactions yet'}</td></tr>
+                    <tr><td colSpan={6} className="text-center py-8 text-sm text-muted-foreground">{t.noTransactions || 'No transactions yet'}</td></tr>
                   ) : billingHistory.map(row => {
                     const date = new Date(row.created_at);
                     const formattedDate = `${date.getDate().toString().padStart(2,'0')}/${(date.getMonth()+1).toString().padStart(2,'0')}/${date.getFullYear()}`;
                     const displayAmount = row.final_amount ?? row.amount;
                     const statusLabel = row.status === 'completed' ? 'Paid' : row.status === 'pending' ? 'Pending' : row.status;
                     return (
-                      <tr key={row.id} className="hover:bg-muted/50 transition-colors">
+                      <tr key={row.id} className="hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setSelectedPayment(row)}>
                         <td className="px-5 py-3 text-sm">{formattedDate}</td>
                         <td className="px-5 py-3 text-sm font-mono text-xs text-muted-foreground">{row.transaction_id || row.id.slice(0,13)}</td>
                         <td className="px-5 py-3 text-sm font-medium">{formatPlanName(row.plan_purchased)}</td>
+                        <td className="px-5 py-3 text-sm text-muted-foreground">{row.payment_method || '—'}</td>
                         <td className="px-5 py-3 text-sm text-right tabular-nums">${displayAmount.toFixed(2)}</td>
                         <td className="px-5 py-3 text-right">
                           <Badge
@@ -748,6 +744,12 @@ export default function ServicePlan() {
               <p className="text-xs text-muted-foreground text-center">{t.showingRecent}</p>
             </div>
           </Card>
+
+          <UserPaymentDetailDialog
+            payment={selectedPayment}
+            open={!!selectedPayment}
+            onClose={() => setSelectedPayment(null)}
+          />
         </TabsContent>
       </Tabs>
     </div>
