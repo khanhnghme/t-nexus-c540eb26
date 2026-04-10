@@ -37,7 +37,6 @@ export function useGoogleDriveConnect() {
       toast({ title: 'Đã kết nối Google Drive' });
       setIsConnected(true);
       checkConnection();
-      // Clean URL
       const url = new URL(window.location.href);
       url.searchParams.delete('gdrive');
       window.history.replaceState({}, '', url.toString());
@@ -54,8 +53,11 @@ export function useGoogleDriveConnect() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { toast({ title: 'Vui lòng đăng nhập', variant: 'destructive' }); return; }
 
+      const returnUrl = window.location.pathname + window.location.search;
+
       const { data, error } = await supabase.functions.invoke('google-drive-auth', {
         headers: { Authorization: `Bearer ${session.access_token}` },
+        body: { return_url: returnUrl },
       });
 
       if (error) throw error;

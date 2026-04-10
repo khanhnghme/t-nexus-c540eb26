@@ -35,6 +35,21 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Read return_url from request body
+    let returnUrl = "/settings";
+    try {
+      const body = await req.json();
+      if (body?.return_url && typeof body.return_url === "string") {
+        returnUrl = body.return_url;
+      }
+    } catch {
+      // No body or invalid JSON — use default
+    }
+
+    // Encode userId + returnUrl into state
+    const statePayload = `${user.id}::${returnUrl}`;
+    const state = btoa(statePayload);
+
     const redirectUri = `${SUPABASE_URL}/functions/v1/google-drive-callback`;
 
     const params = new URLSearchParams({
@@ -44,7 +59,7 @@ Deno.serve(async (req) => {
       scope: "https://www.googleapis.com/auth/drive.readonly",
       access_type: "offline",
       prompt: "consent",
-      state: user.id,
+      state,
     });
 
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;

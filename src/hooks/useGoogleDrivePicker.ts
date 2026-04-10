@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 export interface DriveFile {
@@ -11,7 +11,6 @@ export interface DriveFile {
   type: 'drive';
 }
 
-// Google Picker API types
 declare global {
   interface Window {
     google?: {
@@ -20,6 +19,7 @@ declare global {
         ViewId: { DOCS: string };
         Action: { PICKED: string; CANCEL: string };
         Feature: { MULTISELECT_ENABLED: string };
+        DocsView: new (viewId?: string) => any;
       };
     };
     gapi?: {
@@ -29,30 +29,31 @@ declare global {
 }
 
 let pickerApiLoaded = false;
-let gapiLoaded = false;
 
-function loadGapiScript(): Promise<void> {
-  if (gapiLoaded) return Promise.resolve();
+function loadScript(src: string, id: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    if (document.getElementById('gapi-script')) {
-      // Script tag exists, wait for load
+    const existing = document.getElementById(id);
+    if (existing) {
+      // Already in DOM — check if loaded
+      if (id === 'gapi-script' && window.gapi) return resolve();
       const check = setInterval(() => {
-        if (window.gapi) { gapiLoaded = true; clearInterval(check); resolve(); }
-      }, 100);
-      setTimeout(() => { clearInterval(check); reject(new Error('GAPI timeout')); }, 10000);
+        if (id === 'gapi-script' && window.gapi) { clearInterval(check); resolve(); }
+      }, 50);
+      setTimeout(() => { clearInterval(check); reject(new Error(`Timeout loading ${id}`)); }, 8000);
       return;
     }
     const script = document.createElement('script');
-    script.id = 'gapi-script';
-    script.src = 'https://apis.google.com/js/api.js';
-    script.onload = () => { gapiLoaded = true; resolve(); };
-    script.onerror = () => reject(new Error('Failed to load GAPI'));
+    script.id = id;
+    script.src = src;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(`Failed to load ${src}`));
     document.head.appendChild(script);
   });
 }
 
 function loadPickerApi(): Promise<void> {
-  if (pickerApiLoaded) return Promise.resolve();
+  if (pickerApiLoaded && window.google?.picker) return Promise.resolve();
   return new Promise((resolve, reject) => {
     if (!window.gapi) { reject(new Error('GAPI not loaded')); return; }
     window.gapi.load('picker', () => {
@@ -70,34 +71,41 @@ interface UseGoogleDrivePickerOptions {
 export function useGoogleDrivePicker({ getPickerToken, onFilesPicked }: UseGoogleDrivePickerOptions) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const pickerVisible = useRef(false);
 
   const openPicker = useCallback(async () => {
+    if (isLoading || pickerVisible.current) return;
     setIsLoading(true);
     try {
-      // Load APIs
-      await loadGapiScript();
+      // Load GAPI + Picker
+      await loadScript('https://apis.google.com/js/api.js', 'gapi-script');
       await loadPickerApi();
 
-      // Get token
       const tokenData = await getPickerToken();
       if (!tokenData) {
         toast({ title: 'Không thể lấy token Google Drive', description: 'Vui lòng kết nối lại.', variant: 'destructive' });
+        setIsLoading(false);
         return;
       }
 
-      const { access_token, client_id } = tokenData;
+      const { access_token } = tokenData;
       const google = window.google;
       if (!google?.picker) {
         toast({ title: 'Google Picker chưa sẵn sàng', variant: 'destructive' });
+        setIsLoading(false);
         return;
       }
 
-      const view = new google.picker.PickerBuilder()
-        .addView(google.picker.ViewId.DOCS)
+      pickerVisible.current = true;
+
+      const view = new google.picker.DocsView(google.picker.ViewId.DOCS);
+
+      const picker = new google.picker.PickerBuilder()
+        .addView(view)
         .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
         .setOAuthToken(access_token)
-        .setDeveloperKey('') // Not needed with OAuth token
-        .setAppId(client_id.split('-')[0]) // Extract app ID from client ID
+        .setOrigin(window.location.protocol + '//' + window.location.host)
+        .setSize(900, 550)
         .setCallback((data: any) => {
           if (data.action === google.picker.Action.PICKED) {
             const files: DriveFile[] = data.docs.map((doc: any) => ({
@@ -111,17 +119,21 @@ export function useGoogleDrivePicker({ getPickerToken, onFilesPicked }: UseGoogl
             }));
             onFilesPicked(files);
           }
+          if (data.action === google.picker.Action.PICKED || data.action === google.picker.Action.CANCEL) {
+            pickerVisible.current = false;
+            setIsLoading(false);
+          }
         })
         .build();
 
-      view.setVisible(true);
+      picker.setVisible(true);
     } catch (err) {
       console.error('Picker error:', err);
       toast({ title: 'Lỗi mở Google Drive Picker', variant: 'destructive' });
-    } finally {
+      pickerVisible.current = false;
       setIsLoading(false);
     }
-  }, [getPickerToken, onFilesPicked, toast]);
+  }, [getPickerToken, onFilesPicked, toast, isLoading]);
 
   return { openPicker, isLoading };
 }

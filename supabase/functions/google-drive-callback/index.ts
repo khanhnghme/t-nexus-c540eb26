@@ -8,21 +8,45 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 Deno.serve(async (req) => {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
-  const userId = url.searchParams.get("state");
+  const stateParam = url.searchParams.get("state");
   const error = url.searchParams.get("error");
 
   const appOrigin = SUPABASE_URL.includes("supabase.co")
     ? "https://t-nexus.lovable.app"
     : "http://localhost:5173";
 
+  // Decode state to extract userId and returnUrl
+  let userId: string | null = null;
+  let returnUrl = "/settings";
+  if (stateParam) {
+    try {
+      const decoded = atob(stateParam);
+      const separatorIndex = decoded.indexOf("::");
+      if (separatorIndex !== -1) {
+        userId = decoded.substring(0, separatorIndex);
+        returnUrl = decoded.substring(separatorIndex + 2) || "/settings";
+      } else {
+        // Legacy format: state is just userId
+        userId = decoded;
+      }
+    } catch {
+      // If base64 decode fails, treat as plain userId (legacy)
+      userId = stateParam;
+    }
+  }
+
+  const buildRedirect = (status: string) => {
+    const sep = returnUrl.includes("?") ? "&" : "?";
+    return `${appOrigin}${returnUrl}${sep}gdrive=${status}`;
+  };
+
   if (error || !code || !userId) {
-    return Response.redirect(`${appOrigin}/settings?gdrive=error`, 302);
+    return Response.redirect(buildRedirect("error"), 302);
   }
 
   try {
     const redirectUri = `${SUPABASE_URL}/functions/v1/google-drive-callback`;
 
-    // Exchange code for tokens
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -38,12 +62,11 @@ Deno.serve(async (req) => {
     const tokenData = await tokenRes.json();
     if (!tokenRes.ok || !tokenData.access_token) {
       console.error("Token exchange failed:", tokenData);
-      return Response.redirect(`${appOrigin}/settings?gdrive=error`, 302);
+      return Response.redirect(buildRedirect("error"), 302);
     }
 
     const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000).toISOString();
 
-    // Get user email from Google
     let emailAddress: string | null = null;
     try {
       const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
@@ -71,12 +94,12 @@ Deno.serve(async (req) => {
 
     if (upsertError) {
       console.error("DB upsert error:", upsertError);
-      return Response.redirect(`${appOrigin}/settings?gdrive=error`, 302);
+      return Response.redirect(buildRedirect("error"), 302);
     }
 
-    return Response.redirect(`${appOrigin}/settings?gdrive=connected`, 302);
+    return Response.redirect(buildRedirect("connected"), 302);
   } catch (err) {
     console.error("Callback error:", err);
-    return Response.redirect(`${appOrigin}/settings?gdrive=error`, 302);
+    return Response.redirect(buildRedirect("error"), 302);
   }
 });
