@@ -82,6 +82,8 @@ import UserAvatar from './UserAvatar';
 
 import { CountdownTimer } from './CountdownTimer';
 import ResourceLinkRenderer from './ResourceLinkRenderer';
+import { useGoogleDriveConnect } from '@/hooks/useGoogleDriveConnect';
+import { useGoogleDrivePicker, type DriveFile } from '@/hooks/useGoogleDrivePicker';
 
 interface TaskAssignee {
   user_id: string;
