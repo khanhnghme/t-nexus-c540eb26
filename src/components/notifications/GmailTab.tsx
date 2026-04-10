@@ -20,7 +20,7 @@ import {
   PaginationEllipsis,
 } from '@/components/ui/pagination';
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 10;
 
 interface GmailMessage {
   id: string;
