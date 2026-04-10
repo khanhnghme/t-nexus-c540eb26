@@ -38,6 +38,9 @@ export default function PaymentResult() {
   const [loading, setLoading] = useState(!!orderId);
 
   useEffect(() => {
+    if (isSuccess) {
+      refreshProfile();
+    }
     if (!orderId) return;
     supabase
       .from('orders')
@@ -48,7 +51,7 @@ export default function PaymentResult() {
         if (data) setOrder(data as OrderData);
         setLoading(false);
       });
-  }, [orderId]);
+  }, [orderId, isSuccess, refreshProfile]);
 
   if (loading) {
     return (
