@@ -1507,6 +1507,10 @@ export const vi: Translations = {
       addonDiscountPro: '-10% Pro',
       addonDiscountBusiness: '-20% Business',
       addonNoPackage: 'Không có add-on',
+      // Next plan (scheduled transition)
+      nextPlanTitle: 'Lịch chuyển gói',
+      nextPlanDesc: 'Gói tiếp theo: {plan} — có hiệu lực từ {date}',
+      scheduledBadge: 'Đã lên lịch',
     },
     createWorkspace: {
       title: 'Tạo Workspace mới',

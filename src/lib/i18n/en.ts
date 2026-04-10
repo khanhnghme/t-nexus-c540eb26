@@ -1531,6 +1531,10 @@ export const en = {
       addonDiscountPro: '-10% Pro',
       addonDiscountBusiness: '-20% Business',
       addonNoPackage: 'No add-on',
+      // Next plan (scheduled transition)
+      nextPlanTitle: 'Scheduled Plan Change',
+      nextPlanDesc: 'Next plan: {plan} — effective from {date}',
+      scheduledBadge: 'Scheduled',
     },
     createWorkspace: {
       title: 'Create new Workspace',
