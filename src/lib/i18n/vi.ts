@@ -491,6 +491,7 @@ export const vi: Translations = {
     loginNow: 'Đăng nhập ngay',
     policyAgree: 'Tôi đồng ý với',
     policyTitle: 'Điều khoản dịch vụ',
+    privacyPolicyTitle: 'Chính sách bảo mật',
     policyDialogDesc: 'Nội dung điều khoản dịch vụ T-Nexus.',
     policyReadTerms: 'T-Nexus — Vui lòng đọc kỹ các điều khoản trước khi sử dụng',
     policyUpdated: 'Cập nhật',

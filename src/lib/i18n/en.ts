@@ -493,6 +493,7 @@ export const en = {
     // Policy
     policyAgree: 'I agree with',
     policyTitle: 'Terms of Service',
+    privacyPolicyTitle: 'Privacy Policy',
     policyDialogDesc: 'T-Nexus terms of service content.',
     policyReadTerms: 'T-Nexus — Please read the terms carefully before using',
     policyUpdated: 'Updated',

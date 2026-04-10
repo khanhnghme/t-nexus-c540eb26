@@ -52,19 +52,17 @@ const registerSchema = (ta: Record<string, string>) => z.object({
 function PolicyCheckbox({
   checked,
   onCheckedChange,
-  policyUpdatedAt,
   error,
   ta,
-  dateLocale,
   localizedPolicyPath,
+  localizedPrivacyPath,
 }: {
   checked: boolean;
   onCheckedChange: (v: boolean) => void;
-  policyUpdatedAt: string | null;
   error?: string;
   ta: Record<string, string>;
-  dateLocale: Locale;
   localizedPolicyPath: string;
+  localizedPrivacyPath: string;
 }) {
   return (
     <div className="space-y-1">
@@ -92,9 +90,20 @@ function PolicyCheckbox({
           >
             {ta.policyTitle}
           </a>
-          {policyUpdatedAt && (
-            <span className="text-[10px] text-muted-foreground leading-none">· {format(new Date(policyUpdatedAt), "dd/MM/yyyy", { locale: dateLocale })}</span>
-          )}
+          <span className="text-muted-foreground">&</span>
+          <a
+            href={localizedPrivacyPath}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-warning hover:underline font-semibold"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              window.open(localizedPrivacyPath, '_blank', 'noopener,noreferrer');
+            }}
+          >
+            {ta.privacyPolicyTitle}
+          </a>
         </div>
       </div>
       {error && <p className="text-sm text-destructive ml-6">{error}</p>}
@@ -111,6 +120,7 @@ export function MemberAuthForm() {
   const ta = translations.auth;
   const dateLocale = locale === 'vi' ? viLocale : enUS;
   const localizedPolicyPath = localizedPath('/guide/terms');
+  const localizedPrivacyPath = localizedPath('/guide/privacy');
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -738,11 +748,10 @@ export function MemberAuthForm() {
                 <PolicyCheckbox
                   checked={loginPolicyAgreed}
                   onCheckedChange={setLoginPolicyAgreed}
-                  policyUpdatedAt={policyUpdatedAt}
                   error={errors.policy}
                   ta={ta}
-                  dateLocale={dateLocale}
                   localizedPolicyPath={localizedPolicyPath}
+                  localizedPrivacyPath={localizedPrivacyPath}
                 />
 
                 <TurnstileWidget
@@ -1242,11 +1251,10 @@ export function MemberAuthForm() {
                 <PolicyCheckbox
                   checked={regPolicyAgreed}
                   onCheckedChange={setRegPolicyAgreed}
-                  policyUpdatedAt={policyUpdatedAt}
                   error={errors.policy}
                   ta={ta}
-                  dateLocale={dateLocale}
                   localizedPolicyPath={localizedPolicyPath}
+                  localizedPrivacyPath={localizedPrivacyPath}
                 />
 
 
