@@ -124,7 +124,7 @@ export default function BillingHistory() {
   const formatDateTime = (d: string | null) => {
     if (!d) return '—';
     const date = new Date(d);
-    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
   };
 
   const getStatusBadge = (status: string) => {
@@ -198,11 +198,12 @@ export default function BillingHistory() {
                           className="text-xs gap-1"
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (row.raw?.order_type === 'addon') {
-                              navigate('/addon-checkout');
-                            } else {
-                              navigate(`/checkout?plan=${row.raw?.plan || 'plan_pro'}&cycle=${row.raw?.billing_cycle || 'monthly'}`);
-                            }
+                              const oid = row.order_id || row.id;
+                              if (row.raw?.order_type === 'addon') {
+                                navigate(`/addon-checkout/${oid}`);
+                              } else {
+                                navigate(`/checkout/${oid}`);
+                              }
                           }}
                         >
                           <CreditCard className="w-3 h-3" />

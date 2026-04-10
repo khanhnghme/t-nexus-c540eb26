@@ -59,6 +59,8 @@ import PaymentResult from "./pages/PaymentResult";
 import ServicePlan from "./pages/ServicePlan";
 import BillingHistory from "./pages/BillingHistory";
 import AddonCheckout from "./pages/AddonCheckout";
+import CheckoutPayment from "./pages/CheckoutPayment";
+import AddonCheckoutPayment from "./pages/AddonCheckoutPayment";
 import AdminLayout from "./components/layout/AdminLayout";
 import AdminBilling from "./pages/AdminBilling";
 import AdminUserBilling from "./pages/AdminUserBilling";
@@ -198,9 +200,11 @@ function AppRoutes() {
           <Route path="/upgrade" element={<Upgrade />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/checkout/result" element={<PaymentResult />} />
+          <Route path="/checkout/:orderId" element={<CheckoutPayment />} />
           <Route path="/service-plan" element={<ServicePlan />} />
           <Route path="/billing-history" element={<BillingHistory />} />
           <Route path="/addon-checkout" element={<AddonCheckout />} />
+          <Route path="/addon-checkout/:orderId" element={<AddonCheckoutPayment />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />
