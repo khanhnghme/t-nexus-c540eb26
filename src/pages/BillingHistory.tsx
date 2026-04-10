@@ -206,7 +206,7 @@ export default function BillingHistory() {
                   >
                     <td className="px-5 py-3 text-sm"><DateTimeCell value={row.created_at} /></td>
                     <td className="px-5 py-3 text-sm font-mono text-xs text-muted-foreground">
-                      #{(row.order_id || row.id).slice(0, 8).toUpperCase()}
+                      {row.raw?.order_code || `#${(row.order_id || row.id).slice(0, 8).toUpperCase()}`}
                     </td>
                     <td className="px-5 py-3 text-sm font-medium">{formatPlanName(row.plan_purchased)}</td>
                     <td className="px-5 py-3 text-sm text-muted-foreground">{row.payment_method || '—'}</td>

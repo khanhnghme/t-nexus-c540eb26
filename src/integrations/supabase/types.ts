@@ -1355,6 +1355,7 @@ export type Database = {
           discount_amount: number
           expires_at: string | null
           id: string
+          order_code: string | null
           order_type: string
           payment_method: string
           paypal_order_id: string | null
@@ -1377,6 +1378,7 @@ export type Database = {
           discount_amount?: number
           expires_at?: string | null
           id?: string
+          order_code?: string | null
           order_type?: string
           payment_method?: string
           paypal_order_id?: string | null
@@ -1399,6 +1401,7 @@ export type Database = {
           discount_amount?: number
           expires_at?: string | null
           id?: string
+          order_code?: string | null
           order_type?: string
           payment_method?: string
           paypal_order_id?: string | null

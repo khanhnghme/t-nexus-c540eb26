@@ -163,7 +163,7 @@ export default function CheckoutSummary() {
         <CardContent className="p-5 space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold">{isVi ? 'Chi tiết đơn hàng' : 'Order Details'}</h3>
-            <span className="text-xs text-muted-foreground font-mono">#{order.id.slice(0, 8).toUpperCase()}</span>
+            <span className="text-xs text-muted-foreground font-mono">{order.order_code || `#${order.id.slice(0, 8).toUpperCase()}`}</span>
           </div>
           <Separator />
           <div className="space-y-2 text-sm">

@@ -6,12 +6,13 @@ import { Button } from '@/components/ui/button';
 interface OrderCountdownProps {
   expiresAt: string;
   orderId: string;
+  orderCode?: string;
   onExpired?: () => void;
   onCreateNew?: () => void;
   isVi?: boolean;
 }
 
-export function OrderCountdown({ expiresAt, orderId, onExpired, onCreateNew, isVi = false }: OrderCountdownProps) {
+export function OrderCountdown({ expiresAt, orderId, orderCode, onExpired, onCreateNew, isVi = false }: OrderCountdownProps) {
   const [timeLeft, setTimeLeft] = useState({ h: 0, m: 0, s: 0, expired: false });
 
   const calculate = useCallback(() => {
@@ -41,7 +42,7 @@ export function OrderCountdown({ expiresAt, orderId, onExpired, onCreateNew, isV
   const pad = (n: number) => n.toString().padStart(2, '0');
   const totalMinutes = timeLeft.h * 60 + timeLeft.m;
   const isUrgent = !timeLeft.expired && totalMinutes < 10;
-  const truncatedId = orderId.slice(0, 8).toUpperCase();
+  const displayCode = orderCode || `#${orderId.slice(0, 8).toUpperCase()}`;
 
   if (timeLeft.expired) {
     return (
@@ -53,7 +54,7 @@ export function OrderCountdown({ expiresAt, orderId, onExpired, onCreateNew, isV
               {isVi ? 'Đơn hàng đã hết hạn' : 'Order has expired'}
             </p>
             <p className="text-xs text-muted-foreground">
-              {isVi ? 'Mã đơn' : 'Order'}: #{truncatedId}
+              {isVi ? 'Mã đơn' : 'Order'}: {displayCode}
             </p>
           </div>
         </div>
@@ -85,7 +86,7 @@ export function OrderCountdown({ expiresAt, orderId, onExpired, onCreateNew, isV
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            {isVi ? 'Mã đơn' : 'Order'}: #{truncatedId}
+            {isVi ? 'Mã đơn' : 'Order'}: {displayCode}
           </p>
         </div>
       </div>
