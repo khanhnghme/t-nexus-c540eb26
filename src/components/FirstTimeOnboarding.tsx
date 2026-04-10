@@ -375,7 +375,7 @@ export default function FirstTimeOnboarding({
         bio: bio.trim() || null,
         onboarding_completed: true,
         must_change_password: false,
-        user_plan: 'plan_free' as const,
+        ...(paymentStatus !== 'success' ? { user_plan: 'plan_free' as const } : {}),
       };
       if (avatarUrl) updateData.avatar_url = avatarUrl;
       if (needsStudentId) updateData.student_id = editStudentId.trim();
@@ -470,13 +470,21 @@ export default function FirstTimeOnboarding({
 
       setPaymentStatus('success');
       toast({ title: isVi ? 'Thanh toán thành công!' : 'Payment successful!' });
-      // Go to finish step
-      goNext();
+
+      // Refresh profile to ensure plan is persisted by edge function
+      await supabase
+        .from('profiles')
+        .select('user_plan')
+        .eq('id', userId)
+        .single();
+
+      // Brief delay to show success state, then advance
+      setTimeout(() => goNext(), 1500);
     } catch {
       setPaymentStatus('failed');
       toast({ title: isVi ? 'Thanh toán thất bại. Vui lòng thử lại.' : 'Payment failed. Please try again.', variant: 'destructive' });
     }
-  }, [isVi, toast]);
+  }, [isVi, toast, userId]);
 
   const stepLabels: Record<StepId, string> = {
     language: t.stepLang,
