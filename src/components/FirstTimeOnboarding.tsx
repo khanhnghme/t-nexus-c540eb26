@@ -1023,12 +1023,26 @@ export default function FirstTimeOnboarding({
                                           }}
                                         >
                                           <Check className={cn('mr-2 h-4 w-4', editInstitution === inst.name ? 'opacity-100' : 'opacity-0')} />
+                                          <span className="text-xs font-mono text-muted-foreground mr-1.5">{inst.code}</span>
                                           <span className="truncate">{inst.name}</span>
-                                          <span className="ml-auto text-[10px] text-muted-foreground">{inst.code}</span>
                                         </CommandItem>
                                       ))}
                                     </CommandGroup>
                                   ))}
+                                  <CommandGroup heading={isVi ? 'Khác' : 'Other'}>
+                                    <CommandItem
+                                      value="__other__"
+                                      onSelect={() => {
+                                        setEditInstitution('__other__');
+                                        setInstitutionOpen(false);
+                                        setInstitutionSearch('');
+                                        setInfoErrors(p => ({ ...p, editInstitution: false }));
+                                      }}
+                                    >
+                                      <Check className={cn('mr-2 h-4 w-4', editInstitution === '__other__' ? 'opacity-100' : 'opacity-0')} />
+                                      <span className="truncate">{isVi ? 'Đơn vị đào tạo khác...' : 'Other institution...'}</span>
+                                    </CommandItem>
+                                  </CommandGroup>
                                 </ScrollArea>
                               </CommandList>
                             </Command>
