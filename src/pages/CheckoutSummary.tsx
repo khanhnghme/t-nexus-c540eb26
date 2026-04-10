@@ -47,6 +47,14 @@ function StepProgress({ isVi, status }: { isVi: boolean; status?: string }) {
   );
 }
 
+const ADDON_TYPES = [
+  { type: 'projects', emoji: '📁', unitLabel: '+5 projects', unitLabelVi: '+5 dự án' },
+  { type: 'storage', emoji: '💾', unitLabel: '+5 GB storage', unitLabelVi: '+5 GB lưu trữ' },
+  { type: 'members', emoji: '👥', unitLabel: '+10 members', unitLabelVi: '+10 thành viên' },
+];
+
+const ADDON_PRICE_MONTHLY = 2.49;
+
 const STATUS_CONFIG = {
   completed: {
     icon: CheckCircle2,
