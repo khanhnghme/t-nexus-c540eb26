@@ -51,7 +51,7 @@ export default function AddonCheckoutPayment() {
   // Background polling: detect webhook-completed orders
   useEffect(() => {
     if (!user || !orderCode || paymentStatus === 'success') return;
-    if (paymentStatus !== 'idle' && paymentStatus !== 'processing') return;
+    if (paymentStatus !== 'idle' && paymentStatus !== 'processing' && paymentStatus !== 'failed') return;
 
     const interval = setInterval(async () => {
       const { data } = await supabase.from('orders').select('status').eq('order_code', orderCode).eq('user_id', user.id).maybeSingle();
@@ -139,19 +139,26 @@ export default function AddonCheckoutPayment() {
       const { data, error } = await supabase.functions.invoke('capture-paypal-order', {
         body: { subscriptionID },
       });
-      if (error || !data?.success) throw new Error(error?.message || 'Capture failed');
-      userAddons.refresh();
-      accountLimits.refresh();
-      await refreshProfile();
-      toast({ title: '✅', description: isVi ? 'Mua add-on thành công!' : 'Add-on purchased successfully!' });
-      await pollOrderStatus(orderCode!);
-      navigate(`/checkout/summary/${orderCode}`, { replace: true });
+      if (error) throw new Error(error?.message || 'Capture failed');
+      if (data?.success && !data?.pending) {
+        setPaymentStatus('success');
+        userAddons.refresh();
+        accountLimits.refresh();
+        await refreshProfile();
+        toast({ title: '✅', description: isVi ? 'Mua add-on thành công!' : 'Add-on purchased successfully!' });
+        navigate(`/checkout/summary/${orderCode}`, { replace: true });
+      } else if (data?.success && data?.pending) {
+        toast({ title: isVi ? 'Đã xác nhận! Đang chờ kích hoạt...' : 'Confirmed! Waiting for activation...' });
+        // Stay in processing, background polling will handle redirect
+      } else {
+        throw new Error('Capture failed');
+      }
     } catch (err: any) {
       setPaymentStatus('failed');
       setPaymentError(err.message || (isVi ? 'Thanh toán thất bại. Vui lòng thử lại.' : 'Payment failed. Please try again.'));
       toast({ title: 'Error', description: err.message || 'Payment failed', variant: 'destructive' });
     }
-  }, [navigate, isVi, userAddons, accountLimits, refreshProfile, orderCode, pollOrderStatus]);
+  }, [navigate, isVi, userAddons, accountLimits, refreshProfile, orderCode]);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {

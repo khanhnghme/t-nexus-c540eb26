@@ -252,20 +252,28 @@ export default function Checkout() {
         body: { subscriptionID: data.subscriptionID },
       });
 
-      if (res.error || !res.data?.success) {
+      if (res.error) {
         throw new Error(res.error?.message || 'Payment capture failed');
       }
 
-      setPaymentStatus('success');
-      toast.success(t?.paymentSuccess || 'Payment successful!');
-      await refreshProfile();
-      navigate(`/checkout/result?status=success&order_id=${res.data.orderId || ''}`);
+      if (res.data?.success && !res.data?.pending) {
+        setPaymentStatus('success');
+        toast.success(t?.paymentSuccess || 'Payment successful!');
+        await refreshProfile();
+        navigate(`/checkout/result?status=success&order_id=${res.data.orderId || ''}`);
+      } else if (res.data?.success && res.data?.pending) {
+        // Subscription approved but not ACTIVE yet — wait for webhook
+        toast.success(isVi ? 'Đã xác nhận! Đang chờ PayPal kích hoạt...' : 'Confirmed! Waiting for PayPal activation...');
+        // Keep processing — when webhook completes, order status changes and we can redirect
+      } else {
+        throw new Error('Payment capture failed');
+      }
     } catch {
       setPaymentStatus('failed');
       toast.error(t?.paymentFailed || 'Payment failed. Please try again.');
       navigate(`/checkout/result?status=failed&order_id=${orderReservation?.orderId || ''}`);
     }
-  }, [navigate, t, refreshProfile]);
+  }, [navigate, t, refreshProfile, isVi, orderReservation]);
 
   if (!prices) {
     return (

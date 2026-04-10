@@ -467,13 +467,34 @@ export default function FirstTimeOnboarding({
         body: { subscriptionID: data.subscriptionID },
       });
 
-      if (res.error || !res.data?.success) {
+      if (res.error) {
         throw new Error(res.error?.message || 'Payment capture failed');
       }
 
-      setPaymentStatus('success');
-      onComplete();
-      toast({ title: isVi ? 'Thanh toán thành công!' : 'Payment successful!' });
+      if (res.data?.success && !res.data?.pending) {
+        setPaymentStatus('success');
+        onComplete();
+        toast({ title: isVi ? 'Thanh toán thành công!' : 'Payment successful!' });
+      } else if (res.data?.success && res.data?.pending) {
+        // Subscription approved but not ACTIVE yet — keep processing
+        toast({ title: isVi ? 'Đã xác nhận! Đang chờ kích hoạt...' : 'Confirmed! Waiting for activation...' });
+        // Poll for completion
+        const pollInterval = setInterval(async () => {
+          const checkRes = await supabase.functions.invoke('capture-paypal-order', {
+            body: { subscriptionID: data.subscriptionID },
+          });
+          if (checkRes.data?.success && !checkRes.data?.pending) {
+            clearInterval(pollInterval);
+            setPaymentStatus('success');
+            onComplete();
+            toast({ title: isVi ? 'Thanh toán thành công!' : 'Payment successful!' });
+          }
+        }, 4000);
+        // Auto-stop after 2 minutes
+        setTimeout(() => clearInterval(pollInterval), 120000);
+      } else {
+        throw new Error('Payment capture failed');
+      }
     } catch {
       setPaymentStatus('failed');
       toast({ title: isVi ? 'Thanh toán thất bại. Vui lòng thử lại.' : 'Payment failed. Please try again.', variant: 'destructive' });
