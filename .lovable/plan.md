@@ -1,22 +1,16 @@
 
 
-## Xóa hoàn toàn LoadingScreen
+## Xóa hoàn toàn SplashScreen khỏi dự án
 
-LoadingScreen đang được dùng ở **8 file**. Sẽ xóa component và thay thế tất cả references:
+### Thay đổi
 
-### 1. Xóa file `src/components/LoadingScreen.tsx`
+**1. Xóa file `src/components/SplashScreen.tsx`**
 
-### 2. Thay thế tại các file sử dụng
+**2. `src/pages/Landing.tsx`**
+- Xóa `import SplashScreen` (dòng 2)
+- Xóa state `showSplash` (dòng 328)
+- Xóa block `{showSplash && <SplashScreen ... />}` (dòng 530-538)
+- Nội dung landing page render ngay lập tức, không delay
 
-| File | Hiện tại | Thay bằng |
-|------|----------|-----------|
-| `src/pages/Landing.tsx` | Overlay LoadingScreen khi `isChecking` | Xóa hoàn toàn block overlay, bỏ import |
-| `src/App.tsx` (ProtectedRoute + AdminRoute) | `if (isLoading) return <LoadingScreen />` | `return null` hoặc render trống |
-| `src/pages/Auth.tsx` | `if (authLoading) return <LoadingScreen />` | `return null` |
-| `src/pages/Onboarding.tsx` | `if (isLoading) return <LoadingScreen />` | `return null` |
-| `src/pages/PublicProfile.tsx` | `if (loading) return <LoadingScreen />` | `return null` |
-| `src/pages/PublicProjectView.tsx` | `if (isLoading) return <LoadingScreen />` | `return null` |
-| `src/pages/GroupDetail.tsx` | `if (isLoading) return <LoadingScreen />` | `return null` |
-
-Tất cả `return null` sẽ render trang trắng trong lúc loading (rất ngắn), không ảnh hưởng UX và crawler sẽ thấy nội dung thật ngay.
+Kết quả: Homepage load ngay, không animation, không chờ, crawler thấy nội dung HTML ngay lập tức.
 
