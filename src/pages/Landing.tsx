@@ -1418,6 +1418,7 @@ export default function Landing() {
                       { label: adminEmail || tl.footerComingSoon, href: adminEmail ? `mailto:${adminEmail}` : '#resources' },
                       { label: tc.login, href: lp('/auth'), external: false },
                       { label: tc.installApp, href: lp('/download'), external: false },
+                      { label: '**Explore more →**', href: lp('/guide'), external: false, bold: true },
                     ],
                   },
                 ].map((column) => (
@@ -1446,12 +1447,6 @@ export default function Landing() {
             <div className="mt-12 flex flex-col gap-3 border-t pt-6 text-sm md:flex-row md:items-center md:justify-between" style={{ borderColor: colorVar('--landing-hero-foreground', 0.08), color: colorVar('--landing-hero-subtle') }}>
               <span className="whitespace-nowrap">{tc.copyright} <span className="italic">{tc.developedBy}</span>. {tc.allRightsReserved}</span>
               <div className="flex items-center gap-4">
-                <Link to={lp('/guide/privacy')} className="text-sm underline underline-offset-2 transition-colors hover:opacity-80" style={{ color: colorVar('--landing-hero-muted') }}>
-                  {tl.footerPrivacyPolicy}
-                </Link>
-                <Link to={lp('/guide/terms')} className="text-sm underline underline-offset-2 transition-colors hover:opacity-80" style={{ color: colorVar('--landing-hero-muted') }}>
-                  {tl.footerTermsOfService}
-                </Link>
                 <span>{tl.footerDesignedFor}</span>
                 <LanguageToggle variant="light" />
               </div>
