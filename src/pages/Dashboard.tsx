@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import MandatoryNotification from '@/components/MandatoryNotification';
+
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
@@ -523,7 +523,7 @@ export default function Dashboard() {
         <Navigate to="/onboarding" replace />
       )}
 
-      <MandatoryNotification mode="post_login" userId={user?.id} />
+      
       <div className="relative space-y-8" style={{ zIndex: 2 }}>
         {/* Welcome Section — Frosted Glass style (Light & Dark mode compatible) */}
         <div className="relative overflow-hidden rounded-2xl border border-white/60 dark:border-primary/20 bg-gradient-to-br from-white/80 via-white/60 to-primary/10 dark:from-background/80 dark:via-background/60 dark:to-primary/20 backdrop-blur-xl shadow-md">
