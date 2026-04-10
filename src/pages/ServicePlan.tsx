@@ -319,14 +319,47 @@ export default function ServicePlan() {
                     <Sparkles className="w-4 h-4 text-amber-500" />
                     {t.planBenefits.replace('{name}', planName)}
                   </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                    {features.map((feature: string, i: number) => (
-                      <div key={i} className="flex items-center gap-2 text-sm py-1">
-                        <Check className="w-4 h-4 text-emerald-500 shrink-0" />
-                        <span>{feature}</span>
+                  {(() => {
+                    const iconMap: Record<string, React.ElementType> = {
+                      building: Building2, folder: FolderKanban, video: Video,
+                      sparkles: Sparkles, headset: Shield,
+                    };
+                    const featureGroups = (t as any).servicePlanFeatureGroups?.[planKey as string] || [];
+                    return (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {featureGroups.map((group: any, gi: number) => {
+                          const IconComp = iconMap[group.icon] || Sparkles;
+                          return (
+                            <Card key={gi} className="border-border/50">
+                              <CardContent className="p-4">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <IconComp className="w-4 h-4 text-primary" />
+                                  <span className="text-sm font-semibold">{group.category}</span>
+                                </div>
+                                <div className="space-y-0">
+                                  {group.items.map((item: any, ii: number) => (
+                                    <div key={ii}>
+                                      <div className="flex items-center justify-between py-1.5 text-sm">
+                                        <span className="text-muted-foreground">{item.label}</span>
+                                        {item.value === '✓' ? (
+                                          <Check className="w-4 h-4 text-emerald-500" />
+                                        ) : item.value === '—' ? (
+                                          <Minus className="w-4 h-4 text-muted-foreground/50" />
+                                        ) : (
+                                          <span className="font-medium">{item.value}</span>
+                                        )}
+                                      </div>
+                                      {ii < group.items.length - 1 && <Separator />}
+                                    </div>
+                                  ))}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })()}
                 </div>
               </CardContent>
             </Card>
