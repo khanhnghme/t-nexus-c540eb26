@@ -157,14 +157,12 @@ export default function FirstTimeOnboarding({
     return map;
   }, [filteredInstitutions]);
 
-  // Load PayPal config when checkout step is possible
+  // Check if user already paid (returning from /checkout)
   useEffect(() => {
-    if (selectedPlan !== 'plan_free' && !paypalClientId) {
-      supabase.functions.invoke('get-paypal-config').then(({ data }) => {
-        if (data?.clientId) setPaypalClientId(data.clientId);
-      });
+    if (profile && profile.user_plan !== 'plan_free' && profile.plan_status === 'active') {
+      setPaymentStatus('success');
     }
-  }, [selectedPlan, paypalClientId]);
+  }, []);
 
   // Check if user is first-time buyer (no completed orders)
   useEffect(() => {
