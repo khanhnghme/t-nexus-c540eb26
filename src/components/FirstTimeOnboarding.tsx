@@ -1563,10 +1563,11 @@ export default function FirstTimeOnboarding({
                           </Button>
                         </div>
                       </div>
+                    </>
+                  )}
                 </div>
               </div>
             )}
-
             {/* ===== FINISH ===== */}
             {currentStep === 'finish' && (
               <div className="h-full flex flex-col">
