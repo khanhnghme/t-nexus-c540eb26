@@ -12,6 +12,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { OrderCountdown } from '@/components/OrderCountdown';
 
 import { PLAN_CONFIG, getPlanLabel, getPlanRank, getWelcomePrice, type PlanKey, PLAN_ORDER } from '@/lib/planConfig';
 
@@ -76,6 +77,8 @@ export default function Checkout() {
   const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
   const [paymentMethodOpen, setPaymentMethodOpen] = useState(true);
   const [isFirstTimeBuyer, setIsFirstTimeBuyer] = useState(true);
+  const [orderReservation, setOrderReservation] = useState<{ orderId: string; expiresAt: string } | null>(null);
+  const [orderExpired, setOrderExpired] = useState(false);
 
   useEffect(() => {
     supabase.functions.invoke('get-paypal-config').then(({ data }) => {
@@ -190,6 +193,15 @@ export default function Checkout() {
 
     if (res.error || !res.data?.orderID) {
       throw new Error(res.error?.message || 'Failed to create order');
+    }
+
+    // Save reservation info
+    if (res.data.expiresAt || res.data.internalOrderId) {
+      setOrderReservation({
+        orderId: res.data.internalOrderId || res.data.orderID,
+        expiresAt: res.data.expiresAt || new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+      });
+      setOrderExpired(false);
     }
 
     return res.data.orderID;
@@ -537,7 +549,7 @@ export default function Checkout() {
     <div className="max-w-5xl mx-auto py-6 px-4 space-y-5">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => setStep(1)}>
+        <Button variant="ghost" size="icon" onClick={() => { setStep(1); setOrderReservation(null); setOrderExpired(false); }}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
@@ -547,6 +559,17 @@ export default function Checkout() {
           </p>
         </div>
       </div>
+
+      {/* Order Reservation Countdown */}
+      {orderReservation && (
+        <OrderCountdown
+          expiresAt={orderReservation.expiresAt}
+          orderId={orderReservation.orderId}
+          isVi={isVi}
+          onExpired={() => setOrderExpired(true)}
+          onCreateNew={() => { setStep(1); setOrderReservation(null); setOrderExpired(false); }}
+        />
+      )}
 
       {/* Downgrade warning banners */}
       {isDowngrade && (
@@ -681,6 +704,16 @@ export default function Checkout() {
                       <div className="flex items-center justify-center py-6 gap-2">
                         <Loader2 className="h-5 w-5 animate-spin" />
                         <span className="text-sm text-muted-foreground">{t?.processing || 'Processing payment...'}</span>
+                      </div>
+                    ) : orderExpired ? (
+                      <div className="flex flex-col items-center justify-center py-6 gap-2 text-center">
+                        <AlertTriangle className="h-5 w-5 text-destructive" />
+                        <p className="text-sm text-destructive font-medium">
+                          {isVi ? 'Đơn hàng đã hết hạn. Vui lòng tạo đơn mới.' : 'Order expired. Please create a new order.'}
+                        </p>
+                        <Button variant="outline" size="sm" onClick={() => { setStep(1); setOrderReservation(null); setOrderExpired(false); }}>
+                          {isVi ? 'Quay lại' : 'Go back'}
+                        </Button>
                       </div>
                     ) : paypalClientId ? (
                       <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD' }}>

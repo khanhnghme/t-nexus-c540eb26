@@ -280,7 +280,7 @@ Deno.serve(async (req) => {
     });
 
     return new Response(
-      JSON.stringify({ orderID: paypalOrder.id }),
+      JSON.stringify({ orderID: paypalOrder.id, expiresAt, internalOrderId: paypalOrder.id }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
