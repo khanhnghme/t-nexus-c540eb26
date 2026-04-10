@@ -76,6 +76,14 @@ export default function PaymentResult() {
             <h1 className="text-2xl font-bold">{t?.successTitle || 'Payment Successful!'}</h1>
             <p className="text-muted-foreground">{t?.successDesc || 'Your plan has been upgraded successfully.'}</p>
           </>
+        ) : status === 'expired' ? (
+          <>
+            <div className="p-4 bg-amber-500/10 rounded-full">
+              <XCircle className="h-12 w-12 text-amber-500" />
+            </div>
+            <h1 className="text-2xl font-bold">{t?.expiredTitle || 'Order Expired'}</h1>
+            <p className="text-muted-foreground">{t?.expiredDesc || 'This order has expired. Please create a new order to continue.'}</p>
+          </>
         ) : (
           <>
             <div className="p-4 bg-destructive/10 rounded-full">
@@ -91,7 +99,10 @@ export default function PaymentResult() {
       {isSuccess && order && (
         <Card>
           <CardContent className="p-5 space-y-3">
-            <h3 className="text-sm font-semibold">{t?.orderDetails || 'Order Details'}</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold">{t?.orderDetails || 'Order Details'}</h3>
+              <span className="text-xs text-muted-foreground font-mono">#{order.id.slice(0, 8).toUpperCase()}</span>
+            </div>
             <Separator />
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
@@ -124,6 +135,12 @@ export default function PaymentResult() {
                 <span>${order.total_amount.toFixed(2)}</span>
               </div>
             </div>
+            {order.completed_at && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{t?.completedAt || 'Completed'}</span>
+                <span className="text-xs">{new Date(order.completed_at).toLocaleString()}</span>
+              </div>
+            )}
             <div className="flex justify-center pt-1">
               <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-none text-xs">
                 {t?.completed || 'Completed'}
