@@ -95,6 +95,8 @@ export default function AddonCheckout() {
   const [orderExpired, setOrderExpired] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [agreedToPolicy, setAgreedToPolicy] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancellingOrder, setCancellingOrder] = useState(false);
 
   useEffect(() => {
     supabase.functions.invoke('get-paypal-config').then(({ data }) => {
@@ -395,24 +397,84 @@ export default function AddonCheckout() {
   return (
     <div className="max-w-5xl mx-auto py-6 px-4 space-y-5">
       {/* Header — no back button in Step 2 */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{isVi ? 'Xác nhận & Thanh toán' : 'Confirm & Pay'}</h1>
           <p className="text-sm text-muted-foreground">
             {isVi ? 'Bước 2/2 — Kiểm tra và thanh toán' : 'Step 2/2 — Review and pay'}
           </p>
         </div>
+        {orderReservation && !orderExpired && (
+          <Button
+            variant="destructive"
+            size="sm"
+            className="gap-1.5"
+            disabled={cancellingOrder}
+            onClick={() => setShowCancelDialog(true)}
+          >
+            {cancellingOrder ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+            {isVi ? 'Hủy đơn hàng' : 'Cancel Order'}
+          </Button>
+        )}
       </div>
 
-      {/* Order Reservation Countdown */}
+      {/* Order ID + Reservation Countdown */}
       {orderReservation && (
-        <OrderCountdown
-          expiresAt={orderReservation.expiresAt}
-          orderId={orderReservation.orderId}
-          isVi={isVi}
-          onExpired={() => setOrderExpired(true)}
-        />
+        <>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">{isVi ? 'Mã đơn hàng:' : 'Order ID:'}</span>
+            <code className="font-mono text-xs bg-muted px-2 py-0.5 rounded">#{orderReservation.orderId.slice(0, 8).toUpperCase()}</code>
+          </div>
+          <OrderCountdown
+            expiresAt={orderReservation.expiresAt}
+            orderId={orderReservation.orderId}
+            isVi={isVi}
+            onExpired={() => setOrderExpired(true)}
+          />
+        </>
       )}
+
+      {/* Cancel Order Confirmation Dialog */}
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{isVi ? 'Xác nhận hủy đơn hàng' : 'Cancel Order?'}</DialogTitle>
+            <DialogDescription>
+              {isVi
+                ? 'Bạn có chắc muốn hủy đơn hàng này? Hành động này không thể hoàn tác.'
+                : 'Are you sure you want to cancel this order? This action cannot be undone.'}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCancelDialog(false)}>
+              {isVi ? 'Quay lại' : 'Go back'}
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={cancellingOrder}
+              onClick={async () => {
+                if (!orderReservation) return;
+                setCancellingOrder(true);
+                try {
+                  await supabase.from('orders').update({ status: 'cancelled' }).eq('id', orderReservation.orderId);
+                  toast({ title: isVi ? 'Đơn hàng đã được hủy' : 'Order has been cancelled' });
+                  setShowCancelDialog(false);
+                  setOrderReservation(null);
+                  setOrderExpired(false);
+                  setStep(1);
+                } catch (e) {
+                  toast({ title: isVi ? 'Không thể hủy đơn hàng' : 'Failed to cancel order', variant: 'destructive' });
+                } finally {
+                  setCancellingOrder(false);
+                }
+              }}
+            >
+              {cancellingOrder && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />}
+              {isVi ? 'Xác nhận hủy' : 'Confirm Cancel'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Order Summary Table */}
       <Card>
