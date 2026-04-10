@@ -132,6 +132,10 @@ export default function FirstTimeOnboarding({
   const [bio, setBio] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [infoErrors, setInfoErrors] = useState<Record<string, boolean>>({});
+  const [editStudentId, setEditStudentId] = useState(userStudentId || '');
+  const [editFullName, setEditFullName] = useState(userFullName || '');
+  const needsStudentId = !userStudentId || userStudentId.trim() === '';
+  const needsFullName = !userFullName || userFullName.trim() === '';
 
   // Load PayPal config when checkout step is possible
   useEffect(() => {
