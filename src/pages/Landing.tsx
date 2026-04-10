@@ -883,6 +883,26 @@ export default function Landing() {
                   </>
                 )}
               </div>
+              <div
+                className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm"
+                style={{ color: colorVar('--landing-hero-muted'), animation: 'landing-fade-up 700ms ease-out 360ms both' }}
+              >
+                <Link
+                  to={lp('/guide/privacy')}
+                  className="underline underline-offset-4 transition-opacity hover:opacity-80"
+                  style={{ color: colorVar('--landing-hero-foreground') }}
+                >
+                  {tl.footerPrivacyPolicy}
+                </Link>
+                <span aria-hidden="true" style={{ color: colorVar('--landing-hero-subtle') }}>•</span>
+                <Link
+                  to={lp('/guide/terms')}
+                  className="underline underline-offset-4 transition-opacity hover:opacity-80"
+                  style={{ color: colorVar('--landing-hero-muted') }}
+                >
+                  {tl.footerTermsOfService}
+                </Link>
+              </div>
             </div>
 
             <div className="relative z-10 mt-18 md:mt-24" style={{ animation: 'landing-fade-up 900ms ease-out 420ms both' }}>
