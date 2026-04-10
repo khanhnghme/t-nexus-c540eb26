@@ -140,6 +140,7 @@ export function MemberAuthForm() {
   const [regInstitution, setRegInstitution] = useState('');
   const [regInstitutionOpen, setRegInstitutionOpen] = useState(false);
   const [regInstitutionSearch, setRegInstitutionSearch] = useState('');
+  const [regCustomInstitution, setRegCustomInstitution] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regUserId, setRegUserId] = useState('');
   const [regPassword, setRegPassword] = useState('');
