@@ -830,6 +830,7 @@ export function MemberAuthForm() {
                   </button>
                 </p>
               </form>
+              </div>
             ) : activeTab === 'forgot' ? (
               <div className="space-y-4">
                 {forgotStep === 'done' ? (
