@@ -248,7 +248,10 @@ export default function CheckoutPayment() {
       {/* Order Summary Table */}
       <Card>
         <CardContent className="pt-5 pb-5">
-          <h3 className="text-base font-semibold mb-4">{t?.orderSummary || 'Order Summary'}</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold">{t?.orderSummary || 'Order Summary'}</h3>
+            <code className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{order?.order_code || orderCode}</code>
+          </div>
 
           <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground pb-2 border-b">
             <div className="col-span-6">{isVi ? 'Sản phẩm' : 'Item'}</div>
