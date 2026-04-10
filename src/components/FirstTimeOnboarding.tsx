@@ -139,8 +139,20 @@ export default function FirstTimeOnboarding({
   const [infoErrors, setInfoErrors] = useState<Record<string, boolean>>({});
   const [editStudentId, setEditStudentId] = useState(userStudentId || '');
   const [editFullName, setEditFullName] = useState(userFullName || '');
+  const [editInstitution, setEditInstitution] = useState(userInstitution || '');
+  const [institutionOpen, setInstitutionOpen] = useState(false);
+  const [institutionSearch, setInstitutionSearch] = useState('');
   const needsStudentId = !userStudentId || userStudentId.trim() === '';
   const needsFullName = !userFullName || userFullName.trim() === '';
+  const filteredInstitutions = useMemo(() => searchInstitutions(institutionSearch), [institutionSearch]);
+  const institutionsByRegion = useMemo(() => {
+    const map = new Map<string, typeof filteredInstitutions>();
+    for (const region of REGIONS) {
+      const items = filteredInstitutions.filter(i => i.region === region);
+      if (items.length > 0) map.set(region, items);
+    }
+    return map;
+  }, [filteredInstitutions]);
 
   // Load PayPal config when checkout step is possible
   useEffect(() => {
@@ -304,6 +316,7 @@ export default function FirstTimeOnboarding({
     if (!skills.trim()) errors.skills = true;
     if (needsStudentId && !editStudentId.trim()) errors.editStudentId = true;
     if (!editFullName.trim()) errors.editFullName = true;
+    if (!editInstitution.trim()) errors.editInstitution = true;
     setInfoErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -356,6 +369,7 @@ export default function FirstTimeOnboarding({
       if (avatarUrl) updateData.avatar_url = avatarUrl;
       if (needsStudentId) updateData.student_id = editStudentId.trim();
       updateData.full_name = editFullName.trim();
+      updateData.institution = editInstitution.trim();
 
       const { error } = await supabase.from('profiles').update(updateData).eq('id', userId);
       if (error) throw error;
