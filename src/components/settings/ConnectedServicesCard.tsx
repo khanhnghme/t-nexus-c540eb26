@@ -3,7 +3,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useGoogleCalendarSync } from '@/hooks/useGoogleCalendarSync';
 import { useGmailSync } from '@/hooks/useGmailSync';
 import { useGoogleDriveConnect } from '@/hooks/useGoogleDriveConnect';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,11 +11,14 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Calendar, Mail, HardDrive, Link2, Unlink, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { Link2, Unlink, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import googleCalendarLogo from '@/assets/google-calendar-logo.png';
+import gmailLogo from '@/assets/gmail-logo.png';
+import googleDriveLogo from '@/assets/google-drive-logo.png';
 
 interface ServiceInfo {
   key: string;
-  icon: React.ElementType;
+  logo: string;
   name: string;
   nameVi: string;
   description: string;
@@ -31,7 +33,6 @@ interface ServiceInfo {
 function ServiceCard({ service, isVi }: { service: ServiceInfo; isVi: boolean }) {
   const [disconnectTarget, setDisconnectTarget] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState(false);
-  const Icon = service.icon;
 
   const handleDisconnect = async () => {
     setDisconnecting(true);
@@ -45,12 +46,12 @@ function ServiceCard({ service, isVi }: { service: ServiceInfo; isVi: boolean })
 
   if (service.isChecking) {
     return (
-      <div className="rounded-xl border border-border p-5 space-y-3">
-        <div className="flex items-center gap-3">
-          <Skeleton className="w-10 h-10 rounded-lg" />
-          <div className="space-y-1.5 flex-1">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-3 w-36" />
+      <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+        <div className="flex items-center gap-4">
+          <Skeleton className="w-12 h-12 rounded-xl" />
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-5 w-28" />
+            <Skeleton className="h-3 w-44" />
           </div>
         </div>
         <Skeleton className="h-9 w-full rounded-full" />
@@ -61,59 +62,80 @@ function ServiceCard({ service, isVi }: { service: ServiceInfo; isVi: boolean })
   return (
     <>
       <div
-        className={`rounded-xl border p-5 transition-all ${
+        className={`rounded-2xl border p-6 transition-all flex flex-col ${
           service.isConnected
-            ? 'border-primary/20 bg-primary/5'
-            : 'border-border bg-card hover:border-muted-foreground/20'
+            ? 'border-primary/20 bg-primary/[0.03] shadow-sm'
+            : 'border-border bg-card hover:border-muted-foreground/20 hover:shadow-sm'
         }`}
       >
-        <div className="flex items-start gap-3 mb-4">
-          <div className={`p-2.5 rounded-lg ${service.isConnected ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-            <Icon className="w-5 h-5" />
-          </div>
+        {/* Header */}
+        <div className="flex items-start gap-4 mb-5">
+          <img
+            src={service.logo}
+            alt={service.name}
+            className="w-12 h-12 rounded-xl object-contain flex-shrink-0"
+            loading="lazy"
+            width={48}
+            height={48}
+          />
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5">
+            <div className="flex items-center gap-2 mb-1">
               <p className="text-sm font-semibold">{isVi ? service.nameVi : service.name}</p>
-              {service.isConnected ? (
-                <Badge variant="default" className="text-[10px] px-1.5 py-0 h-[18px] bg-emerald-500/15 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/15">
-                  <CheckCircle2 className="w-3 h-3 mr-0.5" />
-                  {isVi ? 'Đã kết nối' : 'Connected'}
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-[18px] text-muted-foreground">
-                  <XCircle className="w-3 h-3 mr-0.5" />
-                  {isVi ? 'Chưa kết nối' : 'Not connected'}
-                </Badge>
-              )}
             </div>
-            <p className="text-xs text-muted-foreground">{isVi ? service.descriptionVi : service.description}</p>
-            {service.isConnected && service.email && (
-              <p className="text-xs text-primary/80 mt-1 truncate">{service.email}</p>
-            )}
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {isVi ? service.descriptionVi : service.description}
+            </p>
           </div>
         </div>
 
-        {service.isConnected ? (
-          <Button
-            variant="destructive"
-            size="sm"
-            className="w-full"
-            onClick={() => setDisconnectTarget(service.key)}
-          >
-            <Unlink className="w-3.5 h-3.5" />
-            {isVi ? 'Ngắt kết nối' : 'Disconnect'}
-          </Button>
-        ) : (
-          <Button
-            variant="default"
-            size="sm"
-            className="w-full"
-            onClick={() => service.onConnect()}
-          >
-            <Link2 className="w-3.5 h-3.5" />
-            {isVi ? 'Kết nối' : 'Connect'}
-          </Button>
-        )}
+        {/* Status */}
+        <div className="mb-4">
+          {service.isConnected ? (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/15">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                  {isVi ? 'Đã kết nối' : 'Connected'}
+                </p>
+                {service.email && (
+                  <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/70 truncate">{service.email}</p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50 border border-border">
+              <XCircle className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                {isVi ? 'Chưa kết nối' : 'Not connected'}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Action */}
+        <div className="mt-auto">
+          {service.isConnected ? (
+            <Button
+              variant="destructive"
+              size="sm"
+              className="w-full"
+              onClick={() => setDisconnectTarget(service.key)}
+            >
+              <Unlink className="w-3.5 h-3.5" />
+              {isVi ? 'Ngắt kết nối' : 'Disconnect'}
+            </Button>
+          ) : (
+            <Button
+              variant="default"
+              size="sm"
+              className="w-full"
+              onClick={() => service.onConnect()}
+            >
+              <Link2 className="w-3.5 h-3.5" />
+              {isVi ? 'Kết nối' : 'Connect'}
+            </Button>
+          )}
+        </div>
       </div>
 
       <AlertDialog open={disconnectTarget === service.key} onOpenChange={(o) => !o && setDisconnectTarget(null)}>
@@ -156,7 +178,7 @@ export default function ConnectedServicesCard() {
   const services: ServiceInfo[] = [
     {
       key: 'calendar',
-      icon: Calendar,
+      logo: googleCalendarLogo,
       name: 'Google Calendar',
       nameVi: 'Google Calendar',
       description: 'Sync events between system and Google Calendar',
@@ -168,7 +190,7 @@ export default function ConnectedServicesCard() {
     },
     {
       key: 'gmail',
-      icon: Mail,
+      logo: gmailLogo,
       name: 'Gmail',
       nameVi: 'Gmail',
       description: 'Read and sync emails from your Gmail inbox',
@@ -181,7 +203,7 @@ export default function ConnectedServicesCard() {
     },
     {
       key: 'drive',
-      icon: HardDrive,
+      logo: googleDriveLogo,
       name: 'Google Drive',
       nameVi: 'Google Drive',
       description: 'Attach files from Google Drive to tasks',
@@ -194,26 +216,31 @@ export default function ConnectedServicesCard() {
     },
   ];
 
+  const connectedCount = services.filter(s => s.isConnected).length;
+
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Link2 className="w-4 h-4 text-primary" />
-          {isVi ? 'Dịch vụ đã kết nối' : 'Connected Services'}
-        </CardTitle>
-        <CardDescription>
-          {isVi
-            ? 'Quản lý liên kết với các dịch vụ của Google'
-            : 'Manage connections to Google services'}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {services.map((s) => (
-            <ServiceCard key={s.key} service={s} isVi={isVi} />
-          ))}
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-base font-semibold flex items-center gap-2">
+            <Link2 className="w-4 h-4 text-primary" />
+            {isVi ? 'Dịch vụ liên kết' : 'Connected Services'}
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {isVi
+              ? 'Quản lý liên kết với các dịch vụ Google'
+              : 'Manage connections to Google services'}
+          </p>
         </div>
-      </CardContent>
-    </Card>
+        <Badge variant="outline" className="text-xs">
+          {connectedCount}/{services.length} {isVi ? 'đã kết nối' : 'connected'}
+        </Badge>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {services.map((s) => (
+          <ServiceCard key={s.key} service={s} isVi={isVi} />
+        ))}
+      </div>
+    </div>
   );
 }
