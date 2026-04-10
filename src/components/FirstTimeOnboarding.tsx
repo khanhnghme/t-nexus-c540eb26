@@ -298,7 +298,7 @@ export default function FirstTimeOnboarding({
     if (!phone.trim()) errors.phone = true;
     if (!skills.trim()) errors.skills = true;
     if (needsStudentId && !editStudentId.trim()) errors.editStudentId = true;
-    if (needsFullName && !editFullName.trim()) errors.editFullName = true;
+    if (!editFullName.trim()) errors.editFullName = true;
     setInfoErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -350,7 +350,7 @@ export default function FirstTimeOnboarding({
       };
       if (avatarUrl) updateData.avatar_url = avatarUrl;
       if (needsStudentId) updateData.student_id = editStudentId.trim();
-      if (needsFullName) updateData.full_name = editFullName.trim();
+      updateData.full_name = editFullName.trim();
 
       const { error } = await supabase.from('profiles').update(updateData).eq('id', userId);
       if (error) throw error;
@@ -911,7 +911,7 @@ export default function FirstTimeOnboarding({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {[
-                        ...(needsFullName ? [{ id: 'editFullName', label: isVi ? 'Họ tên' : 'Full Name', icon: <User className="w-4 h-4" />, placeholder: isVi ? 'Nhập họ tên' : 'Enter full name', value: editFullName, setter: setEditFullName }] : []),
+                        { id: 'editFullName', label: isVi ? 'Họ tên' : 'Full Name', icon: <User className="w-4 h-4" />, placeholder: isVi ? 'Nhập họ tên' : 'Enter full name', value: editFullName, setter: setEditFullName },
                         ...(needsStudentId ? [{ id: 'editStudentId', label: isVi ? 'MSSV' : 'Student ID', icon: <GraduationCap className="w-4 h-4" />, placeholder: isVi ? 'Nhập MSSV' : 'Enter Student ID', value: editStudentId, setter: setEditStudentId }] : []),
                         { id: 'yearBatch', label: t.fieldBatch, icon: <GraduationCap className="w-4 h-4" />, placeholder: t.fieldBatchPlaceholder, value: yearBatch, setter: setYearBatch },
                         { id: 'major', label: t.fieldMajor, icon: <BookOpen className="w-4 h-4" />, placeholder: t.fieldMajorPlaceholder, value: major, setter: setMajor },
