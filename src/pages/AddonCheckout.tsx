@@ -131,45 +131,8 @@ export default function AddonCheckout() {
     }).select('id, expires_at, order_code').single();
 
     if (error || !data) throw new Error(error?.message || 'Failed to create order');
-
-    setOrderReservation({ orderId: data.id, expiresAt: data.expires_at! });
-    setOrderExpired(false);
     return data.order_code;
   }, [user, addons, billingCycle, subtotal, totalAmount, saving]);
-
-  const createOrder = useCallback(async (): Promise<string> => {
-    const { data, error } = await supabase.functions.invoke('create-paypal-order', {
-      body: {
-        order_type: 'addon',
-        billing_cycle: billingCycle,
-        addons: addonItems,
-        internal_order_id: orderReservation?.orderId,
-      },
-    });
-    if (error || !data?.orderID) throw new Error(error?.message || 'Failed to create order');
-
-    return data.orderID;
-  }, [billingCycle, addonItems, orderReservation]);
-
-  const captureOrder = useCallback(async (orderID: string) => {
-    setPaymentStatus('processing');
-    try {
-      const { data, error } = await supabase.functions.invoke('capture-paypal-order', {
-        body: { orderID },
-      });
-      if (error || !data?.success) throw new Error(error?.message || 'Capture failed');
-
-      setPaymentStatus('success');
-      userAddons.refresh();
-      accountLimits.refresh();
-      await refreshProfile();
-      toast({ title: '✅', description: isVi ? 'Mua add-on thành công!' : 'Add-on purchased successfully!' });
-      navigate(`/checkout/result?status=success&order_id=${data.orderId || orderReservation?.orderId || ''}`, { replace: true });
-    } catch (err: any) {
-      setPaymentStatus('failed');
-      toast({ title: 'Error', description: err.message || 'Payment failed', variant: 'destructive' });
-    }
-  }, [navigate, isVi, userAddons, accountLimits, refreshProfile]);
 
   /* ═══ Order Summary Card (shared between steps) ═══ */
   const OrderSummaryCard = () => (
