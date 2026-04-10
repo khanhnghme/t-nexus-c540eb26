@@ -1,60 +1,50 @@
 
 
-## Plan: Order Reservation Model — Giữ đơn có thời hạn
+## Plan: Cập nhật UI phản ánh Order Reservation
 
-### Hiện trạng
+### Tổng quan
+Thêm các yếu tố trực quan vào Step 2 (thanh toán) của cả `Checkout.tsx` và `AddonCheckout.tsx` để user thấy rõ đơn hàng có thời hạn, cùng trạng thái order. Cập nhật `PaymentResult.tsx` hiển thị thêm thông tin reservation.
 
-Hệ thống đã có 80% mô hình này:
-- Order tạo với `status = pending` khi gọi `create-paypal-order`
-- `cleanup-pending-orders` tự hủy đơn pending sau 2h (dùng `created_at`)
-- `capture-paypal-order` check idempotent (`completed` → skip)
+### Thay đổi cụ thể
 
-### Thiếu sót cần bổ sung
+#### 1. Tạo component `OrderCountdown.tsx`
+- Hiển thị countdown timer từ `expires_at` (đếm ngược 2h)
+- Icon đồng hồ + text "Đơn hàng hết hạn sau: HH:MM:SS"
+- Khi < 10 phút → đổi sang màu đỏ cảnh báo
+- Khi hết hạn → hiển thị "Đơn hàng đã hết hạn" + nút "Tạo đơn mới"
+- Dùng `useEffect` + `setInterval` mỗi giây
 
-| Lỗ hổng | Vấn đề |
-|---|---|
-| Không có `expires_at` | Cleanup dùng `created_at + 2h` ngầm, nhưng capture không check → **đơn hết hạn vẫn có thể capture** |
-| Capture không reject expired | Nếu cron chưa chạy và đơn quá 2h, capture vẫn xử lý bình thường |
-| Frontend không biết đơn hết hạn | Không hiển thị countdown hoặc cảnh báo |
+#### 2. Cập nhật `Checkout.tsx` (Step 2)
+- Sau khi `createOrder` trả về, lưu `orderId` + `expiresAt` vào state
+- Hiển thị mã đơn hàng (Order ID truncated) + `OrderCountdown` ngay dưới header Step 2
+- Thêm badge trạng thái: "⏳ Đang chờ thanh toán" (pending)
+- Nếu order expired → disable PayPal buttons, hiển thị nút quay lại Step 1
 
-### Thay đổi
+#### 3. Cập nhật `AddonCheckout.tsx` (Step 2)
+- Tương tự Checkout: hiển thị Order ID + countdown timer
+- Disable payment khi hết hạn
 
-#### 1. DB Migration — Thêm cột `expires_at`
-```sql
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS expires_at timestamptz;
--- Backfill existing pending orders
-UPDATE orders SET expires_at = created_at + interval '2 hours' WHERE expires_at IS NULL;
-```
+#### 4. Cập nhật `PaymentResult.tsx`
+- Hiển thị thêm Order ID (truncated)
+- Hiển thị thời gian hoàn thành (`completed_at`)
+- Nếu status = expired → hiển thị UI riêng "Đơn hàng đã hết hạn"
 
-#### 2. `create-paypal-order/index.ts`
-- Set `expires_at = NOW() + 2 hours` khi insert order
-
-#### 3. `capture-paypal-order/index.ts`
-- Sau khi fetch order, thêm check:
-  ```
-  if (order.status === 'expired' || (order.expires_at && new Date(order.expires_at) < new Date()))
-    → return 400 "Order expired"
-  ```
-- Nếu order đã quá hạn nhưng chưa bị cron đánh expired → set expired luôn và reject
-
-#### 4. `cleanup-pending-orders/index.ts`
-- Đổi điều kiện: dùng `expires_at <= NOW()` thay vì `created_at < 2h ago`
-
-#### 5. `paypal-webhook/index.ts`
-- Thêm check `expires_at` tương tự capture — reject webhook cho đơn hết hạn
+### Flow thay đổi
+- Step 1: Không thay đổi (chọn plan/addon)
+- Step 2: Order được tạo khi bấm "Continue to Pay" → hiển thị countdown + order ID
+- Hết hạn: Tự động disable thanh toán, hiển thị thông báo
 
 ### Không thay đổi
-- Frontend flow (step 1/2) giữ nguyên
-- Logic tính giá, coupon, addon giữ nguyên
-- PayPal integration flow giữ nguyên
+- Backend logic, API, database
+- Step 1 UI
+- Tính giá, coupon logic
 
 ### Files
 
 | File | Action |
 |---|---|
-| DB migration | Add `expires_at` column |
-| `supabase/functions/create-paypal-order/index.ts` | Set `expires_at` on insert |
-| `supabase/functions/capture-paypal-order/index.ts` | Reject expired orders |
-| `supabase/functions/cleanup-pending-orders/index.ts` | Use `expires_at` column |
-| `supabase/functions/paypal-webhook/index.ts` | Reject expired orders |
+| `src/components/OrderCountdown.tsx` | Create — countdown timer component |
+| `src/pages/Checkout.tsx` | Edit — add order reservation UI in Step 2 |
+| `src/pages/AddonCheckout.tsx` | Edit — add order reservation UI in Step 2 |
+| `src/pages/PaymentResult.tsx` | Edit — show order ID, timestamps, expired state |
 
