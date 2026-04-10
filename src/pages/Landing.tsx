@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import SplashScreen from '@/components/SplashScreen';
+
 import MandatoryNotification from '@/components/MandatoryNotification';
 import { useFullLockdown } from '@/hooks/useFullLockdown';
 import { Button } from '@/components/ui/button';
@@ -325,7 +325,7 @@ export default function Landing() {
   const tl = t.landing;
   const tc = t.common;
   const tn = t.nav;
-  const [showSplash, setShowSplash] = useState(() => !sessionStorage.getItem('t-nexus-splash-shown'));
+  
   const [isInitializing, setIsInitializing] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
   const [introVisible, setIntroVisible] = useState(false);
@@ -411,10 +411,10 @@ export default function Landing() {
   }, [dashboardVideoElement]);
 
   useEffect(() => {
-    if (!showSplash && videoRef.current) {
+    if (videoRef.current) {
       videoRef.current.play().catch(() => undefined);
     }
-  }, [showSplash]);
+  }, []);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -527,15 +527,6 @@ export default function Landing() {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden" style={{ backgroundColor: colorVar('--landing-night'), fontFamily: "'NotionInter', 'Inter', sans-serif" }}>
-      {/* Loading/Splash overlays — content renders behind for crawlers */}
-      {showSplash && (
-        <SplashScreen
-          onComplete={() => {
-            sessionStorage.setItem('t-nexus-splash-shown', 'true');
-            setShowSplash(false);
-          }}
-        />
-      )}
       <MandatoryNotification mode="pre_login" locale={locale} />
 
       {videoEnabled && videoUrl && (
@@ -547,7 +538,7 @@ export default function Landing() {
             playsInline
             preload="auto"
             className="pointer-events-none fixed inset-0 h-full w-full object-cover"
-            style={{ opacity: showSplash ? 0 : videoOpacity, zIndex: 0, willChange: 'transform', transform: 'translateZ(0)', transition: 'opacity 1s' }}
+            style={{ opacity: videoOpacity, zIndex: 0, willChange: 'transform', transform: 'translateZ(0)', transition: 'opacity 1s' }}
             src={videoUrl}
           />
           <div
