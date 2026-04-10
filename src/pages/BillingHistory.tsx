@@ -121,9 +121,10 @@ export default function BillingHistory() {
   const canContinuePayment = (r: BillingRecord) =>
     r.status === 'pending' && r.expires_at && new Date(r.expires_at).getTime() > Date.now();
 
-  const formatDate = (d: string) => {
+  const formatDateTime = (d: string | null) => {
+    if (!d) return '—';
     const date = new Date(d);
-    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
   };
 
   const getStatusBadge = (status: string) => {
@@ -161,10 +162,11 @@ export default function BillingHistory() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">
-                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{isVi ? 'Ngày' : 'Date'}</th>
+                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{isVi ? 'Ngày đặt' : 'Created'}</th>
                 <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{isVi ? 'Mã đơn' : 'Order ID'}</th>
                 <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{isVi ? 'Gói' : 'Plan'}</th>
                 <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{isVi ? 'Phương thức' : 'Method'}</th>
+                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{isVi ? 'Thanh toán lúc' : 'Paid at'}</th>
                 <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{isVi ? 'Số tiền' : 'Amount'}</th>
                 <th className="text-center text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3">{isVi ? 'Trạng thái' : 'Status'}</th>
                 <th className="text-center text-xs font-medium text-muted-foreground uppercase tracking-wider px-5 py-3"></th>
@@ -172,19 +174,20 @@ export default function BillingHistory() {
             </thead>
             <tbody className="divide-y divide-border">
               {loading ? (
-                <tr><td colSpan={7} className="text-center py-8"><Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" /></td></tr>
+                <tr><td colSpan={8} className="text-center py-8"><Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" /></td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-8 text-sm text-muted-foreground">{isVi ? 'Chưa có giao dịch' : 'No transactions yet'}</td></tr>
+                <tr><td colSpan={8} className="text-center py-8 text-sm text-muted-foreground">{isVi ? 'Chưa có giao dịch' : 'No transactions yet'}</td></tr>
               ) : filtered.map(row => {
                 const displayAmount = row.final_amount ?? row.amount;
                 return (
                   <tr key={`${row.source}-${row.id}`} className="hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setSelectedPayment(row.raw)}>
-                    <td className="px-5 py-3 text-sm">{formatDate(row.created_at)}</td>
+                    <td className="px-5 py-3 text-sm whitespace-nowrap">{formatDateTime(row.created_at)}</td>
                     <td className="px-5 py-3 text-sm font-mono text-xs text-muted-foreground">
                       #{(row.order_id || row.id).slice(0, 8).toUpperCase()}
                     </td>
                     <td className="px-5 py-3 text-sm font-medium">{formatPlanName(row.plan_purchased)}</td>
                     <td className="px-5 py-3 text-sm text-muted-foreground">{row.payment_method || '—'}</td>
+                    <td className="px-5 py-3 text-sm text-muted-foreground whitespace-nowrap">{formatDateTime(row.paid_at)}</td>
                     <td className="px-5 py-3 text-sm text-right tabular-nums">${displayAmount.toFixed(2)}</td>
                     <td className="px-5 py-3 text-center">{getStatusBadge(row.status)}</td>
                     <td className="px-5 py-3 text-center">
