@@ -63,7 +63,11 @@ export default function GmailTab() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [nextPageToken, setNextPageToken] = useState<string | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
+  // 5 emails/page, 25 emails/sync = 5 pages per sync batch
+  const PAGES_PER_BATCH = Math.floor(25 / PAGE_SIZE); // 5
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   const fetchEmails = useCallback(async (page: number) => {
@@ -92,8 +96,33 @@ export default function GmailTab() {
     if (isConnected && !isChecking) fetchEmails(currentPage);
   }, [isConnected, isChecking, currentPage, fetchEmails]);
 
+  // Auto-load more when user navigates beyond available data
+  const handlePageChange = useCallback(async (page: number) => {
+    // Check if we need more emails from Gmail
+    const neededEmails = page * PAGE_SIZE;
+    if (neededEmails > totalCount && nextPageToken && !isLoadingMore && !isSyncing) {
+      setIsLoadingMore(true);
+      try {
+        const result = await syncEmails(nextPageToken);
+        if (result?.nextPageToken) {
+          setNextPageToken(result.nextPageToken);
+        } else {
+          setNextPageToken(null);
+        }
+      } finally {
+        setIsLoadingMore(false);
+      }
+    }
+    setCurrentPage(page);
+  }, [totalCount, nextPageToken, isLoadingMore, isSyncing, syncEmails]);
+
   const handleSync = async () => {
-    await syncEmails();
+    const result = await syncEmails();
+    if (result?.nextPageToken) {
+      setNextPageToken(result.nextPageToken);
+    } else {
+      setNextPageToken(null);
+    }
     setCurrentPage(1);
     await fetchEmails(1);
   };
