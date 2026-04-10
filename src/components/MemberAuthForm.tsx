@@ -52,19 +52,17 @@ const registerSchema = (ta: Record<string, string>) => z.object({
 function PolicyCheckbox({
   checked,
   onCheckedChange,
-  policyUpdatedAt,
   error,
   ta,
-  dateLocale,
   localizedPolicyPath,
+  localizedPrivacyPath,
 }: {
   checked: boolean;
   onCheckedChange: (v: boolean) => void;
-  policyUpdatedAt: string | null;
   error?: string;
   ta: Record<string, string>;
-  dateLocale: Locale;
   localizedPolicyPath: string;
+  localizedPrivacyPath: string;
 }) {
   return (
     <div className="space-y-1">
@@ -92,9 +90,20 @@ function PolicyCheckbox({
           >
             {ta.policyTitle}
           </a>
-          {policyUpdatedAt && (
-            <span className="text-[10px] text-muted-foreground leading-none">· {format(new Date(policyUpdatedAt), "dd/MM/yyyy", { locale: dateLocale })}</span>
-          )}
+          <span className="text-muted-foreground">&</span>
+          <a
+            href={localizedPrivacyPath}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-warning hover:underline font-semibold"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              window.open(localizedPrivacyPath, '_blank', 'noopener,noreferrer');
+            }}
+          >
+            {ta.privacyPolicyTitle}
+          </a>
         </div>
       </div>
       {error && <p className="text-sm text-destructive ml-6">{error}</p>}
