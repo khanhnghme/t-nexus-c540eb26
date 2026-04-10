@@ -307,9 +307,35 @@ export default function AddonCheckoutPayment() {
           <h2 className="text-base font-semibold">{isVi ? 'Phương thức thanh toán' : 'Payment Method'}</h2>
 
           {paymentStatus === 'processing' ? (
-            <div className="flex flex-col items-center justify-center py-8 gap-3">
-              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">{isVi ? 'Đang xử lý...' : 'Processing...'}</p>
+            <div className="flex flex-col items-center justify-center py-8 gap-4 text-center">
+              <Loader2 className="w-10 h-10 animate-spin text-primary" />
+              <div className="space-y-1">
+                <p className="font-semibold">
+                  {isVi ? 'Đang xác nhận thanh toán với PayPal' : 'Confirming payment with PayPal'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {isVi ? 'Hệ thống đang xác minh giao dịch của bạn...' : 'The system is verifying your transaction...'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-300">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <span>{isVi ? 'Vui lòng không thoát hoặc tải lại trang' : 'Please do not leave or reload this page'}</span>
+              </div>
+              <div className="w-full max-w-xs space-y-2">
+                <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                  <div className="h-full w-1/2 rounded-full bg-primary" style={{ animation: 'pulse 1.5s ease-in-out infinite, addonSlideRight 2s ease-in-out infinite' }} />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {isVi ? 'Mã đơn hàng:' : 'Order ID:'}{' '}
+                  <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{order?.order_code || orderCode}</code>
+                </p>
+              </div>
+              <style>{`
+                @keyframes addonSlideRight {
+                  0%, 100% { transform: translateX(-60%); }
+                  50% { transform: translateX(120%); }
+                }
+              `}</style>
             </div>
           ) : orderExpired ? (
             <div className="flex flex-col items-center justify-center py-6 gap-2 text-center">
