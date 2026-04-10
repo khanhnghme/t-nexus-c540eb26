@@ -911,6 +911,8 @@ export default function FirstTimeOnboarding({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {[
+                        ...(needsFullName ? [{ id: 'editFullName', label: isVi ? 'Họ tên' : 'Full Name', icon: <User className="w-4 h-4" />, placeholder: isVi ? 'Nhập họ tên' : 'Enter full name', value: editFullName, setter: setEditFullName }] : []),
+                        ...(needsStudentId ? [{ id: 'editStudentId', label: isVi ? 'MSSV' : 'Student ID', icon: <GraduationCap className="w-4 h-4" />, placeholder: isVi ? 'Nhập MSSV' : 'Enter Student ID', value: editStudentId, setter: setEditStudentId }] : []),
                         { id: 'yearBatch', label: t.fieldBatch, icon: <GraduationCap className="w-4 h-4" />, placeholder: t.fieldBatchPlaceholder, value: yearBatch, setter: setYearBatch },
                         { id: 'major', label: t.fieldMajor, icon: <BookOpen className="w-4 h-4" />, placeholder: t.fieldMajorPlaceholder, value: major, setter: setMajor },
                         { id: 'phone', label: t.fieldPhone, icon: <Phone className="w-4 h-4" />, placeholder: t.fieldPhonePlaceholder, value: phone, setter: setPhone },
