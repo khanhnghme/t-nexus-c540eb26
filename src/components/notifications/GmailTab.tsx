@@ -1,7 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Mail, RefreshCw, Loader2, Inbox } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -11,6 +10,17 @@ import { enUS } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import GmailConnect from './GmailConnect';
 import { useGmailSync } from '@/hooks/useGmailSync';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from '@/components/ui/pagination';
+
+const PAGE_SIZE = 15;
 
 interface GmailMessage {
   id: string;
@@ -51,38 +61,61 @@ export default function GmailTab() {
   const { isConnected, isSyncing, isChecking, connectedEmail, connect, disconnect, syncEmails } = useGmailSync();
   const [emails, setEmails] = useState<GmailMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
-  const fetchEmails = async () => {
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+
+  const fetchEmails = useCallback(async (page: number) => {
     if (!user?.id) return;
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      const from = (page - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      const { data, error, count } = await supabase
         .from('gmail_messages')
-        .select('*')
+        .select('*', { count: 'exact' })
         .eq('user_id', user.id)
         .order('received_at', { ascending: false })
-        .limit(50);
+        .range(from, to);
       if (error) throw error;
       setEmails((data as GmailMessage[]) || []);
+      setTotalCount(count || 0);
     } catch (err) {
       console.error('Failed to fetch emails:', err);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id]);
 
   useEffect(() => {
-    if (isConnected && !isChecking) fetchEmails();
-  }, [isConnected, isChecking, user?.id]);
+    if (isConnected && !isChecking) fetchEmails(currentPage);
+  }, [isConnected, isChecking, currentPage, fetchEmails]);
 
   const handleSync = async () => {
     await syncEmails();
-    await fetchEmails();
+    setCurrentPage(1);
+    await fetchEmails(1);
   };
 
   const grouped = useMemo(() => groupEmailsByDate(emails, locale), [emails, locale]);
 
-  // Not connected state
+  const getPageNumbers = () => {
+    const pages: (number | 'ellipsis')[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push('ellipsis');
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (currentPage < totalPages - 2) pages.push('ellipsis');
+      pages.push(totalPages);
+    }
+    return pages;
+  };
+
   if (!isChecking && !isConnected) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
@@ -108,7 +141,6 @@ export default function GmailTab() {
 
   return (
     <div>
-      {/* Header with sync */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border/40 bg-muted/20">
         <GmailConnect
           isConnected={isConnected}
@@ -117,13 +149,19 @@ export default function GmailTab() {
           onConnect={connect}
           onDisconnect={disconnect}
         />
-        <Button variant="outline" size="sm" onClick={handleSync} disabled={isSyncing} className="gap-1.5">
-          {isSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-          {g.syncNow || 'Sync'}
-        </Button>
+        <div className="flex items-center gap-2">
+          {totalCount > 0 && (
+            <span className="text-xs text-muted-foreground">
+              {totalCount} email{totalCount !== 1 ? 's' : ''}
+            </span>
+          )}
+          <Button variant="outline" size="sm" onClick={handleSync} disabled={isSyncing} className="gap-1.5">
+            {isSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            {g.syncNow || 'Sync'}
+          </Button>
+        </div>
       </div>
 
-      {/* Loading */}
       {(isLoading || isChecking) ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
           <Loader2 className="w-8 h-8 animate-spin mb-3" />
@@ -157,15 +195,12 @@ export default function GmailTab() {
                     !email.is_read && "bg-primary/[0.03]"
                   )}
                 >
-                  {/* Icon */}
                   <div className={cn(
                     "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
                     !email.is_read ? "bg-primary/10" : "bg-muted/60"
                   )}>
                     <Mail className={cn("w-4 h-4", !email.is_read ? "text-primary" : "text-muted-foreground")} />
                   </div>
-
-                  {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start gap-2">
                       <div className="min-w-0 flex-1">
@@ -196,6 +231,45 @@ export default function GmailTab() {
               ))}
             </div>
           ))}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="py-4 border-t border-border/40">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      className={cn(currentPage === 1 && "pointer-events-none opacity-50", "cursor-pointer")}
+                    />
+                  </PaginationItem>
+                  {getPageNumbers().map((p, i) =>
+                    p === 'ellipsis' ? (
+                      <PaginationItem key={`e-${i}`}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={p}>
+                        <PaginationLink
+                          isActive={currentPage === p}
+                          onClick={() => setCurrentPage(p as number)}
+                          className="cursor-pointer"
+                        >
+                          {p}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )
+                  )}
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      className={cn(currentPage === totalPages && "pointer-events-none opacity-50", "cursor-pointer")}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </div>
       )}
     </div>

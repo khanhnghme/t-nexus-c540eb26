@@ -136,49 +136,44 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Fetch details for each message (batch of 50)
+      // Fetch details in parallel batches of 10
+      const BATCH_SIZE = 10;
       const messages = [];
-      for (const msg of messageIds) {
-        try {
-          const detailRes = await fetch(
-            `https://www.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`,
-            { headers: { Authorization: `Bearer ${accessToken}` } }
-          );
-          if (!detailRes.ok) {
-            await detailRes.text();
-            continue;
-          }
-          const detail = await detailRes.json();
-
-          const headers = detail.payload?.headers || [];
-          const getHeader = (name: string) => headers.find((h: any) => h.name.toLowerCase() === name.toLowerCase())?.value || null;
-
-          const fromRaw = getHeader("From") || "";
-          let fromName = "";
-          let fromEmail = fromRaw;
-          const match = fromRaw.match(/^(.+?)\s*<(.+?)>$/);
-          if (match) {
-            fromName = match[1].replace(/^"|"$/g, "").trim();
-            fromEmail = match[2];
-          }
-
-          const isRead = !detail.labelIds?.includes("UNREAD");
-
-          messages.push({
-            user_id: user.id,
-            gmail_message_id: detail.id,
-            thread_id: detail.threadId,
-            subject: getHeader("Subject"),
-            snippet: detail.snippet,
-            from_email: fromEmail,
-            from_name: fromName,
-            received_at: new Date(parseInt(detail.internalDate)).toISOString(),
-            is_read: isRead,
-            labels: detail.labelIds || [],
-          });
-        } catch (e) {
-          console.error("Error fetching message detail:", e);
-        }
+      for (let i = 0; i < messageIds.length; i += BATCH_SIZE) {
+        const batch = messageIds.slice(i, i + BATCH_SIZE);
+        const results = await Promise.all(
+          batch.map(async (msg) => {
+            try {
+              const detailRes = await fetch(
+                `https://www.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`,
+                { headers: { Authorization: `Bearer ${accessToken}` } }
+              );
+              if (!detailRes.ok) { await detailRes.text(); return null; }
+              const detail = await detailRes.json();
+              const headers = detail.payload?.headers || [];
+              const getHeader = (name: string) => headers.find((h: any) => h.name.toLowerCase() === name.toLowerCase())?.value || null;
+              const fromRaw = getHeader("From") || "";
+              let fromName = "";
+              let fromEmail = fromRaw;
+              const match = fromRaw.match(/^(.+?)\s*<(.+?)>$/);
+              if (match) { fromName = match[1].replace(/^"|"$/g, "").trim(); fromEmail = match[2]; }
+              const isRead = !detail.labelIds?.includes("UNREAD");
+              return {
+                user_id: user.id,
+                gmail_message_id: detail.id,
+                thread_id: detail.threadId,
+                subject: getHeader("Subject"),
+                snippet: detail.snippet,
+                from_email: fromEmail,
+                from_name: fromName,
+                received_at: new Date(parseInt(detail.internalDate)).toISOString(),
+                is_read: isRead,
+                labels: detail.labelIds || [],
+              };
+            } catch (e) { console.error("Error fetching message detail:", e); return null; }
+          })
+        );
+        messages.push(...results.filter(Boolean));
       }
 
       if (messages.length > 0) {
