@@ -896,73 +896,78 @@ export default function FirstTimeOnboarding({
                 </div>
 
                 <div className="flex-1 px-6 md:px-10 pb-6 overflow-y-auto">
-                  <div className="w-full max-w-lg mx-auto">
+                  <div className="w-full max-w-2xl mx-auto">
                     <div className="text-center mb-4">
                       <h2 className="text-xl font-extrabold mb-0.5">{t.infoTitle}</h2>
                       <p className="text-muted-foreground text-sm">{t.infoDesc}</p>
                     </div>
 
-                    <div className="flex flex-col items-center mb-5">
-                      <div className="relative group cursor-pointer mb-2" onClick={() => fileInputRef.current?.click()}>
-                        <Avatar className="h-20 w-20 border-4 border-background shadow-xl ring-2 ring-primary/20">
-                          {previewUrl ? (
-                            <AvatarImage src={previewUrl} alt="Preview" />
-                          ) : (
-                            <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-primary text-xl font-bold">
-                              {getInitials(userFullName)}
-                            </AvatarFallback>
-                          )}
-                        </Avatar>
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Camera className="w-6 h-6 text-white" />
-                        </div>
-                        <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg">
-                          <Camera className="w-3.5 h-3.5" />
-                        </div>
-                      </div>
-                      <button type="button" onClick={() => fileInputRef.current?.click()}
-                        className="text-xs text-primary font-medium hover:underline">
-                        {previewUrl ? t.changeAvatar : t.uploadAvatar}
-                      </button>
-                      <p className="text-[10px] text-muted-foreground">{t.avatarOptional}</p>
-                      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
-                    </div>
-
-                    {/* Nhóm 1: Hồ sơ cá nhân */}
+                    {/* Nhóm 1: Hồ sơ cá nhân (avatar + fields cùng box) */}
                     <div className="rounded-xl border bg-card p-4 space-y-3">
                       <div className="flex items-center gap-2 text-sm font-semibold">
                         <User className="w-4 h-4 text-primary" />
                         {isVi ? 'Hồ sơ cá nhân' : 'Personal Profile'}
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <Label htmlFor="editFullName" className="text-xs font-semibold mb-1.5 block">
-                            {isVi ? 'Họ tên' : 'Full Name'} <span className="text-destructive">*</span>
-                          </Label>
-                          <Input id="editFullName" placeholder={isVi ? 'Nhập họ tên' : 'Enter full name'}
-                            value={editFullName}
-                            onChange={(e) => { setEditFullName(e.target.value); setInfoErrors(p => ({ ...p, editFullName: false })); }}
-                            className={cn('h-9 border-0 bg-muted/50 rounded-lg focus-visible:ring-1', infoErrors.editFullName && 'bg-destructive/10')} />
+                      <div className="flex gap-4 items-start">
+                        {/* Avatar bên trái */}
+                        <div className="flex flex-col items-center shrink-0">
+                          <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                            <Avatar className="h-16 w-16 border-4 border-background shadow-xl ring-2 ring-primary/20">
+                              {previewUrl ? (
+                                <AvatarImage src={previewUrl} alt="Preview" />
+                              ) : (
+                                <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-primary text-lg font-bold">
+                                  {getInitials(userFullName)}
+                                </AvatarFallback>
+                              )}
+                            </Avatar>
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Camera className="w-5 h-5 text-white" />
+                            </div>
+                            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg">
+                              <Camera className="w-3 h-3" />
+                            </div>
+                          </div>
+                          <button type="button" onClick={() => fileInputRef.current?.click()}
+                            className="text-[10px] text-primary font-medium hover:underline mt-1">
+                            {previewUrl ? t.changeAvatar : t.uploadAvatar}
+                          </button>
+                          <p className="text-[9px] text-muted-foreground">{t.avatarOptional}</p>
+                          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
                         </div>
-                        <div>
-                          <Label htmlFor="emailReadonly" className="text-xs font-semibold mb-1.5 block">
-                            Email
-                          </Label>
-                          <Input id="emailReadonly" value={userEmail} disabled
-                            className="h-9 border-0 bg-muted/50 rounded-lg opacity-60 cursor-not-allowed" />
+                        {/* Fields bên phải */}
+                        <div className="flex-1 space-y-3 min-w-0">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <Label htmlFor="editFullName" className="text-xs font-semibold mb-1.5 block">
+                                {isVi ? 'Họ tên' : 'Full Name'} <span className="text-destructive">*</span>
+                              </Label>
+                              <Input id="editFullName" placeholder={isVi ? 'Nhập họ tên' : 'Enter full name'}
+                                value={editFullName}
+                                onChange={(e) => { setEditFullName(e.target.value); setInfoErrors(p => ({ ...p, editFullName: false })); }}
+                                className={cn('h-9 border-0 bg-muted/50 rounded-lg focus-visible:ring-1', infoErrors.editFullName && 'bg-destructive/10')} />
+                            </div>
+                            <div>
+                              <Label htmlFor="emailReadonly" className="text-xs font-semibold mb-1.5 block">
+                                Email
+                              </Label>
+                              <Input id="emailReadonly" value={userEmail} disabled
+                                className="h-9 border-0 bg-muted/50 rounded-lg opacity-60 cursor-not-allowed" />
+                            </div>
+                          </div>
+                          {needsStudentId && (
+                            <div>
+                              <Label htmlFor="editStudentId" className="text-xs font-semibold mb-1.5 block">
+                                {isVi ? 'MSSV' : 'Student ID'} <span className="text-destructive">*</span>
+                              </Label>
+                              <Input id="editStudentId" placeholder={isVi ? 'Nhập MSSV' : 'Enter Student ID'}
+                                value={editStudentId}
+                                onChange={(e) => { setEditStudentId(e.target.value); setInfoErrors(p => ({ ...p, editStudentId: false })); }}
+                                className={cn('h-9 border-0 bg-muted/50 rounded-lg focus-visible:ring-1', infoErrors.editStudentId && 'bg-destructive/10')} />
+                            </div>
+                          )}
                         </div>
                       </div>
-                      {needsStudentId && (
-                        <div>
-                          <Label htmlFor="editStudentId" className="text-xs font-semibold mb-1.5 block">
-                            {isVi ? 'MSSV' : 'Student ID'} <span className="text-destructive">*</span>
-                          </Label>
-                          <Input id="editStudentId" placeholder={isVi ? 'Nhập MSSV' : 'Enter Student ID'}
-                            value={editStudentId}
-                            onChange={(e) => { setEditStudentId(e.target.value); setInfoErrors(p => ({ ...p, editStudentId: false })); }}
-                            className={cn('h-9 border-0 bg-muted/50 rounded-lg focus-visible:ring-1', infoErrors.editStudentId && 'bg-destructive/10')} />
-                        </div>
-                      )}
                     </div>
 
                     {/* Nhóm 2: Thông tin học vấn */}
