@@ -183,7 +183,47 @@ export default function Checkout() {
     }
   }, [couponCode, plan, t, isVi]);
 
+  // Create internal order reservation when entering Step 2
+  const createReservation = useCallback(async () => {
+    const addonsList = Object.entries(addons)
+      .filter(([, qty]) => qty > 0)
+      .map(([type, quantity]) => ({ type, quantity }));
+
+    const { data, error } = await supabase.from('orders').insert({
+      user_id: user!.id,
+      plan,
+      billing_cycle: cycle,
+      order_type: 'plan',
+      base_amount: originalBaseAmount,
+      addon_amount: addonFinal,
+      discount_amount: discountAmount + welcomeDiscount + addonSaving,
+      welcome_discount: welcomeDiscount,
+      total_amount: totalAmount,
+      addons: addonsList as any,
+      addons_applied: addonFinal > 0,
+      coupon_code: couponDiscount ? couponDiscount.code : null,
+      coupon_applied: !!couponDiscount,
+      payment_method: 'paypal',
+      status: 'pending',
+      expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+    }).select('id, expires_at').single();
+
+    if (error || !data) {
+      throw new Error(error?.message || 'Failed to create order');
+    }
+
+    setOrderReservation({
+      orderId: data.id,
+      expiresAt: data.expires_at!,
+    });
+    setOrderExpired(false);
+    return data.id;
+  }, [user, plan, cycle, addons, originalBaseAmount, addonFinal, discountAmount, welcomeDiscount, addonSaving, totalAmount, couponDiscount]);
+
   const createOrder = useCallback(async () => {
+    // Use existing reservation if available
+    const internalOrderId = orderReservation?.orderId;
+
     const addonsList = Object.entries(addons)
       .filter(([, qty]) => qty > 0)
       .map(([type, quantity]) => ({ type, quantity }));
@@ -194,6 +234,7 @@ export default function Checkout() {
         billing_cycle: cycle,
         addons: addonsList,
         coupon_code: couponDiscount ? couponDiscount.code : undefined,
+        internal_order_id: internalOrderId,
       },
     });
 
@@ -201,17 +242,8 @@ export default function Checkout() {
       throw new Error(res.error?.message || 'Failed to create order');
     }
 
-    // Save reservation info
-    if (res.data.expiresAt || res.data.internalOrderId) {
-      setOrderReservation({
-        orderId: res.data.internalOrderId || res.data.orderID,
-        expiresAt: res.data.expiresAt || new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-      });
-      setOrderExpired(false);
-    }
-
     return res.data.orderID;
-  }, [plan, cycle, addons, couponDiscount]);
+  }, [plan, cycle, addons, couponDiscount, orderReservation]);
 
   const onApprove = useCallback(async (data: { orderID: string }) => {
     setPaymentStatus('processing');
