@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Mail, Unplug, Loader2 } from 'lucide-react';
+import { Unplug, Loader2 } from 'lucide-react';
+import gmailLogo from '@/assets/gmail-logo.png';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
@@ -50,7 +51,7 @@ export default function GmailConnect({ isConnected, isChecking, connectedEmail, 
               size="sm"
               className="h-7 gap-1.5 text-xs border-green-300 text-green-700 dark:border-green-700 dark:text-green-400"
             >
-              <Mail className="w-3.5 h-3.5" />
+              <img src={gmailLogo} alt="Gmail" className="w-3.5 h-3.5" />
               {connectedEmail || g.connected || 'Đã kết nối'}
             </Button>
           </DropdownMenuTrigger>
@@ -87,7 +88,7 @@ export default function GmailConnect({ isConnected, isChecking, connectedEmail, 
 
   return (
     <Button variant="outline" size="sm" onClick={onConnect} className="gap-1.5">
-      <Mail className="w-4 h-4" />
+      <img src={gmailLogo} alt="Gmail" className="w-4 h-4" />
       {g.connectGmail || 'Connect Gmail'}
     </Button>
   );

@@ -84,6 +84,7 @@ import { CountdownTimer } from './CountdownTimer';
 import ResourceLinkRenderer from './ResourceLinkRenderer';
 import { useGoogleDriveConnect } from '@/hooks/useGoogleDriveConnect';
 import { useGoogleDrivePicker, type DriveFile } from '@/hooks/useGoogleDrivePicker';
+import googleDriveLogo from '@/assets/google-drive-logo.png';
 
 interface TaskAssignee {
   user_id: string;
@@ -1186,7 +1187,7 @@ export default function TaskSubmissionDialog({
                             {!driveConnect.isConnected ? (
                               <div className="h-full min-h-[180px] flex flex-col items-center justify-center gap-3">
                                 <div className="relative">
-                                  <img src="https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png" alt="Google Drive" className="w-12 h-12 opacity-40" />
+                                  <img src={googleDriveLogo} alt="Google Drive" className="w-12 h-12 opacity-40" />
                                 </div>
                                 <p className="text-sm text-muted-foreground text-center">Kết nối Google Drive để chọn file</p>
                                 <Button
@@ -1195,7 +1196,7 @@ export default function TaskSubmissionDialog({
                                   onClick={driveConnect.connect}
                                   className="gap-2 border-violet-500/30 text-violet-600 hover:bg-violet-500/10"
                                 >
-                                  <img src="https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png" alt="" className="w-4 h-4" />
+                                  <img src={googleDriveLogo} alt="" className="w-4 h-4" />
                                   Liên kết Google Drive
                                 </Button>
                               </div>

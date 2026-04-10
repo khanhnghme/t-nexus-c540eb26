@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Unlink } from 'lucide-react';
+import googleCalendarLogo from '@/assets/google-calendar-logo.png';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,7 +48,7 @@ export default function GoogleCalendarConnect({
         onClick={onConnect}
         className="h-7 gap-1.5 text-xs"
       >
-        <img src="https://www.gstatic.com/images/branding/product/1x/calendar_2020q4_48dp.png" alt="Google Calendar" className="h-3.5 w-3.5" />
+        <img src={googleCalendarLogo} alt="Google Calendar" className="h-3.5 w-3.5" />
         Google Calendar
       </Button>
     );
@@ -66,7 +67,7 @@ export default function GoogleCalendarConnect({
             {isSyncing ? (
               <RefreshCw className="h-3.5 w-3.5 animate-spin" />
             ) : (
-              <img src="https://www.gstatic.com/images/branding/product/1x/calendar_2020q4_48dp.png" alt="Google Calendar" className="h-3.5 w-3.5" />
+              <img src={googleCalendarLogo} alt="Google Calendar" className="h-3.5 w-3.5" />
             )}
             {isSyncing ? 'Đang đồng bộ...' : 'Đã kết nối'}
           </Button>

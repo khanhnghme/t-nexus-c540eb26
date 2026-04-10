@@ -16,6 +16,7 @@ import { logActivity } from '@/lib/activityLogger';
 import { cn } from '@/lib/utils';
 import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 import { useGoogleDriveConnect } from '@/hooks/useGoogleDriveConnect';
+import googleDriveLogo from '@/assets/google-drive-logo.png';
 import { useGoogleDrivePicker, DriveFile } from '@/hooks/useGoogleDrivePicker';
 import {
   Upload,
@@ -568,7 +569,7 @@ export default function ResourceUploadDialog({
                 )}
               </TabsTrigger>
               <TabsTrigger value="drive" className="gap-2">
-                <HardDrive className="w-4 h-4" />
+                <img src={googleDriveLogo} alt="Google Drive" className="w-4 h-4" />
                 Google Drive
                 {pendingDriveFiles.length > 0 && (
                   <Badge variant="secondary" className="ml-1 text-[10px] px-1.5">{pendingDriveFiles.length}</Badge>
@@ -869,10 +870,10 @@ export default function ResourceUploadDialog({
                   </div>
                 ) : !isDriveConnected ? (
                   <div className="flex-1 flex flex-col items-center justify-center gap-3">
-                    <HardDrive className="w-12 h-12 text-muted-foreground/40" />
+                    <img src={googleDriveLogo} alt="Google Drive" className="w-12 h-12 opacity-40" />
                     <p className="text-sm text-muted-foreground">Chưa liên kết Google Drive</p>
                     <Button onClick={connectDrive} className="gap-2">
-                      <HardDrive className="w-4 h-4" />
+                      <img src={googleDriveLogo} alt="" className="w-4 h-4" />
                       Liên kết Google Drive
                     </Button>
                   </div>
@@ -885,7 +886,7 @@ export default function ResourceUploadDialog({
                       {isPickerLoading ? (
                         <Loader2 className="w-8 h-8 mx-auto text-muted-foreground mb-2 animate-spin" />
                       ) : (
-                        <HardDrive className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                        <img src={googleDriveLogo} alt="Google Drive" className="w-8 h-8 mx-auto mb-2" />
                       )}
                       <p className="text-sm font-medium">Nhấn để mở Google Drive Picker</p>
                       <p className="text-xs text-muted-foreground mt-1">Chọn một hoặc nhiều file từ Drive</p>
