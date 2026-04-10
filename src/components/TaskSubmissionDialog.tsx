@@ -951,7 +951,7 @@ export default function TaskSubmissionDialog({
                     )}
 
                     {/* Layout - File Upload & Links - fill remaining height */}
-                    <div className={`grid gap-6 flex-1 min-h-0 ${allowFileUpload && allowLinkSubmission ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+                    <div className={`grid gap-4 flex-1 min-h-0 ${allowFileUpload && allowLinkSubmission ? 'grid-cols-1 lg:grid-cols-3' : allowFileUpload || allowLinkSubmission ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
                       {/* CÁCH 1 - File Upload */}
                       {allowFileUpload && (
                         <div className="rounded-xl border-2 border-emerald-500/30 overflow-hidden flex flex-col shadow-sm min-h-0">
