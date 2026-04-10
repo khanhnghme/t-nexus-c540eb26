@@ -78,7 +78,7 @@ const stepIcons: Record<StepId, React.ReactNode> = {
 };
 
 export default function FirstTimeOnboarding({
-  userId, userFullName, userEmail, userStudentId, userPlan, mustChangePassword, onComplete,
+  userId, userFullName, userEmail, userStudentId, userInstitution, userPlan, mustChangePassword, onComplete,
 }: FirstTimeOnboardingProps) {
   const { toast } = useToast();
   const { translations: { app: appT, pricing: pricingT }, setLocale, locale } = useLanguage();
