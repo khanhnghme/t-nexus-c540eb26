@@ -18,8 +18,9 @@ import { toast } from '@/hooks/use-toast';
 import {
   Crown, Zap, Building2, FolderKanban, HardDrive,
   ArrowRight, Loader2, Infinity, Receipt,
-  Check, Users, Shield, Sparkles, BarChart3, Package, AlertTriangle,
+  Check, Users, Shield, Sparkles, BarChart3, Package, AlertTriangle, RefreshCw,
 } from 'lucide-react';
+import { getPlanLabel } from '@/lib/planConfig';
 import { UserPaymentDetailDialog } from '@/components/billing/UserPaymentDetailDialog';
 
 interface WorkspaceUsage {
@@ -329,6 +330,29 @@ export default function ServicePlan() {
               </CardContent>
             </Card>
           </section>
+
+          {/* Next plan card */}
+          {profile?.next_plan && (
+            <section>
+              <Card className="border-blue-500/20 bg-blue-500/5">
+                <CardContent className="p-5 flex items-center gap-4">
+                  <div className="p-2.5 rounded-xl bg-blue-500/10">
+                    <RefreshCw className="w-5 h-5 text-blue-500" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-sm">{t.nextPlanTitle}</h3>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {(t.nextPlanDesc || '')
+                        .replace('{plan}', getPlanLabel(profile.next_plan))
+                        .replace('{date}', profile?.plan_expires_at
+                          ? new Date(profile.plan_expires_at).toLocaleDateString()
+                          : '—')}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+          )}
 
           {!isPremium && (
             <section>

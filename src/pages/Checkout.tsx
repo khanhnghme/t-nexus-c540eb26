@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
-import { ArrowLeft, ArrowRight, Tag, Plus, Minus, ShieldCheck, CreditCard, Loader2, Check, Package, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Tag, Plus, Minus, ShieldCheck, CreditCard, Loader2, Check, Package, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,7 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
-import { PLAN_CONFIG, getPlanLabel, getWelcomePrice, type PlanKey, PLAN_ORDER } from '@/lib/planConfig';
+import { PLAN_CONFIG, getPlanLabel, getPlanRank, getWelcomePrice, type PlanKey, PLAN_ORDER } from '@/lib/planConfig';
 
 /* ═══ Constants ═══ */
 
@@ -53,11 +53,18 @@ export default function Checkout() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { translations: { checkout: t, common: tc } } = useLanguage();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const [plan, setPlan] = useState(searchParams.get('plan') || 'plan_pro');
   const [cycle, setCycle] = useState<'monthly' | 'yearly'>((searchParams.get('cycle') || 'monthly') as 'monthly' | 'yearly');
   const isVi = tc?.language === 'vi' || document.documentElement.lang === 'vi';
+
+  // Detect downgrade vs upgrade
+  const currentPlan = profile?.user_plan || 'plan_free';
+  const currentRank = getPlanRank(currentPlan);
+  const selectedRank = getPlanRank(plan);
+  const isDowngrade = selectedRank < currentRank && currentPlan !== 'plan_free';
+  const existingNextPlan = profile?.next_plan || null;
 
   const [step, setStep] = useState(1);
   const [addons, setAddons] = useState<Record<string, number>>({});
@@ -539,6 +546,27 @@ export default function Checkout() {
           </p>
         </div>
       </div>
+
+      {/* Downgrade warning banners */}
+      {isDowngrade && (
+        <div className="flex items-start gap-3 p-4 rounded-lg border border-amber-500/30 bg-amber-500/5">
+          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-foreground">{t?.downgradeWarning}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{t?.downgradeWarningDesc}</p>
+          </div>
+        </div>
+      )}
+      {existingNextPlan && (
+        <div className="flex items-start gap-3 p-4 rounded-lg border border-orange-500/30 bg-orange-500/5">
+          <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-foreground">
+              {(t?.existingScheduleWarning || '').replace('{plan}', getPlanLabel(existingNextPlan))}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ── TOP: Order Summary Table ── */}
       <Card>

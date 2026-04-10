@@ -52,6 +52,12 @@ export interface Profile {
   downgraded_at: string | null;
   next_plan: string | null;
   next_billing_cycle: string | null;
+  plan_expires_at: string | null;
+  plan_started_at: string | null;
+  plan_status: string;
+  plan_source: string;
+  billing_cycle: string;
+  auto_renew: boolean;
 }
 
 export interface UserRole {

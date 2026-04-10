@@ -17,6 +17,7 @@ export default function ServicePlanSection() {
   const planName = getPlanLabel(plan);
   const isPremium = plan !== 'plan_free';
   const features = featuresMap[plan] || featuresMap.plan_free;
+  const nextPlan = profile?.next_plan || null;
 
   return (
     <Card className="overflow-hidden">
@@ -45,6 +46,15 @@ export default function ServicePlanSection() {
             <p className="text-xs text-muted-foreground mt-0.5">
               {isPremium ? t.premiumActive : t.freeBasic}
             </p>
+            {nextPlan && (
+              <p className="text-xs text-blue-500 mt-0.5">
+                {(t.nextPlanFrom || '→ {plan} from {date}')
+                  .replace('{plan}', getPlanLabel(nextPlan))
+                  .replace('{date}', profile?.plan_expires_at
+                    ? new Date(profile.plan_expires_at).toLocaleDateString()
+                    : '—')}
+              </p>
+            )}
           </div>
         </div>
 

@@ -87,6 +87,9 @@ export default function Upgrade() {
   };
 
   const currentPlanKey: string = effectivePlan ? effectivePlan.replace(/^plan_/, '') : 'free';
+  const nextPlan = profile?.next_plan || null;
+  const nextPlanKey = nextPlan ? nextPlan.replace(/^plan_/, '') : null;
+  const scheduledCta = isVi ? 'Đã lên lịch' : 'Scheduled';
   const upgradeCta = isVi ? 'Nâng cấp' : 'Upgrade';
   const currentPlanCta = isVi ? 'Gói hiện tại' : 'Current plan';
   const downgradeCta = isVi ? 'Hạ cấp' : 'Downgrade';
@@ -97,6 +100,7 @@ export default function Upgrade() {
   const currentRank = PLAN_RANK[currentPlanKey] ?? 0;
 
   const getCta = (planKey: string) => {
+    if (planKey === nextPlanKey) return scheduledCta;
     if (planKey === currentPlanKey) return currentPlanCta;
     if (planKey === 'enterprise') return contactCta;
     const rank = PLAN_RANK[planKey] ?? 0;
@@ -104,6 +108,7 @@ export default function Upgrade() {
   };
 
   const getCtaStyle = (planKey: string): 'primary' | 'outline' => {
+    if (planKey === nextPlanKey) return 'outline';
     if (planKey === currentPlanKey) return 'outline';
     if (planKey === 'pro' && currentRank < 2) return 'primary';
     return 'outline';
@@ -241,7 +246,7 @@ export default function Upgrade() {
               padding: '24px 22px 28px',
               borderRight: idx < LEFT_PLANS.length - 1 ? '1px solid hsl(var(--border))' : 'none',
             }}>
-              <PlanColumn plan={plan} yearly={yearly} tp={tp} disabled={!isOwner} onSelect={handleSelectPlan} isFirstTimeBuyer={isFirstTimeBuyer} />
+              <PlanColumn plan={plan} yearly={yearly} tp={tp} disabled={!isOwner} onSelect={handleSelectPlan} isFirstTimeBuyer={isFirstTimeBuyer} isScheduled={plan.key === nextPlanKey} />
             </div>
           ))}
         </div>
@@ -265,7 +270,7 @@ export default function Upgrade() {
               padding: '24px 22px 28px',
               borderRight: idx < RIGHT_PLANS.length - 1 ? '1px solid hsl(var(--border))' : 'none',
             }}>
-              <PlanColumn plan={plan} yearly={yearly} tp={tp} disabled={!isOwner} onSelect={handleSelectPlan} isFirstTimeBuyer={isFirstTimeBuyer} />
+              <PlanColumn plan={plan} yearly={yearly} tp={tp} disabled={!isOwner} onSelect={handleSelectPlan} isFirstTimeBuyer={isFirstTimeBuyer} isScheduled={plan.key === nextPlanKey} />
             </div>
           ))}
         </div>
@@ -356,7 +361,7 @@ function ToggleBtn({ active, onClick, label }: { active: boolean; onClick: () =>
 
 /* ═══════════════════════ Plan Column ═══════════════════════ */
 
-function PlanColumn({ plan, yearly, tp, disabled, onSelect, isFirstTimeBuyer = false }: { plan: Plan; yearly: boolean; tp: any; disabled: boolean; onSelect: (planKey?: string) => void; isFirstTimeBuyer?: boolean }) {
+function PlanColumn({ plan, yearly, tp, disabled, onSelect, isFirstTimeBuyer = false, isScheduled = false }: { plan: Plan; yearly: boolean; tp: any; disabled: boolean; onSelect: (planKey?: string) => void; isFirstTimeBuyer?: boolean; isScheduled?: boolean }) {
   const price = formatPrice(plan.monthlyPrice, yearly);
   const isCustom = plan.monthlyPrice === null;
   const planKey = `plan_${plan.key}`;
@@ -367,7 +372,12 @@ function PlanColumn({ plan, yearly, tp, disabled, onSelect, isFirstTimeBuyer = f
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div className="flex items-center gap-2 mb-2.5 min-h-[24px]">
         <span className="text-base font-semibold text-foreground">{plan.name}</span>
-        {plan.recommended && (
+        {isScheduled && (
+          <span className="text-[11px] font-semibold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded">
+            🔄 {plan.cta}
+          </span>
+        )}
+        {plan.recommended && !isScheduled && (
           <span className="text-[11px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded">
             {tp.recommended}
           </span>
@@ -402,7 +412,7 @@ function PlanColumn({ plan, yearly, tp, disabled, onSelect, isFirstTimeBuyer = f
       <div className="mb-5">
         <button
           onClick={() => onSelect(plan.key)}
-          disabled={disabled || plan.isCurrent}
+          disabled={disabled || plan.isCurrent || isScheduled}
           className={`w-full py-1.5 px-3.5 text-sm font-medium rounded-lg cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed ${plan.isCurrent
             ? 'bg-primary/10 text-primary border border-primary/30'
             : plan.ctaStyle === 'primary'

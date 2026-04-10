@@ -1531,6 +1531,10 @@ export const en = {
       addonDiscountPro: '-10% Pro',
       addonDiscountBusiness: '-20% Business',
       addonNoPackage: 'No add-on',
+      // Next plan (scheduled transition)
+      nextPlanTitle: 'Scheduled Plan Change',
+      nextPlanDesc: 'Next plan: {plan} — effective from {date}',
+      scheduledBadge: 'Scheduled',
     },
     createWorkspace: {
       title: 'Create new Workspace',
@@ -2371,18 +2375,18 @@ export const en = {
     ch3s3Examples: [
       {
         day: 'Day 1',
-        title: 'Purchase Business plan ($30)',
+        title: 'Purchase Business plan ($24)',
         details: [
-          'You buy the Business plan for $30/month.',
+          'You buy the Business plan for $24/month.',
           'Your 30-day billing cycle starts.',
         ],
       },
       {
         day: 'Day 10',
-        title: 'Downgrade to Pro ($10)',
+        title: 'Downgrade to Pro ($12)',
         details: [
           'You decide to downgrade to Pro.',
-          '💰 $10 is charged immediately (for next cycle).',
+          '💰 $12 is charged immediately (for next cycle).',
           'You continue using Business until Day 30.',
           'Scheduled: Switch to Pro on Day 31.',
         ],
@@ -2391,10 +2395,10 @@ export const en = {
         day: 'Day 15',
         title: 'Change mind — want Business again',
         details: [
-          '💰 You pay $30 again for Business.',
-          '❌ The previous $10 Pro payment is NOT refunded.',
+          '💰 You pay $24 again for Business.',
+          '❌ The previous $12 Pro payment is NOT refunded.',
           'Scheduled plan is updated to Business.',
-          'Result: You paid $30 + $10 + $30 = $70 total.',
+          'Result: You paid $24 + $12 + $24 = $60 total.',
         ],
       },
     ],
@@ -3001,6 +3005,7 @@ export const en = {
     freeBasic: 'Basic free plan',
     viewDetails: 'View details',
     upgrade: 'Upgrade',
+    nextPlanFrom: '→ {plan} from {date}',
   },
 
   servicePlanFeatures: {
@@ -3136,6 +3141,9 @@ export const en = {
     failedMessage: 'Something went wrong. Please try again.',
     tryAgain: 'Try Again',
     invalidPlan: 'Invalid plan selected',
+    downgradeWarning: '⚠️ Downgrade Notice',
+    downgradeWarningDesc: 'You will be charged immediately, but the new plan only takes effect after the current billing cycle ends. No refunds.',
+    existingScheduleWarning: 'You already have a scheduled transition to {plan}. If you proceed, the previous payment will NOT be refunded.',
   },
   paymentResult: {
     successTitle: 'Payment Successful!',
