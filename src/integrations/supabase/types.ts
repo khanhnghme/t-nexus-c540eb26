@@ -260,6 +260,36 @@ export type Database = {
           },
         ]
       }
+      calendar_sync_map: {
+        Row: {
+          google_calendar_id: string
+          google_event_id: string
+          id: string
+          last_synced_at: string
+          local_event_id: string
+          local_event_type: string
+          user_id: string
+        }
+        Insert: {
+          google_calendar_id?: string
+          google_event_id: string
+          id?: string
+          last_synced_at?: string
+          local_event_id: string
+          local_event_type: string
+          user_id: string
+        }
+        Update: {
+          google_calendar_id?: string
+          google_event_id?: string
+          id?: string
+          last_synced_at?: string
+          local_event_id?: string
+          local_event_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       coupons: {
         Row: {
           applicable_plans: string[] | null
@@ -629,6 +659,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      google_calendar_tokens: {
+        Row: {
+          access_token: string
+          calendar_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          refresh_token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          calendar_id?: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          refresh_token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          calendar_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          refresh_token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       group_members: {
         Row: {

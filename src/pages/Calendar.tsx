@@ -14,10 +14,12 @@ import EventDetailDialog from '@/components/calendar/EventDetailDialog';
 import CalendarTaskDetailDialog from '@/components/calendar/CalendarTaskDetailDialog';
 import { CalendarEvent, CalendarViewMode } from '@/types/calendar';
 import { parseLocalDateTime } from '@/lib/datetime';
+import { useGoogleCalendarSync } from '@/hooks/useGoogleCalendarSync';
 
 export default function CalendarPage() {
   const { user } = useAuth();
   const { workspaces, isAvailable: wsAvailable } = useWorkspace();
+  const gcal = useGoogleCalendarSync();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarWsFilter, setCalendarWsFilter] = useState<string>('all'); // 'all' or workspace id
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month');
@@ -190,6 +192,14 @@ export default function CalendarPage() {
           workspaces={wsAvailable ? workspaces.map(w => ({ id: w.id, name: w.name })) : []}
           wsFilter={calendarWsFilter}
           onWsFilterChange={setCalendarWsFilter}
+          gcal={{
+            isConnected: gcal.isConnected,
+            isSyncing: gcal.isSyncing,
+            isChecking: gcal.isChecking,
+            onConnect: gcal.connect,
+            onDisconnect: gcal.disconnect,
+            onSync: async () => { await gcal.sync(); refetchAll(); },
+          }}
         />
 
         {viewMode === 'month' && (

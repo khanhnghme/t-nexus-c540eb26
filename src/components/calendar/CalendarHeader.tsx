@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import GoogleCalendarConnect from './GoogleCalendarConnect';
 
 interface WorkspaceOption {
   id: string;
@@ -28,6 +29,14 @@ interface CalendarHeaderProps {
   workspaces?: WorkspaceOption[];
   wsFilter?: string;
   onWsFilterChange?: (value: string) => void;
+  gcal?: {
+    isConnected: boolean;
+    isSyncing: boolean;
+    isChecking: boolean;
+    onConnect: () => void;
+    onDisconnect: () => void;
+    onSync: () => void;
+  };
 }
 
 export default function CalendarHeader({
@@ -41,6 +50,7 @@ export default function CalendarHeader({
   workspaces = [],
   wsFilter = 'all',
   onWsFilterChange,
+  gcal,
 }: CalendarHeaderProps) {
   const { locale, translations: { app: t } } = useLanguage();
   const cal = t.calendar;
@@ -93,6 +103,16 @@ export default function CalendarHeader({
               ))}
             </SelectContent>
           </Select>
+        )}
+        {gcal && (
+          <GoogleCalendarConnect
+            isConnected={gcal.isConnected}
+            isSyncing={gcal.isSyncing}
+            isChecking={gcal.isChecking}
+            onConnect={gcal.onConnect}
+            onDisconnect={gcal.onDisconnect}
+            onSync={gcal.onSync}
+          />
         )}
         <Button size="sm" onClick={onAddEvent} className="h-7 gap-1.5 text-xs bg-accent text-accent-foreground hover:bg-accent/90 shadow-sm">
           <Plus className="h-3.5 w-3.5" />
