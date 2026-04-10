@@ -70,9 +70,12 @@ export default function CalendarPage() {
       }
       if (!filteredTasks.length) return [];
       const events: CalendarEvent[] = [];
+      const filteredTaskIds = filteredTasks.map((t: any) => t.id);
+      const relevantAssignments = assignedTaskIds.filter(id => filteredTaskIds.includes(id));
+
       filteredTasks.forEach((task: any) => {
-        const isAssigned = assignedTaskIds.includes(task.id);
-        if (assignedTaskIds.length > 0 && !isAssigned) return;
+        const isAssigned = relevantAssignments.includes(task.id);
+        if (relevantAssignments.length > 0 && !isAssigned) return;
         const deadline = parseLocalDateTime(task.deadline);
         if (!deadline) return;
         events.push({
