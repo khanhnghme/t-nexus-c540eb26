@@ -5,11 +5,93 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-async function updateUserAddons(
+const PAYPAL_BASE = "https://api-m.sandbox.paypal.com";
+
+/* ═══ PayPal Webhook Signature Verification ═══ */
+async function verifyWebhookSignature(req: Request, body: string): Promise<boolean> {
+  const webhookId = Deno.env.get("PAYPAL_WEBHOOK_ID");
+  if (!webhookId) {
+    console.warn("[paypal-webhook] PAYPAL_WEBHOOK_ID not set, skipping verification");
+    return false;
+  }
+
+  const transmissionId = req.headers.get("paypal-transmission-id");
+  const transmissionTime = req.headers.get("paypal-transmission-time");
+  const certUrl = req.headers.get("paypal-cert-url");
+  const authAlgo = req.headers.get("paypal-auth-algo");
+  const transmissionSig = req.headers.get("paypal-transmission-sig");
+
+  if (!transmissionId || !transmissionTime || !certUrl || !authAlgo || !transmissionSig) {
+    console.error("[paypal-webhook] Missing PayPal signature headers");
+    return false;
+  }
+
+  // Get access token
+  const clientId = Deno.env.get("PAYPAL_CLIENT_ID")!;
+  const clientSecret = Deno.env.get("PAYPAL_CLIENT_SECRET")!;
+  const tokenRes = await fetch(`${PAYPAL_BASE}/v1/oauth2/token`, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: "grant_type=client_credentials",
+  });
+  const tokenData = await tokenRes.json();
+  if (!tokenData.access_token) {
+    console.error("[paypal-webhook] Failed to get access token for verification");
+    return false;
+  }
+
+  // Verify signature via PayPal API
+  const verifyRes = await fetch(`${PAYPAL_BASE}/v1/notifications/verify-webhook-signature`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${tokenData.access_token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      auth_algo: authAlgo,
+      cert_url: certUrl,
+      transmission_id: transmissionId,
+      transmission_sig: transmissionSig,
+      transmission_time: transmissionTime,
+      webhook_id: webhookId,
+      webhook_event: JSON.parse(body),
+    }),
+  });
+
+  const verifyData = await verifyRes.json();
+  const isValid = verifyData.verification_status === "SUCCESS";
+  if (!isValid) {
+    console.error("[paypal-webhook] Signature verification failed:", verifyData);
+  }
+  return isValid;
+}
+
+/* ═══ Idempotent Addon Update ═══ */
+async function applyAddonsIfNeeded(
   supabase: any,
+  orderId: string,
   userId: string,
-  addons: Array<{ type: string; quantity: number }>
+  addons: Array<{ type: string; quantity: number }> | null
 ) {
+  if (!addons || addons.length === 0) return;
+
+  // Atomically check and set flag
+  const { data: updated, error } = await supabase
+    .from("orders")
+    .update({ addons_applied: true })
+    .eq("id", orderId)
+    .eq("addons_applied", false)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !updated) {
+    console.log(`[paypal-webhook] Addons already applied for order ${orderId}, skipping`);
+    return;
+  }
+
   for (const addon of addons) {
     const { data: existing } = await supabase
       .from("user_addons")
@@ -32,13 +114,57 @@ async function updateUserAddons(
   }
 }
 
+/* ═══ Idempotent Coupon Update ═══ */
+async function applyCouponIfNeeded(supabase: any, orderId: string, couponCode: string | null) {
+  if (!couponCode) return;
+
+  const { data: updated, error } = await supabase
+    .from("orders")
+    .update({ coupon_applied: true })
+    .eq("id", orderId)
+    .eq("coupon_applied", false)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !updated) {
+    console.log(`[paypal-webhook] Coupon already applied for order ${orderId}, skipping`);
+    return;
+  }
+
+  const { data: coupon } = await supabase
+    .from("coupons")
+    .select("id, used_count")
+    .eq("code", couponCode)
+    .maybeSingle();
+
+  if (coupon) {
+    await supabase
+      .from("coupons")
+      .update({ used_count: coupon.used_count + 1 })
+      .eq("id", coupon.id);
+  }
+}
+
+/* ═══ Main Handler ═══ */
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const body = await req.json();
+    const bodyText = await req.text();
+
+    // Verify webhook signature
+    const isValid = await verifyWebhookSignature(req, bodyText);
+    if (!isValid) {
+      console.error("[paypal-webhook] Invalid webhook signature, rejecting");
+      return new Response(JSON.stringify({ error: "Invalid signature" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const body = JSON.parse(bodyText);
     const eventType = body.event_type;
     const resource = body.resource;
 
@@ -87,14 +213,11 @@ Deno.serve(async (req) => {
         .update({ status: "completed", completed_at: nowISO })
         .eq("id", order.id);
 
-      // Update user addons (for both plan and addon orders)
+      // Idempotent addon application
       const addons = order.addons as Array<{ type: string; quantity: number }> | null;
-      if (addons && addons.length > 0) {
-        await updateUserAddons(supabase, order.user_id, addons);
-      }
+      await applyAddonsIfNeeded(supabase, order.id, order.user_id, addons);
 
       if (isAddonOrder) {
-        // ADDON-ONLY: skip profile/plan update
         await supabase.from("payment_history").insert({
           user_id: order.user_id,
           plan_purchased: order.plan || "addon",
@@ -175,20 +298,8 @@ Deno.serve(async (req) => {
           reason: "PayPal webhook backup capture",
         });
 
-        // Increment coupon usage
-        if (order.coupon_code) {
-          const { data: coupon } = await supabase
-            .from("coupons")
-            .select("id, used_count")
-            .eq("code", order.coupon_code)
-            .maybeSingle();
-          if (coupon) {
-            await supabase
-              .from("coupons")
-              .update({ used_count: coupon.used_count + 1 })
-              .eq("id", coupon.id);
-          }
-        }
+        // Idempotent coupon increment
+        await applyCouponIfNeeded(supabase, order.id, order.coupon_code);
 
         // Update workspace limits based on new plan
         const { data: planLimits } = await supabase
