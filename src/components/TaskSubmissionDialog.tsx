@@ -135,12 +135,20 @@ export default function TaskSubmissionDialog({
   const [status, setStatus] = useState<TaskStatus | ''>('');
   const [submissionLinks, setSubmissionLinks] = useState<SubmissionLink[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [driveFiles, setDriveFiles] = useState<DriveFile[]>([]);
   const [note, setNote] = useState('');
   const [taskAssignees, setTaskAssignees] = useState<TaskAssignee[]>([]);
   // showLateWarning removed - late warning now integrated into post-submit step
   const [taskScore, setTaskScore] = useState<TaskScore | null>(null);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [showPostSubmitStep, setShowPostSubmitStep] = useState(false);
+
+  // Google Drive integration
+  const driveConnect = useGoogleDriveConnect();
+  const drivePicker = useGoogleDrivePicker({
+    getPickerToken: driveConnect.getPickerToken,
+    onFilesPicked: (files) => setDriveFiles(prev => [...prev, ...files]),
+  });
 
   // Get max file size and submission method from task
   const taskWithSize = task as (Task & { max_file_size?: number }) | null;
