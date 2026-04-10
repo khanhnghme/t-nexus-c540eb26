@@ -45,6 +45,7 @@ import Tips from "./pages/Tips";
 import DownloadPage from "./pages/Download";
 import Pricing from "./pages/Pricing";
 import PricingDocs from "./pages/PricingDocs";
+import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import WorkspaceSettings from "./pages/WorkspaceSettings";
 import WorkspaceMembers from "./pages/WorkspaceMembers";
@@ -134,6 +135,7 @@ function AppRoutes() {
         <Route path="/download" element={<ForceLightMode><DownloadPage /></ForceLightMode>} />
         <Route path="/guide/terms" element={<ForceLightMode><Terms /></ForceLightMode>} />
         <Route path="/guide/pricing" element={<ForceLightMode><PricingDocs /></ForceLightMode>} />
+        <Route path="/guide/privacy" element={<ForceLightMode><Privacy /></ForceLightMode>} />
 
         {/* ═══ Localized public routes — Vietnamese (/vi) ═══ */}
         <Route path="/vi">
@@ -143,6 +145,7 @@ function AppRoutes() {
           <Route path="download" element={<ForceLightMode><DownloadPage /></ForceLightMode>} />
           <Route path="guide/terms" element={<ForceLightMode><Terms /></ForceLightMode>} />
           <Route path="guide/pricing" element={<ForceLightMode><PricingDocs /></ForceLightMode>} />
+          <Route path="guide/privacy" element={<ForceLightMode><Privacy /></ForceLightMode>} />
         </Route>
 
         {/* ═══ Non-localized public routes ═══ */}
