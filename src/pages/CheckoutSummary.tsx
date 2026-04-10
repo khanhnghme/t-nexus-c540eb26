@@ -23,17 +23,17 @@ const ADDON_PRICE_MONTHLY = 2.49;
 function StepProgress({ isVi }: { isVi: boolean }) {
   const labels = isVi ? STEP_LABELS_VI : STEP_LABELS_EN;
   return (
-    <div className="flex items-center justify-center gap-0 w-full max-w-md mx-auto mb-6">
+    <div className="flex items-center justify-center w-full max-w-md mx-auto mb-6">
       {labels.map((label, i) => (
-        <div key={i} className="flex items-center flex-1">
-          <div className="flex flex-col items-center flex-1">
-            <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
+        <div key={i} className="flex items-center" style={{ flex: i < labels.length - 1 ? 1 : 'none' }}>
+          <div className="flex flex-col items-center">
+            <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold shrink-0">
               {i + 1}
             </div>
-            <span className="text-xs mt-1 font-medium">{label}</span>
+            <span className="text-xs mt-1 font-medium whitespace-nowrap">{label}</span>
           </div>
           {i < labels.length - 1 && (
-            <div className="h-0.5 w-full bg-primary -mt-4" />
+            <div className="h-0.5 flex-1 bg-primary mx-1 -mt-4" />
           )}
         </div>
       ))}
