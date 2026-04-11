@@ -1,44 +1,42 @@
 
 
-## Phase 4 — Task Table (Database View): Giai đoạn 3/4 (UI Design & Build)
+## Phase 4 — Task Table (Database View): Giai đoạn 4/4 (Final Polish & Integration)
 
-Giai đoạn 1-2 đã hoàn thành: `useTaskTableData`, `taskTableColumns`, `useTaskTable` (sorting/filter/pagination), `useTaskTableFilters`. Giai đoạn 3 tập trung vào **build UI component** cho task table.
+Giai đoạn 1-3 đã hoàn thành: data hooks, table logic, UI components. Giai đoạn 4 tập trung vào **tích hợp vào page thực tế, i18n, và polish cuối**.
 
 ### Thay đổi
 
-**1. Tạo `src/components/notion/task-table/TaskTable.tsx` — Main table component**
-- Sử dụng `useTaskTable` hook để lấy table instance
-- Render table bằng `flexRender` từ TanStack + shadcn `Table` components
-- Hiển thị: header row với sort indicators, body rows với data cells
-- Status column render badge với màu từ `STATUS_CONFIG`
-- Assignees column render avatar stack (avatar circle + fallback initials)
-- Loading state với skeleton rows
-- Empty state khi không có data
-- Notion-style styling: border nhẹ, hover highlight, compact rows
+**1. Tích hợp `TaskTable` vào `GroupDetail.tsx`**
+- Thêm một tab mới hoặc toggle view trong tab `tasks` hiện tại để chuyển giữa `TaskListView` (view hiện tại) và `TaskTable` (database view mới)
+- Thêm nút toggle icon (list view / table view) vào toolbar của tab tasks
+- Truyền `groupId={group.id}` cho `TaskTable`
 
-**2. Tạo `src/components/notion/task-table/TaskTableToolbar.tsx` — Filter bar**
-- Thanh toolbar phía trên table
-- Filter dropdown cho Status (sử dụng `applyStatusFilter`)
-- Filter dropdown cho Stage (sử dụng `applyStageFilter`)
-- Hiển thị active filter badges với nút clear
-- Sử dụng `useTaskTableFilters` để lấy unique values cho dropdowns
+**2. I18n — Thêm translations cho task table**
+- `src/lib/i18n/vi.ts`: Thêm key `taskTable` với các label: Title → "Tên task", Status → "Trạng thái", Assignees → "Người thực hiện", Deadline → "Hạn nộp", Stage → "Giai đoạn", Submission → "Hình thức nộp", showing/filtered/clear/noTasks
+- `src/lib/i18n/en.ts`: Thêm tương tự bằng tiếng Anh
+- Update `taskTableColumns.ts` để nhận translations thay vì hardcoded strings
+- Update `TaskTableToolbar.tsx` và `TaskTablePagination.tsx` sử dụng i18n
 
-**3. Tạo `src/components/notion/task-table/TaskTablePagination.tsx` — Pagination controls**
-- Hiển thị "Showing X of Y" text
-- Nút Previous / Next page
-- Sử dụng `table.getCanPreviousPage()`, `table.getCanNextPage()`
+**3. Polish UI**
+- `TaskTable.tsx`: Thêm row click handler để navigate tới task detail (`/p/{slug}/t/{taskSlug}`)
+- `TaskTableToolbar.tsx`: Thêm search input filter theo title
+- Responsive: ẩn một số cột trên mobile (submission_method, stage_name)
 
-**4. Update `index.ts` — Thêm exports UI components**
+**4. Dark mode verification**
+- Đảm bảo `STATUS_CONFIG` colors hoạt động tốt trên cả light/dark mode
+- Kiểm tra border, hover states trong dark mode
 
 ### Không thay đổi database
-### Không thay đổi logic hooks (đã hoàn thành ở giai đoạn 1-2)
 
-### Files cần tạo/sửa
+### Files cần sửa
 
 | File | Thay đổi |
 |------|----------|
-| `src/components/notion/task-table/TaskTable.tsx` | **Tạo mới** — Main table UI |
-| `src/components/notion/task-table/TaskTableToolbar.tsx` | **Tạo mới** — Filter toolbar |
-| `src/components/notion/task-table/TaskTablePagination.tsx` | **Tạo mới** — Pagination UI |
-| `src/components/notion/task-table/index.ts` | Thêm exports mới |
+| `src/pages/GroupDetail.tsx` | Tích hợp TaskTable với view toggle |
+| `src/lib/i18n/vi.ts` | Thêm taskTable translations |
+| `src/lib/i18n/en.ts` | Thêm taskTable translations |
+| `src/components/notion/task-table/taskTableColumns.ts` | Sử dụng i18n cho header labels |
+| `src/components/notion/task-table/TaskTable.tsx` | Row click, responsive, i18n |
+| `src/components/notion/task-table/TaskTableToolbar.tsx` | Search input, i18n |
+| `src/components/notion/task-table/TaskTablePagination.tsx` | i18n text |
 
