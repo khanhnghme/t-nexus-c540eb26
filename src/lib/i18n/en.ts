@@ -1501,6 +1501,18 @@ export const en = {
       confirmDeleteTitle: 'Delete page',
       confirmDeleteDesc: 'Are you sure you want to delete this page? This action cannot be undone.',
       cancel: 'Cancel',
+      slashMenu: {
+        image: 'Image',
+        imageDesc: 'Insert an image',
+        video: 'Video',
+        videoDesc: 'Embed a video',
+        callout: 'Callout',
+        calloutDesc: 'Highlight important info',
+        codeBlock: 'Code Block',
+        codeBlockDesc: 'Insert a code snippet',
+        table: 'Table',
+        tableDesc: 'Insert a table',
+      },
     },
     servicePlan: {
       goBack: 'Go back',

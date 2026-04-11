@@ -15,99 +15,14 @@ export function getCustomSlashMenuItems(
   editor: BlockNoteEditor<any, any, any>
 ): SlashMenuItem[] {
   return [
-    // === Basic ===
-    {
-      key: 'heading_1',
-      title: 'Heading 1',
-      subtext: 'Large section heading',
-      aliases: ['h1', 'heading1'],
-      group: 'Headings',
-      onItemClick: () => {
-        editor.insertBlocks(
-          [{ type: 'heading', props: { level: 1 } }],
-          editor.getTextCursorPosition().block,
-          'after'
-        );
-      },
-    },
-    {
-      key: 'heading_2',
-      title: 'Heading 2',
-      subtext: 'Medium section heading',
-      aliases: ['h2', 'heading2'],
-      group: 'Headings',
-      onItemClick: () => {
-        editor.insertBlocks(
-          [{ type: 'heading', props: { level: 2 } }],
-          editor.getTextCursorPosition().block,
-          'after'
-        );
-      },
-    },
-    {
-      key: 'heading_3',
-      title: 'Heading 3',
-      subtext: 'Small section heading',
-      aliases: ['h3', 'heading3'],
-      group: 'Headings',
-      onItemClick: () => {
-        editor.insertBlocks(
-          [{ type: 'heading', props: { level: 3 } }],
-          editor.getTextCursorPosition().block,
-          'after'
-        );
-      },
-    },
-    {
-      key: 'paragraph',
-      title: 'Paragraph',
-      subtext: 'Plain text block',
-      aliases: ['p', 'text'],
-      group: 'Basic blocks',
-      onItemClick: () => {
-        editor.insertBlocks(
-          [{ type: 'paragraph' }],
-          editor.getTextCursorPosition().block,
-          'after'
-        );
-      },
-    },
-    {
-      key: 'bullet_list',
-      title: 'Bullet List',
-      subtext: 'Unordered list item',
-      aliases: ['ul', 'bullet', 'list'],
-      group: 'Basic blocks',
-      onItemClick: () => {
-        editor.insertBlocks(
-          [{ type: 'bulletListItem' }],
-          editor.getTextCursorPosition().block,
-          'after'
-        );
-      },
-    },
-    {
-      key: 'numbered_list',
-      title: 'Numbered List',
-      subtext: 'Ordered list item',
-      aliases: ['ol', 'numbered', 'list'],
-      group: 'Basic blocks',
-      onItemClick: () => {
-        editor.insertBlocks(
-          [{ type: 'numberedListItem' }],
-          editor.getTextCursorPosition().block,
-          'after'
-        );
-      },
-    },
-
-    // === Media ===
+    // === Media (not in default menu) ===
     {
       key: 'image',
       title: 'Image',
       subtext: 'Insert an image',
       aliases: ['img', 'picture', 'photo'],
       group: 'Media',
+      icon: '🖼️',
       onItemClick: () => {
         editor.insertBlocks(
           [{ type: 'image' as any }],
@@ -122,6 +37,7 @@ export function getCustomSlashMenuItems(
       subtext: 'Embed a video',
       aliases: ['video', 'youtube', 'embed'],
       group: 'Media',
+      icon: '🎬',
       onItemClick: () => {
         editor.insertBlocks(
           [{ type: 'video' as any }],
@@ -131,13 +47,14 @@ export function getCustomSlashMenuItems(
       },
     },
 
-    // === Advanced ===
+    // === Advanced (custom blocks) ===
     {
       key: 'callout',
       title: 'Callout',
       subtext: 'Highlight important info',
       aliases: ['callout', 'alert', 'notice', 'info'],
       group: 'Advanced',
+      icon: '💡',
       onItemClick: () => {
         editor.insertBlocks(
           [{ type: 'callout' as any, props: { type: 'info' } }],
@@ -152,6 +69,7 @@ export function getCustomSlashMenuItems(
       subtext: 'Insert a code snippet',
       aliases: ['code', 'codeblock', 'pre'],
       group: 'Advanced',
+      icon: '💻',
       onItemClick: () => {
         editor.insertBlocks(
           [{ type: 'codeBlock' as any }],
@@ -160,14 +78,13 @@ export function getCustomSlashMenuItems(
         );
       },
     },
-
-    // === Table ===
     {
       key: 'table',
       title: 'Table',
       subtext: 'Insert a table',
       aliases: ['table', 'grid'],
       group: 'Advanced',
+      icon: '📊',
       onItemClick: () => {
         editor.insertBlocks(
           [{ type: 'table' as any }],
