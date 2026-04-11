@@ -470,7 +470,26 @@ export default function GroupDetail() {
       <div>
 
       {group.project_mode === 'custom' ? (
-        <CanvasPageView groupId={group.id} editable={isLeaderInGroup} />
+        <div className="animate-fade-in">
+          <div className="flex items-center gap-3 px-4 md:px-6 pt-4 pb-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 shrink-0"
+              onClick={() => navigate('/groups')}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div className="min-w-0">
+              <h1 className="text-lg font-semibold truncate">{group.name}</h1>
+              {group.description && (
+                <p className="text-xs text-muted-foreground truncate">{group.description}</p>
+              )}
+            </div>
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">Canvas</Badge>
+          </div>
+          <CanvasPageView groupId={group.id} editable={isLeaderInGroup} />
+        </div>
       ) : (
       <div>
         <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-0">
