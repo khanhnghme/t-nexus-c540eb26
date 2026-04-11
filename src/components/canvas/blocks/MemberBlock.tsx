@@ -4,10 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTaskBlockContext } from "./TaskBlockContext";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, List, LayoutGrid } from "lucide-react";
+import { Users, List, LayoutGrid, UserPlus } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
 import { getProjectRoleLabel } from "@/lib/roleLabels";
 import { Toggle } from "@/components/ui/toggle";
+import ProjectGuestInviteDialog from "@/components/ProjectGuestInviteDialog";
+import { Button } from "@/components/ui/button";
 
 interface MemberRow {
   user_id: string;
@@ -17,10 +19,11 @@ interface MemberRow {
 }
 
 function MemberListRenderer() {
-  const { groupId } = useTaskBlockContext();
+  const { groupId, editable } = useTaskBlockContext();
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [groupName, setGroupName] = useState("");
 
   const fetchMembers = useCallback(async () => {
     if (!groupId) return;
@@ -46,6 +49,13 @@ function MemberListRenderer() {
   useEffect(() => {
     fetchMembers();
   }, [fetchMembers]);
+
+  useEffect(() => {
+    if (!groupId) return;
+    supabase.from("groups").select("name").eq("id", groupId).single().then(({ data }) => {
+      if (data) setGroupName(data.name);
+    });
+  }, [groupId]);
 
   useEffect(() => {
     if (!groupId) return;
@@ -92,6 +102,17 @@ function MemberListRenderer() {
         <Users className="h-4 w-4 text-primary" />
         <span className="text-sm font-medium">Thành viên dự án</span>
         <div className="ml-auto flex items-center gap-1">
+          {editable && (
+            <ProjectGuestInviteDialog
+              groupId={groupId}
+              groupName={groupName}
+              trigger={
+                <Button variant="ghost" size="icon" className="h-7 w-7">
+                  <UserPlus className="h-3.5 w-3.5" />
+                </Button>
+              }
+            />
+          )}
           <Toggle
             size="sm"
             pressed={viewMode === "list"}
