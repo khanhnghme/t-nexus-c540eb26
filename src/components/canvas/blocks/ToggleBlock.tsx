@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useCallback } from "react";
 import { createReactBlockSpec } from "@blocknote/react";
 import { ChevronRight, ChevronDown } from "lucide-react";
 
@@ -7,18 +7,32 @@ export const ToggleBlock = createReactBlockSpec(
     type: "toggleBlock" as const,
     propSchema: {
       collapsed: { default: "true" as const },
+      bodyText: { default: "" as const },
     },
     content: "inline",
   },
   {
     render: (props) => {
       const isCollapsed = props.block.props.collapsed === "true";
+      const textareaRef = useRef<HTMLTextAreaElement>(null);
 
       const handleToggle = (e: React.MouseEvent) => {
         e.stopPropagation();
         props.editor.updateBlock(props.block, {
           props: { collapsed: isCollapsed ? "false" : "true" },
         });
+      };
+
+      const autoResize = useCallback((el: HTMLTextAreaElement) => {
+        el.style.height = "auto";
+        el.style.height = el.scrollHeight + "px";
+      }, []);
+
+      const handleBodyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        props.editor.updateBlock(props.block, {
+          props: { bodyText: e.target.value },
+        });
+        autoResize(e.target);
       };
 
       return (
@@ -67,11 +81,31 @@ export const ToggleBlock = createReactBlockSpec(
               style={{
                 padding: "0.5rem 0.75rem 0.75rem 2.5rem",
                 borderTop: "1px solid hsl(var(--border))",
-                color: "hsl(var(--muted-foreground))",
-                fontSize: "0.875rem",
               }}
             >
-              Toggle content area
+              <textarea
+                ref={textareaRef}
+                value={props.block.props.bodyText}
+                onChange={handleBodyChange}
+                placeholder="Nhập nội dung..."
+                onFocus={(e) => autoResize(e.target)}
+                rows={1}
+                style={{
+                  width: "100%",
+                  border: "none",
+                  outline: "none",
+                  resize: "none",
+                  background: "transparent",
+                  color: "hsl(var(--muted-foreground))",
+                  fontSize: "0.875rem",
+                  lineHeight: "1.5",
+                  whiteSpace: "pre-wrap",
+                  overflow: "hidden",
+                  fontFamily: "inherit",
+                  padding: 0,
+                  minHeight: "1.5rem",
+                }}
+              />
             </div>
           )}
         </div>
