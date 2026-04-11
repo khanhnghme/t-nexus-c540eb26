@@ -1,40 +1,31 @@
 
 
-## Fix: Mã đơn hàng hiển thị sai tại Billing History
+## Fix: Nút "Về Dashboard" → "Về Lịch sử thanh toán" khi mở từ billing history
 
-### Nguyên nhân
+### Phân tích
 
-Trang `/billing-history` hiển thị 2 loại records:
-1. **Payment records** (từ `payment_history`): `raw` là row payment — **không có `order_code`**, chỉ có `order_id` (UUID). Nên fallback hiển thị `#AB12CD34` (8 ký tự UUID cắt ngắn).
-2. **Pending orders** (từ `orders`): `raw` là row order — **có `order_code`** (`ORD-YYYYMM-XXX`). Hiển thị đúng.
-
-### Giải pháp
-
-Sau khi load cả 2 nguồn dữ liệu, tạo một map `orderId → order_code` từ `orders` data, rồi gắn `order_code` vào mỗi payment record thông qua `order_id`.
+Trang `/checkout/summary/:orderCode` có nút "Go to Dashboard" luôn navigate về `/dashboard`. Khi người dùng mở trang này từ `/billing-history`, nút này nên quay về `/billing-history` thay vì dashboard.
 
 ### Thay đổi
 
-**File: `src/pages/BillingHistory.tsx`**
+**File: `src/pages/CheckoutSummary.tsx`**
 
-1. Tạo map `orderCodeMap` từ `orderRes.data`:
-```typescript
-const orderCodeMap: Record<string, string> = {};
-(orderRes.data || []).forEach((o: any) => {
-  if (o.id && o.order_code) orderCodeMap[o.id] = o.order_code;
-});
-```
+1. Detect nguồn truy cập: kiểm tra `document.referrer` hoặc dùng `sessionStorage` flag. Cách đơn giản nhất: dùng `location.state` hoặc check nếu history trước đó là billing-history. Tuy nhiên cách đáng tin nhất là kiểm tra `sessionStorage.getItem('checkout_from')`:
+   - Nếu `checkout_from === 'onboarding'` → đã có logic "Continue Setup"
+   - Nếu `checkout_from === 'billing'` → quay về `/billing-history`
+   - Mặc định → quay về `/dashboard`
 
-2. Khi map `paymentRecords`, gắn `order_code` vào raw:
-```typescript
-raw: { ...r, order_code: r.order_id ? orderCodeMap[r.order_id] : undefined },
-```
+2. Tại `BillingHistory.tsx`: khi click vào row để navigate sang summary, set `sessionStorage.setItem('checkout_from', 'billing')`.
 
-3. Bỏ fallback UUID cắt ngắn — chỉ hiển thị `order_code` hoặc `'—'`:
-```typescript
-{row.raw?.order_code || '—'}
-```
+3. Tại `CheckoutSummary.tsx` section actions (status completed):
+   - Thêm case `checkout_from === 'billing'` → nút hiển thị "Lịch sử thanh toán" / "Billing History" với icon `Receipt`, navigate về `/billing-history`.
 
-### Kết quả
+4. Clean up `sessionStorage` khi navigate.
 
-Tất cả records (payment lẫn pending) đều hiển thị mã đơn chuẩn `ORD-YYYYMM-XXXXXXXXX`.
+### Files cần sửa
+
+| File | Thay đổi |
+|------|----------|
+| `src/pages/BillingHistory.tsx` | Set `sessionStorage('checkout_from', 'billing')` khi navigate sang summary |
+| `src/pages/CheckoutSummary.tsx` | Thêm case billing → nút quay về `/billing-history` |
 
