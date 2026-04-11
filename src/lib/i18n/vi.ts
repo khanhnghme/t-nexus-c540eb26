@@ -2086,6 +2086,8 @@ export const vi: Translations = {
       weekdayLabels: ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'],
       eventDetail: 'Chi tiết sự kiện',
       personalEvent: 'Sự kiện cá nhân',
+      externalEvent: 'Google Calendar',
+      internalEvent: 'Sự kiện nội bộ',
       closeBtn: 'Đóng',
       editBtn: 'Chỉnh sửa',
       project: 'Dự án',

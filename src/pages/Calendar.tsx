@@ -118,6 +118,7 @@ export default function CalendarPage() {
         type: 'personal',
         color: ev.color,
         description: ev.description,
+        source: ev.source || 'internal',
       }));
     },
     enabled: !!user?.id,
