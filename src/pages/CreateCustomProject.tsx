@@ -44,6 +44,7 @@ export default function CreateCustomProject() {
   );
   const [isCreating, setIsCreating] = useState(false);
   const [templateContent, setTemplateContent] = useState<Json | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const editorContentRef = useRef<Block[]>([]);
   const idempotencyKeyRef = useRef(crypto.randomUUID());
   const createLockRef = useRef(false);
@@ -216,12 +217,13 @@ export default function CreateCustomProject() {
 
           <TemplatePicker
             workspaceId={selectedWorkspaceId}
-            onSelect={(content) => {
+            onSelect={(content, templateId) => {
               setTemplateContent(content);
+              setSelectedTemplateId(templateId);
               editorContentRef.current = [];
               editorKey.current += 1;
             }}
-            selectedTemplateId={templateContent === null ? null : "selected"}
+            selectedTemplateId={selectedTemplateId}
           />
         </div>
 
