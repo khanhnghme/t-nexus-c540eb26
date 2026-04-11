@@ -192,12 +192,19 @@ function AppRoutes() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/groups" element={<Groups />} />
-          <Route path="/p/:projectSlug" element={<GroupDetail />} />
-          <Route path="/p/:projectSlug/page/:pageSlug" element={<GroupDetail />} />
-          <Route path="/p/:projectSlug/t/:taskSlug" element={<GroupDetail />} />
-          <Route path="/p/:projectSlug/t/:taskSlug/f/:fileIndex" element={<ProtectedRoute><FilePreview /></ProtectedRoute>} />
-          <Route path="/groups/:groupId" element={<GroupDetail />} />
-          <Route path="/groups/:groupId/tasks/:taskId" element={<GroupDetail />} />
+          {/* New URL format: /pr/ws-{wsShortId}/{projectSlug} */}
+          <Route path="/pr/ws-:wsShortId/:projectSlug" element={<GroupDetail />} />
+          <Route path="/pr/ws-:wsShortId/:projectSlug/t/:taskSlug" element={<GroupDetail />} />
+          <Route path="/pr/ws-:wsShortId/:projectSlug/t/:taskSlug/f/:fileIndex" element={<ProtectedRoute><FilePreview /></ProtectedRoute>} />
+          {/* New page format: /pa/ws-{wsShortId}/{pageSlug} */}
+          <Route path="/pa/ws-:wsShortId/:pageSlug" element={<GroupDetail />} />
+          {/* Legacy redirects */}
+          <Route path="/p/:projectSlug" element={<LegacyProjectRedirect />} />
+          <Route path="/p/:projectSlug/page/:pageSlug" element={<LegacyPageRedirect />} />
+          <Route path="/p/:projectSlug/t/:taskSlug" element={<LegacyTaskRedirect />} />
+          <Route path="/p/:projectSlug/t/:taskSlug/f/:fileIndex" element={<LegacyFileRedirect />} />
+          <Route path="/groups/:groupId" element={<LegacyGroupRedirect />} />
+          <Route path="/groups/:groupId/tasks/:taskId" element={<LegacyGroupRedirect />} />
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/communication" element={<Communication />} />
           <Route path="/feedback" element={<Feedback />} />
