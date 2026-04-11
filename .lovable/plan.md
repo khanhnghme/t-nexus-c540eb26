@@ -1,53 +1,66 @@
 
 
-## Phase 10 — Giai doan 3/4: Styling cho View Mode
+## Phase 10 — Giai doan 4/4: Permission Check Nang Cao (RLS + Client)
 
 ### Muc tieu
-Them CSS styling cho View mode — an cursor caret, bo padding thua, va lam noi dung hien thi sach se khi o che do xem.
+Bo sung RLS policies cho `project_pages` de group members (project_member, project_admin, project_owner) co the doc/ghi dung quyen, va dam bao client-side logic khop voi server-side policies.
 
 ### Hien trang
-- Stage 1-2 hoan thanh: toggle Edit/View, an side menu/slash menu/formatting toolbar
-- CSS class `view-mode` da duoc them len container div khi `editable=false`
-- Chua co CSS rules nao target `.view-mode`
+- Stage 1-3 hoan thanh: toggle Edit/View, an UI elements, styling view mode
+- RLS hien tai chi co 3 policies:
+  - System admins SELECT all
+  - Public groups SELECT cho anonymous
+  - System admins ALL (full CRUD)
+- **Thieu**: Group members (project_owner/admin/member/guest) khong co policy SELECT hoac INSERT/UPDATE/DELETE → ho khong the doc hoac chinh sua pages qua RLS
 
 ### Hanh dong
 
-**Them CSS rules trong `src/index.css` (hoac file CSS phu hop)**
-- `.view-mode` selector:
-  - An text cursor/caret: `caret-color: transparent`
-  - Bo user-select restriction neu can (cho phep copy text)
-  - An cac placeholder text cua BlockNote (e.g. "Type '/' for commands")
-  - Dieu chinh padding cho phu hop voi view mode (bo padding du thua tu editor UI)
-  - An viền outline khi focus vao block
+**1. Them RLS policies (database migration)**
 
-### Chi tiet ky thuat
+| Policy | Operation | Dieu kien |
+|--------|-----------|-----------|
+| Group members can view pages | SELECT | User la member cua group (bat ky role) |
+| Group leaders can manage pages | INSERT, UPDATE, DELETE | User co role `project_owner` hoac `project_admin` trong group |
 
 ```text
-.view-mode {
-  caret-color: transparent;
-}
+-- Group members (any role) can view pages of their groups
+CREATE POLICY "Group members can view pages"
+  ON public.project_pages FOR SELECT
+  TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM public.group_members gm
+    WHERE gm.group_id = project_pages.group_id
+      AND gm.user_id = auth.uid()
+  ));
 
-.view-mode .bn-editor {
-  /* An placeholder */
-}
-
-.view-mode [data-placeholder]::before {
-  display: none;
-}
-
-.view-mode .bn-block-content:focus-within {
-  outline: none;
-  box-shadow: none;
-}
+-- Group leaders can insert/update/delete pages
+CREATE POLICY "Group leaders can manage pages"
+  ON public.project_pages FOR ALL
+  TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM public.group_members gm
+    WHERE gm.group_id = project_pages.group_id
+      AND gm.user_id = auth.uid()
+      AND gm.role IN ('project_owner', 'project_admin')
+  ))
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM public.group_members gm
+    WHERE gm.group_id = project_pages.group_id
+      AND gm.user_id = auth.uid()
+      AND gm.role IN ('project_owner', 'project_admin')
+  ));
 ```
 
+**2. Cap nhat `.lovable/plan.md`** — Danh dau Phase 10 hoan tat
+
 ### Khong lam
-- Permission check nang cao (giai doan 4)
+- Thay doi UI/component code (da xong o stage 1-3)
 - Thay doi logic toggle/props
 
 ### Files thay doi
 
 | File | Thay doi |
 |------|----------|
-| `src/index.css` | Them `.view-mode` CSS rules |
+| Migration SQL | Them 2 RLS policies cho group members |
+| `.lovable/plan.md` | Phase 10 hoan tat |
 
