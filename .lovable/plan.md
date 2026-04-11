@@ -1,77 +1,42 @@
 
 
-## Phase 19 & 20 — Keyboard Shortcuts + Canvas Activity Log
+## Điều chỉnh TopBar cho Custom Mode + Fix runtime error
 
-### Phase 19: Keyboard Shortcuts
+### Vấn đề
+1. **TopBar hiện tại**: Khi vào dự án Custom (Canvas), TopBar vẫn hiển thị các tab của Basic mode (Overview, Tasks, Meetings, Resources, Members, Scores...) vì `setProjectNavProps` được gọi cho **tất cả** dự án, không phân biệt `project_mode`.
+2. **Runtime error**: `block.content?.map is not a function` trong `canvasExport.ts` — một số block có `content` là string thay vì array.
 
-**Mục tiêu:** Power user experience với phím tắt tùy chỉnh cho Canvas.
+### Giải pháp
 
-BlockNote đã có sẵn các phím tắt cơ bản (Ctrl+B, Ctrl+I, Ctrl+/, etc.). Chỉ cần bổ sung:
+#### 1. Thêm `projectMode` vào `ProjectNavProps`
 
-**1. Custom keyboard shortcuts hook**
+**File: `src/contexts/DashboardLayoutContext.tsx`**
+- Thêm field `projectMode?: 'basic' | 'custom'` vào `ProjectNavProps`
 
-Tạo `src/hooks/useCanvasShortcuts.ts`:
-- `Ctrl+S` / `Cmd+S` — force save (trigger auto-save ngay lập tức)
-- `Ctrl+N` / `Cmd+N` — tạo page mới
-- `Ctrl+Shift+T` — insert task block vào editor
-- `Ctrl+?` / `Cmd+?` — mở shortcut help modal
-- `Ctrl+\` — toggle sidebar
-- `Ctrl+E` — toggle edit/view mode
+#### 2. Truyền `projectMode` từ GroupDetail
 
-Hook nhận callbacks từ `CanvasPageView` và đăng ký global `keydown` listener. Cleanup khi unmount.
+**File: `src/pages/GroupDetail.tsx`** (dòng 131-145)
+- Khi `setProjectNavProps`, bổ sung `projectMode: group.project_mode`
+- Với custom mode, không cần truyền `activeTab` / `onTabChange` (TopBar sẽ không render tabs)
 
-**2. Shortcut help modal**
+#### 3. TopBar hiển thị khác cho Custom mode
 
-Tạo `src/components/canvas/ShortcutHelpDialog.tsx`:
-- Dialog hiển thị bảng phím tắt (2 cột: shortcut + mô tả)
-- Bao gồm cả BlockNote built-in shortcuts và custom shortcuts
-- Mở bằng `Ctrl+?` hoặc nút `?` trên header
+**File: `src/components/layout/TopBar.tsx`**
+- Nếu `projectNavProps.projectMode === 'custom'`: hiển thị breadcrumb đơn giản (tên dự án + badge "Canvas") thay vì tabs
+- Nếu `projectNavProps.projectMode !== 'custom'`: giữ nguyên logic tabs hiện tại
 
-**3. Tích hợp vào CanvasPageView**
+#### 4. Fix runtime error trong canvasExport
 
-- Import `useCanvasShortcuts` và truyền callbacks (save, create page, toggle sidebar, toggle edit)
-- Thêm nút `?` icon trên header bar để mở shortcut help
-
-### Phase 20: Canvas Activity Log
-
-**Mục tiêu:** Track thay đổi canvas (ai sửa gì, khi nào) — reuse hệ thống `activity_logs` đã có.
-
-**1. Log canvas actions**
-
-Trong `CanvasPageView.tsx`, gọi `logActivity()` (từ `src/lib/activityLogger.ts`) khi:
-- Tạo page mới → `action: 'page_created'`, `actionType: 'project'`
-- Xóa page → `action: 'page_deleted'`
-- Đổi tên page → `action: 'page_renamed'`
-- Save content (debounced, chỉ log 1 lần mỗi session hoặc mỗi 5 phút) → `action: 'page_updated'`
-
-Không cần migration — bảng `activity_logs` đã tồn tại và đủ flexible (action TEXT, metadata JSONB).
-
-**2. "Last edited by" indicator**
-
-Trong `CanvasPageView.tsx` header hoặc `CanvasEditor.tsx`:
-- Query `activity_logs` cho page hiện tại, lấy record mới nhất với `action = 'page_updated'`
-- Hiển thị: "Chỉnh sửa lần cuối bởi X, 5 phút trước" dạng text nhỏ
-- Dùng `useQuery` với `staleTime: 60000` (refresh mỗi phút)
-
-**3. Hook `usePageLastEditor`**
-
-Tạo `src/hooks/usePageLastEditor.ts`:
-- Query `activity_logs` WHERE metadata->>'page_id' = pageId, ORDER BY created_at DESC, LIMIT 1
-- Join profiles để lấy tên người sửa
-- Return `{ editorName, editedAt, isLoading }`
+**File: `src/lib/canvasExport.ts`**
+- Wrap `block.content` access: kiểm tra `Array.isArray(block.content)` trước khi `.map()`
+- Nếu `content` là string → dùng trực tiếp; nếu undefined → trả `""`
 
 ### Files thay đổi
 
 | File | Thay đổi |
 |------|----------|
-| `src/hooks/useCanvasShortcuts.ts` | Mới — global keyboard listener |
-| `src/components/canvas/ShortcutHelpDialog.tsx` | Mới — modal hiển thị phím tắt |
-| `src/hooks/usePageLastEditor.ts` | Mới — query last editor |
-| `src/components/canvas/CanvasPageView.tsx` | Tích hợp shortcuts + logActivity + last edited indicator |
-| `src/components/canvas/CanvasEditor.tsx` | Expose force-save callback |
-
-### Không làm
-- Custom keybinding configuration (user tự đổi phím tắt)
-- Diff/version history cho pages
-- Real-time activity feed
+| `src/contexts/DashboardLayoutContext.tsx` | Thêm `projectMode` vào interface |
+| `src/pages/GroupDetail.tsx` | Truyền `projectMode` khi set nav props |
+| `src/components/layout/TopBar.tsx` | Render breadcrumb cho custom, tabs cho basic |
+| `src/lib/canvasExport.ts` | Fix `content?.map` crash |
 
