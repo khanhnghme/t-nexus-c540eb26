@@ -1,75 +1,94 @@
 
 
-## Phase 12 — Hoàn thiện: Cover Image UI + Page Header
+## Phase 13 — Routing & Navigation cho Custom Projects
 
-### Tình trạng hiện tại
-- Stage 1 done: cột `cover_url` đã có trong DB
-- Stage 2 done: `updatePage` service + `handleChangeCover` handler đã có trong `CanvasPageView.tsx`
-- Icon/emoji picker đã hoạt động đầy đủ (Phase 11)
-- Chưa có UI hiển thị cover, chưa có cách chọn/upload cover
+### Mục tiêu
+URL đẹp cho từng page trong custom project, breadcrumb navigation, và deep-link trực tiếp đến page cụ thể.
 
-### Công việc còn lại
+### Hiện trạng đã có
+- `project_pages.slug` column + unique index per group đã tồn tại
+- Trigger `trg_project_pages_slug` auto-generate slug khi INSERT
+- Route `/p/:projectSlug` đã render `GroupDetail` → `CanvasPageView`
+- `CanvasPageView` dùng `activePageId` state nội bộ, chưa sync với URL
+- Breadcrumb component UI đã có sẵn (`src/components/ui/breadcrumb.tsx`)
 
-**1. Tạo component `PageCoverImage.tsx`**
+### Công việc
 
-Component hiển thị cover image phía trên editor content:
-- Nếu `cover_url` có giá trị: render ảnh/gradient full-width, chiều cao ~180px
-- Nếu không có cover: không render gì (hoặc chỉ hiện nút "Add cover" khi hover, nếu editable)
-- Nút "Change cover" và "Remove cover" hiện khi hover (chỉ edit mode)
+**1. Thêm route mới cho page slug**
 
-**2. Tạo component `CoverPicker.tsx`**
+Trong `App.tsx`, thêm route:
+```
+/p/:projectSlug/page/:pageSlug → GroupDetail
+```
+`GroupDetail` sẽ đọc `pageSlug` param và truyền xuống `CanvasPageView`.
 
-Popover cho phép chọn cover:
-- Tab 1 — Preset gradients: 8-10 gradient CSS đẹp (lưu dạng CSS string vào `cover_url`)
-- Tab 2 — Preset solid colors: 6-8 màu solid
-- Tab 3 — URL ảnh: input nhập URL ảnh bên ngoài
-- Nút "Remove cover" để xóa
+**2. Cập nhật `GroupDetail.tsx`**
 
-Không cần storage bucket — chỉ dùng gradient CSS và URL ảnh bên ngoài ở phase này.
+- Đọc `pageSlug` từ `useParams()`
+- Truyền `pageSlug` xuống `CanvasPageView` qua prop mới
+- Thay header cứng bằng **Breadcrumb**: Workspace > Project name > Page name
 
-**3. Tạo component `PageHeader.tsx`**
+**3. Cập nhật `CanvasPageView.tsx`**
 
-Header lớn kiểu Notion phía trên editor:
-- Icon lớn (emoji, click để đổi nếu editable)
-- Title lớn (editable inline nếu edit mode)
-- Nút "Add icon" / "Add cover" hiện khi hover (nếu chưa có)
+- Nhận prop `initialPageSlug?: string`
+- Khi có `initialPageSlug`: tìm page matching slug → set `activePageId`
+- Khi user chuyển page: dùng `navigate()` để update URL thành `/p/:projectSlug/page/:pageSlug`
+- Khi không có `pageSlug` (URL cũ `/p/:projectSlug`): auto-redirect đến page đầu tiên
 
-**4. Tích hợp vào `CanvasEditor.tsx`**
+**4. Cập nhật `CanvasSidebar.tsx`**
 
-Thêm `PageHeader` + `PageCoverImage` phía trên `BlockNoteView`:
-- Truyền `cover_url`, `icon`, `title`, `editable` từ `CanvasPageView`
-- Gọi `handleChangeCover`, `handleChangePageIcon`, `handleRenamePage` qua props
+- Click page trong sidebar → navigate URL thay vì chỉ set state
+- Active page highlight dựa trên URL param
 
-**5. Cập nhật `CanvasPageView.tsx`**
+**5. Đảm bảo slug update khi rename page**
 
-- Truyền `activePage.cover_url`, `activePage.icon`, `activePage.title` xuống `CanvasEditor`
-- Truyền callbacks: `onChangeCover`, `onChangeIcon`, `onRenameTitle`
+- Khi user đổi title page → gọi update slug (hoặc tạo trigger BEFORE UPDATE tương tự INSERT)
+- Migration: thêm trigger cho UPDATE nếu chưa có
 
-### Preset gradients (ví dụ)
+### Migration cần thiết
 
-```text
-linear-gradient(135deg, #667eea 0%, #764ba2 100%)
-linear-gradient(135deg, #f093fb 0%, #f5576c 100%)
-linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)
-linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)
-linear-gradient(135deg, #fa709a 0%, #fee140 100%)
-linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)
-linear-gradient(135deg, #fccb90 0%, #d57eeb 100%)
-linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)
+```sql
+-- Trigger auto-generate slug on UPDATE (title change)
+CREATE OR REPLACE FUNCTION public.generate_page_slug()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' OR (TG_OP = 'UPDATE' AND NEW.title IS DISTINCT FROM OLD.title) THEN
+    NEW.slug := public.generate_vietnamese_slug(NEW.title);
+    -- Handle duplicates within same group
+    IF EXISTS (
+      SELECT 1 FROM public.project_pages 
+      WHERE group_id = NEW.group_id AND slug = NEW.slug AND id != NEW.id
+    ) THEN
+      NEW.slug := NEW.slug || '-' || substr(NEW.id::text, 1, 4);
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Add trigger for UPDATE
+DROP TRIGGER IF EXISTS trg_project_pages_slug ON public.project_pages;
+CREATE TRIGGER trg_project_pages_slug
+  BEFORE INSERT OR UPDATE ON public.project_pages
+  FOR EACH ROW EXECUTE FUNCTION public.generate_page_slug();
+
+-- Backfill existing pages without slugs
+UPDATE public.project_pages SET slug = public.generate_vietnamese_slug(title) WHERE slug IS NULL;
 ```
 
 ### Files thay đổi
 
 | File | Thay đổi |
 |------|----------|
-| `src/components/canvas/PageCoverImage.tsx` | Mới — hiển thị cover |
-| `src/components/canvas/CoverPicker.tsx` | Mới — chọn gradient/color/URL |
-| `src/components/canvas/PageHeader.tsx` | Mới — header lớn với icon + title + actions |
-| `src/components/canvas/CanvasEditor.tsx` | Thêm props, render PageHeader + PageCoverImage |
-| `src/components/canvas/CanvasPageView.tsx` | Truyền cover_url/icon/title + callbacks xuống editor |
+| Migration SQL | Trigger UPDATE + backfill slugs |
+| `src/App.tsx` | Thêm route `/p/:projectSlug/page/:pageSlug` |
+| `src/pages/GroupDetail.tsx` | Đọc `pageSlug`, truyền xuống, thêm breadcrumb |
+| `src/components/canvas/CanvasPageView.tsx` | Sync activePageId với URL, navigate khi chuyển page |
+| `src/components/canvas/CanvasSidebar.tsx` | Click page → navigate URL |
+| `src/hooks/useProjectPages.ts` | Đảm bảo query trả về `slug` field |
 
 ### Không làm
-- Upload ảnh lên storage (có thể bổ sung sau)
-- Slug routing (Phase 13)
-- Template system (Phase 16)
+- Public page view (Phase 18)
+- SEO meta tags
+- Page nesting / sub-pages
 
