@@ -1,44 +1,49 @@
 
 
-## Cập nhật giới hạn Connected Tools theo gói + UI thông báo rõ ràng
+## Redesign AI Assistant — Clean, Minimal, Focused
 
-### Vấn đề hiện tại
+### Thay đổi chính
 
-1. **Không có kiểm tra gói** — `ConnectedServicesCard` cho phép MỌI user kết nối dịch vụ, kể cả Free/Plus (không có quyền Connected Tools)
-2. **UI không thông báo** — Không có thông báo trực quan nào cho user Free/Plus biết họ cần nâng cấp để dùng Connected Tools
-3. **Pricing/Upgrade** — Hiện chỉ hiện boolean (✓/—) cho Connected Tools, chưa hiện "Unlimited" rõ ràng
+**1. Loại bỏ noise**
+- Xóa toàn bộ `SUGGESTED_QUESTIONS` section (empty state)
+- Xóa nút "Thử lại câu hỏi" (nếu có)
+- Xóa decorative shapes (spinning circles trong header)
+- Xóa hero bounce/pulse/glow animations
+- Giảm CSS animations còn tối thiểu (chỉ giữ typing dots + fade-in)
 
-### Thay đổi
+**2. Header — Compact & Clean**
+- Bỏ gradient background phức tạp → solid `bg-background` + subtle border
+- Bỏ decorative circles, ring effects
+- Avatar nhỏ hơn (h-8 w-8), không ring/glow
+- Online indicator đơn giản hơn
+- Text color dùng foreground thay vì primary-foreground
 
-**1. `ConnectedServicesCard.tsx` — Thêm kiểm tra gói + UI khóa**
+**3. Empty State — Minimal**
+- Chỉ hiện: Avatar nhỏ + "Hỏi bất cứ điều gì" (1 dòng text)
+- Không có suggested questions, không hero section, không emoji
 
-- Import `useAuth` và `shouldShowIntegrations`
-- Nếu user plan là Free/Plus: hiển thị danh sách 3 dịch vụ nhưng **disabled**, thay nút "Connect" bằng badge "Yêu cầu Pro+" và nút "Nâng cấp" → navigate `/upgrade`
-- Nếu user plan >= Pro: giữ nguyên logic hiện tại (connect/disconnect bình thường)
-- Thêm banner nhỏ phía trên danh sách cho Free/Plus: "Dịch vụ liên kết khả dụng từ gói Pro trở lên"
+**4. Scope + Usage bar — Simplify**
+- Gộp scope indicator và usage vào 1 dòng nhỏ gọn
+- Bỏ colored backgrounds (blue-50, amber-50) → text thuần với icon
+- Usage bar giữ nhưng nhỏ hơn
 
-**2. `ConnectedToolsBadge.tsx` — Cập nhật `ConnectedToolsTailwind`**
+**5. Message bubbles — Cleaner**
+- Giữ nguyên layout (user bên phải, AI bên trái)
+- Giảm shadow, border → cleaner look
+- Typing indicator giữ dots, bỏ "Đang suy nghĩ..." text và sparkle spin
 
-- Khi plan không đủ (Free/Plus): hiện danh sách với icon khóa (Lock) thay vì Check, kèm text "Cần gói Pro+"
-- Khi plan đủ: giữ nguyên
+**6. Input area — Simpler**
+- Bỏ disclaimer section (AlertTriangle warning)
+- Giữ textarea + send button
+- Bỏ hint text "Enter để gửi" → chỉ hiện khi hết lượt
 
-**3. `Pricing.tsx` + `Upgrade.tsx` — Comparison table**
+**7. CSS — Cắt giảm mạnh**
+- Xóa ~80% custom keyframes (hero-enter, hero-bounce, pulse-glow, card-enter, decor-rotate, sparkle-spin)
+- Giữ: typing-wave, shimmer (thinking), fade-in
 
-- Thay giá trị boolean `true` trong `CONNECTED_TOOLS_CATEGORY` thành text `"Unlimited"` cho Pro/Business/Enterprise
-- Free/Plus giữ `false` (hiện —)
-
-**4. `ServicePlanSection.tsx` — Hiện trạng thái Connected Tools cho mọi gói**
-
-- Nếu plan < Pro: hiện Connected Tools section với icon Lock + "Nâng cấp để mở khóa"
-- Nếu plan >= Pro: giữ nguyên hiện tại
-
-### Files cần sửa
+### File cần sửa
 
 | File | Thay đổi |
 |------|----------|
-| `src/components/settings/ConnectedServicesCard.tsx` | Thêm plan check, UI khóa + nút nâng cấp |
-| `src/components/ConnectedToolsBadge.tsx` | Thêm variant locked cho plan thấp |
-| `src/pages/Pricing.tsx` | `CONNECTED_TOOLS_CATEGORY` dùng `"Unlimited"` thay `true` |
-| `src/pages/Upgrade.tsx` | `CONNECTED_TOOLS_CATEGORY` dùng `"Unlimited"` thay `true` |
-| `src/components/personal/ServicePlanSection.tsx` | Hiện Connected Tools cho mọi gói (locked/unlocked) |
+| `src/components/ai/AIAssistantPanel.tsx` | Redesign toàn bộ UI + xóa animations thừa |
 
