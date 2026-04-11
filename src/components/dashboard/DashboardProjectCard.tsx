@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Users, Calendar, Globe, EyeOff, Eye, Clock } from 'lucide-react';
+import { FileText, Users, Calendar, Globe, EyeOff, Eye, Clock, Palette } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { fixStorageUrl } from '@/lib/urlUtils';
 import type { Group } from '@/types/database';
