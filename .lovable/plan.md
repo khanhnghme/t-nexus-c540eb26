@@ -1,94 +1,79 @@
 
 
-## Phase 13 — Routing & Navigation cho Custom Projects
+## Phase 14 — Inline Task Creation nâng cao
 
 ### Mục tiêu
-URL đẹp cho từng page trong custom project, breadcrumb navigation, và deep-link trực tiếp đến page cụ thể.
+Nâng cấp trải nghiệm tạo task trong Task Block: thêm khả năng assign member và set deadline ngay khi tạo, không cần mở dialog.
 
-### Hiện trạng đã có
-- `project_pages.slug` column + unique index per group đã tồn tại
-- Trigger `trg_project_pages_slug` auto-generate slug khi INSERT
-- Route `/p/:projectSlug` đã render `GroupDetail` → `CanvasPageView`
-- `CanvasPageView` dùng `activePageId` state nội bộ, chưa sync với URL
-- Breadcrumb component UI đã có sẵn (`src/components/ui/breadcrumb.tsx`)
+### Hiện trạng
+- Inline "Add task" row đã có: gõ tên + Enter → tạo task với status "TODO"
+- Chưa có assign member khi tạo inline
+- Chưa có set deadline khi tạo inline
+- Member data đã có sẵn query pattern từ `MemberBlock.tsx` (`group_members` + `profiles`)
 
 ### Công việc
 
-**1. Thêm route mới cho page slug**
+**1. Tạo component `InlineTaskCreator.tsx`**
 
-Trong `App.tsx`, thêm route:
+Thay thế input đơn giản hiện tại bằng component mới:
+- Input tên task (giữ nguyên Enter = tạo)
+- Nút assign member: dropdown hiển thị danh sách member của group (fetch từ `group_members`)
+- Nút set deadline: date picker popup (dùng `Calendar` component có sẵn)
+- Sau khi tạo task xong → auto insert `task_assignments` nếu có chọn member
+- UI compact: các nút icon nhỏ bên cạnh input, chỉ expand khi click
+
+**2. Cập nhật `TaskBlock.tsx`**
+
+- `handleAddTask` mở rộng: nhận thêm `assigneeId?: string` và `deadline?: string`
+- Sau khi insert task → nếu có `assigneeId` → insert vào `task_assignments`
+- Sau khi insert task → nếu có `deadline` → update task deadline
+- Cập nhật `TaskHandlers` type trong `taskBlockTypes.ts`: `onAdd` nhận params mới
+
+**3. Cập nhật `TaskListView.tsx` và `TaskKanbanView.tsx`**
+
+- Thay inline input cũ bằng `InlineTaskCreator`
+- Truyền `groupId` để component fetch member list
+- Giữ nguyên UX: focus vào input → gõ tên → tùy chọn assign/deadline → Enter
+
+**4. Cập nhật `taskBlockTypes.ts`**
+
+```typescript
+interface TaskHandlers {
+  onAdd: (params?: { assigneeId?: string; deadline?: string }) => Promise<void>;
+  // ... giữ nguyên các handler khác
+}
 ```
-/p/:projectSlug/page/:pageSlug → GroupDetail
+
+### UI Design
+
+```text
+┌─────────────────────────────────────────────────┐
+│ + │ Thêm công việc mới...  │ 👤 │ 📅 │        │
+│   │ [input text]           │[dp]│[dt]│        │
+└─────────────────────────────────────────────────┘
+     ↑ input                  ↑     ↑
+                         member  deadline
+                         picker  picker
 ```
-`GroupDetail` sẽ đọc `pageSlug` param và truyền xuống `CanvasPageView`.
 
-**2. Cập nhật `GroupDetail.tsx`**
-
-- Đọc `pageSlug` từ `useParams()`
-- Truyền `pageSlug` xuống `CanvasPageView` qua prop mới
-- Thay header cứng bằng **Breadcrumb**: Workspace > Project name > Page name
-
-**3. Cập nhật `CanvasPageView.tsx`**
-
-- Nhận prop `initialPageSlug?: string`
-- Khi có `initialPageSlug`: tìm page matching slug → set `activePageId`
-- Khi user chuyển page: dùng `navigate()` để update URL thành `/p/:projectSlug/page/:pageSlug`
-- Khi không có `pageSlug` (URL cũ `/p/:projectSlug`): auto-redirect đến page đầu tiên
-
-**4. Cập nhật `CanvasSidebar.tsx`**
-
-- Click page trong sidebar → navigate URL thay vì chỉ set state
-- Active page highlight dựa trên URL param
-
-**5. Đảm bảo slug update khi rename page**
-
-- Khi user đổi title page → gọi update slug (hoặc tạo trigger BEFORE UPDATE tương tự INSERT)
-- Migration: thêm trigger cho UPDATE nếu chưa có
-
-### Migration cần thiết
-
-```sql
--- Trigger auto-generate slug on UPDATE (title change)
-CREATE OR REPLACE FUNCTION public.generate_page_slug()
-RETURNS TRIGGER AS $$
-BEGIN
-  IF TG_OP = 'INSERT' OR (TG_OP = 'UPDATE' AND NEW.title IS DISTINCT FROM OLD.title) THEN
-    NEW.slug := public.generate_vietnamese_slug(NEW.title);
-    -- Handle duplicates within same group
-    IF EXISTS (
-      SELECT 1 FROM public.project_pages 
-      WHERE group_id = NEW.group_id AND slug = NEW.slug AND id != NEW.id
-    ) THEN
-      NEW.slug := NEW.slug || '-' || substr(NEW.id::text, 1, 4);
-    END IF;
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Add trigger for UPDATE
-DROP TRIGGER IF EXISTS trg_project_pages_slug ON public.project_pages;
-CREATE TRIGGER trg_project_pages_slug
-  BEFORE INSERT OR UPDATE ON public.project_pages
-  FOR EACH ROW EXECUTE FUNCTION public.generate_page_slug();
-
--- Backfill existing pages without slugs
-UPDATE public.project_pages SET slug = public.generate_vietnamese_slug(title) WHERE slug IS NULL;
-```
+- 👤 click → dropdown danh sách member, chọn 1 người
+- 📅 click → date picker popup
+- Sau khi chọn, hiện badge nhỏ (tên member / ngày) bên cạnh input
+- Enter hoặc click nút → tạo task + assign + deadline cùng lúc
+- Escape → reset form
 
 ### Files thay đổi
 
 | File | Thay đổi |
 |------|----------|
-| Migration SQL | Trigger UPDATE + backfill slugs |
-| `src/App.tsx` | Thêm route `/p/:projectSlug/page/:pageSlug` |
-| `src/pages/GroupDetail.tsx` | Đọc `pageSlug`, truyền xuống, thêm breadcrumb |
-| `src/components/canvas/CanvasPageView.tsx` | Sync activePageId với URL, navigate khi chuyển page |
-| `src/components/canvas/CanvasSidebar.tsx` | Click page → navigate URL |
-| `src/hooks/useProjectPages.ts` | Đảm bảo query trả về `slug` field |
+| `src/components/canvas/blocks/InlineTaskCreator.tsx` | Mới — inline form với member + deadline |
+| `src/components/canvas/blocks/taskBlockTypes.ts` | Update `onAdd` signature |
+| `src/components/canvas/blocks/TaskBlock.tsx` | Mở rộng `handleAddTask` với assign + deadline |
+| `src/components/canvas/blocks/TaskListView.tsx` | Dùng `InlineTaskCreator` thay input cũ |
+| `src/components/canvas/blocks/TaskKanbanView.tsx` | Dùng `InlineTaskCreator` thay input cũ |
 
 ### Không làm
-- Public page view (Phase 18)
-- SEO meta tags
-- Page nesting / sub-pages
+- Assign nhiều member cùng lúc (chỉ 1 người khi inline create)
+- Priority/label khi tạo inline
+- Bulk task creation
 
