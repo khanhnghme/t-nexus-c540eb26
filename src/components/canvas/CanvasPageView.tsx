@@ -89,6 +89,14 @@ export default function CanvasPageView({ groupId, editable = false }: CanvasPage
     }
   };
 
+  const handleChangeCover = async (pageId: string, coverUrl: string | null) => {
+    try {
+      await updatePage.mutateAsync({ pageId, updates: { cover_url: coverUrl } });
+    } catch (err: any) {
+      toast.error(err.message || "Không thể thay đổi cover.");
+    }
+  };
+
   const handleReorderPages = async (orderedIds: string[]) => {
     if (!pages) return;
     try {
