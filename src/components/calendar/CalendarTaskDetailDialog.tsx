@@ -16,7 +16,7 @@ import UserAvatar from '@/components/UserAvatar';
 import TaskSubmissionDialog from '@/components/TaskSubmissionDialog';
 import {
   Clock, CheckCircle2, AlertTriangle, ExternalLink, Send,
-  Calendar, Users, FileText, Loader2, Circle, Target, FolderOpen
+  Calendar, Users, FileText, Loader2, Circle, Target, FolderOpen, Hash, Copy, Check
 } from 'lucide-react';
 import type { Task, TaskStatus } from '@/types/database';
 

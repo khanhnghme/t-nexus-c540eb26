@@ -4,8 +4,9 @@ import { Badge } from '@/components/ui/badge';
 import { CalendarEvent } from '@/types/calendar';
 import { format } from 'date-fns';
 import { vi as viLocale } from 'date-fns/locale';
-import { Clock, FileText, Pencil, Tag } from 'lucide-react';
+import { Clock, FileText, Pencil, Tag, Hash, Copy, Check } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useState } from 'react';
 
 interface EventDetailDialogProps {
   open: boolean;
@@ -23,6 +24,28 @@ const GoogleIcon = () => (
   </svg>
 );
 
+function CopyableId({ label, value }: { label: string; value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <div className="flex items-center gap-2 min-w-0">
+      <span className="text-xs text-muted-foreground shrink-0">{label}:</span>
+      <code className="text-xs font-mono bg-background px-1.5 py-0.5 rounded border border-border truncate max-w-[180px]">
+        {value}
+      </code>
+      <button onClick={handleCopy} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+        {copied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+      </button>
+    </div>
+  );
+}
+
 export default function EventDetailDialog({ open, onOpenChange, event, onEdit }: EventDetailDialogProps) {
   const { locale, translations: { app: t } } = useLanguage();
   const cal = t.calendar;
@@ -37,6 +60,7 @@ export default function EventDetailDialog({ open, onOpenChange, event, onEdit }:
 
   const eventColor = event.color || '#3b82f6';
   const isExternal = event.source === 'external';
+  const shortId = event.id?.slice(0, 8) || '';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -103,6 +127,19 @@ export default function EventDetailDialog({ open, onOpenChange, event, onEdit }:
                 </Badge>
               ) : (
                 <Badge variant="secondary" className="text-xs font-medium">{cal.personalEvent}</Badge>
+              )}
+            </div>
+          </div>
+
+          {/* Event IDs */}
+          <div className="flex items-start gap-3 rounded-xl bg-muted/50 px-3.5 py-3">
+            <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center shrink-0 shadow-sm">
+              <Hash className="w-4 h-4 text-muted-foreground" />
+            </div>
+            <div className="flex flex-col gap-1.5 min-w-0">
+              <CopyableId label="ID" value={shortId} />
+              {event.googleEventId && (
+                <CopyableId label="Google" value={event.googleEventId} />
               )}
             </div>
           </div>
