@@ -29,11 +29,13 @@ export default function CanvasEditor({
   }, [editor, onChange]);
 
   return (
-    <BlockNoteView
-      editor={editor}
-      editable={editable}
-      onChange={handleChange}
-      theme={resolvedTheme === "dark" ? "dark" : "light"}
-    />
+    <div className="min-h-[460px] p-2">
+      <BlockNoteView
+        editor={editor}
+        editable={editable}
+        onChange={handleChange}
+        theme={resolvedTheme === "dark" ? "dark" : "light"}
+      />
+    </div>
   );
 }
