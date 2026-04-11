@@ -2148,6 +2148,8 @@ export const en = {
       // EventDetailDialog
       eventDetail: 'Event detail',
       personalEvent: 'Personal event',
+      externalEvent: 'Google Calendar',
+      internalEvent: 'Internal event',
       closeBtn: 'Close',
       editBtn: 'Edit',
       // CalendarEventPill

@@ -15,6 +15,8 @@ export interface CalendarEvent {
   // Personal-specific
   color?: string;
   description?: string;
+  source?: 'internal' | 'external';
+  googleEventId?: string;
 }
 
 export interface PersonalEvent {
