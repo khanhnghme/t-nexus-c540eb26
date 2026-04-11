@@ -68,6 +68,7 @@ import AdminBilling from "./pages/AdminBilling";
 import AdminUserBilling from "./pages/AdminUserBilling";
 
 const CreateCustomProject = React.lazy(() => import("./pages/CreateCustomProject"));
+const PublicCanvasPage = React.lazy(() => import("./pages/PublicCanvasPage"));
 
 const queryClient = new QueryClient();
 
@@ -164,6 +165,8 @@ function AppRoutes() {
         <Route path="/s/:shareToken" element={<ForceLightMode><PublicProjectView /></ForceLightMode>} />
         <Route path="/s/:shareToken/t/:taskSlug/f/:fileIndex" element={<ForceLightMode><FilePreview /></ForceLightMode>} />
         <Route path="/public/project/:shareToken" element={<ForceLightMode><PublicProjectView /></ForceLightMode>} />
+        <Route path="/share/:token/page/:pageSlug" element={<ForceLightMode><Suspense fallback={null}><PublicCanvasPage /></Suspense></ForceLightMode>} />
+        <Route path="/share/:token/page" element={<ForceLightMode><Suspense fallback={null}><PublicCanvasPage /></Suspense></ForceLightMode>} />
         <Route path="/reset-password" element={<ForceLightMode><ResetPassword /></ForceLightMode>} />
         <Route path="/auth/member" element={<Navigate to="/auth" replace />} />
         <Route path="/auth/admin" element={<Navigate to="/auth" replace />} />
