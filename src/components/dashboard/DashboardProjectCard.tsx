@@ -105,6 +105,15 @@ export default function DashboardProjectCard({ group, isHidden, isPending, onTog
             </Badge>
           </div>
         )}
+        {group.project_mode === 'custom' && !isPending && (
+          <Badge
+            variant="secondary"
+            className="absolute top-2 left-2 text-[10px] bg-background/90 backdrop-blur-sm px-1.5 py-0.5 gap-0.5"
+          >
+            <Palette className="w-2.5 h-2.5" />
+            Custom
+          </Badge>
+        )}
         {group.is_public && !isPending && (
           <Badge
             variant="secondary"
