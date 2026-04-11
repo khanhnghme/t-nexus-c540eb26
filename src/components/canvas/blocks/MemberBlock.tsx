@@ -45,6 +45,27 @@ function MemberListRenderer() {
     fetchMembers();
   }, [fetchMembers]);
 
+  useEffect(() => {
+    if (!groupId) return;
+    const channel = supabase
+      .channel(`members-${groupId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "group_members",
+          filter: `group_id=eq.${groupId}`,
+        },
+        () => fetchMembers()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [groupId, fetchMembers]);
+
   if (loading) {
     return (
       <div className="rounded-lg border bg-card p-3 space-y-2">
