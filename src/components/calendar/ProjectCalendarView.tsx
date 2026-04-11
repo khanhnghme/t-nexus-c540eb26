@@ -114,6 +114,7 @@ export default function ProjectCalendarView({ groupId, projectSlug }: ProjectCal
         <CalendarWeekView
           currentDate={currentDate}
           events={events}
+          onDayClick={handleDayClick}
           onEventClick={handleEventClick}
         />
       )}
@@ -126,14 +127,13 @@ export default function ProjectCalendarView({ groupId, projectSlug }: ProjectCal
       )}
 
       {/* Day detail */}
-      {selectedDay && selectedDayEvents.length > 0 && (
-        <CalendarDayDetail
-          date={selectedDay}
-          events={selectedDayEvents}
-          onEventClick={handleEventClick}
-          onClose={() => setSelectedDay(null)}
-        />
-      )}
+      <CalendarDayDetail
+        open={dayDetailOpen && !!selectedDay}
+        onOpenChange={(open) => { setDayDetailOpen(open); if (!open) setSelectedDay(null); }}
+        date={selectedDay || new Date()}
+        events={selectedDayEvents}
+        onEventClick={handleEventClick}
+      />
     </div>
   );
 }
