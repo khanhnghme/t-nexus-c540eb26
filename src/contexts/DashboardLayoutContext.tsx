@@ -14,6 +14,7 @@ export interface ProjectNavProps {
   membersCount: number;
   hasActiveMeeting?: boolean;
   isScoreFinalized?: boolean;
+  projectMode?: 'basic' | 'custom';
 }
 
 interface DashboardLayoutContextType {

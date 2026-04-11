@@ -2,8 +2,9 @@ import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useDashboardLayoutContext } from '@/contexts/DashboardLayoutContext';
-import { Moon, Sun, LayoutDashboard, Layers, Users, Award, FolderOpen, Video, Activity, Settings } from 'lucide-react';
+import { Moon, Sun, LayoutDashboard, Layers, Users, Award, FolderOpen, Video, Activity, Settings, PenTool } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 import tNexusTextWhite from '@/assets/t-nexus-text-white.png';
 import {
   Tooltip,
@@ -68,8 +69,9 @@ export default function TopBar() {
   const pageTitle = getBreadcrumb(location.pathname, locale);
 
   const isProjectMode = !!projectNavProps;
+  const isCustomMode = projectNavProps?.projectMode === 'custom';
 
-  const visibleTabs = isProjectMode
+  const visibleTabs = (isProjectMode && !isCustomMode)
     ? projectTabs.filter(tab => {
         if (tab.showAlways) return true;
         const showSettings = projectNavProps.isLeaderInGroup && projectNavProps.isGroupCreator;
@@ -86,7 +88,17 @@ export default function TopBar() {
         "flex items-center gap-1 min-w-0 overflow-x-auto scrollbar-none",
         isProjectMode && "flex-1 justify-center"
       )}>
-        {isProjectMode ? (
+        {isProjectMode && isCustomMode ? (
+          <div className="flex items-center gap-2 mx-auto">
+            <PenTool className="w-3.5 h-3.5 text-primary" />
+            <span className="text-sm font-semibold truncate max-w-[200px]" style={{ color: 'var(--_sb-fg, hsl(var(--foreground)))' }}>
+              {pageTitle}
+            </span>
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-medium">
+              Canvas
+            </Badge>
+          </div>
+        ) : isProjectMode ? (
           <div className="flex items-center gap-0.5 mx-auto">
             {visibleTabs.map((tab) => {
               const Icon = tab.icon;
