@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { TaskListBlock } from "./blocks/TaskBlock";
 import { MemberListBlock } from "./blocks/MemberBlock";
 import { CalendarBlock } from "./blocks/CalendarBlock";
+import { NoteCalloutBlock } from "./blocks/NoteBlock";
 import { TaskBlockProvider } from "./blocks/TaskBlockContext";
 
 const schema = BlockNoteSchema.create({
@@ -20,6 +21,7 @@ const schema = BlockNoteSchema.create({
     taskList: TaskListBlock(),
     memberList: MemberListBlock(),
     calendarView: CalendarBlock(),
+    noteCallout: NoteCalloutBlock(),
   },
 });
 
