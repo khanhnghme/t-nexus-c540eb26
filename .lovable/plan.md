@@ -1,49 +1,70 @@
 
 
-## Redesign AI Assistant — Clean, Minimal, Focused
+## Refactor hệ thống mã tham gia: 4 số → 6 ký tự (A-Z + 0-9)
 
-### Thay đổi chính
+### Tổng quan
 
-**1. Loại bỏ noise**
-- Xóa toàn bộ `SUGGESTED_QUESTIONS` section (empty state)
-- Xóa nút "Thử lại câu hỏi" (nếu có)
-- Xóa decorative shapes (spinning circles trong header)
-- Xóa hero bounce/pulse/glow animations
-- Giảm CSS animations còn tối thiểu (chỉ giữ typing dots + fade-in)
+Chuyển hoàn toàn từ mã 4 chữ số (`0000`–`9999`) sang mã 6 ký tự chữ hoa + số (`A7K2X9`), áp dụng cho toàn bộ project hiện có và mới.
 
-**2. Header — Compact & Clean**
-- Bỏ gradient background phức tạp → solid `bg-background` + subtle border
-- Bỏ decorative circles, ring effects
-- Avatar nhỏ hơn (h-8 w-8), không ring/glow
-- Online indicator đơn giản hơn
-- Text color dùng foreground thay vì primary-foreground
+### 1. Database Migration
 
-**3. Empty State — Minimal**
-- Chỉ hiện: Avatar nhỏ + "Hỏi bất cứ điều gì" (1 dòng text)
-- Không có suggested questions, không hero section, không emoji
+```sql
+-- Migrate tất cả project có join_code sang mã mới 6 ký tự
+-- Sử dụng function để generate + đảm bảo unique
+CREATE OR REPLACE FUNCTION public.generate_join_code_6()
+RETURNS text LANGUAGE plpgsql AS $$
+DECLARE
+  chars TEXT := 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  result TEXT;
+  i INT;
+BEGIN
+  LOOP
+    result := '';
+    FOR i IN 1..6 LOOP
+      result := result || substr(chars, floor(random()*36)::int + 1, 1);
+    END LOOP;
+    EXIT WHEN NOT EXISTS (SELECT 1 FROM public.groups WHERE join_code = result);
+  END LOOP;
+  RETURN result;
+END;
+$$;
 
-**4. Scope + Usage bar — Simplify**
-- Gộp scope indicator và usage vào 1 dòng nhỏ gọn
-- Bỏ colored backgrounds (blue-50, amber-50) → text thuần với icon
-- Usage bar giữ nhưng nhỏ hơn
+-- Migrate all existing join codes
+UPDATE public.groups 
+SET join_code = public.generate_join_code_6() 
+WHERE join_code IS NOT NULL;
+```
 
-**5. Message bubbles — Cleaner**
-- Giữ nguyên layout (user bên phải, AI bên trái)
-- Giảm shadow, border → cleaner look
-- Typing indicator giữ dots, bỏ "Đang suy nghĩ..." text và sparkle spin
+### 2. `ShareSettingsCard.tsx` — Generate code mới
 
-**6. Input area — Simpler**
-- Bỏ disclaimer section (AlertTriangle warning)
-- Giữ textarea + send button
-- Bỏ hint text "Enter để gửi" → chỉ hiện khi hết lượt
+- `generateJoinCode()`: đổi từ `Math.floor(random*10000).padStart(4,'0')` → generate 6 ký tự `A-Z0-9`
+- UI hiển thị mã: giữ `tracking-[0.5em] font-mono`, format rõ ràng
 
-**7. CSS — Cắt giảm mạnh**
-- Xóa ~80% custom keyframes (hero-enter, hero-bounce, pulse-glow, card-enter, decor-rotate, sparkle-spin)
-- Giữ: typing-wave, shimmer (thinking), fade-in
+### 3. `JoinByCodeDialog.tsx` — Input 6 ký tự
 
-### File cần sửa
+- Đổi `digits` state từ `['','','','']` → `['','','','','','']` (6 ô)
+- `handleDigitChange`: chấp nhận `A-Z0-9` thay vì chỉ `\d`, auto uppercase
+- Validation: `code.length !== 6 || !/^[A-Z0-9]{6}$/.test(code)` thay vì `^\d{4}$`
+- `handlePaste`: parse 6 ký tự, uppercase, lọc chỉ `A-Z0-9`
+- UI text: "6 ký tự" thay "4 chữ số", `inputMode="text"` thay `numeric`
+
+### 4. i18n updates
+
+- `vi.ts`: `shareCodeDesc` → "Chia sẻ mã 6 ký tự này...", `enableJoinCode` → "Bật để tạo mã 6 ký tự..."
+- `en.ts`: `shareCodeDesc` → "Share this 6-character code...", `enableJoinCode` → "Enable to create a 6-character code..."
+
+### 5. Edge function (`team-assistant/index.ts`)
+
+- Cập nhật prompt text: "mã 4 số" → "mã 6 ký tự"
+
+### Files cần sửa
 
 | File | Thay đổi |
 |------|----------|
-| `src/components/ai/AIAssistantPanel.tsx` | Redesign toàn bộ UI + xóa animations thừa |
+| **Migration SQL** | Tạo `generate_join_code_6()` + migrate data |
+| `src/components/ShareSettingsCard.tsx` | `generateJoinCode()` → 6 chars A-Z0-9 |
+| `src/components/JoinByCodeDialog.tsx` | 6 input boxes, accept A-Z0-9, auto uppercase, validation |
+| `src/lib/i18n/vi.ts` | Cập nhật text mô tả |
+| `src/lib/i18n/en.ts` | Cập nhật text mô tả |
+| `supabase/functions/team-assistant/index.ts` | Cập nhật prompt text |
 
