@@ -16,7 +16,7 @@ interface Template {
 
 interface TemplatePickerProps {
   workspaceId?: string;
-  onSelect: (content: Json | null) => void;
+  onSelect: (content: Json | null, templateId: string | null) => void;
   selectedTemplateId: string | null;
 }
 
@@ -61,7 +61,7 @@ export default function TemplatePicker({ workspaceId, onSelect, selectedTemplate
         {/* Blank option */}
         <button
           type="button"
-          onClick={() => onSelect(null)}
+          onClick={() => onSelect(null, null)}
           className={cn(
             "flex flex-col items-center gap-1.5 p-3 rounded-lg border text-left transition-colors hover:bg-accent/50",
             selectedTemplateId === null && "border-primary bg-primary/5 ring-1 ring-primary"
@@ -76,7 +76,7 @@ export default function TemplatePicker({ workspaceId, onSelect, selectedTemplate
           <button
             key={t.id}
             type="button"
-            onClick={() => onSelect(t.content)}
+            onClick={() => onSelect(t.content, t.id)}
             className={cn(
               "flex flex-col items-center gap-1.5 p-3 rounded-lg border text-left transition-colors hover:bg-accent/50",
               selectedTemplateId === t.id && "border-primary bg-primary/5 ring-1 ring-primary"
