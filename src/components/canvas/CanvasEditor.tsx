@@ -17,7 +17,7 @@ const schema = BlockNoteSchema.create({
   blockSpecs: {
     ...defaultBlockSpecs,
     taskList: TaskListBlock(),
-    memberList: MemberListBlock(),
+    memberList: MemberListBlock,
   },
 });
 

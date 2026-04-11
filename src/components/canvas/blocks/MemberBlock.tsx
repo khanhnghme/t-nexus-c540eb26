@@ -101,15 +101,13 @@ function MemberListRenderer() {
   );
 }
 
-export function MemberListBlock() {
-  return createReactBlockSpec(
-    {
-      type: "memberList" as const,
-      propSchema: {},
-      content: "none" as const,
-    },
-    {
-      render: () => <MemberListRenderer />,
-    }
-  );
-}
+export const MemberListBlock = createReactBlockSpec(
+  {
+    type: "memberList" as const,
+    propSchema: {},
+    content: "none" as const,
+  },
+  {
+    render: () => <MemberListRenderer />,
+  }
+);
