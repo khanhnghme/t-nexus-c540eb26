@@ -3095,6 +3095,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      acquire_sync_lock: {
+        Args: { p_timeout_seconds?: number; p_user_id: string }
+        Returns: boolean
+      }
       check_project_access: {
         Args: { _group_id: string; _user_id: string }
         Returns: {
@@ -3222,6 +3226,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      release_sync_lock: { Args: { p_user_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "owner_system" | "leader" | "member"
