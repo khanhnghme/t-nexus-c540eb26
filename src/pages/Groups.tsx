@@ -335,6 +335,7 @@ export default function Groups() {
           created_by: user!.id,
           slug: '',
           idempotency_key: idempotencyKeyRef.current,
+          project_mode: 'basic',
         };
 
       // Auto-assign workspace_id if workspace is active
@@ -496,7 +497,7 @@ export default function Groups() {
                 }}
                 onSelectCustom={() => {
                   setShowModeSelector(false);
-                  navigate('/create-custom');
+                  navigate(activeWorkspace ? `/create-custom?workspace=${activeWorkspace.id}` : '/create-custom');
                 }}
               />
             </DialogContent>
