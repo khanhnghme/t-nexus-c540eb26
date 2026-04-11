@@ -163,7 +163,7 @@ function TaskListRenderer() {
                 {editable ? (
                   <Select
                     value={task.status}
-                    onValueChange={(v) => handleStatusChange(task.id, v)}
+                    onValueChange={(v) => handleStatusChange(task.id, v as "TODO" | "IN_PROGRESS" | "DONE" | "VERIFIED")}
                   >
                     <SelectTrigger className="h-6 w-auto min-w-[90px] text-xs px-2 py-0 border-none bg-transparent">
                       <SelectValue />
