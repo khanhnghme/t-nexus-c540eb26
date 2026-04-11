@@ -3390,6 +3390,33 @@ export const en = {
     searchPlaceholder: 'Search tasks...',
     listView: 'List view',
     tableView: 'Table view',
+    kanbanView: 'Kanban board',
+    calendarView: 'Calendar view',
+  },
+
+  kanban: {
+    todo: 'To Do',
+    inProgress: 'In Progress',
+    done: 'Done',
+    verified: 'Verified',
+    noTasks: 'No tasks',
+    moveStatus: 'Move status',
+    overdue: 'Overdue: ',
+  },
+
+  taskAttachments: {
+    title: 'Attachments',
+    upload: 'Upload',
+    noAttachments: 'No attachments yet',
+  },
+
+  projectCalendar: {
+    title: 'Calendar',
+    today: 'Today',
+    month: 'Month',
+    week: 'Week',
+    day: 'Day',
+    deadlineCount: 'deadlines',
   },
 };
 
