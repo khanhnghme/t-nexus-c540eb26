@@ -1,32 +1,40 @@
 
 
-## Xóa logo icon, chỉ giữ logo text làm nhận diện thương hiệu
+## Fix: Mã đơn hàng hiển thị sai tại Billing History
 
-### Phạm vi thay đổi
+### Nguyên nhân
 
-Xóa tất cả references đến file `t-nexus-logo.png` (logo icon hình ảnh), chỉ giữ lại 2 file logo text: `t-nexus-text.png` (dark) và `t-nexus-text-white.png` (light).
+Trang `/billing-history` hiển thị 2 loại records:
+1. **Payment records** (từ `payment_history`): `raw` là row payment — **không có `order_code`**, chỉ có `order_id` (UUID). Nên fallback hiển thị `#AB12CD34` (8 ký tự UUID cắt ngắn).
+2. **Pending orders** (từ `orders`): `raw` là row order — **có `order_code`** (`ORD-YYYYMM-XXX`). Hiển thị đúng.
 
-### Files cần sửa (10 files)
+### Giải pháp
 
-| File | Thay đổi |
-|------|----------|
-| **`src/components/TNexusLogo.tsx`** | Xóa import `tNexusLogo`, xóa `variant="icon"`, xóa `variant="full"` (icon+text). Chỉ giữ `variant="text"`. Xóa `TNexusIcon` export. |
-| **`src/pages/Landing.tsx`** | Xóa import `tNexusLogo`. Thay tất cả chỗ dùng icon logo bằng text logo (`tNexusTextWhite`). Header, hero section, feature badge, footer — chỉ hiển thị text logo. |
-| **`src/components/layout/TopBar.tsx`** | Xóa import `tNexusLogo`. Bỏ `<img src={tNexusLogo}>`, chỉ giữ text logo. |
-| **`src/components/layout/DashboardLayout.tsx`** | Xóa import `tNexusLogo`. Sidebar và mobile header — bỏ icon logo, chỉ giữ text logo. |
-| **`src/pages/Guide.tsx`** | Xóa import `tNexusLogo`. Header chỉ hiển thị text logo. |
-| **`src/pages/Pricing.tsx`** | Xóa import `tNexusLogo`. Chỉ giữ text logo. |
-| **`src/pages/Download.tsx`** | Xóa import `tNexusLogo`. Chỉ giữ text logo. |
-| **`src/pages/ResetPassword.tsx`** | Đã dùng `variant="text"` — không cần đổi. |
-| **`src/lib/projectEvidencePdf.ts`** | Thay `ettLogoImage` từ icon sang text logo (`t-nexus-text.png`). |
-| **`src/lib/activityLogPdf.ts`** | Thay `ettLogoUrl` từ icon sang text logo (`t-nexus-text.png`). |
+Sau khi load cả 2 nguồn dữ liệu, tạo một map `orderId → order_code` từ `orders` data, rồi gắn `order_code` vào mỗi payment record thông qua `order_id`.
 
-### Không xóa file asset
+### Thay đổi
 
-File `src/assets/t-nexus-logo.png` sẽ được giữ lại trong repo nhưng không còn được import ở bất kỳ đâu, tránh rủi ro nếu cần rollback.
+**File: `src/pages/BillingHistory.tsx`**
 
-### Không ảnh hưởng
+1. Tạo map `orderCodeMap` từ `orderRes.data`:
+```typescript
+const orderCodeMap: Record<string, string> = {};
+(orderRes.data || []).forEach((o: any) => {
+  if (o.id && o.order_code) orderCodeMap[o.id] = o.order_code;
+});
+```
 
-- Các file chỉ dùng `variant="text"` (MemberAuthForm, RememberLoginScreen, Terms, Privacy, PricingDocs) — không cần thay đổi.
-- `CheckoutLayoutWrapper.tsx` — đã dùng text logo, không có icon logo.
+2. Khi map `paymentRecords`, gắn `order_code` vào raw:
+```typescript
+raw: { ...r, order_code: r.order_id ? orderCodeMap[r.order_id] : undefined },
+```
+
+3. Bỏ fallback UUID cắt ngắn — chỉ hiển thị `order_code` hoặc `'—'`:
+```typescript
+{row.raw?.order_code || '—'}
+```
+
+### Kết quả
+
+Tất cả records (payment lẫn pending) đều hiển thị mã đơn chuẩn `ORD-YYYYMM-XXXXXXXXX`.
 
