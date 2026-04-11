@@ -4,7 +4,7 @@ import { useProjectPages, useCreatePage, useDeletePage, useUpdatePage } from "@/
 import CanvasEditor from "./CanvasEditor";
 import type { CanvasEditorHandle } from "./CanvasEditor";
 import CanvasSidebar from "./CanvasSidebar";
-import { Loader2, FileText, RefreshCw, Plus, PanelLeft, Pencil, Eye, Save, Menu, Download, Link2, HelpCircle } from "lucide-react";
+import { Loader2, FileText, RefreshCw, Plus, PanelLeft, Pencil, Eye, Save, Menu, Download, Link2, HelpCircle, MoreHorizontal } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -237,7 +237,7 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
     : undefined;
 
   return (
-    <div className="flex border rounded-lg bg-card overflow-hidden" style={{ minHeight: 400 }}>
+    <div className="flex h-full overflow-hidden">
       {/* Desktop sidebar */}
       {!isMobile && sidebarOpen && (
         <CanvasSidebar
@@ -283,15 +283,16 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
         </Sheet>
       )}
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 border-b text-sm overflow-x-auto">
+      <div className="flex-1 min-w-0 flex flex-col overflow-y-auto">
+        {/* Slim AFFiNE-style toolbar */}
+        <div className="flex items-center gap-1 px-2 py-1 border-b text-sm shrink-0">
           {(!sidebarOpen || isMobile) && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 sm:h-6 sm:w-6 shrink-0"
+                  className="h-7 w-7 shrink-0"
                   onClick={() => setSidebarOpen(true)}
                 >
                   {isMobile ? <Menu className="h-4 w-4" /> : <PanelLeft className="h-3.5 w-3.5" />}
@@ -300,38 +301,30 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
               <TooltipContent side="right">Hiện sidebar</TooltipContent>
             </Tooltip>
           )}
+
           {activePage.icon && (
             <span className="text-sm leading-none">{activePage.icon}</span>
           )}
-          <span className="text-muted-foreground truncate flex-1 text-xs sm:text-sm">{activePage.title}</span>
+          <span className="text-muted-foreground truncate flex-1 text-xs">{activePage.title}</span>
 
-          {/* Last editor indicator */}
+          {/* Last editor — subtle */}
           {lastEditor && (
-            <span className="text-[10px] text-muted-foreground/70 hidden sm:inline truncate max-w-[180px]">
+            <span className="text-[10px] text-muted-foreground/60 hidden sm:inline truncate max-w-[160px]">
               {lastEditor.editorName} · {formatDistanceToNow(new Date(lastEditor.editedAt), { addSuffix: true, locale: vi })}
             </span>
           )}
 
+          {/* Edit/View toggle — icon only */}
           {editable && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant={isEditMode ? "secondary" : "ghost"}
-                  size="sm"
-                  className="h-7 gap-1.5 text-xs shrink-0"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
                   onClick={() => setIsEditMode((prev) => !prev)}
                 >
-                  {isEditMode ? (
-                    <>
-                      <Pencil className="h-3 w-3" />
-                      <span className="hidden sm:inline">Sửa</span>
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="h-3 w-3" />
-                      <span className="hidden sm:inline">Xem</span>
-                    </>
-                  )}
+                  {isEditMode ? <Pencil className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -339,36 +332,27 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
               </TooltipContent>
             </Tooltip>
           )}
-          {editable && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 gap-1.5 text-xs shrink-0"
-                  onClick={() => setSaveTemplateOpen(true)}
-                >
-                  <Save className="h-3 w-3" />
-                  <span className="hidden sm:inline">Template</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Lưu trang này làm template</TooltipContent>
-            </Tooltip>
-          )}
-          {/* Export dropdown */}
+
+          {/* More actions dropdown — gom Export/Template/Share/Help */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs shrink-0">
-                <Download className="h-3 w-3" />
-                <span className="hidden sm:inline">Export</span>
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
+                <MoreHorizontal className="h-3.5 w-3.5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-48">
+              {editable && (
+                <DropdownMenuItem onClick={() => setSaveTemplateOpen(true)}>
+                  <Save className="h-3.5 w-3.5 mr-2" />
+                  Lưu làm template
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={() => {
                 const content = activePage.content as unknown as any[];
                 downloadPdf(content || [], activePage.title);
                 toast.success("Đã export PDF!");
               }}>
+                <Download className="h-3.5 w-3.5 mr-2" />
                 Export PDF
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
@@ -376,60 +360,44 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
                 downloadMarkdown(content || [], activePage.title);
                 toast.success("Đã export Markdown!");
               }}>
+                <Download className="h-3.5 w-3.5 mr-2" />
                 Export Markdown
+              </DropdownMenuItem>
+              {projectSlug && (
+                <DropdownMenuItem onClick={() => {
+                  const url = `${window.location.origin}/share/${projectSlug}/page/${activePage.slug || ""}`;
+                  navigator.clipboard.writeText(url);
+                  toast.success("Đã copy link trang!");
+                }}>
+                  <Link2 className="h-3.5 w-3.5 mr-2" />
+                  Copy link chia sẻ
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={() => setShortcutHelpOpen(true)}>
+                <HelpCircle className="h-3.5 w-3.5 mr-2" />
+                Phím tắt
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          {/* Copy share link */}
-          {projectSlug && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 gap-1.5 text-xs shrink-0"
-                  onClick={() => {
-                    const url = `${window.location.origin}/share/${projectSlug}/page/${activePage.slug || ""}`;
-                    navigator.clipboard.writeText(url);
-                    toast.success("Đã copy link trang!");
-                  }}
-                >
-                  <Link2 className="h-3 w-3" />
-                  <span className="hidden sm:inline">Share</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Copy link chia sẻ trang</TooltipContent>
-            </Tooltip>
-          )}
-          {/* Shortcut help */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 shrink-0"
-                onClick={() => setShortcutHelpOpen(true)}
-              >
-                <HelpCircle className="h-3 w-3" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Phím tắt (Ctrl+?)</TooltipContent>
-          </Tooltip>
         </div>
-        <CanvasEditor
-          ref={editorRef}
-          key={activePage.id}
-          initialContent={initialContent}
-          editable={isEditMode}
-          pageId={activePage.id}
-          groupId={groupId}
-          title={activePage.title}
-          icon={activePage.icon}
-          coverUrl={activePage.cover_url}
-          onChangeTitle={(newTitle) => handleRenamePage(activePage.id, newTitle)}
-          onChangeIcon={(icon) => handleChangePageIcon(activePage.id, icon)}
-          onChangeCover={(coverUrl) => handleChangeCover(activePage.id, coverUrl)}
-        />
+
+        {/* Editor content */}
+        <div className="flex-1">
+          <CanvasEditor
+            ref={editorRef}
+            key={activePage.id}
+            initialContent={initialContent}
+            editable={isEditMode}
+            pageId={activePage.id}
+            groupId={groupId}
+            title={activePage.title}
+            icon={activePage.icon}
+            coverUrl={activePage.cover_url}
+            onChangeTitle={(newTitle) => handleRenamePage(activePage.id, newTitle)}
+            onChangeIcon={(icon) => handleChangePageIcon(activePage.id, icon)}
+            onChangeCover={(coverUrl) => handleChangeCover(activePage.id, coverUrl)}
+          />
+        </div>
       </div>
       {saveTemplateOpen && (
         <Suspense fallback={null}>
