@@ -263,8 +263,11 @@ export default function Groups() {
     setSearchResults([]);
   };
 
-  const handleCreateGroup = async () => {
+  const handleCreateGroup = useCallback(async () => {
     if (guardReadOnly()) return;
+    // Prevent duplicate submissions
+    if (createLockRef.current || isCreating) return;
+    
     if (!newGroupName.trim()) {
       toast({
         title: g.errorTitle,
@@ -310,9 +313,10 @@ export default function Groups() {
       }
     } catch (limitErr) {
       console.warn('Error checking project limit:', limitErr);
-      // Continue with creation if limit check fails
     }
 
+    // Lock to prevent double submission
+    createLockRef.current = true;
     setIsCreating(true);
 
     try {
