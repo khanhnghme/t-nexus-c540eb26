@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState, useEffect } from "react";
+import { useRef, useCallback, useState, useEffect, memo } from "react";
 import { createReactBlockSpec } from "@blocknote/react";
 import { ChevronRight } from "lucide-react";
 

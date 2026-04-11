@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { createReactBlockSpec } from "@blocknote/react";
 
 const NOTE_COLORS: Record<string, { bg: string; border: string; dot: string }> = {
