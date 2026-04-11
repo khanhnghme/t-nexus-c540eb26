@@ -866,6 +866,7 @@ export type Database = {
           join_require_approval: boolean
           leader_id: string | null
           name: string
+          project_mode: string
           score_finalized_at: string | null
           share_token: string | null
           short_id: string | null
@@ -900,6 +901,7 @@ export type Database = {
           join_require_approval?: boolean
           leader_id?: string | null
           name: string
+          project_mode?: string
           score_finalized_at?: string | null
           share_token?: string | null
           short_id?: string | null
@@ -934,6 +936,7 @@ export type Database = {
           join_require_approval?: boolean
           leader_id?: string | null
           name?: string
+          project_mode?: string
           score_finalized_at?: string | null
           share_token?: string | null
           short_id?: string | null
@@ -2000,6 +2003,53 @@ export type Database = {
           },
         ]
       }
+      project_pages: {
+        Row: {
+          content: Json
+          created_at: string
+          created_by: string
+          display_order: number
+          group_id: string
+          icon: string | null
+          id: string
+          slug: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          created_by: string
+          display_order?: number
+          group_id: string
+          icon?: string | null
+          id?: string
+          slug?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          created_by?: string
+          display_order?: number
+          group_id?: string
+          icon?: string | null
+          id?: string
+          slug?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_pages_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_resources: {
         Row: {
           category: string | null
@@ -2506,6 +2556,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "task_assignments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_attachments: {
+        Row: {
+          content_type: string | null
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          storage_name: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number
+          id?: string
+          storage_name?: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          storage_name?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_attachments_task_id_fkey"
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
