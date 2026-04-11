@@ -1,49 +1,53 @@
 
 
-## Phase 6 — Giai doan 3/4: Grid View Toggle cho Member Block
+## Phase 6 — Giai đoạn 4/4: Invite Member từ Member Block
 
-### Muc tieu
-Them che do xem Grid (dang luoi) ben canh List view hien tai, cho phep user chuyen doi giua 2 che do hien thi.
+### Mục tiêu
+Thêm nút "Mời thành viên" vào header của Member Block, mở dialog mời khách (reuse `ProjectGuestInviteDialog` đã có). Chỉ hiển thị nút khi user có quyền (`editable` từ context). Cập nhật plan.md ghi nhận Phase 6 hoàn tất.
 
-### Hien trang
-- Stage 1/4: Read-only member list — hoan thanh
-- Stage 2/4: Realtime subscription — hoan thanh
-- Hien tai chi co list view (danh sach doc)
+### Hiện trạng
+- Stage 1-3 hoàn thành: read-only list, realtime, grid/list toggle
+- `ProjectGuestInviteDialog` đã có sẵn, nhận `groupId` + `groupName`
+- `TaskBlockContext` cung cấp `editable` flag
 
-### Hanh dong cu the
+### Hành động cụ thể
 
-**1. Cap nhat `src/components/canvas/blocks/MemberBlock.tsx`**
-- Them state `viewMode: "list" | "grid"` (default: "list")
-- Them toggle button (List / LayoutGrid icon) ben canh count badge trong header
-- List view: giu nguyen layout hien tai
-- Grid view: render members dang grid (2-3 cot), moi member la 1 card nho voi avatar lon hon, ten, role badge
+**1. Cập nhật `src/components/canvas/blocks/MemberBlock.tsx`**
+- Import `ProjectGuestInviteDialog`
+- Fetch `groupName` từ bảng `groups` (query thêm 1 lần khi mount) hoặc truyền qua context
+- Trong header, nếu `editable === true` → render nút `UserPlus` icon làm trigger cho `ProjectGuestInviteDialog`
+- Nút đặt cạnh toggle view, trước count badge
 
-### Chi tiet ky thuat
+**2. Cập nhật `src/components/canvas/blocks/TaskBlockContext.tsx`**
+- Thêm `groupName` vào context value (optional, để tránh query thừa trong MemberBlock)
+
+**3. Cập nhật nơi cung cấp `TaskBlockProvider`** 
+- Truyền thêm `groupName` vào provider
+
+**4. Cập nhật `.lovable/plan.md`**
+- Ghi nhận Phase 6 hoàn tất
+
+### Chi tiết kỹ thuật
 
 ```text
-Header:
-  ┌──────────────────────────────────────────┐
-  │ 👥 Thanh vien du an   [List|Grid] [count]│
-  └──────────────────────────────────────────┘
+Header khi editable=true:
+┌──────────────────────────────────────────────────┐
+│ 👥 Thành viên dự án   [+Mời] [List|Grid] [count]│
+└──────────────────────────────────────────────────┘
 
-Grid View:
-  ┌────────────┐  ┌────────────┐  ┌────────────┐
-  │  [Avatar]  │  │  [Avatar]  │  │  [Avatar]  │
-  │  Nguyen A  │  │  Tran B    │  │  Le C      │
-  │  Owner     │  │  Admin     │  │  Member    │
-  └────────────┘  └────────────┘  └────────────┘
-
-Toggle:
-  useState("list") → click icon → setViewMode("grid")
-  List icon: <List />    Grid icon: <LayoutGrid />
+[+Mời] = ProjectGuestInviteDialog trigger (UserPlus icon button)
+         Props: groupId từ context, groupName từ context
 ```
 
-### Khong lam trong giai doan nay
-- Invite member tu block (giai doan 4)
+### Files thay đổi
 
-### Files thay doi
-
-| File | Thay doi |
+| File | Thay đổi |
 |------|----------|
-| `src/components/canvas/blocks/MemberBlock.tsx` | Them grid view + toggle button |
+| `src/components/canvas/blocks/TaskBlockContext.tsx` | Thêm `groupName` vào context |
+| Nơi render `TaskBlockProvider` | Truyền thêm `groupName` |
+| `src/components/canvas/blocks/MemberBlock.tsx` | Thêm nút invite, import dialog |
+| `.lovable/plan.md` | Phase 6 hoàn tất |
+
+### Không làm trong giai đoạn này
+- Quản lý role từ block (remove member, change role) — ngoài scope Phase 6
 
