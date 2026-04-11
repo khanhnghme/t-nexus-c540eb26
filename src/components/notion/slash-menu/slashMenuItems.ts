@@ -1,5 +1,4 @@
 import { BlockNoteEditor, filterSuggestionItems } from '@blocknote/core';
-import type { DefaultSuggestionItem } from '@blocknote/core';
 
 export function getCustomSlashMenuItems(
   editor: BlockNoteEditor<any, any, any>
