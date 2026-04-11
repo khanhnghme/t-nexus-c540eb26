@@ -4,13 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTaskBlockContext } from "./TaskBlockContext";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CalendarDays } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { CalendarDays, Plus } from "lucide-react";
 import { DayPicker } from "react-day-picker";
 import { format, isSameDay } from "date-fns";
 import { vi } from "date-fns/locale";
 import { parseLocalDateTime } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { toast } from "sonner";
 import {
   Tooltip,
   TooltipContent,
@@ -26,11 +29,13 @@ interface DeadlineTask {
 }
 
 function CalendarRenderer() {
-  const { groupId } = useTaskBlockContext();
+  const { groupId, editable } = useTaskBlockContext();
   const [tasks, setTasks] = useState<DeadlineTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [month, setMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [adding, setAdding] = useState(false);
 
   const fetchTasks = useCallback(async () => {
     if (!groupId) return;
@@ -222,54 +227,107 @@ function CalendarRenderer() {
       {/* Selected Day Panel */}
       {selectedDay && (() => {
         const dayTasks = getTasksForDay(selectedDay);
-        if (dayTasks.length === 0) return null;
         return (
           <div className="border-t px-3 py-2 space-y-1.5">
             <p className="text-xs font-medium text-muted-foreground">
               {format(selectedDay, "dd/MM/yyyy")}
             </p>
-            <ul className="space-y-1">
-              {dayTasks.map((t) => {
-                const statusColor =
-                  t.status === "DONE" || t.status === "VERIFIED"
-                    ? "bg-green-500/15 text-green-700 dark:text-green-400"
-                    : t.status === "IN_PROGRESS"
-                    ? "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400"
-                    : "bg-muted text-muted-foreground";
-                const statusLabel =
-                  t.status === "DONE"
-                    ? "Done"
-                    : t.status === "VERIFIED"
-                    ? "Verified"
-                    : t.status === "IN_PROGRESS"
-                    ? "In Progress"
-                    : "Todo";
-                const deadlineDate = parseLocalDateTime(t.deadline);
-                return (
-                  <li
-                    key={t.id}
-                    className="flex items-center justify-between gap-2 text-xs"
-                  >
-                    <span className="truncate flex-1">• {t.title}</span>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      {deadlineDate && (
-                        <span className="text-muted-foreground">
-                          {format(deadlineDate, "HH:mm")}
-                        </span>
-                      )}
-                      <span
-                        className={cn(
-                          "px-1.5 py-0.5 rounded text-[10px] font-medium",
-                          statusColor
+            {dayTasks.length === 0 && (
+              <p className="text-xs text-muted-foreground italic">Không có deadline</p>
+            )}
+            {dayTasks.length > 0 && (
+              <ul className="space-y-1">
+                {dayTasks.map((t) => {
+                  const statusColor =
+                    t.status === "DONE" || t.status === "VERIFIED"
+                      ? "bg-green-500/15 text-green-700 dark:text-green-400"
+                      : t.status === "IN_PROGRESS"
+                      ? "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400"
+                      : "bg-muted text-muted-foreground";
+                  const statusLabel =
+                    t.status === "DONE"
+                      ? "Done"
+                      : t.status === "VERIFIED"
+                      ? "Verified"
+                      : t.status === "IN_PROGRESS"
+                      ? "In Progress"
+                      : "Todo";
+                  const deadlineDate = parseLocalDateTime(t.deadline);
+                  return (
+                    <li
+                      key={t.id}
+                      className="flex items-center justify-between gap-2 text-xs"
+                    >
+                      <span className="truncate flex-1">• {t.title}</span>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {deadlineDate && (
+                          <span className="text-muted-foreground">
+                            {format(deadlineDate, "HH:mm")}
+                          </span>
                         )}
-                      >
-                        {statusLabel}
-                      </span>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+                        <span
+                          className={cn(
+                            "px-1.5 py-0.5 rounded text-[10px] font-medium",
+                            statusColor
+                          )}
+                        >
+                          {statusLabel}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {editable && (
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!newTaskTitle.trim() || adding) return;
+                  setAdding(true);
+                  try {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (!user) {
+                      toast.error("Bạn cần đăng nhập");
+                      return;
+                    }
+                    const deadline = format(selectedDay, "yyyy-MM-dd") + "T23:59:00";
+                    const { error } = await supabase.from("tasks").insert({
+                      title: newTaskTitle.trim(),
+                      group_id: groupId,
+                      status: "TODO",
+                      deadline,
+                      created_by: user.id,
+                    });
+                    if (error) throw error;
+                    setNewTaskTitle("");
+                    toast.success("Đã tạo task");
+                  } catch (err: any) {
+                    toast.error(err.message || "Không thể tạo task");
+                  } finally {
+                    setAdding(false);
+                  }
+                }}
+                className="flex items-center gap-1.5 pt-1 border-t border-dashed"
+              >
+                <Input
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  placeholder="+ Thêm task deadline..."
+                  className="h-7 text-xs flex-1"
+                  disabled={adding}
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 w-7 p-0"
+                  disabled={adding || !newTaskTitle.trim()}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </Button>
+              </form>
+            )}
           </div>
         );
       })()}
