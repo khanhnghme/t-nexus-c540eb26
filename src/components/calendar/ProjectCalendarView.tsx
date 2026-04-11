@@ -26,6 +26,7 @@ export default function ProjectCalendarView({ groupId, projectSlug }: ProjectCal
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month');
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [dayDetailOpen, setDayDetailOpen] = useState(false);
 
   const handlePrevious = () => {
     if (viewMode === 'month') setCurrentDate(d => subMonths(d, 1));
