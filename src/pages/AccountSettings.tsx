@@ -134,6 +134,14 @@ export default function AccountSettings() {
   const { locale, setLocale } = useLanguage();
   const isVi = locale === 'vi';
 
+  useEffect(() => {
+    if (window.location.hash === '#integrations') {
+      setTimeout(() => {
+        document.getElementById('integrations')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    }
+  }, []);
+
   return (
     <div className="max-w-3xl mx-auto py-2 px-1 space-y-6">
       {/* Page header */}
@@ -159,7 +167,7 @@ export default function AccountSettings() {
           </div>
 
           {/* Connected Services */}
-          <div className="p-5">
+          <div className="p-5" id="integrations">
             <div className="flex items-center gap-2 mb-3">
               <Link2 className="w-4 h-4 text-muted-foreground" />
               <h3 className="text-sm font-medium">{isVi ? 'Dịch vụ liên kết' : 'Connected Services'}</h3>
