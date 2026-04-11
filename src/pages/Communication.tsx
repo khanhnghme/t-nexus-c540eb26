@@ -615,7 +615,19 @@ export default function Communication() {
   const handleNavigateToTask = (taskId: string) => {
     // Navigate directly to the project's tasks tab using slug
     const projectSlug = (selectedProject as any)?.slug || (selectedProject as any)?.short_id || selectedProject?.id;
-    navigate(`/p/${projectSlug}?tab=tasks&task=${taskId}`);
+    const wsId = (selectedProject as any)?.workspace_id;
+    // Try to get workspace short_id if available
+    if (wsId) {
+      (supabase as any).from('workspaces').select('short_id').eq('id', wsId).maybeSingle().then(({ data }: any) => {
+        if (data?.short_id) {
+          navigate(`/pr/ws-${data.short_id}/${projectSlug}?tab=tasks&task=${taskId}`);
+        } else {
+          navigate(`/p/${projectSlug}?tab=tasks&task=${taskId}`);
+        }
+      });
+    } else {
+      navigate(`/p/${projectSlug}?tab=tasks&task=${taskId}`);
+    }
   };
 
   const getInitials = (name: string) => {

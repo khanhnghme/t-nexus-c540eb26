@@ -72,7 +72,7 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
   useEffect(() => {
     const path = location.pathname;
     if (path === '/workspace/new') return;
-    if (path.startsWith('/p/')) {
+    if (path.startsWith('/pr/') || path.startsWith('/p/')) {
       setExpanded('projects');
     } else if (path === '/personal-info' || path === '/account-settings') {
       setExpanded('account');
@@ -125,7 +125,7 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
   };
 
   const hasActiveChild = (paths: string[]) => paths.some(p => isPathActive(p));
-  const projectPaths = projects.map(p => `/p/${p.slug || p.id}`);
+  const projectPaths = projects.map(p => activeWorkspace?.short_id ? `/pr/ws-${activeWorkspace.short_id}/${p.slug || p.id}` : `/p/${p.slug || p.id}`);
 
   /* ─── Collapsed mode ─── */
   if (collapsed) {
@@ -229,7 +229,7 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
               </Link>
 
               {projects.map(p => {
-                const href = `/p/${p.slug || p.id}`;
+                const href = activeWorkspace?.short_id ? `/pr/ws-${activeWorkspace.short_id}/${p.slug || p.id}` : `/p/${p.slug || p.id}`;
                 const active = location.pathname.startsWith(href);
                 return (
                   <Link

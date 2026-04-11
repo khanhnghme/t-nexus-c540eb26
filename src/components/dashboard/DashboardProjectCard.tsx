@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { FileText, Users, Calendar, Globe, EyeOff, Eye, Clock, Palette } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { fixStorageUrl } from '@/lib/urlUtils';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
 import type { Group } from '@/types/database';
 
 interface DashboardProjectCardProps {
@@ -54,6 +55,7 @@ function NameCover({ name }: { name: string }) {
 
 export default function DashboardProjectCard({ group, isHidden, isPending, onToggleHide }: DashboardProjectCardProps) {
   const [imgError, setImgError] = useState(false);
+  const { activeWorkspace } = useWorkspace();
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('vi-VN', {
@@ -74,7 +76,7 @@ export default function DashboardProjectCard({ group, isHidden, isPending, onTog
   const Wrapper = isPending ? 'div' : Link;
   const wrapperProps = isPending
     ? {}
-    : { to: `/p/${group.slug}` };
+    : { to: activeWorkspace?.short_id ? `/pr/ws-${activeWorkspace.short_id}/${group.slug}` : `/p/${group.slug}` };
 
   return (
     <Wrapper

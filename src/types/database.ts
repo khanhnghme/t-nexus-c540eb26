@@ -76,6 +76,7 @@ export type InviteScope = 'workspace' | 'project';
 
 export interface Workspace {
   id: string;
+  short_id: string;
   name: string;
   slug: string;
   description: string | null;
