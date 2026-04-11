@@ -1193,11 +1193,11 @@ export default function TaskSubmissionDialog({
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={driveConnect.connect}
+                                  onClick={() => navigate('/account-settings#integrations')}
                                   className="gap-2 border-violet-500/30 text-violet-600 hover:bg-violet-500/10"
                                 >
                                   <img src={googleDriveLogo} alt="" className="w-4 h-4" />
-                                  Liên kết Google Drive
+                                  Đi tới Cài đặt để liên kết
                                 </Button>
                               </div>
                             ) : (

@@ -872,9 +872,9 @@ export default function ResourceUploadDialog({
                   <div className="flex-1 flex flex-col items-center justify-center gap-3">
                     <img src={googleDriveLogo} alt="Google Drive" className="w-12 h-12 opacity-40" />
                     <p className="text-sm text-muted-foreground">Chưa liên kết Google Drive</p>
-                    <Button onClick={connectDrive} className="gap-2">
+                    <Button onClick={() => navigate('/account-settings#integrations')} className="gap-2">
                       <img src={googleDriveLogo} alt="" className="w-4 h-4" />
-                      Liên kết Google Drive
+                      Đi tới Cài đặt để liên kết
                     </Button>
                   </div>
                 ) : (
