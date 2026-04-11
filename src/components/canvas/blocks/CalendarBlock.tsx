@@ -30,7 +30,7 @@ function CalendarRenderer() {
   const [tasks, setTasks] = useState<DeadlineTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [month, setMonth] = useState(new Date());
-  const [hoveredDay, setHoveredDay] = useState<Date | null>(null);
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
   const fetchTasks = useCallback(async () => {
     if (!groupId) return;
@@ -128,6 +128,14 @@ function CalendarRenderer() {
         <TooltipProvider delayDuration={200}>
           <DayPicker
             mode="single"
+            selected={selectedDay || undefined}
+            onSelect={(day) => {
+              if (day && selectedDay && isSameDay(day, selectedDay)) {
+                setSelectedDay(null);
+              } else {
+                setSelectedDay(day || null);
+              }
+            }}
             month={month}
             onMonthChange={setMonth}
             locale={vi}
@@ -210,6 +218,61 @@ function CalendarRenderer() {
           />
         </TooltipProvider>
       </div>
+
+      {/* Selected Day Panel */}
+      {selectedDay && (() => {
+        const dayTasks = getTasksForDay(selectedDay);
+        if (dayTasks.length === 0) return null;
+        return (
+          <div className="border-t px-3 py-2 space-y-1.5">
+            <p className="text-xs font-medium text-muted-foreground">
+              {format(selectedDay, "dd/MM/yyyy")}
+            </p>
+            <ul className="space-y-1">
+              {dayTasks.map((t) => {
+                const statusColor =
+                  t.status === "DONE" || t.status === "VERIFIED"
+                    ? "bg-green-500/15 text-green-700 dark:text-green-400"
+                    : t.status === "IN_PROGRESS"
+                    ? "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400"
+                    : "bg-muted text-muted-foreground";
+                const statusLabel =
+                  t.status === "DONE"
+                    ? "Done"
+                    : t.status === "VERIFIED"
+                    ? "Verified"
+                    : t.status === "IN_PROGRESS"
+                    ? "In Progress"
+                    : "Todo";
+                const deadlineDate = parseLocalDateTime(t.deadline);
+                return (
+                  <li
+                    key={t.id}
+                    className="flex items-center justify-between gap-2 text-xs"
+                  >
+                    <span className="truncate flex-1">• {t.title}</span>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {deadlineDate && (
+                        <span className="text-muted-foreground">
+                          {format(deadlineDate, "HH:mm")}
+                        </span>
+                      )}
+                      <span
+                        className={cn(
+                          "px-1.5 py-0.5 rounded text-[10px] font-medium",
+                          statusColor
+                        )}
+                      >
+                        {statusLabel}
+                      </span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })()}
     </div>
   );
 }
