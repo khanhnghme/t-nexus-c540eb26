@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import submissionIllustration from '@/assets/submission-confirm-illustration.png';
 import {
   Dialog,
@@ -130,6 +131,7 @@ export default function TaskSubmissionDialog({
 }: TaskSubmissionDialogProps) {
   const { toast } = useToast();
   const { user, profile, isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab || 'requirements');
   
@@ -1193,11 +1195,11 @@ export default function TaskSubmissionDialog({
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={driveConnect.connect}
+                                  onClick={() => navigate('/account-settings#integrations')}
                                   className="gap-2 border-violet-500/30 text-violet-600 hover:bg-violet-500/10"
                                 >
                                   <img src={googleDriveLogo} alt="" className="w-4 h-4" />
-                                  Liên kết Google Drive
+                                  Đi tới Cài đặt để liên kết
                                 </Button>
                               </div>
                             ) : (
