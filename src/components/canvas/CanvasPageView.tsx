@@ -24,6 +24,7 @@ export default function CanvasPageView({ groupId, editable = false }: CanvasPage
   const isMobile = useIsMobile();
   const [activePageId, setActivePageId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isEditMode, setIsEditMode] = useState(editable);
 
   // Default sidebar closed on mobile
   useEffect(() => {
