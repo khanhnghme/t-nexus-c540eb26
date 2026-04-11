@@ -856,6 +856,7 @@ export type Database = {
           created_by: string
           description: string | null
           id: string
+          idempotency_key: string | null
           image_url: string | null
           instructor_email: string | null
           instructor_name: string | null
@@ -889,6 +890,7 @@ export type Database = {
           created_by: string
           description?: string | null
           id?: string
+          idempotency_key?: string | null
           image_url?: string | null
           instructor_email?: string | null
           instructor_name?: string | null
@@ -922,6 +924,7 @@ export type Database = {
           created_by?: string
           description?: string | null
           id?: string
+          idempotency_key?: string | null
           image_url?: string | null
           instructor_email?: string | null
           instructor_name?: string | null
