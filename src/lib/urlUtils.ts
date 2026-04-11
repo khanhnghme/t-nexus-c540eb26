@@ -1,8 +1,8 @@
 import { normalizeStorageUrl } from '@/lib/r2Storage';
 
 // URL utilities for semantic, human-readable URLs
-// Format: /p/{name-slug} for projects (clean, no random IDs)
-// Format: /p/{project-slug}/t/{task-slug} for tasks
+// Format: /p/{workspace-slug}/{project-slug} for projects
+// Format: /p/{workspace-slug}/{project-slug}/t/{task-slug} for tasks
 
 /**
  * Fix storage URLs that may point to old/different Supabase instances.
@@ -35,18 +35,25 @@ export function isSlug(id: string): boolean {
 }
 
 /**
- * Generate project URL using slug
- * Format: /p/{name-slug}
+ * Generate project URL using workspace slug + project slug
+ * Format: /p/{workspace-slug}/{project-slug}
  */
-export function getProjectUrl(slug: string): string {
-  return `/p/${slug}`;
+export function getProjectUrl(projectSlug: string, workspaceSlug?: string): string {
+  if (workspaceSlug) {
+    return `/p/${workspaceSlug}/${projectSlug}`;
+  }
+  // Fallback for legacy (should not happen in normal flow)
+  return `/p/${projectSlug}`;
 }
 
 /**
  * Generate task URL with context
- * Format: /p/{project-slug}/t/{task-slug}
+ * Format: /p/{workspace-slug}/{project-slug}/t/{task-slug}
  */
-export function getTaskUrl(projectSlug: string, taskSlug: string): string {
+export function getTaskUrl(projectSlug: string, taskSlug: string, workspaceSlug?: string): string {
+  if (workspaceSlug) {
+    return `/p/${workspaceSlug}/${projectSlug}/t/${taskSlug}`;
+  }
   return `/p/${projectSlug}/t/${taskSlug}`;
 }
 
@@ -59,15 +66,29 @@ export function getPublicProjectUrl(shareToken: string): string {
 
 /**
  * Generate file preview URL - semantic format
- * Format: /p/{project-slug}/t/{task-slug}/f/{file-index}
- * Fallback: /f?p={project}&t={task}&i={index}
+ * Format: /p/{workspace-slug}/{project-slug}/t/{task-slug}/f/{file-index}
  */
 export function getFilePreviewUrl(
   projectSlug: string,
   taskSlug: string,
-  fileIndex: number = 0
+  fileIndex: number = 0,
+  workspaceSlug?: string
 ): string {
+  if (workspaceSlug) {
+    return `/p/${workspaceSlug}/${projectSlug}/t/${taskSlug}/f/${fileIndex}`;
+  }
   return `/p/${projectSlug}/t/${taskSlug}/f/${fileIndex}`;
+}
+
+/**
+ * Generate canvas page URL
+ * Format: /p/{workspace-slug}/{project-slug}/page/{page-slug}
+ */
+export function getCanvasPageUrl(projectSlug: string, pageSlug: string, workspaceSlug?: string): string {
+  if (workspaceSlug) {
+    return `/p/${workspaceSlug}/${projectSlug}/page/${pageSlug}`;
+  }
+  return `/p/${projectSlug}/page/${pageSlug}`;
 }
 
 /**
