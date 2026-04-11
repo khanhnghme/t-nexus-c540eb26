@@ -68,23 +68,21 @@ async function gcalRequest(accessToken: string, path: string, method = "GET", bo
   return method === "DELETE" ? null : res.json();
 }
 
-// Acquire optimistic lock (30s timeout)
+// Acquire optimistic lock via DB function (handles timestamp comparison correctly)
 async function acquireLock(supabase: any, userId: string): Promise<boolean> {
-  const lockExpiry = new Date(Date.now() - 30000).toISOString();
-  const { data } = await supabase
-    .from("google_calendar_tokens")
-    .update({ sync_locked_at: new Date().toISOString() })
-    .eq("user_id", userId)
-    .or(`sync_locked_at.is.null,sync_locked_at.lt.${lockExpiry}`)
-    .select("id");
-  return !!(data && data.length > 0);
+  const { data, error } = await supabase.rpc("acquire_sync_lock", {
+    p_user_id: userId,
+    p_timeout_seconds: 30,
+  });
+  if (error) {
+    console.error("acquire_sync_lock error:", error);
+    return false;
+  }
+  return data === true;
 }
 
 async function releaseLock(supabase: any, userId: string) {
-  await supabase
-    .from("google_calendar_tokens")
-    .update({ sync_locked_at: null })
-    .eq("user_id", userId);
+  await supabase.rpc("release_sync_lock", { p_user_id: userId });
 }
 
 Deno.serve(async (req) => {
