@@ -353,7 +353,7 @@ export default function AddonCheckout() {
                 try {
                   const newOrderCode = await createReservation();
                   setShowConfirmDialog(false);
-                  navigate('/addon-checkout/' + newOrderCode);
+                  navigate('/addon-checkout/payment/' + newOrderCode);
                 } catch (e) {
                   toast({ title: 'Error', description: isVi ? 'Không thể tạo đơn hàng' : 'Failed to create order', variant: 'destructive' });
                 } finally {

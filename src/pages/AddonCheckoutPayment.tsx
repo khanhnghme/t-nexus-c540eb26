@@ -63,7 +63,7 @@ export default function AddonCheckoutPayment() {
         userAddons.refresh();
         accountLimits.refresh();
         await refreshProfile();
-        navigate(`/checkout/summary/${orderCode}`, { replace: true });
+        navigate(`/addon-checkout/summary/${orderCode}`, { replace: true });
       }
     }, 4000);
 
@@ -85,7 +85,7 @@ export default function AddonCheckoutPayment() {
       if (paypalRes.data?.clientId) setPaypalClientId(paypalRes.data.clientId);
       // If order is finished, redirect to summary
       if (['completed', 'cancelled', 'expired'].includes(orderRes.data.status)) {
-        navigate(`/checkout/summary/${orderCode}`, { replace: true });
+        navigate(`/addon-checkout/summary/${orderCode}`, { replace: true });
         return;
       }
       if (orderRes.data.status === 'failed') {
@@ -148,7 +148,7 @@ export default function AddonCheckoutPayment() {
         accountLimits.refresh();
         await refreshProfile();
         toast({ title: '✅', description: isVi ? 'Mua add-on thành công!' : 'Add-on purchased successfully!' });
-        navigate(`/checkout/summary/${orderCode}`, { replace: true });
+        navigate(`/addon-checkout/summary/${orderCode}`, { replace: true });
       } else if (data?.success && data?.pending) {
         toast({ title: isVi ? 'Đã xác nhận! Đang chờ kích hoạt...' : 'Confirmed! Waiting for activation...' });
         // Stay in processing, background polling will handle redirect
@@ -200,16 +200,18 @@ export default function AddonCheckoutPayment() {
 
   return (
     <div className="max-w-5xl mx-auto py-6 px-4 space-y-5">
-      {/* Back button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="gap-1.5 text-muted-foreground hover:text-foreground -ml-2"
-        onClick={() => setShowBackDialog(true)}
-      >
-        <ArrowLeft className="w-4 h-4" />
-        <span className="text-sm">{isVi ? 'Quay lại' : 'Back'}</span>
-      </Button>
+      {/* Back button — hide when minimal layout already has one */}
+      {sessionStorage.getItem('checkout_from') !== 'onboarding' && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5 text-muted-foreground hover:text-foreground -ml-2"
+          onClick={() => setShowBackDialog(true)}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm">{isVi ? 'Quay lại' : 'Back'}</span>
+        </Button>
+      )}
       {paymentStatus === 'failed' && paymentError && (
         <div className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
           <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />

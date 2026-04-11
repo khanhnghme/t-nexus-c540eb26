@@ -177,7 +177,8 @@ function AppRoutes() {
           <Route path="/checkout/summary/:orderCode" element={<CheckoutSummary />} />
           <Route path="/checkout/payment/:orderCode" element={<CheckoutPayment />} />
           <Route path="/addon-checkout" element={<AddonCheckout />} />
-          <Route path="/addon-checkout/:orderCode" element={<AddonCheckoutPayment />} />
+          <Route path="/addon-checkout/payment/:orderCode" element={<AddonCheckoutPayment />} />
+          <Route path="/addon-checkout/summary/:orderCode" element={<CheckoutSummary />} />
         </Route>
 
         {/* ═══ Protected routes with persistent DashboardLayout ═══ */}

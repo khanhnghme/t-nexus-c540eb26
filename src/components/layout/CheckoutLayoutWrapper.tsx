@@ -57,7 +57,8 @@ function MinimalCheckoutLayout() {
   const handleConfirmBack = () => {
     setShowBackConfirm(false);
     if (location.pathname.startsWith('/addon-checkout/')) {
-      navigate('/addon-checkout', { replace: true });
+      const checkoutFrom = sessionStorage.getItem('checkout_from');
+      navigate(checkoutFrom === 'onboarding' ? '/onboarding' : '/addon-checkout', { replace: true });
     } else {
       navigate('/onboarding');
     }
