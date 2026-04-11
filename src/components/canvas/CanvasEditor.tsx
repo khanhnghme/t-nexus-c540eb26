@@ -4,7 +4,7 @@ import { BlockNoteView } from "@blocknote/shadcn";
 import { useTheme } from "next-themes";
 import { BlockNoteSchema, defaultBlockSpecs } from "@blocknote/core";
 import type { Block, PartialBlock } from "@blocknote/core";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useImperativeHandle, useMemo, useState, forwardRef } from "react";
 import { useAutosave } from "@/hooks/useAutosave";
 import { useUpdatePageContent } from "@/hooks/useProjectPages";
 import { Check, Cloud, Loader2, AlertCircle } from "lucide-react";
@@ -29,6 +29,10 @@ const schema = BlockNoteSchema.create({
   },
 });
 
+export interface CanvasEditorHandle {
+  forceSave: () => void;
+}
+
 interface CanvasEditorProps {
   initialContent?: PartialBlock[];
   editable?: boolean;
@@ -43,7 +47,7 @@ interface CanvasEditorProps {
   onChangeCover?: (coverUrl: string | null) => void;
 }
 
-export default function CanvasEditor({
+const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function CanvasEditor({
   initialContent,
   editable = true,
   onChange,
@@ -55,7 +59,7 @@ export default function CanvasEditor({
   onChangeTitle,
   onChangeIcon,
   onChangeCover,
-}: CanvasEditorProps) {
+}, ref) {
   const { resolvedTheme } = useTheme();
   const updatePageContent = useUpdatePageContent();
   const [serializedContent] = useState("");
@@ -63,7 +67,6 @@ export default function CanvasEditor({
 
   const safeInitialContent = useMemo(() => {
     if (!initialContent?.length) return undefined;
-    // Filter out blocks with unknown types that would crash BlockNote
     const validTypes = new Set(Object.keys(schema.blockSpecs));
     const filterBlocks = (blocks: PartialBlock[]): PartialBlock[] =>
       blocks
@@ -96,13 +99,19 @@ export default function CanvasEditor({
     });
   }, []);
 
-  const { isSaving, lastSaved, hasUnsavedChanges, saveError } = useAutosave({
+  const { isSaving, lastSaved, hasUnsavedChanges, saveError, forceSave } = useAutosave({
     data: currentContent,
     onSave: handleSave,
     onError: handleSaveError,
     delay: 800,
     enabled: !!pageId && editable,
   });
+
+  useImperativeHandle(ref, () => ({
+    forceSave: () => {
+      if (forceSave) forceSave();
+    },
+  }), [forceSave]);
 
   const handleChange = useCallback(() => {
     const doc = editor.document as Block[];
@@ -168,4 +177,6 @@ export default function CanvasEditor({
       )}
     </div>
   );
-}
+});
+
+export default CanvasEditor;
