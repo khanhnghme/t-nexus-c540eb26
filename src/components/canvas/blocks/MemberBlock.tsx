@@ -4,9 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTaskBlockContext } from "./TaskBlockContext";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users } from "lucide-react";
+import { Users, List, LayoutGrid } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
 import { getProjectRoleLabel } from "@/lib/roleLabels";
+import { Toggle } from "@/components/ui/toggle";
 
 interface MemberRow {
   user_id: string;
@@ -19,6 +20,7 @@ function MemberListRenderer() {
   const { groupId } = useTaskBlockContext();
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
   const fetchMembers = useCallback(async () => {
     if (!groupId) return;
@@ -89,29 +91,62 @@ function MemberListRenderer() {
       <div className="flex items-center gap-2 mb-3">
         <Users className="h-4 w-4 text-primary" />
         <span className="text-sm font-medium">Thành viên dự án</span>
-        <Badge variant="secondary" className="ml-auto text-xs">
-          {members.length}
-        </Badge>
+        <div className="ml-auto flex items-center gap-1">
+          <Toggle
+            size="sm"
+            pressed={viewMode === "list"}
+            onPressedChange={() => setViewMode("list")}
+            aria-label="List view"
+            className="h-7 w-7 p-0"
+          >
+            <List className="h-3.5 w-3.5" />
+          </Toggle>
+          <Toggle
+            size="sm"
+            pressed={viewMode === "grid"}
+            onPressedChange={() => setViewMode("grid")}
+            aria-label="Grid view"
+            className="h-7 w-7 p-0"
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+          </Toggle>
+          <Badge variant="secondary" className="text-xs ml-1">
+            {members.length}
+          </Badge>
+        </div>
       </div>
 
       {members.length === 0 ? (
         <p className="text-xs text-muted-foreground text-center py-4">
           Chưa có thành viên nào
         </p>
-      ) : (
+      ) : viewMode === "list" ? (
         <div className="space-y-1.5">
           {members.map((m) => (
             <div
               key={m.user_id}
               className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50 transition-colors"
             >
-              <UserAvatar
-                src={m.avatar_url}
-                name={m.full_name}
-                size="sm"
-              />
+              <UserAvatar src={m.avatar_url} name={m.full_name} size="sm" />
               <span className="text-sm truncate flex-1">{m.full_name}</span>
               <Badge variant="outline" className="text-[10px] shrink-0">
+                {getProjectRoleLabel(m.role)}
+              </Badge>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 gap-2">
+          {members.map((m) => (
+            <div
+              key={m.user_id}
+              className="flex flex-col items-center gap-1.5 rounded-lg border bg-muted/30 p-3 hover:bg-muted/50 transition-colors"
+            >
+              <UserAvatar src={m.avatar_url} name={m.full_name} size="md" />
+              <span className="text-xs font-medium text-center truncate w-full">
+                {m.full_name}
+              </span>
+              <Badge variant="outline" className="text-[10px]">
                 {getProjectRoleLabel(m.role)}
               </Badge>
             </div>
