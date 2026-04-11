@@ -193,11 +193,11 @@ function AppRoutes() {
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/groups" element={<Groups />} />
           {/* New URL format: /pr/ws-{wsShortId}/{projectSlug} */}
-          <Route path="/pr/ws-:wsShortId/:projectSlug" element={<GroupDetail />} />
-          <Route path="/pr/ws-:wsShortId/:projectSlug/t/:taskSlug" element={<GroupDetail />} />
-          <Route path="/pr/ws-:wsShortId/:projectSlug/t/:taskSlug/f/:fileIndex" element={<ProtectedRoute><FilePreview /></ProtectedRoute>} />
+          <Route path="/pr/:wsParam/:projectSlug" element={<GroupDetail />} />
+          <Route path="/pr/:wsParam/:projectSlug/t/:taskSlug" element={<GroupDetail />} />
+          <Route path="/pr/:wsParam/:projectSlug/t/:taskSlug/f/:fileIndex" element={<ProtectedRoute><FilePreview /></ProtectedRoute>} />
           {/* New page format: /pa/ws-{wsShortId}/{pageSlug} */}
-          <Route path="/pa/ws-:wsShortId/:pageSlug" element={<GroupDetail />} />
+          <Route path="/pa/:wsParam/:pageSlug" element={<GroupDetail />} />
           {/* Legacy redirects */}
           <Route path="/p/:projectSlug" element={<LegacyProjectRedirect />} />
           <Route path="/p/:projectSlug/page/:pageSlug" element={<LegacyPageRedirect />} />
