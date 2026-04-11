@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { fixStorageUrl } from '@/lib/urlUtils';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,6 +48,7 @@ import type { Group, GroupMember } from '@/types/database';
 import UserAvatar from '@/components/UserAvatar';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
+import ProjectModeSelector from '@/components/ProjectModeSelector';
 interface MemberAvatar {
   avatar_url: string | null;
   full_name: string;
@@ -71,6 +72,7 @@ interface MemberToAdd {
 
 export default function Groups() {
   const { user, isSystemAdmin, profile } = useAuth();
+  const navigate = useNavigate();
   const { activeWorkspace, isAvailable: wsAvailable, workspaceRole } = useWorkspace();
   const { translations: { app: t } } = useLanguage();
   const g = t.groups;
@@ -83,6 +85,7 @@ export default function Groups() {
   const [groups, setGroups] = useState<GroupWithMembers[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [showModeSelector, setShowModeSelector] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const createLockRef = useRef(false);
   const idempotencyKeyRef = useRef(crypto.randomUUID());
@@ -448,12 +451,8 @@ export default function Groups() {
             </p>
           </div>
 
-          {/* Create project CTA - always visible */}
-          <Dialog open={isDialogOpen} onOpenChange={(open) => {
-            if (!canCreateProject) return;
-            setIsDialogOpen(open);
-            if (!open) resetForm();
-          }}>
+          {/* Mode Selector Dialog */}
+          <Dialog open={showModeSelector} onOpenChange={setShowModeSelector}>
             <DialogTrigger asChild disabled={!canCreateProject}>
               <div className={`relative overflow-hidden rounded-xl border-2 border-dashed p-5 transition-all duration-300 ${
                 canCreateProject
@@ -485,6 +484,29 @@ export default function Groups() {
                 </div>
               </div>
             </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Chọn loại dự án</DialogTitle>
+                <DialogDescription>Chọn cách bạn muốn quản lý dự án</DialogDescription>
+              </DialogHeader>
+              <ProjectModeSelector
+                onSelectBasic={() => {
+                  setShowModeSelector(false);
+                  setIsDialogOpen(true);
+                }}
+                onSelectCustom={() => {
+                  setShowModeSelector(false);
+                  navigate('/create-custom');
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+
+          {/* Basic project creation dialog */}
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) resetForm();
+          }}>
               <DialogContent
                 className="p-0 gap-0 border-0 bg-transparent shadow-none [&>button]:hidden"
                 style={{ maxWidth: 'none', width: 'auto' }}
