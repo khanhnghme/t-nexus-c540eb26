@@ -189,6 +189,7 @@ function AppRoutes() {
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/groups" element={<Groups />} />
           <Route path="/p/:projectSlug" element={<GroupDetail />} />
+          <Route path="/p/:projectSlug/page/:pageSlug" element={<GroupDetail />} />
           <Route path="/p/:projectSlug/t/:taskSlug" element={<GroupDetail />} />
           <Route path="/p/:projectSlug/t/:taskSlug/f/:fileIndex" element={<ProtectedRoute><FilePreview /></ProtectedRoute>} />
           <Route path="/groups/:groupId" element={<GroupDetail />} />
