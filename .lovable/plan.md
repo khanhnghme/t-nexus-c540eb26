@@ -1,66 +1,95 @@
 
 
-## Phase 15 — Performance Optimization
+## Phase 16 — Template System cho Custom Projects
 
 ### Mục tiêu
-Canvas mượt mà với nhiều blocks, giảm re-renders không cần thiết, lazy load custom blocks, tối ưu auto-save.
+Cho phép user tạo custom project từ template có sẵn (thay vì blank canvas), và lưu project hiện tại thành template để tái sử dụng.
 
 ### Hiện trạng
-- 5 custom blocks (TaskBlock, MemberBlock, CalendarBlock, NoteBlock, ToggleBlock) đều import trực tiếp, không lazy
-- Auto-save delay đang ở 1500ms
-- Không có React.memo hay virtualization
-- Skeleton loading đã có ở TaskBlock, chưa đồng nhất ở các block khác
+- Bảng `project_templates` chưa tồn tại
+- `CreateCustomProject.tsx` luôn tạo project blank (1 page rỗng)
+- Chưa có UI chọn template hay "Save as template"
 
 ### Công việc
 
-**1. Lazy load custom blocks**
+**1. Migration — Tạo bảng `project_templates`**
 
-Tạo `src/components/canvas/blocks/lazyBlocks.ts` — export lazy-wrapped versions của tất cả custom block renderers. Trong `CanvasEditor.tsx`, wrap mỗi block renderer bằng `React.lazy` + `Suspense` với Skeleton fallback.
+```sql
+CREATE TABLE public.project_templates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  description TEXT,
+  content JSONB NOT NULL DEFAULT '[]',
+  category TEXT NOT NULL DEFAULT 'general',
+  icon TEXT,
+  is_system BOOLEAN NOT NULL DEFAULT false,
+  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
-Lưu ý: BlockNote `createReactBlockSpec` cần component đồng bộ ở thời điểm tạo schema. Cách tiếp cận: giữ block spec wrapper đồng bộ, nhưng bên trong render component dùng lazy import cho phần nội dung nặng (data-fetching renderers như `TaskListRenderer`, `MemberListRenderer`, `CalendarRenderer`).
+ALTER TABLE public.project_templates ENABLE ROW LEVEL SECURITY;
 
-**2. React.memo cho block renderers**
+-- System templates visible to all authenticated users
+CREATE POLICY "Anyone can view system templates"
+  ON public.project_templates FOR SELECT TO authenticated
+  USING (is_system = true);
 
-Wrap các inner renderer components bằng `React.memo`:
-- `TaskListRenderer` trong TaskBlock
-- `MemberListRenderer` trong MemberBlock  
-- `CalendarRenderer` trong CalendarBlock
-- `NoteCalloutRenderer` trong NoteBlock
-- `ToggleRenderer` trong ToggleBlock
+-- User templates visible within same workspace
+CREATE POLICY "Workspace members can view workspace templates"
+  ON public.project_templates FOR SELECT TO authenticated
+  USING (workspace_id IN (
+    SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()
+  ));
 
-**3. useMemo / useCallback audit**
+-- Only creator can insert/update/delete their templates
+CREATE POLICY "Users can manage own templates"
+  ON public.project_templates FOR ALL TO authenticated
+  USING (created_by = auth.uid())
+  WITH CHECK (created_by = auth.uid());
+```
 
-Rà soát và thêm memoization cho:
-- `schema` object trong CanvasEditor (đã tạo ngoài component — OK)
-- `handlers` object trong TaskBlock (đã có useMemo — OK)
-- Props truyền xuống child components — đảm bảo stable references
+Seed 3 system templates: "Sprint Planning", "Meeting Notes", "Research Project" với content JSONB mẫu (headings + task block + note block).
 
-**4. Giảm auto-save delay xuống 800ms**
+**2. Tạo `TemplatePicker.tsx`**
 
-Trong `CanvasEditor.tsx`, đổi `delay: 1500` → `delay: 800` cho responsive hơn nhưng vẫn không spam API.
+Component dialog/modal hiển thị khi tạo custom project:
+- Grid cards: "Blank" + các templates từ DB
+- Mỗi card: icon, name, description, preview snippet
+- Fetch templates: system templates + workspace templates
+- Chọn template → trả về content JSONB để hydrate editor
 
-**5. Skeleton loading đồng nhất cho tất cả custom blocks**
+**3. Cập nhật `CreateCustomProject.tsx`**
 
-Thêm loading skeleton cho MemberBlock, CalendarBlock nếu chưa có. Tạo shared `BlockSkeleton` component dùng chung.
+- Thêm bước chọn template trước khi vào editor
+- Flow: Chọn template → pre-fill editor với template content → user chỉnh sửa → tạo project
+- Nếu chọn "Blank" → giữ nguyên behavior hiện tại
 
-**6. Debounce title edit trong PageHeader**
+**4. Tạo `SaveAsTemplateDialog.tsx`**
 
-Đảm bảo inline title edit có debounce trước khi gọi API update, tránh gọi API mỗi keystroke.
+- Button "Lưu làm template" trong page header hoặc menu
+- Dialog: nhập tên, mô tả, chọn category
+- Lấy toàn bộ content JSONB từ page hiện tại → insert vào `project_templates`
+- Chỉ hiện cho project_admin/owner
+
+**5. Tích hợp vào `CanvasPageView.tsx`**
+
+- Thêm menu action "Lưu làm template" cho admin
+- Gọi `SaveAsTemplateDialog` với content hiện tại
 
 ### Files thay đổi
 
 | File | Thay đổi |
 |------|----------|
-| `src/components/canvas/blocks/BlockSkeleton.tsx` | Mới — shared skeleton component |
-| `src/components/canvas/blocks/TaskBlock.tsx` | React.memo cho renderer |
-| `src/components/canvas/blocks/MemberBlock.tsx` | React.memo + skeleton loading |
-| `src/components/canvas/blocks/CalendarBlock.tsx` | React.memo + skeleton loading |
-| `src/components/canvas/blocks/NoteBlock.tsx` | React.memo |
-| `src/components/canvas/blocks/ToggleBlock.tsx` | React.memo |
-| `src/components/canvas/CanvasEditor.tsx` | Lazy load renderers + giảm delay 800ms |
-| `src/components/canvas/PageHeader.tsx` | Debounce title edit |
+| Migration SQL | Tạo bảng `project_templates` + RLS + seed system templates |
+| `src/components/canvas/TemplatePicker.tsx` | Mới — grid chọn template |
+| `src/components/canvas/SaveAsTemplateDialog.tsx` | Mới — dialog lưu template |
+| `src/pages/CreateCustomProject.tsx` | Thêm bước chọn template |
+| `src/components/canvas/CanvasPageView.tsx` | Thêm action "Lưu làm template" |
 
 ### Không làm
-- Virtualization (react-window) — chỉ cần khi thực sự có > 50 blocks, phức tạp với BlockNote
-- Bundle splitting riêng cho từng block (không đáng với kích thước hiện tại)
+- Template marketplace / sharing giữa workspaces
+- Template versioning
+- Template preview với full editor render
 
