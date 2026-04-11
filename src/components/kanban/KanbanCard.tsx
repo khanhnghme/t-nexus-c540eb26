@@ -29,7 +29,7 @@ const STATUS_BORDER_COLOR: Record<TaskStatus, string> = {
 };
 
 export default function KanbanCard({ task, onMoveTask, onClickTask, canEdit }: KanbanCardProps) {
-  const { t } = useLanguage();
+  const { translations: t } = useLanguage();
   const effectiveDeadline = task.extended_deadline || task.deadline;
   const overdue = isDeadlineOverdue(effectiveDeadline) && task.status !== 'DONE' && task.status !== 'VERIFIED';
 

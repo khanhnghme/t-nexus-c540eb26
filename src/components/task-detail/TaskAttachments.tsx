@@ -31,7 +31,7 @@ function getFileIcon(contentType: string | null, fileName: string) {
 
 export default function TaskAttachments({ taskId, canEdit, isLeader }: TaskAttachmentsProps) {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { translations: t } = useLanguage();
   const { attachments, isLoading, uploadAttachment, deleteAttachment, getSignedUrl, isUploading, isDeleting } = useTaskAttachments(taskId);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

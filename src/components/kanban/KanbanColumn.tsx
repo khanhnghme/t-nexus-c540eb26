@@ -22,7 +22,7 @@ const STATUS_HEADER_COLOR: Record<TaskStatus, string> = {
 };
 
 export default function KanbanColumn({ status, label, tasks, onMoveTask, onClickTask, canEdit }: KanbanColumnProps) {
-  const { t } = useLanguage();
+  const { translations: t } = useLanguage();
 
   return (
     <div className="flex flex-col min-w-[280px] w-[280px] bg-muted/30 rounded-lg border">

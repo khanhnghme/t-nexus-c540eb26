@@ -23,7 +23,7 @@ interface ProjectCalendarViewProps {
 
 export default function ProjectCalendarView({ groupId, projectSlug }: ProjectCalendarViewProps) {
   const { events, isLoading } = useProjectCalendar(groupId);
-  const { t } = useLanguage();
+  const { translations: t } = useLanguage();
   const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month');

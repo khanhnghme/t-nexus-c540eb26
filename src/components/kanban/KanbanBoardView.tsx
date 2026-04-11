@@ -12,7 +12,7 @@ interface KanbanBoardViewProps {
 
 export default function KanbanBoardView({ groupId, canEdit, onClickTask }: KanbanBoardViewProps) {
   const { columns, getColumnTasks, moveTask, isLoading } = useKanbanBoard(groupId);
-  const { t } = useLanguage();
+  const { translations: t } = useLanguage();
 
   const columnLabels: Record<TaskStatus, string> = {
     TODO: t.kanban?.todo ?? 'Chờ làm',
