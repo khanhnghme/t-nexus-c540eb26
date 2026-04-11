@@ -1,5 +1,4 @@
 import { createReactBlockSpec } from "@blocknote/react";
-import { defaultProps } from "@blocknote/core";
 
 const NOTE_COLORS: Record<string, { bg: string; border: string }> = {
   "#f0f9ff": { bg: "#f0f9ff", border: "#bae6fd" },
@@ -14,9 +13,8 @@ export const NoteCalloutBlock = createReactBlockSpec(
   {
     type: "noteCallout" as const,
     propSchema: {
-      ...defaultProps,
-      icon: { default: "💡" as const },
-      color: { default: "#f0f9ff" as const },
+      icon: { default: "💡" },
+      color: { default: "#f0f9ff" },
     },
     content: "inline",
   },
