@@ -6,7 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 export function useGoogleCalendarSync() {
   const { user } = useAuth();
-  const { translations: { app: t } } = useLanguage();
+  const { locale, translations: { app: t } } = useLanguage();
   const [isConnected, setIsConnected] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
