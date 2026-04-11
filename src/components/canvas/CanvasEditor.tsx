@@ -19,6 +19,7 @@ const schema = BlockNoteSchema.create({
     ...defaultBlockSpecs,
     taskList: TaskListBlock(),
     memberList: MemberListBlock(),
+    calendarView: CalendarBlock(),
   },
 });
 
