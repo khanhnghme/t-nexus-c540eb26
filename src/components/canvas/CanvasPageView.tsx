@@ -31,10 +31,11 @@ interface CanvasPageViewProps {
   groupId: string;
   editable?: boolean;
   projectSlug?: string;
+  wsShortId?: string;
   initialPageSlug?: string;
 }
 
-export default function CanvasPageView({ groupId, editable = false, projectSlug, initialPageSlug }: CanvasPageViewProps) {
+export default function CanvasPageView({ groupId, editable = false, projectSlug, wsShortId, initialPageSlug }: CanvasPageViewProps) {
   const { data: pages, isLoading, error, refetch } = useProjectPages(groupId);
   const { user, profile } = useAuth();
   const navigate = useNavigate();
@@ -76,7 +77,9 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
     if (!activePageId || !ids.includes(activePageId)) {
       const firstPage = pages[0];
       setActivePageId(firstPage.id);
-      if (projectSlug && firstPage.slug && !initialPageSlug) {
+      if (wsShortId && firstPage.slug && !initialPageSlug) {
+        navigate(`/pa/ws-${wsShortId}/${firstPage.slug}`, { replace: true });
+      } else if (projectSlug && firstPage.slug && !initialPageSlug) {
         navigate(`/p/${projectSlug}/page/${firstPage.slug}`, { replace: true });
       }
     }
@@ -84,7 +87,9 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
 
   const navigateToPage = (page: { id: string; slug?: string | null }) => {
     setActivePageId(page.id);
-    if (projectSlug && page.slug) {
+    if (wsShortId && page.slug) {
+      navigate(`/pa/ws-${wsShortId}/${page.slug}`);
+    } else if (projectSlug && page.slug) {
       navigate(`/p/${projectSlug}/page/${page.slug}`);
     }
     if (isMobile) setSidebarOpen(false);
@@ -116,7 +121,9 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
         created_by: user.id,
         display_order: maxOrder,
       });
-      if (projectSlug && newPage.slug) {
+      if (wsShortId && newPage.slug) {
+        navigate(`/pa/ws-${wsShortId}/${newPage.slug}`);
+      } else if (projectSlug && newPage.slug) {
         navigate(`/p/${projectSlug}/page/${newPage.slug}`);
       }
       setActivePageId(newPage.id);
