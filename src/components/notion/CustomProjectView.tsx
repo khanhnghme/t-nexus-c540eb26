@@ -25,7 +25,7 @@ export default function CustomProjectView({ groupId, isLeader }: CustomProjectVi
   const fetchPages = useCallback(async () => {
     const { data, error } = await supabase
       .from('project_pages')
-      .select('id, title, display_order')
+      .select('id, title, display_order, icon')
       .eq('group_id', groupId)
       .order('display_order');
 
@@ -48,12 +48,11 @@ export default function CustomProjectView({ groupId, isLeader }: CustomProjectVi
       if (cancelled) return;
 
       if (!fetched || fetched.length === 0) {
-        // Auto-create first page if leader
         if (isLeader && user) {
           const { data: newPage } = await supabase
             .from('project_pages')
             .insert({ group_id: groupId, created_by: user.id, title: 'Untitled', content: [] as unknown as Json })
-            .select('id, title, display_order')
+            .select('id, title, display_order, icon')
             .single();
 
           if (newPage && !cancelled) {
@@ -99,7 +98,7 @@ export default function CustomProjectView({ groupId, isLeader }: CustomProjectVi
       const { data: newPage, error } = await supabase
         .from('project_pages')
         .insert({ group_id: groupId, created_by: user.id, title: 'Untitled', display_order: maxOrder, content: [] as unknown as Json })
-        .select('id, title, display_order')
+        .select('id, title, display_order, icon')
         .single();
 
       if (error) throw error;
@@ -115,6 +114,71 @@ export default function CustomProjectView({ groupId, isLeader }: CustomProjectVi
     }
   };
 
+  const handleRenamePage = async (pageId: string, newTitle: string) => {
+    const { error } = await supabase
+      .from('project_pages')
+      .update({ title: newTitle })
+      .eq('id', pageId);
+
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      return;
+    }
+    setPages(prev => prev.map(p => p.id === pageId ? { ...p, title: newTitle } : p));
+  };
+
+  const handleDeletePage = async (pageId: string) => {
+    const { error } = await supabase
+      .from('project_pages')
+      .delete()
+      .eq('id', pageId);
+
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      return;
+    }
+
+    setPages(prev => {
+      const remaining = prev.filter(p => p.id !== pageId);
+      if (selectedPageId === pageId) {
+        setSelectedPageId(remaining.length > 0 ? remaining[0].id : null);
+        if (remaining.length === 0) setSelectedContent([]);
+      }
+      return remaining;
+    });
+  };
+
+  const handleReorderPages = async (reorderedPages: PageItem[]) => {
+    setPages(reorderedPages);
+
+    const updates = reorderedPages.map((p, idx) =>
+      supabase
+        .from('project_pages')
+        .update({ display_order: idx })
+        .eq('id', p.id)
+    );
+
+    const results = await Promise.all(updates);
+    const failed = results.find(r => r.error);
+    if (failed?.error) {
+      toast({ title: 'Error', description: failed.error.message, variant: 'destructive' });
+      await fetchPages();
+    }
+  };
+
+  const handleUpdateIcon = async (pageId: string, icon: string) => {
+    const { error } = await supabase
+      .from('project_pages')
+      .update({ icon })
+      .eq('id', pageId);
+
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      return;
+    }
+    setPages(prev => prev.map(p => p.id === pageId ? { ...p, icon } : p));
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -125,18 +189,21 @@ export default function CustomProjectView({ groupId, isLeader }: CustomProjectVi
 
   return (
     <div className="flex h-[calc(100vh-200px)] min-h-[400px] rounded-lg border bg-background overflow-hidden">
-      {/* Sidebar */}
       <div className="w-56 shrink-0">
         <NotionPageList
           pages={pages}
           selectedPageId={selectedPageId}
           onSelectPage={setSelectedPageId}
           onCreatePage={handleCreatePage}
+          onRenamePage={handleRenamePage}
+          onDeletePage={handleDeletePage}
+          onReorderPages={handleReorderPages}
+          onUpdateIcon={handleUpdateIcon}
           isCreating={isCreating}
+          isLeader={isLeader}
         />
       </div>
 
-      {/* Editor */}
       <div className="flex-1 min-w-0">
         {selectedPageId ? (
           <NotionEditor
