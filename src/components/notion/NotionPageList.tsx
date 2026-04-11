@@ -9,6 +9,7 @@ export interface PageItem {
   id: string;
   title: string;
   display_order: number;
+  icon?: string | null;
 }
 
 interface NotionPageListProps {
@@ -16,7 +17,12 @@ interface NotionPageListProps {
   selectedPageId: string | null;
   onSelectPage: (pageId: string) => void;
   onCreatePage: () => Promise<void>;
+  onRenamePage?: (pageId: string, newTitle: string) => Promise<void>;
+  onDeletePage?: (pageId: string) => Promise<void>;
+  onReorderPages?: (reorderedPages: PageItem[]) => Promise<void>;
+  onUpdateIcon?: (pageId: string, icon: string) => Promise<void>;
   isCreating?: boolean;
+  isLeader?: boolean;
 }
 
 export default function NotionPageList({ pages, selectedPageId, onSelectPage, onCreatePage, isCreating }: NotionPageListProps) {
