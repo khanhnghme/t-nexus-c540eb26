@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Download, CheckCircle2, Share, Info } from 'lucide-react';
-import tNexusLogo from '@/assets/t-nexus-logo.png';
 import tNexusText from '@/assets/t-nexus-text.png';
 import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageToggle from '@/components/LanguageToggle';
@@ -67,8 +66,7 @@ export default function DownloadPage() {
             <span className="text-sm font-medium">{td.backHome}</span>
           </Link>
           <div className="flex items-center gap-2.5">
-            <img src={tNexusLogo} alt="T-Nexus" className="h-7 w-7" />
-            <img src={tNexusText} alt="T-Nexus" className="h-4 w-auto hidden sm:block" />
+            <img src={tNexusText} alt="T-Nexus" className="h-4 w-auto" />
           </div>
         </div>
       </header>

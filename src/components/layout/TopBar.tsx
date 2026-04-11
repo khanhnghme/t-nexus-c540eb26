@@ -4,7 +4,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useDashboardLayoutContext } from '@/contexts/DashboardLayoutContext';
 import { Moon, Sun, LayoutDashboard, Layers, Users, Award, FolderOpen, Video, Activity, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import tNexusLogo from '@/assets/t-nexus-logo.png';
 import tNexusTextWhite from '@/assets/t-nexus-text-white.png';
 import {
   Tooltip,
@@ -161,7 +160,6 @@ export default function TopBar() {
         </Tooltip>
 
         <Link to="/dashboard" className="flex items-center gap-1.5 ml-1 opacity-70 hover:opacity-100 transition-opacity">
-          <img src={tNexusLogo} alt="T-Nexus" className="h-6 w-6 shrink-0" />
           <img
             src={tNexusTextWhite}
             alt="T-Nexus"

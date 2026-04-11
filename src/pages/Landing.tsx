@@ -51,7 +51,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageToggle from '@/components/LanguageToggle';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import tNexusLogo from '@/assets/t-nexus-logo.png';
 import tNexusTextWhite from '@/assets/t-nexus-text-white.png';
 import introPage1 from '@/assets/intro-page1-overview.png';
 import introPage2 from '@/assets/intro-page2-tasks.png';
@@ -578,8 +577,7 @@ export default function Landing() {
         >
           <div className="mx-auto flex h-16 max-w-[1320px] items-center justify-between px-6">
             <a href="#top" className="flex items-center gap-3">
-              <img src={tNexusLogo} alt="T-Nexus icon" className="h-8 w-8" />
-              <img src={tNexusTextWhite} alt="T-Nexus" className="hidden h-5 w-auto sm:block" />
+              <img src={tNexusTextWhite} alt="T-Nexus" className="h-5 w-auto" />
             </a>
 
             <nav className="hidden items-center gap-1 lg:flex">
@@ -1188,7 +1186,6 @@ export default function Landing() {
                   <div className="flex flex-col relative overflow-hidden rounded-[1.5rem] border p-6" style={{ borderColor: colorVar('--landing-teal', 0.3), backgroundColor: colorVar('--landing-teal', 0.05) }}>
                     <div className="relative z-10">
                       <div className="mb-5 inline-flex items-center gap-2 rounded-full border px-3 py-1 self-start" style={{ borderColor: colorVar('--landing-teal', 0.3), backgroundColor: colorVar('--landing-teal', 0.15) }}>
-                        <img src={tNexusLogo} alt="T-Nexus" className="h-4 w-4 rounded-[3px] opacity-90" />
                         <span className="text-xs font-bold uppercase tracking-wider" style={{ color: colorVar('--landing-teal') }}>{tl.efficiencyWithTNexus}</span>
                       </div>
                       <div className="mb-6 overflow-hidden rounded-[1rem] border" style={{ borderColor: colorVar('--landing-border-soft'), backgroundColor: colorVar('--landing-card') }}>
@@ -1379,14 +1376,11 @@ export default function Landing() {
           <div className="mx-auto max-w-[1240px]">
             <div className="flex flex-col gap-12 lg:flex-row lg:justify-between lg:items-start">
               <div className="lg:max-w-md xl:max-w-[34rem]">
-                <div className="flex items-center gap-4 md:gap-5">
-                  <img src={tNexusLogo} alt="T-Nexus icon" className="h-12 w-12 md:h-16 md:w-16" />
-                  <div className="flex flex-col justify-center">
-                    <p className="mb-2.5 text-[12px] font-semibold uppercase tracking-[0.32em]" style={{ color: colorVar('--landing-hero-subtle') }}>
-                      {tc.tNexusPlatform}
-                    </p>
-                    <img src={tNexusTextWhite} alt="T-Nexus" className="h-[32px] w-auto shrink-0 object-contain object-left md:h-[42px]" />
-                  </div>
+                <div className="flex flex-col justify-center">
+                  <p className="mb-2.5 text-[12px] font-semibold uppercase tracking-[0.32em]" style={{ color: colorVar('--landing-hero-subtle') }}>
+                    {tc.tNexusPlatform}
+                  </p>
+                  <img src={tNexusTextWhite} alt="T-Nexus" className="h-[32px] w-auto shrink-0 object-contain object-left md:h-[42px]" />
                 </div>
                 <p className="mt-6 text-[16px] leading-8" style={{ color: colorVar('--landing-hero-muted') }}>
                   {tc.footerDescription}
@@ -1478,7 +1472,7 @@ export default function Landing() {
               <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/90 to-accent opacity-95" />
               <div className="relative flex items-center justify-between px-6 py-3 text-primary-foreground">
                 <div className="flex items-center gap-3">
-                  <img src={tNexusLogo} alt="T-Nexus" className="h-5 w-auto" />
+                  <img src={tNexusTextWhite} alt="T-Nexus" className="h-4 w-auto" />
                   <div className="h-4 w-px bg-primary-foreground/30" />
                   <div>
                     <h2 className="text-sm font-bold">{tl.introTitle}</h2>

@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import type { Group, GroupMember, Task, Stage } from '@/types/database';
-import ettLogoImage from '@/assets/t-nexus-logo.png';
+import ettLogoImage from '@/assets/t-nexus-text.png';
 
 // ETT Brand Colors
 const ETT_TEAL: [number, number, number] = [26, 107, 109];

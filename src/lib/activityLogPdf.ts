@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
-import ettLogoUrl from '@/assets/t-nexus-logo.png';
+import ettLogoUrl from '@/assets/t-nexus-text.png';
 
 // ETT Brand Colors
 const ETT_TEAL: [number, number, number] = [26, 107, 109]; // #1A6B6D
