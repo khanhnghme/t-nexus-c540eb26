@@ -1,45 +1,53 @@
 
 
-## Phase 10 — Giai đoạn 2/4: Ẩn Slash Menu và Drag Handles ở View Mode
+## Phase 10 — Giai doan 3/4: Styling cho View Mode
 
-### Mục tiêu
-Khi admin chuyển sang View mode (hoặc member/guest xem), ẩn các UI elements chỉ dành cho editing: slash menu (`/`), drag handles (kéo block), side menu, và formatting toolbar.
+### Muc tieu
+Them CSS styling cho View mode — an cursor caret, bo padding thua, va lam noi dung hien thi sach se khi o che do xem.
 
-### Hiện trạng
-- Stage 1 hoàn thành: toggle Edit/View button trên header, `isEditMode` state truyền xuống `CanvasEditor`
-- `BlockNoteView` nhận `editable={false}` khi View mode — tuy nhiên một số UI elements như side menu, formatting toolbar vẫn có thể hiển thị tùy cấu hình
+### Hien trang
+- Stage 1-2 hoan thanh: toggle Edit/View, an side menu/slash menu/formatting toolbar
+- CSS class `view-mode` da duoc them len container div khi `editable=false`
+- Chua co CSS rules nao target `.view-mode`
 
-### Hành động
+### Hanh dong
 
-**Cập nhật `src/components/canvas/CanvasEditor.tsx`**
-- Khi `editable=false`: truyền thêm props để ẩn side menu và formatting toolbar
-  - `sideMenu={false}` — ẩn drag handle + add button bên trái block
-  - `formattingToolbar={false}` — ẩn toolbar khi select text
-  - `slashMenu={false}` — ẩn slash menu (/) 
-- Kiểm tra BlockNoteView API: nếu dùng prop-based approach không khả thi thì wrap với conditional component overrides
-- Thêm CSS class `.view-mode` lên container div khi `editable=false` để có thể target thêm bằng CSS nếu cần (ẩn cursor caret, padding adjustments)
+**Them CSS rules trong `src/index.css` (hoac file CSS phu hop)**
+- `.view-mode` selector:
+  - An text cursor/caret: `caret-color: transparent`
+  - Bo user-select restriction neu can (cho phep copy text)
+  - An cac placeholder text cua BlockNote (e.g. "Type '/' for commands")
+  - Dieu chinh padding cho phu hop voi view mode (bo padding du thua tu editor UI)
+  - An viền outline khi focus vao block
 
-### Chi tiết kỹ thuật
+### Chi tiet ky thuat
 
 ```text
-Edit mode (editable=true):
-  BlockNoteView: full UI — side menu, slash menu, formatting toolbar
+.view-mode {
+  caret-color: transparent;
+}
 
-View mode (editable=false):
-  BlockNoteView: editable=false
-  + sideMenu={false}
-  + formattingToolbar={false}  
-  + slashMenu={false}
-  + CSS class "view-mode" trên container
+.view-mode .bn-editor {
+  /* An placeholder */
+}
+
+.view-mode [data-placeholder]::before {
+  display: none;
+}
+
+.view-mode .bn-block-content:focus-within {
+  outline: none;
+  box-shadow: none;
+}
 ```
 
-### Không làm
-- Styling cho view mode (giai đoạn 3)
-- Permission check nâng cao (giai đoạn 4)
+### Khong lam
+- Permission check nang cao (giai doan 4)
+- Thay doi logic toggle/props
 
-### Files thay đổi
+### Files thay doi
 
-| File | Thay đổi |
+| File | Thay doi |
 |------|----------|
-| `src/components/canvas/CanvasEditor.tsx` | Ẩn side menu, slash menu, formatting toolbar khi view mode |
+| `src/index.css` | Them `.view-mode` CSS rules |
 
