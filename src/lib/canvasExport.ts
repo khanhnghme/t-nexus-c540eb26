@@ -12,14 +12,16 @@ function blockToMarkdown(block: AnyBlock, depth = 0): string {
   let text = "";
 
   // Extract inline text content
-  const inlineText = (block.content as any[])
-    ?.map((c: any) => {
-      if (typeof c === "string") return c;
-      if (c?.type === "text") return c.text ?? "";
-      if (c?.type === "link") return `[${c.content?.map((t: any) => t.text).join("") ?? ""}](${c.href ?? ""})`;
-      return "";
-    })
-    .join("") ?? "";
+  const inlineText = Array.isArray(block.content)
+    ? (block.content as any[])
+        .map((c: any) => {
+          if (typeof c === "string") return c;
+          if (c?.type === "text") return c.text ?? "";
+          if (c?.type === "link") return `[${c.content?.map((t: any) => t.text).join("") ?? ""}](${c.href ?? ""})`;
+          return "";
+        })
+        .join("")
+    : (typeof block.content === "string" ? block.content : "");
 
   switch (type) {
     case "heading": {
@@ -115,14 +117,17 @@ export function downloadMarkdown(blocks: AnyBlock[], title = "Untitled") {
 // ─── PDF Export ───
 
 function getInlineText(block: AnyBlock): string {
+  if (!Array.isArray(block.content)) {
+    return typeof block.content === "string" ? block.content : "";
+  }
   return (block.content as any[])
-    ?.map((c: any) => {
+    .map((c: any) => {
       if (typeof c === "string") return c;
       if (c?.type === "text") return c.text ?? "";
       if (c?.type === "link") return c.content?.map((t: any) => t.text).join("") ?? "";
       return "";
     })
-    .join("") ?? "";
+    .join("");
 }
 
 export function downloadPdf(blocks: AnyBlock[], title = "Untitled") {

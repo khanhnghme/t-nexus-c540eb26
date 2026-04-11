@@ -139,6 +139,7 @@ export default function GroupDetail() {
         membersCount: members.length,
         hasActiveMeeting,
         isScoreFinalized: !!(group as any).score_finalized_at,
+        projectMode: (group.project_mode === 'custom' ? 'custom' : 'basic') as 'basic' | 'custom',
       });
     }
     return () => setProjectNavProps(null);
