@@ -1,52 +1,60 @@
 
 
-## Phase 5 — Giai doan 2/4: CRUD Task tu trong Block
+## Phase 5 — Giai doan 3/4: Kanban View trong Task Block
 
 ### Muc tieu
-Cho phep user tuong tac truc tiep voi task list block trong canvas: thay doi status, va tao task moi ngay trong block (khi editable).
+Them che do xem Kanban (cot theo status) cho task list block, cho phep user chuyen doi giua List view va Kanban view.
 
 ### Hien trang
-- Stage 1/4 da hoan thanh: custom block `taskList` hien thi read-only danh sach task (title, status, assignee, deadline)
-- TaskBlockContext cung cap `groupId` va `editable`
-- Chua co tuong tac nao tu block
+- Stage 1/4: Custom block infrastructure + read-only
+- Stage 2/4: CRUD (status change, add, delete) — hoan thanh
+- TaskBlock hien tai chi co list view
 
 ### Hanh dong cu the
 
-**1. Cap nhat `src/components/canvas/blocks/TaskBlock.tsx`** — Them CRUD
-- **Thay doi status**: Click vao status badge mo dropdown (Select) cho phep chuyen status: TODO → IN_PROGRESS → DONE. Chi hien khi `editable = true`
-- **Tao task moi**: Them input row cuoi danh sach (khi editable). Nhap title + Enter → insert task vao DB voi `group_id` va status `TODO`
-- **Xoa task**: Them nut xoa (icon Trash nho) khi hover vao task row, chi khi editable. Confirm truoc khi xoa
-- Sau moi thao tac CRUD, refetch danh sach tasks de cap nhat UI
-- Su dung `useTaskBlockContext()` de kiem tra `editable` truoc khi render cac control
-
-**2. Cap nhat `src/components/canvas/blocks/TaskBlockContext.tsx`** (khong thay doi)
-- Context da du `groupId` va `editable`, khong can them gi
+**1. Cap nhat `src/components/canvas/blocks/TaskBlock.tsx`**
+- Them state `viewMode: "list" | "kanban"` (mac dinh `"list"`)
+- Them toggle button (List/Kanban icon) trong header bar cua block
+- Tach render logic thanh 2 component con:
+  - `TaskListView` — giu nguyen logic list hien tai
+  - `TaskKanbanView` — render 4 cot: TODO | IN_PROGRESS | DONE | VERIFIED
+- Kanban view:
+  - Moi cot co header voi ten status + so luong task
+  - Task card hien thi: title, assignee, deadline
+  - Khi editable: drag-drop task giua cac cot de thay doi status (dung HTML5 drag API don gian)
+  - Khi editable: nut xoa tren moi card (hover)
+  - Khi editable: input "Them task" o cuoi cot TODO
+- Chia se chung `handleStatusChange`, `handleAddTask`, `handleDelete` giua 2 view
 
 ### Chi tiet ky thuat
 
 ```text
-TaskListRenderer (editable = true):
+TaskListRenderer:
+  ┌─ Header: [ListChecks icon] "Danh sach cong viec" [count] [List|Kanban toggle]
+  │
+  ├─ viewMode === "list" → <TaskListView tasks={...} ... />
+  └─ viewMode === "kanban" → <TaskKanbanView tasks={...} ... />
 
-  [Task Row]
-    ├─ Title (text)
-    ├─ Status Badge → click → Dropdown (TODO | IN_PROGRESS | DONE)
-    │   └─ onChange → supabase.from("tasks").update({ status }).eq("id", taskId)
-    ├─ Assignee (read-only)
-    ├─ Deadline (read-only)
-    └─ Trash icon (hover) → confirm → supabase.from("tasks").delete().eq("id", taskId)
+TaskKanbanView:
+  ┌──────────┬──────────┬──────────┬──────────┐
+  │  Can lam │ Dang lam │Hoan thanh│ Da duyet │
+  │  (TODO)  │(PROGRESS)│  (DONE)  │(VERIFIED)│
+  ├──────────┼──────────┼──────────┼──────────┤
+  │ [card]   │ [card]   │ [card]   │ [card]   │
+  │ [card]   │          │          │          │
+  │ [+add]   │          │          │          │
+  └──────────┴──────────┴──────────┴──────────┘
 
-  [+ Add task row]
-    └─ Input + Enter → supabase.from("tasks").insert({ title, group_id, status: "TODO" })
+  Drag card tu cot A sang cot B → handleStatusChange(taskId, newStatus)
 ```
 
 ### Khong lam trong giai doan nay
-- Kanban view (giai doan 3)
 - Inline edit title, deadline, assignee (giai doan 4)
-- Drag-drop reorder tasks
+- External drag-drop library (dung HTML5 native)
 
 ### Files thay doi
 
 | File | Thay doi |
 |------|----------|
-| `src/components/canvas/blocks/TaskBlock.tsx` | Them status dropdown, add task input, delete button |
+| `src/components/canvas/blocks/TaskBlock.tsx` | Them Kanban view, view toggle, drag-drop |
 
