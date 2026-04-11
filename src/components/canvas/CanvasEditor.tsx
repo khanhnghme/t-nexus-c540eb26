@@ -23,7 +23,7 @@ const schema = BlockNoteSchema.create({
     memberList: MemberListBlock(),
     calendarView: CalendarBlock(),
     noteCallout: NoteCalloutBlock(),
-    toggleBlock: ToggleBlock(),
+    toggleBlock: ToggleBlock,
   },
 });
 
