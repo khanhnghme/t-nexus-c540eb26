@@ -6,7 +6,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import TaskListView from '@/components/TaskListView';
-import { TaskTable } from '@/components/notion/task-table';
 import GroupDashboard from '@/components/GroupDashboard';
 import GroupInfoCard from '@/components/GroupInfoCard';
 import MemberManagementCard from '@/components/MemberManagementCard';
@@ -30,9 +29,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Users, Loader2, ArrowLeft, Layers, Trash2, Calendar, Clock, List, Table2, LayoutGrid, CalendarDays } from 'lucide-react';
-import KanbanBoardView from '@/components/kanban/KanbanBoardView';
-import ProjectCalendarView from '@/components/calendar/ProjectCalendarView';
+import { Plus, Users, Loader2, ArrowLeft, Layers, Trash2, Calendar, Clock } from 'lucide-react';
 
 import AccessDenied from '@/components/AccessDenied';
 
@@ -42,7 +39,6 @@ import ProjectEvidenceExport from '@/components/ProjectEvidenceExport';
 import GroupMeetings from '@/components/GroupMeetings';
 
 import type { Group, GroupMember, Task, Profile, Stage } from '@/types/database';
-import CustomProjectView from '@/components/notion/CustomProjectView';
 import { DeadlineHourPicker } from '@/components/DeadlineHourPicker';
 import { notifyTaskAssigned } from '@/lib/notifications';
 import { deleteWithUndo } from '@/lib/deleteWithUndo';
@@ -92,7 +88,6 @@ export default function GroupDetail() {
   const [isGroupCreator, setIsGroupCreator] = useState(false);
   
   const [hasActiveMeeting, setHasActiveMeeting] = useState(false);
-  const [taskViewMode, setTaskViewMode] = useState<'list' | 'table' | 'kanban' | 'calendar'>('list');
   
   // Compute available tabs based on permissions
   const availableTabs = [
@@ -660,137 +655,67 @@ export default function GroupDetail() {
           </div>
 
           <div className="px-4 md:px-6">
-          {(group as any).project_mode === 'custom' ? (
-            <>
-              <TabsContent value="overview" className="mt-6">
-                <CustomProjectView groupId={group.id} isLeader={isLeaderInGroup} />
-              </TabsContent>
-            </>
-          ) : (
-            <>
-              <TabsContent value="overview" className="mt-6">
-                <GroupDashboard
-                  tasks={tasks}
-                  members={members}
-                  stages={stages}
-                  createdBy={group.created_by}
-                  groupName={group.name}
-                  groupDescription={group.description}
-                  imageUrl={group.image_url}
-                  canEdit={isLeaderInGroup}
-                  onEditInfo={() => setIsEditInfoOpen(true)}
-                  courseInfo={{
-                    class_code: group.class_code,
-                    instructor_name: group.instructor_name,
-                    instructor_email: group.instructor_email,
-                    zalo_link: group.zalo_link,
-                    additional_info: group.additional_info,
-                    description: group.description,
-                  }}
-                />
-                {isLeaderInGroup && isEditInfoOpen && (
-                  <GroupInfoCard group={group} canEdit={true} onUpdate={() => { fetchGroupData(); setIsEditInfoOpen(false); }} dialogOnly initialOpen onClose={() => setIsEditInfoOpen(false)} />
-                )}
-              </TabsContent>
+            <TabsContent value="overview" className="mt-6">
+              <GroupDashboard
+                tasks={tasks}
+                members={members}
+                stages={stages}
+                createdBy={group.created_by}
+                groupName={group.name}
+                groupDescription={group.description}
+                imageUrl={group.image_url}
+                canEdit={isLeaderInGroup}
+                onEditInfo={() => setIsEditInfoOpen(true)}
+                courseInfo={{
+                  class_code: group.class_code,
+                  instructor_name: group.instructor_name,
+                  instructor_email: group.instructor_email,
+                  zalo_link: group.zalo_link,
+                  additional_info: group.additional_info,
+                  description: group.description,
+                }}
+              />
+              {/* Hidden GroupInfoCard - only shown as dialog when edit is triggered */}
+              {isLeaderInGroup && isEditInfoOpen && (
+                <GroupInfoCard group={group} canEdit={true} onUpdate={() => { fetchGroupData(); setIsEditInfoOpen(false); }} dialogOnly initialOpen onClose={() => setIsEditInfoOpen(false)} />
+              )}
+            </TabsContent>
 
-              <TabsContent value="tasks" className="mt-6">
-                <div className="flex items-center justify-end mb-3 gap-1">
-                  <Button
-                    variant={taskViewMode === 'list' ? 'default' : 'ghost'}
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setTaskViewMode('list')}
-                    title={t.taskTable?.listView ?? 'List view'}
-                  >
-                    <List className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={taskViewMode === 'table' ? 'default' : 'ghost'}
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setTaskViewMode('table')}
-                    title={t.taskTable?.tableView ?? 'Table view'}
-                  >
-                    <Table2 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={taskViewMode === 'kanban' ? 'default' : 'ghost'}
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setTaskViewMode('kanban')}
-                    title={t.taskTable?.kanbanView ?? 'Kanban'}
-                  >
-                    <LayoutGrid className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={taskViewMode === 'calendar' ? 'default' : 'ghost'}
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setTaskViewMode('calendar')}
-                    title={t.taskTable?.calendarView ?? 'Calendar'}
-                  >
-                    <CalendarDays className="h-4 w-4" />
-                  </Button>
-                </div>
-                {taskViewMode === 'list' && (
-                  <TaskListView stages={stages} tasks={tasks} members={members} isLeaderInGroup={isLeaderInGroup} groupId={group.id} groupSlug={group.slug} onRefresh={fetchGroupData} onEditTask={setEditingTask} onCreateTask={(stageId) => { setNewTaskStageId(stageId); setIsTaskDialogOpen(true); }} onEditStage={setEditingStage} onDeleteStage={setStageToDelete} onToggleStageHidden={handleToggleStageHidden} />
-                )}
-                {taskViewMode === 'table' && (
-                  <TaskTable groupId={group.id} />
-                )}
-                {taskViewMode === 'kanban' && (
-                  <KanbanBoardView
-                    groupId={group.id}
-                    canEdit={isLeaderInGroup || members.some(m => m.user_id === user?.id)}
-                    onClickTask={(taskId) => {
-                      const task = tasks.find(t => t.id === taskId);
-                      if (task && group.slug && (task as any).short_id) {
-                        navigate(`/p/${group.slug}/task/${(task as any).short_id}`);
-                      } else {
-                        navigate(`/groups/${group.id}/tasks/${taskId}`);
-                      }
-                    }}
-                  />
-                )}
-                {taskViewMode === 'calendar' && (
-                  <ProjectCalendarView groupId={group.id} projectSlug={group.slug || undefined} />
-                )}
-              </TabsContent>
+            <TabsContent value="tasks" className="mt-6">
+              <TaskListView stages={stages} tasks={tasks} members={members} isLeaderInGroup={isLeaderInGroup} groupId={group.id} groupSlug={group.slug} onRefresh={fetchGroupData} onEditTask={setEditingTask} onCreateTask={(stageId) => { setNewTaskStageId(stageId); setIsTaskDialogOpen(true); }} onEditStage={setEditingStage} onDeleteStage={setStageToDelete} onToggleStageHidden={handleToggleStageHidden} />
+            </TabsContent>
 
-              <TabsContent value="scores" className="mt-6">
-                <ProcessScores 
-                  groupId={group.id} 
-                  stages={stages} 
-                  members={members} 
-                  tasks={tasks} 
-                  isLeader={isLeaderInGroup}
-                  scoreFinalizedAt={(group as any).score_finalized_at}
-                  appealDeadlineHours={(group as any).appeal_deadline_hours ?? 48}
-                  onRefreshGroup={fetchGroupData}
-                />
-              </TabsContent>
-            </>
-          )}
+            <TabsContent value="meetings" className="mt-6">
+              <GroupMeetings
+                groupId={group.id}
+                groupName={group.name}
+                stages={stages}
+                members={members}
+                isLeader={isLeaderInGroup}
+                onRefreshTasks={fetchGroupData}
+              />
+            </TabsContent>
 
-          {/* Shared tabs for both modes */}
-          <TabsContent value="meetings" className="mt-6">
-            <GroupMeetings
-              groupId={group.id}
-              groupName={group.name}
-              stages={stages}
-              members={members}
-              isLeader={isLeaderInGroup}
-              onRefreshTasks={fetchGroupData}
-            />
-          </TabsContent>
+            <TabsContent value="members" className="mt-6">
+              <MemberManagementCard members={members} isLeaderInGroup={isLeaderInGroup} isGroupCreator={isGroupCreator} groupId={group.id} currentUserId={user?.id || ''} groupCreatorId={group.created_by} onRefresh={fetchGroupData} />
+            </TabsContent>
 
-          <TabsContent value="members" className="mt-6">
-            <MemberManagementCard members={members} isLeaderInGroup={isLeaderInGroup} isGroupCreator={isGroupCreator} groupId={group.id} currentUserId={user?.id || ''} groupCreatorId={group.created_by} onRefresh={fetchGroupData} />
-          </TabsContent>
+            <TabsContent value="resources" className="mt-6">
+              <ProjectResources groupId={group.id} isLeader={isLeaderInGroup} />
+            </TabsContent>
 
-          <TabsContent value="resources" className="mt-6">
-            <ProjectResources groupId={group.id} isLeader={isLeaderInGroup} />
-          </TabsContent>
+            <TabsContent value="scores" className="mt-6">
+              <ProcessScores 
+                groupId={group.id} 
+                stages={stages} 
+                members={members} 
+                tasks={tasks} 
+                isLeader={isLeaderInGroup}
+                scoreFinalizedAt={(group as any).score_finalized_at}
+                appealDeadlineHours={(group as any).appeal_deadline_hours ?? 48}
+                onRefreshGroup={fetchGroupData}
+              />
+            </TabsContent>
 
             {(isGroupCreator || isAdmin) && (
               <TabsContent value="logs" className="mt-6">

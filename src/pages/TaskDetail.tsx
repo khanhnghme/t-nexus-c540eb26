@@ -15,7 +15,6 @@ import { formatDeadlineVN } from '@/lib/datetime';
 import { ArrowLeft, Loader2, ExternalLink, Calendar, Clock, Save } from 'lucide-react';
 import type { Task, TaskAssignment, Profile, TaskStatus } from '@/types/database';
 import ResourceLinkRenderer from '@/components/ResourceLinkRenderer';
-import TaskAttachments from '@/components/task-detail/TaskAttachments';
 
 export default function TaskDetail() {
   const { groupId, taskId } = useParams<{ groupId: string; taskId: string }>();
@@ -189,12 +188,6 @@ export default function TaskDetail() {
                 </a>
               </div>
             )}
-
-            <TaskAttachments
-              taskId={taskId!}
-              canEdit={canEdit}
-              isLeader={isLeaderInGroup}
-            />
           </CardContent>
         </Card>
       </div>

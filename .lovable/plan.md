@@ -1,53 +1,48 @@
 
 
-## Phase 5 — Kanban + Task Detail + Project Calendar: Giai đoạn 4/4 (Integration)
+## Fix chống tạo project trùng lặp — Idempotency
 
-Giai đoạn 1-3 hoàn thành: database, logic hooks, UI components. Giai đoạn 4 tập trung **tích hợp vào pages thực tế, i18n, và polish**.
+### Hiện trạng
+
+`Groups.tsx` đã có:
+- ✅ `createLockRef` (useRef lock)
+- ✅ `isCreating` state → disable button + spinner "Đang tạo..."
+- ✅ Feedback toast sau khi tạo/lỗi
+
+**Thiếu**: Idempotency key — nếu request gửi 2 lần (network retry, browser refresh), backend vẫn tạo 2 project.
+
+`CreateWorkspace.tsx` cũng thiếu lock ref + idempotency.
 
 ### Thay đổi
 
-**1. Tích hợp Kanban + Calendar vào `GroupDetail.tsx`**
-- Mở rộng `taskViewMode` từ `'list' | 'table'` thành `'list' | 'table' | 'kanban' | 'calendar'`
-- Thêm 2 toggle buttons mới (Kanban icon + Calendar icon) vào toolbar hiện tại (dòng 695-714)
-- Render `KanbanBoardView` khi `taskViewMode === 'kanban'`, truyền `groupId`, `canEdit`, `onClickTask` (navigate đến task detail)
-- Render `ProjectCalendarView` khi `taskViewMode === 'calendar'`, truyền `groupId`, `projectSlug`
-- Import `KanbanBoardView`, `ProjectCalendarView`, thêm icons `LayoutGrid`, `CalendarDays`
+**1. `src/pages/Groups.tsx`** — Thêm idempotency key
+- Generate UUID (`crypto.randomUUID()`) khi mở dialog
+- Gửi kèm `idempotency_key` trong `insert` data vào bảng `groups`
+- Reset key khi đóng dialog hoặc tạo thành công
 
-**2. Tích hợp TaskAttachments vào `TaskDetail.tsx`**
-- Import và render `TaskAttachments` component sau phần submission link (dòng ~190)
-- Truyền `taskId`, `canEdit`, `isLeader: isLeaderInGroup`
-- Hiển thị cho tất cả users (view), chỉ canEdit mới upload được
+**2. `src/pages/CreateWorkspace.tsx`** — Thêm lock ref + idempotency
+- Thêm `useRef` lock tương tự Groups
+- Generate idempotency key khi mount
+- Gửi kèm trong body tới edge function `workspace-management`
 
-**3. Thêm i18n translations**
-- `src/lib/i18n/vi.ts`: Thêm block `kanban` + `taskAttachments` + `projectCalendar`
-- `src/lib/i18n/en.ts`: Tương ứng English translations
-- Labels: view mode tooltips, empty states, upload/download text
+**3. Database migration** — Thêm cột `idempotency_key` vào bảng `groups`
+```sql
+ALTER TABLE public.groups ADD COLUMN idempotency_key uuid;
+CREATE UNIQUE INDEX idx_groups_idempotency_key ON public.groups(idempotency_key) WHERE idempotency_key IS NOT NULL;
+```
+Unique index đảm bảo nếu insert trùng key → lỗi constraint → không tạo duplicate.
 
-**4. i18n hóa các components đã tạo ở giai đoạn 3**
-- `KanbanBoardView.tsx` / `KanbanColumn.tsx` / `KanbanCard.tsx`: Sử dụng `useLanguage()` cho status labels, empty states
-- `TaskAttachments.tsx`: i18n cho upload zone text, delete confirm, file size labels
-- `ProjectCalendarView.tsx`: i18n cho header text
+**4. `supabase/functions/workspace-management/index.ts`** — Idempotency cho workspace
+- Nhận `idempotency_key` từ body
+- Check existing workspace với cùng key trước khi insert
+- Nếu đã tồn tại → trả về workspace cũ thay vì tạo mới
 
-**5. Kanban click → task detail navigation**
-- `onClickTask` callback trong `KanbanBoardView`: navigate đến `/p/{projectSlug}/tasks/{taskSlug}` hoặc fallback `/groups/{groupId}/tasks/{taskId}`
-
-### Chi tiết kỹ thuật
-
-- `taskViewMode` state default vẫn là `'list'` (không breaking change)
-- KanbanBoardView invalidate `['task-table', groupId]` khi move → tự sync với Table view
-- TaskAttachments bucket `task-attachments` đã private → dùng `getSignedUrl` cho download
-
-### Files cần thay đổi
+### Files cần sửa
 
 | File | Thay đổi |
 |------|----------|
-| `src/pages/GroupDetail.tsx` | Thêm kanban/calendar toggle + render components |
-| `src/pages/TaskDetail.tsx` | Thêm TaskAttachments section |
-| `src/lib/i18n/vi.ts` | Thêm kanban, taskAttachments, projectCalendar translations |
-| `src/lib/i18n/en.ts` | Tương ứng English |
-| `src/components/kanban/KanbanBoardView.tsx` | i18n labels |
-| `src/components/kanban/KanbanColumn.tsx` | i18n empty state |
-| `src/components/kanban/KanbanCard.tsx` | i18n status labels |
-| `src/components/task-detail/TaskAttachments.tsx` | i18n text |
-| `src/components/calendar/ProjectCalendarView.tsx` | i18n header |
+| Migration SQL | Thêm cột `idempotency_key` + unique index trên `groups` |
+| `src/pages/Groups.tsx` | Generate + gửi idempotency_key |
+| `src/pages/CreateWorkspace.tsx` | Thêm lock ref + idempotency |
+| `supabase/functions/workspace-management/index.ts` | Check idempotency cho create_workspace |
 
