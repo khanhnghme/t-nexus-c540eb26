@@ -38,7 +38,7 @@ interface JoinByCodeDialogProps {
 export default function JoinByCodeDialog({ open, onOpenChange, onJoined }: JoinByCodeDialogProps) {
   const { user, profile } = useAuth();
   const { toast } = useToast();
-  const [digits, setDigits] = useState(['', '', '', '']);
+  const [digits, setDigits] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [groupPreview, setGroupPreview] = useState<GroupPreview | null>(null);
@@ -55,19 +55,19 @@ export default function JoinByCodeDialog({ open, onOpenChange, onJoined }: JoinB
   const code = digits.join('');
 
   const resetState = () => {
-    setDigits(['', '', '', '']);
+    setDigits(['', '', '', '', '', '']);
     setGroupPreview(null);
     setAlreadyMember(false);
     setAlreadyPending(false);
   };
 
   const handleDigitChange = (index: number, value: string) => {
-    const digit = value.replace(/\D/g, '').slice(-1);
+    const char = value.replace(/[^A-Za-z0-9]/g, '').slice(-1).toUpperCase();
     const newDigits = [...digits];
-    newDigits[index] = digit;
+    newDigits[index] = char;
     setDigits(newDigits);
 
-    if (digit && index < 3) {
+    if (char && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
   };
@@ -76,21 +76,21 @@ export default function JoinByCodeDialog({ open, onOpenChange, onJoined }: JoinB
     if (e.key === 'Backspace' && !digits[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
-    if (e.key === 'Enter' && code.length === 4) {
+    if (e.key === 'Enter' && code.length === 6) {
       handleLookup();
     }
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4);
+    const pasted = e.clipboardData.getData('text').replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 6);
     if (pasted.length > 0) {
-      const newDigits = ['', '', '', ''];
+      const newDigits = ['', '', '', '', '', ''];
       for (let i = 0; i < pasted.length; i++) {
         newDigits[i] = pasted[i];
       }
       setDigits(newDigits);
-      const focusIdx = Math.min(pasted.length, 3);
+      const focusIdx = Math.min(pasted.length, 5);
       inputRefs.current[focusIdx]?.focus();
     }
   };
@@ -107,8 +107,8 @@ export default function JoinByCodeDialog({ open, onOpenChange, onJoined }: JoinB
 
   const handleLookup = async () => {
     if (!user) return;
-    if (code.length !== 4 || !/^\d{4}$/.test(code)) {
-      toast({ title: 'Mã không hợp lệ', description: 'Vui lòng nhập đúng 4 chữ số', variant: 'destructive' });
+    if (code.length !== 6 || !/^[A-Z0-9]{6}$/.test(code)) {
+      toast({ title: 'Mã không hợp lệ', description: 'Vui lòng nhập đúng 6 ký tự (A-Z, 0-9)', variant: 'destructive' });
       return;
     }
 
@@ -251,7 +251,7 @@ export default function JoinByCodeDialog({ open, onOpenChange, onJoined }: JoinB
                 Nhập mã tham gia
               </h2>
               <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px] mx-auto">
-                Nhập mã <span className="font-semibold text-foreground">4 chữ số</span> được trưởng nhóm cung cấp để tìm và tham gia project
+                Nhập mã <span className="font-semibold text-foreground">6 ký tự</span> được trưởng nhóm cung cấp để tìm và tham gia project
               </p>
             </div>
 
@@ -262,14 +262,14 @@ export default function JoinByCodeDialog({ open, onOpenChange, onJoined }: JoinB
                   <input
                     ref={(el) => { inputRefs.current[i] = el; }}
                     type="text"
-                    inputMode="numeric"
+                    inputMode="text"
                     maxLength={1}
                     value={digit}
                     onChange={(e) => handleDigitChange(i, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(i, e)}
                     className={`
-                      w-14 h-16 text-center text-2xl font-bold rounded-xl
-                      border-2 bg-muted/30 outline-none transition-all duration-200
+                      w-12 h-14 text-center text-xl font-bold rounded-xl
+                      border-2 bg-muted/30 outline-none transition-all duration-200 uppercase
                       ${digit
                         ? 'border-primary/50 bg-primary/5 text-foreground shadow-sm shadow-primary/10'
                         : 'border-border hover:border-primary/30'
@@ -278,8 +278,8 @@ export default function JoinByCodeDialog({ open, onOpenChange, onJoined }: JoinB
                     `}
                   />
                   {!digit && (
-                    <span className="absolute inset-0 flex items-center justify-center text-muted-foreground/30 text-2xl font-bold pointer-events-none">
-                      {i + 1}
+                    <span className="absolute inset-0 flex items-center justify-center text-muted-foreground/30 text-xl font-bold pointer-events-none">
+                      •
                     </span>
                   )}
                 </div>
@@ -294,7 +294,7 @@ export default function JoinByCodeDialog({ open, onOpenChange, onJoined }: JoinB
             {/* Search Button */}
             <Button
               onClick={handleLookup}
-              disabled={code.length !== 4 || isLoading}
+              disabled={code.length !== 6 || isLoading}
               className="w-full h-11 text-sm font-semibold gap-2"
               size="lg"
             >

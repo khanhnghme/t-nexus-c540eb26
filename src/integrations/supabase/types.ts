@@ -3122,6 +3122,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      generate_join_code_6: { Args: never; Returns: string }
       generate_vietnamese_slug: {
         Args: { input_text: string }
         Returns: string

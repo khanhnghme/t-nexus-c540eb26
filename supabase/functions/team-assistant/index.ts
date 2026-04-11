@@ -379,7 +379,7 @@ const SYSTEM_KNOWLEDGE_BASE = `
 - **Chia sẻ công khai**: bật chế độ public để người ngoài xem thông tin dự án qua link
 
 ### Tham gia dự án
-- **Mã tham gia**: nhập mã 4 số để join project (có thể yêu cầu duyệt)
+- **Mã tham gia**: nhập mã 6 ký tự (A-Z, 0-9) để join project (có thể yêu cầu duyệt)
 - **Lời mời**: leader gửi lời mời, người dùng xem và phản hồi từ Dashboard
 - **Giới hạn thành viên**: leader thiết lập số lượng tối đa
 
