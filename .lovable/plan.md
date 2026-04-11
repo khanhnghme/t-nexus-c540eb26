@@ -1,44 +1,54 @@
 
 
-## Tích hợp File Upload vào Canvas Editor qua R2 Storage
+## Fix: Cleanup Panel không xóa được dự án và workspace
 
-### Cách hoạt động
+### Nguyên nhân gốc
 
-BlockNote hỗ trợ `uploadFile` callback trong `useCreateBlockNote`. Khi user kéo thả ảnh/file hoặc dùng slash menu (Image, Video, Audio, File), BlockNote gọi callback này và nhận lại URL để hiển thị.
+Hàm `deleteProject()` trong `AccountCleanupPanel.tsx` thực hiện xóa **client-side** (dùng auth token của user), nên bị chặn bởi RLS trên nhiều bảng:
 
-### Thay đổi
+- `activity_logs`: chỉ `system_admin` mới được DELETE
+- `submission_history`, `task_scores`, `task_comments`, `task_assignments`: không có hoặc RLS giới hạn DELETE
+- `score_appeals`, `appeal_attachments`, `notifications`, `meetings`, `meeting_attendance`, `project_messages`: thiếu DELETE policy cho project owner
 
-#### 1. `src/components/canvas/CanvasEditor.tsx`
+Khi bất kỳ 1 bảng nào từ chối DELETE → hàm throw error → dừng toàn bộ quá trình.
 
-- Thêm `uploadFile` function vào config `useCreateBlockNote`:
-  - Upload file lên R2 bucket `project-resources` với path `canvas/{groupId}/{pageId}/{timestamp}_{filename}`
-  - Sau khi upload thành công, INSERT record vào `project_resources` với:
-    - `group_id`, `uploaded_by` (user.id)
-    - `name`: tên file gốc
-    - `file_path`: public URL từ R2
-    - `storage_name`: R2 path
-    - `file_size`: file.size (bytes) → tự động tính vào storage quota qua `get_account_storage_usage()`
-    - `file_type`: file.type
-    - `category`: `'canvas-attachment'`
-    - `resource_type`: `'file'`
-  - Trả về public URL cho BlockNote hiển thị
-- Nhận thêm prop `userId` từ `CanvasPageView` (hoặc dùng `useAuth` trực tiếp trong editor)
-- Import `r2Storage` và `supabase`
+### Giải pháp
 
-#### 2. `src/components/canvas/CanvasPageView.tsx`
+**Chuyển logic xóa project sang edge function `workspace-management`** (đã có service role), thêm action `delete_project`.
 
-- Khi xóa page (`handleDeletePage`), thêm cleanup:
-  - Query `project_resources` WHERE `group_id = groupId` AND `category = 'canvas-attachment'` AND `storage_name LIKE 'canvas/{groupId}/{pageId}/%'`
-  - Xóa files trên R2 và xóa records trong DB
+#### 1. `supabase/functions/workspace-management/index.ts`
 
-### Không cần migration
-- Bảng `project_resources` đã có đủ cột (`file_size`, `storage_name`, `category`, `file_type`)
-- `get_account_storage_usage()` đã tính `project_resources.file_size` → dung lượng tự động cộng vào tổng
+Thêm action `delete_project`:
+- Validate caller là workspace owner hoặc group leader
+- Dùng `supabaseAdmin` (service role) để xóa toàn bộ data liên quan theo đúng thứ tự dependency:
+  - R2 files cleanup (task submissions, note attachments, project resources)
+  - `appeal_attachments` → `score_appeals` → `score_adjustment_history`
+  - `submission_history` → `task_note_attachments` → `task_notes`
+  - `task_scores` → `task_assignments` → `task_comments` → `tasks`
+  - `member_stage_scores` → `stage_weights` → `stages`
+  - `member_final_scores` → `meeting_attendance` → `meeting_messages` → `meetings`
+  - `pending_approvals` → `project_invitations` → `project_resources` → `resource_folders`
+  - `project_messages` → `activity_logs` → `notifications`
+  - `group_members` → `hidden_projects` → `canvas_pages` (nếu có)
+  - `groups`
+
+#### 2. `src/components/cleanup/AccountCleanupPanel.tsx`
+
+Thay thế hàm `deleteProject()` client-side bằng gọi edge function:
+```ts
+const deleteProject = async (groupId: string) => {
+  const { data, error } = await supabase.functions.invoke('workspace-management', {
+    body: { action: 'delete_project', group_id: groupId },
+  });
+  if (error || data?.error) throw new Error(data?.error || error.message);
+};
+```
+- Xóa import `deleteTaskFiles` (không cần nữa, edge function sẽ handle)
 
 ### Files thay đổi
 
 | File | Thay đổi |
 |------|----------|
-| `src/components/canvas/CanvasEditor.tsx` | Thêm `uploadFile` handler với R2 + ghi `project_resources` |
-| `src/components/canvas/CanvasPageView.tsx` | Cleanup canvas attachments khi xóa page |
+| `supabase/functions/workspace-management/index.ts` | Thêm action `delete_project` với service role |
+| `src/components/cleanup/AccountCleanupPanel.tsx` | Thay `deleteProject()` bằng gọi edge function |
 
