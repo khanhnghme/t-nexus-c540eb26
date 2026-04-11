@@ -15,7 +15,7 @@ import { TaskBlockProvider } from "./blocks/TaskBlockContext";
 const schema = BlockNoteSchema.create({
   blockSpecs: {
     ...defaultBlockSpecs,
-    taskList: TaskListBlock,
+    taskList: TaskListBlock(),
   },
 });
 
