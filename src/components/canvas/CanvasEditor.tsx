@@ -85,7 +85,7 @@ export default function CanvasEditor({
     data: currentContent,
     onSave: handleSave,
     onError: handleSaveError,
-    delay: 1500,
+    delay: 800,
     enabled: !!pageId && editable,
   });
 
