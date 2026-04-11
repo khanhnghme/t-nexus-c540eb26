@@ -92,11 +92,33 @@ function TaskListRenderer() {
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
   }, []);
 
+  const handleUpdateTitle = useCallback(async (taskId: string, newTitle: string) => {
+    const title = newTitle.trim();
+    if (!title) return;
+    const { error } = await supabase.from("tasks").update({ title }).eq("id", taskId);
+    if (error) {
+      toast.error("Không thể cập nhật tiêu đề");
+      return;
+    }
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, title } : t)));
+  }, []);
+
+  const handleUpdateDeadline = useCallback(async (taskId: string, newDeadline: string | null) => {
+    const { error } = await supabase.from("tasks").update({ deadline: newDeadline }).eq("id", taskId);
+    if (error) {
+      toast.error("Không thể cập nhật deadline");
+      return;
+    }
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, deadline: newDeadline } : t)));
+  }, []);
+
   const handlers: TaskHandlers = useMemo(() => ({
     onStatusChange: handleStatusChange,
     onAdd: handleAddTask,
     onDelete: handleDelete,
-  }), [handleStatusChange, handleAddTask, handleDelete]);
+    onUpdateTitle: handleUpdateTitle,
+    onUpdateDeadline: handleUpdateDeadline,
+  }), [handleStatusChange, handleAddTask, handleDelete, handleUpdateTitle, handleUpdateDeadline]);
 
   if (loading) {
     return (

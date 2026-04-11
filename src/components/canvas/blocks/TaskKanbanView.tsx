@@ -1,8 +1,15 @@
 import { useState, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Calendar, User, Trash2, Plus } from "lucide-react";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import type { TaskRow, TaskHandlers, TaskStatus } from "./taskBlockTypes";
 import { statusConfig, statusColumns } from "./taskBlockTypes";
 
@@ -17,6 +24,21 @@ interface TaskKanbanViewProps {
 
 export function TaskKanbanView({ tasks, editable, newTitle, setNewTitle, adding, handlers }: TaskKanbanViewProps) {
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+  const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
+  const [editingTitleValue, setEditingTitleValue] = useState("");
+
+  const startEditTitle = (task: TaskRow) => {
+    setEditingTitleId(task.id);
+    setEditingTitleValue(task.title);
+  };
+
+  const saveTitle = (taskId: string) => {
+    const trimmed = editingTitleValue.trim();
+    if (trimmed && trimmed !== tasks.find((t) => t.id === taskId)?.title) {
+      handlers.onUpdateTitle(taskId, trimmed);
+    }
+    setEditingTitleId(null);
+  };
 
   const handleDragStart = useCallback((e: React.DragEvent, taskId: string) => {
     e.dataTransfer.setData("text/plain", taskId);
@@ -79,14 +101,33 @@ export function TaskKanbanView({ tasks, editable, newTitle, setNewTitle, adding,
                 return (
                   <div
                     key={task.id}
-                    draggable={editable}
+                    draggable={editable && editingTitleId !== task.id}
                     onDragStart={(e) => handleDragStart(e, task.id)}
                     className={`group rounded border bg-background p-2 text-xs shadow-sm transition-shadow ${
                       editable ? "cursor-grab active:cursor-grabbing hover:shadow-md" : ""
                     }`}
                   >
                     <div className="flex items-start justify-between gap-1">
-                      <span className="font-medium leading-tight line-clamp-2">{task.title}</span>
+                      {editable && editingTitleId === task.id ? (
+                        <Input
+                          value={editingTitleValue}
+                          onChange={(e) => setEditingTitleValue(e.target.value)}
+                          onBlur={() => saveTitle(task.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") { e.preventDefault(); saveTitle(task.id); }
+                            if (e.key === "Escape") setEditingTitleId(null);
+                          }}
+                          autoFocus
+                          className="flex-1 h-5 text-xs border-none bg-transparent shadow-none focus-visible:ring-1 focus-visible:ring-primary/30 px-0"
+                        />
+                      ) : (
+                        <span
+                          className={cn("font-medium leading-tight line-clamp-2", editable && "cursor-pointer hover:text-primary")}
+                          onClick={() => editable && startEditTitle(task)}
+                        >
+                          {task.title}
+                        </span>
+                      )}
                       {editable && (
                         <button
                           onClick={() => handlers.onDelete(task.id, task.title)}
@@ -104,11 +145,33 @@ export function TaskKanbanView({ tasks, editable, newTitle, setNewTitle, adding,
                           <span className="truncate">{assignees[0]}</span>
                         </span>
                       )}
-                      {task.deadline && (
-                        <span className="flex items-center gap-0.5 shrink-0">
-                          <Calendar className="h-2.5 w-2.5" />
-                          {format(new Date(task.deadline), "dd/MM")}
-                        </span>
+                      {editable ? (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button className="flex items-center gap-0.5 shrink-0 hover:text-primary transition-colors">
+                              <Calendar className="h-2.5 w-2.5" />
+                              {task.deadline ? format(new Date(task.deadline), "dd/MM") : "Hạn"}
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={task.deadline ? new Date(task.deadline) : undefined}
+                              onSelect={(date) => {
+                                handlers.onUpdateDeadline(task.id, date ? date.toISOString() : null);
+                              }}
+                              initialFocus
+                              className={cn("p-3 pointer-events-auto")}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      ) : (
+                        task.deadline && (
+                          <span className="flex items-center gap-0.5 shrink-0">
+                            <Calendar className="h-2.5 w-2.5" />
+                            {format(new Date(task.deadline), "dd/MM")}
+                          </span>
+                        )
                       )}
                     </div>
                   </div>
