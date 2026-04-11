@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
-import { BlockNoteSchema, defaultBlockSpecs, defaultInlineContentSpecs, defaultStyleSchema, filterSuggestionItems } from '@blocknote/core';
+import { BlockNoteSchema, filterSuggestionItems } from '@blocknote/core';
 import { SuggestionMenuController, getDefaultReactSlashMenuItems } from '@blocknote/react';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
