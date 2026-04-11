@@ -71,13 +71,13 @@ export default function PageHeader({
 
   return (
     <div
-      className="px-6 pt-4 pb-2"
+      className="px-6 pt-8 pb-3"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       {/* Quick actions row — visible on hover when items are missing */}
       {editable && hovered && (!icon || !coverUrl) && (
-        <div className="flex items-center gap-1.5 mb-2">
+        <div className="flex items-center gap-1.5 mb-3">
           {!icon && (
             <EmojiPicker currentEmoji={null} onSelect={(emoji) => onChangeIcon?.(emoji)}>
               <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5 text-muted-foreground">
@@ -99,20 +99,20 @@ export default function PageHeader({
 
       {/* Icon */}
       {icon && (
-        <div className="mb-2">
+        <div className="mb-3">
           {editable ? (
             <EmojiPicker currentEmoji={icon} onSelect={(emoji) => onChangeIcon?.(emoji)}>
-              <button className="text-4xl hover:bg-accent rounded-lg p-1 transition-colors cursor-pointer">
+              <button className="text-5xl hover:bg-accent rounded-lg p-1 transition-colors cursor-pointer">
                 {icon}
               </button>
             </EmojiPicker>
           ) : (
-            <span className="text-4xl p-1">{icon}</span>
+            <span className="text-5xl p-1">{icon}</span>
           )}
         </div>
       )}
 
-      {/* Title */}
+      {/* Title — larger like AFFiNE */}
       {editable && editingTitle ? (
         <input
           ref={inputRef}
@@ -123,12 +123,12 @@ export default function PageHeader({
             if (e.key === "Enter") commitTitle();
             if (e.key === "Escape") { setLocalTitle(title); setEditingTitle(false); }
           }}
-          className="text-3xl font-bold w-full bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground"
+          className="text-4xl font-bold w-full bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground/50 leading-tight"
           placeholder="Untitled"
         />
       ) : (
         <h1
-          className={`text-3xl font-bold text-foreground ${editable ? "cursor-text hover:bg-accent/50 rounded-md px-1 -mx-1 transition-colors" : ""}`}
+          className={`text-4xl font-bold text-foreground leading-tight ${editable ? "cursor-text hover:bg-accent/30 rounded-md px-1 -mx-1 transition-colors" : ""}`}
           onClick={() => editable && setEditingTitle(true)}
         >
           {title || "Untitled"}

@@ -134,11 +134,12 @@ export default function CanvasSidebar({
 
   return (
     <div className={cn(
-      "shrink-0 bg-muted/30 flex flex-col",
-      isDrawer ? "w-full h-full" : "w-[220px] max-md:w-[180px] border-r"
+      "shrink-0 flex flex-col bg-background",
+      isDrawer ? "w-full h-full" : "w-[240px] border-r border-border/50"
     )}>
-      <div className="flex items-center justify-between px-3 py-2 border-b">
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+      {/* Header — clean, no uppercase */}
+      <div className="flex items-center justify-between px-3 py-2.5">
+        <span className="text-xs font-medium text-muted-foreground">
           Trang
         </span>
         <div className="flex items-center gap-0.5">
@@ -185,7 +186,7 @@ export default function CanvasSidebar({
           <Droppable droppableId="pages-list">
             {(provided) => (
               <div
-                className="py-1"
+                className="px-1.5 py-0.5"
                 ref={provided.innerRef}
                 {...provided.droppableProps}
               >
@@ -201,14 +202,19 @@ export default function CanvasSidebar({
                         ref={dragProvided.innerRef}
                         {...dragProvided.draggableProps}
                         className={cn(
-                          "group flex items-center gap-1 px-1 py-1.5 cursor-pointer text-sm transition-colors",
+                          "group relative flex items-center gap-1.5 px-2 py-1.5 rounded-md cursor-pointer text-[13px] transition-colors my-0.5",
                           activePageId === page.id
                             ? "bg-accent text-accent-foreground font-medium"
-                            : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                            : "text-muted-foreground hover:bg-accent/40 hover:text-foreground",
                           snapshot.isDragging && "opacity-80 shadow-sm bg-accent"
                         )}
                         onClick={() => onSelectPage(page.id)}
                       >
+                        {/* Active indicator bar */}
+                        {activePageId === page.id && (
+                          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full bg-primary" />
+                        )}
+
                         {editable && (
                           <span
                             {...dragProvided.dragHandleProps}
@@ -219,7 +225,7 @@ export default function CanvasSidebar({
                           </span>
                         )}
                         {!editable && (
-                          <span className="pl-2" />
+                          <span className="pl-1" />
                         )}
 
                         {editable ? (

@@ -134,34 +134,37 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
 
   const editorContent = (
     <>
-      {saveStatus && (
-        <div className={`flex items-center gap-1.5 px-4 py-1.5 text-xs border-b ${saveStatus.className}`}>
-          <saveStatus.icon
-            className={`h-3.5 w-3.5 ${saveStatus.spin ? "animate-spin" : ""}`}
-          />
-          {saveStatus.text}
-        </div>
-      )}
       <PageCoverImage coverUrl={coverUrl} editable={editable} onChangeCover={onChangeCover} />
-      <PageHeader
-        title={title}
-        icon={icon}
-        coverUrl={coverUrl}
-        editable={editable}
-        onChangeTitle={onChangeTitle}
-        onChangeIcon={onChangeIcon}
-        onChangeCover={onChangeCover}
-      />
-      <div className={`p-2 ${!editable ? "view-mode" : ""}`}>
-        <BlockNoteView
-          editor={editor}
+      <div className="max-w-[720px] mx-auto w-full relative">
+        {/* Save status — floating top-right */}
+        {saveStatus && (
+          <div className={`absolute top-2 right-2 flex items-center gap-1 text-[10px] ${saveStatus.className} z-10`}>
+            <saveStatus.icon
+              className={`h-3 w-3 ${saveStatus.spin ? "animate-spin" : ""}`}
+            />
+            {saveStatus.text}
+          </div>
+        )}
+        <PageHeader
+          title={title}
+          icon={icon}
+          coverUrl={coverUrl}
           editable={editable}
-          onChange={handleChange}
-          theme={resolvedTheme === "dark" ? "dark" : "light"}
-          sideMenu={editable}
-          formattingToolbar={editable}
-          slashMenu={editable}
+          onChangeTitle={onChangeTitle}
+          onChangeIcon={onChangeIcon}
+          onChangeCover={onChangeCover}
         />
+        <div className={`px-6 pb-8 ${!editable ? "view-mode" : ""}`}>
+          <BlockNoteView
+            editor={editor}
+            editable={editable}
+            onChange={handleChange}
+            theme={resolvedTheme === "dark" ? "dark" : "light"}
+            sideMenu={editable}
+            formattingToolbar={editable}
+            slashMenu={editable}
+          />
+        </div>
       </div>
     </>
   );

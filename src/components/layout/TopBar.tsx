@@ -1,10 +1,9 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useDashboardLayoutContext } from '@/contexts/DashboardLayoutContext';
-import { Moon, Sun, LayoutDashboard, Layers, Users, Award, FolderOpen, Video, Activity, Settings, PenTool } from 'lucide-react';
+import { Moon, Sun, LayoutDashboard, Layers, Users, Award, FolderOpen, Video, Activity, Settings, PanelLeft, FileText, ChevronRight, MoreHorizontal, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
 import tNexusTextWhite from '@/assets/t-nexus-text-white.png';
 import {
   Tooltip,
@@ -62,9 +61,10 @@ function getBreadcrumb(pathname: string, locale: string) {
 
 export default function TopBar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { locale, translations: { app: { projectNav: navT } } } = useLanguage();
-  const { projectNavProps } = useDashboardLayoutContext();
+  const { projectNavProps, projectInfo, toggleSidebar } = useDashboardLayoutContext();
   const isDark = theme === 'dark';
   const pageTitle = getBreadcrumb(location.pathname, locale);
 
@@ -89,14 +89,30 @@ export default function TopBar() {
         isProjectMode && "flex-1 justify-center"
       )}>
         {isProjectMode && isCustomMode ? (
-          <div className="flex items-center gap-2 mx-auto">
-            <PenTool className="w-3.5 h-3.5 text-primary" />
-            <span className="text-sm font-semibold truncate max-w-[200px]" style={{ color: 'var(--_sb-fg, hsl(var(--foreground)))' }}>
-              {pageTitle}
-            </span>
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-medium">
-              Canvas
-            </Badge>
+          /* ── AFFiNE-style TopBar for Custom/Canvas mode ── */
+          <div className="flex items-center gap-2 w-full px-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="flex items-center justify-center w-7 h-7 rounded-md transition-colors hover:bg-accent shrink-0"
+                  onClick={() => navigate('/groups')}
+                >
+                  <ArrowLeft className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>{locale === 'vi' ? 'Quay lại' : 'Go back'}</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <div className="h-4 w-px bg-border shrink-0" />
+
+            <div className="flex items-center gap-1.5 min-w-0">
+              <FileText className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <span className="text-sm font-medium truncate max-w-[200px]" style={{ color: 'var(--_sb-fg, hsl(var(--foreground)))' }}>
+                {projectInfo.projectName || pageTitle}
+              </span>
+            </div>
           </div>
         ) : isProjectMode ? (
           <div className="flex items-center gap-0.5 mx-auto">
