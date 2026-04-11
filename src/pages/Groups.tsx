@@ -48,6 +48,7 @@ import type { Group, GroupMember } from '@/types/database';
 import UserAvatar from '@/components/UserAvatar';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
+import ProjectModeSelector from '@/components/ProjectModeSelector';
 interface MemberAvatar {
   avatar_url: string | null;
   full_name: string;
@@ -71,6 +72,7 @@ interface MemberToAdd {
 
 export default function Groups() {
   const { user, isSystemAdmin, profile } = useAuth();
+  const navigate = useNavigate();
   const { activeWorkspace, isAvailable: wsAvailable, workspaceRole } = useWorkspace();
   const { translations: { app: t } } = useLanguage();
   const g = t.groups;
