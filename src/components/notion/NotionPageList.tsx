@@ -25,7 +25,7 @@ interface NotionPageListProps {
   isLeader?: boolean;
 }
 
-export default function NotionPageList({ pages, selectedPageId, onSelectPage, onCreatePage, isCreating }: NotionPageListProps) {
+export default function NotionPageList({ pages, selectedPageId, onSelectPage, onCreatePage, onRenamePage, onDeletePage, onReorderPages, onUpdateIcon, isCreating, isLeader }: NotionPageListProps) {
   const { translations: { app: t } } = useLanguage();
   const nt = (t as any).notionEditor || {};
 
