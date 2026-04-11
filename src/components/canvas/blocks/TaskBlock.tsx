@@ -65,7 +65,7 @@ function TaskListRenderer() {
     fetchTasks();
   }, [fetchTasks]);
 
-  const handleStatusChange = async (taskId: string, newStatus: string) => {
+  const handleStatusChange = async (taskId: string, newStatus: "TODO" | "IN_PROGRESS" | "DONE" | "VERIFIED") => {
     const { error } = await supabase
       .from("tasks")
       .update({ status: newStatus })
