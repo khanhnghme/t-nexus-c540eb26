@@ -232,7 +232,7 @@ export default function BillingHistory() {
                               const code = row.raw?.order_code;
                               if (!code) return;
                               if (row.raw?.order_type === 'addon') {
-                                navigate(`/addon-checkout/${code}`);
+                                navigate(`/addon-checkout/payment/${code}`);
                               } else {
                                 navigate(`/checkout/payment/${code}`);
                               }

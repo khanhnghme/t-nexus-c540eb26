@@ -152,7 +152,7 @@ export default function CheckoutSummary() {
           }
           if (!resolved) {
             // Still pending after ~24s — redirect back to payment
-            const route = data.order_type === 'addon' ? `/addon-checkout/${orderCode}` : `/checkout/payment/${orderCode}`;
+            const route = data.order_type === 'addon' ? `/addon-checkout/payment/${orderCode}` : `/checkout/payment/${orderCode}`;
             navigate(route, { replace: true });
           }
           return;
