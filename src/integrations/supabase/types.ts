@@ -3213,6 +3213,7 @@ export type Database = {
           max_storage_mb: number
           name: string
           owner_id: string
+          short_id: string
           slug: string
           updated_at: string
         }
@@ -3227,6 +3228,7 @@ export type Database = {
           max_storage_mb?: number
           name: string
           owner_id: string
+          short_id: string
           slug: string
           updated_at?: string
         }
@@ -3241,6 +3243,7 @@ export type Database = {
           max_storage_mb?: number
           name?: string
           owner_id?: string
+          short_id?: string
           slug?: string
           updated_at?: string
         }
