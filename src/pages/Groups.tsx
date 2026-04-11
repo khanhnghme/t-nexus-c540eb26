@@ -507,6 +507,10 @@ export default function Groups() {
             setIsDialogOpen(open);
             if (!open) resetForm();
           }}>
+              <DialogContent
+                className="p-0 gap-0 border-0 bg-transparent shadow-none [&>button]:hidden"
+                style={{ maxWidth: 'none', width: 'auto' }}
+              >
                 <div
                   className="bg-background border rounded-xl overflow-hidden flex flex-col"
                   style={{ width: '1280px', maxWidth: '95vw', height: '720px', maxHeight: '90vh' }}
