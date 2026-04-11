@@ -1,47 +1,52 @@
 
 
-## Phase 9 — Giai đoạn 2/4: Editable Content Area cho ToggleBlock
+## Phase 9 — Giai doan 3/4: Styling va Theming cho ToggleBlock
 
-### Mục tiêu
-Thay thế placeholder text "Toggle content area" bằng vùng nội dung editable — cho phép user nhập text bên trong toggle khi mở rộng.
+### Muc tieu
+Nang cap giao dien ToggleBlock — them background color nhe, hover effect, va transition cho chevron icon de toggle tro nen dep va chuyen nghiep hon.
 
-### Hiện trạng
-- Stage 1/4 hoàn thành: ToggleBlock render với tiêu đề inline + toggle mở/đóng
-- Khi mở: chỉ hiện static text "Toggle content area" (contentEditable=false)
-- User chưa thể nhập nội dung bên trong toggle
+### Hien trang
+- Stage 1-2 hoan thanh: ToggleBlock co tieu de inline + editable textarea body
+- Style hien tai: chi co border co ban, chua co hover effect, chua co background, chevron chua co transition
 
-### Hành động
+### Hanh dong
 
-**Cập nhật `src/components/canvas/blocks/ToggleBlock.tsx`**
-- Thêm prop `bodyText` vào propSchema (default: `""`) — lưu nội dung bên trong toggle
-- Thay placeholder div bằng `<textarea>` hoặc `<div contentEditable>` cho phép nhập text
-- onChange: gọi `props.editor.updateBlock(props.block, { props: { bodyText: value } })` để persist
-- Placeholder text "Nhập nội dung..." khi rỗng
-- Style: `white-space: pre-wrap`, font-size nhỏ hơn tiêu đề, auto-resize theo nội dung
+**Cap nhat `src/components/canvas/blocks/ToggleBlock.tsx`**
+- Them background nhe cho block (`hsl(var(--muted))` voi opacity thap)
+- Hover effect tren header row (background sang hon khi hover)
+- Transition rotate cho chevron icon (transform + transition 200ms)
+- Dung CSS transform `rotate(90deg)` thay vi swap giua ChevronRight/ChevronDown — chi dung 1 icon `ChevronRight` voi rotation
+- Them hover effect cho toggle button (border-radius, background on hover)
+- Typography: tinh chinh font-weight, line-height cho tieu de va body
 
-### Chi tiết kỹ thuật
+### Chi tiet ky thuat
 
 ```text
-Mở + editable:
-┌──────────────────────────────────┐
-│ ▼  Tiêu đề toggle               │
-├──────────────────────────────────┤
-│    [Nhập nội dung...         ]   │ ← editable area
-│    [Nhiều dòng cũng được     ]   │
+Truoc:
+┌──────────────────────────────────┐  ← border only
+│ ▶  Tieu de                       │
 └──────────────────────────────────┘
 
-New prop: bodyText: { default: "" }
-Content area: contentEditable div hoặc textarea
-onInput/onChange → updateBlock({ props: { bodyText } })
+Sau:
+┌──────────────────────────────────┐  ← subtle background + border
+│ ▶  Tieu de                       │  ← hover: darker bg
+├──────────────────────────────────┤
+│    Noi dung...                   │
+└──────────────────────────────────┘
+
+Chevron: 1 icon ChevronRight
+  collapsed: transform: rotate(0)
+  expanded:  transform: rotate(90deg)
+  transition: transform 200ms ease
 ```
 
-### Không làm
-- Styling/theming cho toggle (giai đoạn 3)
-- Animation mở/đóng (giai đoạn 4)
+### Khong lam
+- Animation mo/dong cho content area (giai doan 4)
+- Thay doi prop schema
 
-### Files thay đổi
+### Files thay doi
 
-| File | Thay đổi |
+| File | Thay doi |
 |------|----------|
-| `src/components/canvas/blocks/ToggleBlock.tsx` | Editable body area + bodyText prop |
+| `src/components/canvas/blocks/ToggleBlock.tsx` | Styling + hover + chevron transition |
 
