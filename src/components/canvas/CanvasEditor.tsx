@@ -2,18 +2,29 @@ import "@blocknote/core/fonts/inter.css";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/shadcn";
 import { useTheme } from "next-themes";
+import { BlockNoteSchema, defaultBlockSpecs } from "@blocknote/core";
 import type { Block, PartialBlock } from "@blocknote/core";
 import { useCallback, useMemo, useState } from "react";
 import { useAutosave } from "@/hooks/useAutosave";
 import { useUpdatePageContent } from "@/hooks/useProjectPages";
 import { Check, Cloud, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { TaskListBlock } from "./blocks/TaskBlock";
+import { TaskBlockProvider } from "./blocks/TaskBlockContext";
+
+const schema = BlockNoteSchema.create({
+  blockSpecs: {
+    ...defaultBlockSpecs,
+    taskList: TaskListBlock(),
+  },
+});
 
 interface CanvasEditorProps {
   initialContent?: PartialBlock[];
   editable?: boolean;
   onChange?: (content: Block[]) => void;
   pageId?: string;
+  groupId?: string;
 }
 
 export default function CanvasEditor({
@@ -21,13 +32,16 @@ export default function CanvasEditor({
   editable = true,
   onChange,
   pageId,
+  groupId,
 }: CanvasEditorProps) {
   const { resolvedTheme } = useTheme();
   const updatePageContent = useUpdatePageContent();
-  const [serializedContent, setSerializedContent] = useState("");
+  const [serializedContent] = useState("");
+  const [currentContent, setCurrentContent] = useState(serializedContent);
 
   const editor = useCreateBlockNote({
-    initialContent: initialContent?.length ? initialContent : undefined,
+    schema,
+    initialContent: initialContent?.length ? (initialContent as any) : undefined,
   });
 
   const handleSave = useCallback(
@@ -46,7 +60,7 @@ export default function CanvasEditor({
   }, []);
 
   const { isSaving, lastSaved, hasUnsavedChanges, saveError } = useAutosave({
-    data: serializedContent,
+    data: currentContent,
     onSave: handleSave,
     onError: handleSaveError,
     delay: 1500,
@@ -59,7 +73,7 @@ export default function CanvasEditor({
       onChange(doc);
     }
     if (pageId) {
-      setSerializedContent(JSON.stringify(doc));
+      setCurrentContent(JSON.stringify(doc));
     }
   }, [editor, onChange, pageId]);
 
@@ -72,8 +86,8 @@ export default function CanvasEditor({
     return null;
   }, [pageId, isSaving, hasUnsavedChanges, lastSaved, saveError]);
 
-  return (
-    <div className="min-h-[460px]">
+  const editorContent = (
+    <>
       {saveStatus && (
         <div className={`flex items-center gap-1.5 px-4 py-1.5 text-xs border-b ${saveStatus.className}`}>
           <saveStatus.icon
@@ -90,6 +104,18 @@ export default function CanvasEditor({
           theme={resolvedTheme === "dark" ? "dark" : "light"}
         />
       </div>
+    </>
+  );
+
+  return (
+    <div className="min-h-[460px]">
+      {groupId ? (
+        <TaskBlockProvider groupId={groupId} editable={editable}>
+          {editorContent}
+        </TaskBlockProvider>
+      ) : (
+        editorContent
+      )}
     </div>
   );
 }

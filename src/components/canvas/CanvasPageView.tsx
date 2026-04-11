@@ -197,6 +197,7 @@ export default function CanvasPageView({ groupId, editable = false }: CanvasPage
           initialContent={initialContent}
           editable={editable}
           pageId={activePage.id}
+          groupId={groupId}
         />
       </div>
     </div>
