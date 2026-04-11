@@ -1,52 +1,41 @@
 
 
-## Phase 3 — Giai đoạn 1/4: Mode Selector UI Component
+## Phase 3 — Giai đoạn 2/4: Đồng bộ project_mode & truyền workspace context
 
 ### Mục tiêu
-Khi user bấm "Tạo dự án" trên trang Groups, hiện bước chọn mode (Basic / Custom) trước khi mở form tạo project. Basic → mở dialog cũ. Custom → navigate tới `/create-custom`.
+Đảm bảo Basic projects ghi rõ `project_mode: 'basic'` vào DB, và khi chọn Custom từ mode selector, workspace hiện tại được truyền sang `/create-custom` để user không phải chọn lại.
 
 ### Hiện trạng
-- ✅ Phase 2 hoàn tất: CRUD + auto-save + error handling
-- ✅ `/create-custom` page hoạt động đầy đủ
-- ✅ `GroupDetail` phân luồng theo `project_mode`
-- ❌ Bấm "Tạo dự án" → mở thẳng dialog Basic, không có lựa chọn mode
-- ❌ Chưa có component Mode Selector
+- ✅ Mode Selector hoạt động: Basic → dialog cũ, Custom → navigate `/create-custom`
+- ❌ `handleCreateGroup` (Basic) không set `project_mode` → DB default (có thể null)
+- ❌ Navigate sang `/create-custom` không truyền workspace → user phải chọn lại workspace
+- ❌ `CreateCustomProject` không nhận workspace từ URL/state
 
 ### Hành động cụ thể
 
-**1. Tạo `src/components/ProjectModeSelector.tsx`** — Component chọn mode
+**1. Cập nhật `Groups.tsx` — `handleCreateGroup`**
+- Thêm `project_mode: 'basic'` vào `insertData` khi tạo project Basic
+- Navigate sang `/create-custom` kèm workspace qua query param: `/create-custom?workspace={activeWorkspace.id}`
 
-- 2 cards ngang nhau: **Basic** và **Custom**
-- Basic card: icon Layers/ListChecks, mô tả "Quản lý task, stage, deadline theo flow chuẩn"
-- Custom card: icon FileText/Palette, mô tả "Canvas tự do với block editor"
-- Props: `onSelectBasic: () => void`, `onSelectCustom: () => void`
-- Styling: hover effect, selected state, responsive
+**2. Cập nhật `CreateCustomProject.tsx` — nhận workspace từ URL**
+- Đọc `?workspace=` từ URL (useSearchParams)
+- Nếu có → auto-select workspace đó, ẩn dropdown chọn workspace
+- Nếu không có → giữ nguyên logic hiện tại (user tự chọn)
 
-**2. Cập nhật `src/pages/Groups.tsx`** — Thêm bước chọn mode
-
-- Thêm state `showModeSelector: boolean` (default false)
-- Khi bấm "Tạo dự án":
-  - Nếu `showModeSelector === false` → set `showModeSelector = true`, mở dialog hiện ModeSelector
-  - Chọn Basic → đóng mode selector, mở dialog tạo project cũ (`isDialogOpen = true`)
-  - Chọn Custom → đóng dialog, navigate tới `/create-custom`
-- Flow: Click CTA → Mode Selector dialog → chọn mode → tiếp tục
-
-**3. Đảm bảo không ảnh hưởng flow cũ**
-
-- Dialog tạo project Basic giữ nguyên 100% logic hiện tại
-- Chỉ thêm 1 bước trung gian (mode selector) trước khi mở dialog cũ
-- Permission check `canCreateProject` vẫn áp dụng
+**3. Verify DB default**
+- Kiểm tra column `project_mode` có default value hay không
+- Nếu chưa có default → thêm migration set default `'basic'`
 
 ### Output
-- Bấm "Tạo dự án" → hiện 2 cards chọn mode
-- Chọn Basic → mở dialog tạo project như cũ
-- Chọn Custom → navigate `/create-custom`
-- UI đẹp, responsive, có animation nhẹ
+- Basic projects có `project_mode: 'basic'` rõ ràng trong DB
+- Chọn Custom từ Groups → workspace được truyền tự động, không cần chọn lại
+- Flow liền mạch từ mode selector đến tạo project
 
 ### Files thay đổi
 
 | File | Thay đổi |
 |------|----------|
-| `src/components/ProjectModeSelector.tsx` | **Mới** — Component 2 cards chọn Basic/Custom |
-| `src/pages/Groups.tsx` | Thêm state + dialog mode selector trước dialog tạo project |
+| `src/pages/Groups.tsx` | Thêm `project_mode: 'basic'` + truyền workspace qua URL |
+| `src/pages/CreateCustomProject.tsx` | Nhận workspace từ query param, auto-select |
+| Migration (nếu cần) | Set default `project_mode = 'basic'` cho column |
 
