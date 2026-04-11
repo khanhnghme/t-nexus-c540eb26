@@ -90,6 +90,7 @@ export default function GroupDetail() {
   const [isGroupCreator, setIsGroupCreator] = useState(false);
   
   const [hasActiveMeeting, setHasActiveMeeting] = useState(false);
+  const [taskViewMode, setTaskViewMode] = useState<'list' | 'table'>('list');
   
   // Compute available tabs based on permissions
   const availableTabs = [
