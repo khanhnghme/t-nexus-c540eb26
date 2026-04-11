@@ -1,0 +1,2 @@
+ALTER TABLE public.project_pages
+  ADD COLUMN IF NOT EXISTS cover_url TEXT DEFAULT NULL;
