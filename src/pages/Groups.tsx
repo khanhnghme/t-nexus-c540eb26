@@ -85,6 +85,7 @@ export default function Groups() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const createLockRef = useRef(false);
+  const idempotencyKeyRef = useRef(crypto.randomUUID());
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupDescription, setNewGroupDescription] = useState('');
   const [newGroupClassCode, setNewGroupClassCode] = useState('');
@@ -330,6 +331,7 @@ export default function Groups() {
           additional_info: newGroupAdditionalInfo.trim() || null,
           created_by: user!.id,
           slug: '',
+          idempotency_key: idempotencyKeyRef.current,
         };
 
       // Auto-assign workspace_id if workspace is active
@@ -397,6 +399,7 @@ export default function Groups() {
 
       setIsDialogOpen(false);
       resetForm();
+      idempotencyKeyRef.current = crypto.randomUUID();
       fetchGroups();
     } catch (error: any) {
       toast({

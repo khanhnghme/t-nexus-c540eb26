@@ -34,6 +34,7 @@ interface RequestBody {
   target_user_id?: string;
   new_role?: string;
   new_owner_id?: string;
+  idempotency_key?: string;
 }
 
 function json(data: unknown, status = 200) {
@@ -103,23 +104,42 @@ serve(async (req: Request) => {
         return err(`Bạn đã đạt giới hạn ${maxWs} workspace cho gói ${callerPlan.replace("plan_", "").toUpperCase()}`);
       }
 
+      // Idempotency check
+      if (body.idempotency_key) {
+        const { data: existing } = await supabaseAdmin
+          .from("workspaces")
+          .select("*")
+          .eq("owner_id", callerId)
+          .eq("idempotency_key", body.idempotency_key)
+          .maybeSingle();
+        if (existing) {
+          console.log(`[workspace-mgmt] idempotency hit, returning existing workspace ${existing.id}`);
+          return json({ success: true, workspace: existing });
+        }
+      }
+
       const { data: slug } = await supabaseAdmin.rpc("generate_workspace_slug", {
         _name: body.name,
       });
 
+      const insertPayload: Record<string, unknown> = {
+        name: body.name,
+        slug: slug || `ws-${Date.now()}`,
+        description: body.description || null,
+        logo_url: body.logo_url || null,
+        owner_id: callerId,
+        plan: "free",
+        max_projects: limits?.max_projects_per_workspace ?? 5,
+        max_members: limits?.max_members_per_workspace ?? 5,
+        max_storage_mb: limits?.max_storage_mb ?? 500,
+      };
+      if (body.idempotency_key) {
+        insertPayload.idempotency_key = body.idempotency_key;
+      }
+
       const { data: ws, error: wsErr } = await supabaseAdmin
         .from("workspaces")
-        .insert({
-          name: body.name,
-          slug: slug || `ws-${Date.now()}`,
-          description: body.description || null,
-          logo_url: body.logo_url || null,
-          owner_id: callerId,
-          plan: "free",
-          max_projects: limits?.max_projects_per_workspace ?? 5,
-          max_members: limits?.max_members_per_workspace ?? 5,
-          max_storage_mb: limits?.max_storage_mb ?? 500,
-        })
+        .insert(insertPayload)
         .select()
         .single();
 
