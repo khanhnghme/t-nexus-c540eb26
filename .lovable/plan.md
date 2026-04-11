@@ -1,52 +1,44 @@
 
 
-## Nâng cấp Connected Tools — Điều hướng tập trung về Cài đặt
+## Cập nhật giới hạn Connected Tools theo gói + UI thông báo rõ ràng
 
-### Hiện trạng
-- **Calendar page** (`CalendarHeader.tsx`): Có nút Google Calendar Connect trực tiếp (connect/disconnect/sync)
-- **Account Settings** (`AccountSettings.tsx`): Đã có `ConnectedServicesCard` — nơi tập trung quản lý cả 3 dịch vụ (Calendar, Gmail, Drive)
-- **Pricing/Upgrade**: Connected Tools hiện chỉ show ✓/— (boolean), không có giới hạn cụ thể
+### Vấn đề hiện tại
+
+1. **Không có kiểm tra gói** — `ConnectedServicesCard` cho phép MỌI user kết nối dịch vụ, kể cả Free/Plus (không có quyền Connected Tools)
+2. **UI không thông báo** — Không có thông báo trực quan nào cho user Free/Plus biết họ cần nâng cấp để dùng Connected Tools
+3. **Pricing/Upgrade** — Hiện chỉ hiện boolean (✓/—) cho Connected Tools, chưa hiện "Unlimited" rõ ràng
 
 ### Thay đổi
 
-**1. Calendar Header — Thay nút Connect bằng nút điều hướng**
+**1. `ConnectedServicesCard.tsx` — Thêm kiểm tra gói + UI khóa**
 
-File: `src/components/calendar/CalendarHeader.tsx`
-- Khi chưa kết nối Google Calendar: thay nút "Google Calendar" (connect trực tiếp) → nút "Kết nối Calendar" điều hướng đến `/account-settings` (scroll đến phần Connected Services)
-- Khi đã kết nối: giữ nút Sync + trạng thái "Đã kết nối", nhưng nút "Ngắt kết nối" trong dropdown → điều hướng đến `/account-settings` thay vì disconnect trực tiếp
+- Import `useAuth` và `shouldShowIntegrations`
+- Nếu user plan là Free/Plus: hiển thị danh sách 3 dịch vụ nhưng **disabled**, thay nút "Connect" bằng badge "Yêu cầu Pro+" và nút "Nâng cấp" → navigate `/upgrade`
+- Nếu user plan >= Pro: giữ nguyên logic hiện tại (connect/disconnect bình thường)
+- Thêm banner nhỏ phía trên danh sách cho Free/Plus: "Dịch vụ liên kết khả dụng từ gói Pro trở lên"
 
-File: `src/components/calendar/GoogleCalendarConnect.tsx`
-- Cập nhật: khi chưa kết nối → `navigate('/account-settings#integrations')` thay vì gọi `onConnect`
-- Khi đã kết nối: giữ nguyên Sync + dropdown nhưng "Ngắt kết nối" → điều hướng settings
+**2. `ConnectedToolsBadge.tsx` — Cập nhật `ConnectedToolsTailwind`**
 
-**2. Pricing & Upgrade — Thêm chi tiết Connected Tools**
+- Khi plan không đủ (Free/Plus): hiện danh sách với icon khóa (Lock) thay vì Check, kèm text "Cần gói Pro+"
+- Khi plan đủ: giữ nguyên
 
-File: `src/pages/Pricing.tsx` + `src/pages/Upgrade.tsx`
-- Thay đổi bảng so sánh Connected Tools từ boolean (✓/—) sang text cụ thể:
-  - Free: — (không có)
-  - Plus: — (không có)
-  - Pro: "Unlimited" (✓)
-  - Business: "Unlimited" (✓)
-  - Enterprise: "Unlimited" (✓)
-- Giữ nguyên hiển thị hiện tại vì không có giới hạn số lượng
+**3. `Pricing.tsx` + `Upgrade.tsx` — Comparison table**
 
-**3. ConnectedToolsBadge — Thêm click điều hướng**
+- Thay giá trị boolean `true` trong `CONNECTED_TOOLS_CATEGORY` thành text `"Unlimited"` cho Pro/Business/Enterprise
+- Free/Plus giữ `false` (hiện —)
 
-File: `src/components/ConnectedToolsBadge.tsx`
-- `ConnectedToolsTailwind` (dùng trong ServicePlanSection): khi click → navigate đến `/account-settings#integrations`
-- `ConnectedToolsInline` (dùng trong Pricing): giữ nguyên (không cần click)
+**4. `ServicePlanSection.tsx` — Hiện trạng thái Connected Tools cho mọi gói**
 
-**4. Account Settings — Thêm anchor ID**
-
-File: `src/pages/AccountSettings.tsx`
-- Thêm `id="integrations"` vào section Connected Services để hỗ trợ scroll-to khi navigate từ trang khác
+- Nếu plan < Pro: hiện Connected Tools section với icon Lock + "Nâng cấp để mở khóa"
+- Nếu plan >= Pro: giữ nguyên hiện tại
 
 ### Files cần sửa
 
 | File | Thay đổi |
 |------|----------|
-| `src/components/calendar/GoogleCalendarConnect.tsx` | Nút connect → navigate settings; disconnect trong dropdown → navigate settings |
-| `src/components/calendar/CalendarHeader.tsx` | Cập nhật props nếu cần |
-| `src/components/ConnectedToolsBadge.tsx` | Thêm onClick navigate cho Tailwind variant |
-| `src/pages/AccountSettings.tsx` | Thêm `id="integrations"` + scroll-to logic |
+| `src/components/settings/ConnectedServicesCard.tsx` | Thêm plan check, UI khóa + nút nâng cấp |
+| `src/components/ConnectedToolsBadge.tsx` | Thêm variant locked cho plan thấp |
+| `src/pages/Pricing.tsx` | `CONNECTED_TOOLS_CATEGORY` dùng `"Unlimited"` thay `true` |
+| `src/pages/Upgrade.tsx` | `CONNECTED_TOOLS_CATEGORY` dùng `"Unlimited"` thay `true` |
+| `src/components/personal/ServicePlanSection.tsx` | Hiện Connected Tools cho mọi gói (locked/unlocked) |
 
