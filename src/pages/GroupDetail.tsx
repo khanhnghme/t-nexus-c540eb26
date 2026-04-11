@@ -68,7 +68,7 @@ export default function GroupDetail() {
   }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  // Support all URL formats: /p/:projectSlug, /groups/:groupId
+  // Support all URL formats: /p/:projectSlug, /p/:projectId, /groups/:groupId
   const routeId = projectSlug || projectId || groupId;
   const { user, isAdmin, profile } = useAuth();
   const { toast } = useToast();
@@ -79,7 +79,7 @@ export default function GroupDetail() {
   const { currentTab, setCurrentTab, goBack, goNext, canGoBack, canGoNext, isFirstTab, isLastTab } = useNavigation();
 
   const { setProjectInfo, setProjectNavProps } = useDashboardLayoutContext();
-
+  
   const [group, setGroup] = useState<ExtendedGroup | null>(null);
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -196,7 +196,7 @@ export default function GroupDetail() {
         groupData = data;
       } else {
         // Lookup by semantic slug (primary method)
-        const { data } = await supabase.from('groups').select('*').eq('slug', routeId).maybeSingle();
+        const { data } = await supabase.from('groups').select('*').eq('slug', routeId).single();
         groupData = data;
       }
       

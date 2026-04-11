@@ -613,6 +613,7 @@ export default function Communication() {
   };
 
   const handleNavigateToTask = (taskId: string) => {
+    // Navigate directly to the project's tasks tab using slug
     const projectSlug = (selectedProject as any)?.slug || (selectedProject as any)?.short_id || selectedProject?.id;
     navigate(`/p/${projectSlug}?tab=tasks&task=${taskId}`);
   };
