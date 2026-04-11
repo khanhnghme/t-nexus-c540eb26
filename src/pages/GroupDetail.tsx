@@ -40,6 +40,7 @@ import GroupMeetings from '@/components/GroupMeetings';
 
 import type { Group, GroupMember, Task, Profile, Stage } from '@/types/database';
 import CustomProjectView from '@/components/notion/CustomProjectView';
+import { DeadlineHourPicker } from '@/components/DeadlineHourPicker';
 import { notifyTaskAssigned } from '@/lib/notifications';
 import { deleteWithUndo } from '@/lib/deleteWithUndo';
 import { logActivity } from '@/lib/activityLogger';
