@@ -1,56 +1,53 @@
 
 
-## Fix: Trang `/pr/...` và `/pa/...` bị 404 hoặc trắng
+## Plan: Cập nhật bảng màu theo Tailwind Slate palette
 
-### Nguyên nhân
+### Tổng quan
+Cập nhật design tokens trong `src/index.css` để sử dụng bảng màu **Slate** chuẩn từ Figma (F8FAFC → 020617), thay thế palette hiện tại.
 
-Trong `GroupDetail.tsx`, biến `routeId` được tính bằng:
-```ts
-const routeId = projectSlug || projectId || groupId;
-```
+### Bảng màu Slate (từ hình Figma)
 
-- Với route `/pr/:wsParam/:projectSlug` → `projectSlug` có giá trị → OK
-- Với route `/pa/:wsParam/:pageSlug` → `projectSlug`, `projectId`, `groupId` đều `undefined` → `routeId = undefined` → `fetchGroupData` không chạy → trang trắng
+| Name | Light (hex) | Dark (hex) |
+|------|------------|------------|
+| 50 | #F8FAFC | #020617 |
+| 100 | #F1F5F9 | #0F172A |
+| 200 | #E2E8F0 | #1E293B |
+| 300 | #CBD5E1 | #334155 |
+| 400 | #94A3B8 | #475569 |
+| 500 | #64748B | #64748B |
+| 600 | #475569 | #94A3B8 |
+| 700 | #334155 | #CBD5E1 |
+| 800 | #1E293B | #E2E8F0 |
+| 900 | #0F172A | #F1F5F9 |
+| 950 | #020617 | #F8FAFC |
 
-### Giải pháp
+### Mapping sang CSS variables
 
-Trong `GroupDetail.tsx`, khi `routeId` undefined nhưng `pageSlug` có giá trị (route `/pa/...`), cần truy vấn bảng `project_pages` theo `slug` để tìm `group_id`, rồi dùng `group_id` đó để load group data.
+| Token | Light (Slate) | Dark (Slate) |
+|-------|--------------|-------------|
+| `--background` | Slate-50 `210 40% 98%` | Slate-950 `222 84% 5%` |
+| `--foreground` | Slate-950 `222 84% 5%` | Slate-50 `210 40% 98%` |
+| `--card` | White `0 0% 100%` | Slate-900 `222 47% 11%` |
+| `--card-foreground` | Slate-950 | Slate-50 |
+| `--muted` | Slate-100 `210 40% 96%` | Slate-800 `217 33% 17%` |
+| `--muted-foreground` | Slate-500 `215 16% 47%` | Slate-400 `215 20% 65%` |
+| `--accent` | Slate-100 | Slate-800 |
+| `--border` | Slate-200 `214 32% 91%` | Slate-800 |
+| `--input` | Slate-200 | Slate-800 |
+| `--secondary` | Slate-100 | Slate-800 |
+| `--popover` | White | Slate-900 |
 
-### Thay đổi
-
-**File: `src/pages/GroupDetail.tsx`**
-
-1. Cập nhật `fetchGroupData` để xử lý trường hợp `pageSlug` có nhưng `routeId` không có:
-
-```ts
-// Nếu vào từ /pa/:wsParam/:pageSlug, resolve group_id từ page slug
-if (!routeId && pageSlug) {
-  const { data: pageData } = await supabase
-    .from('project_pages')
-    .select('group_id')
-    .eq('slug', pageSlug)
-    .single();
-  if (!pageData) {
-    toast({ title: tc.error, description: gd.notFound, variant: 'destructive' });
-    navigate('/groups');
-    return;
-  }
-  // Load group by UUID from page's group_id
-  const { data } = await supabase.from('groups').select('*').eq('id', pageData.group_id).single();
-  groupData = data;
-}
-```
-
-2. Cập nhật `useEffect` trigger:
-```ts
-useEffect(() => { if (routeId || pageSlug) fetchGroupData(); }, [routeId, pageSlug]);
-```
-
-3. Cập nhật `routeId` fallback logic để bao gồm page case.
-
-### Files thay đổi
+### File thay đổi
 
 | File | Thay đổi |
 |------|----------|
-| `src/pages/GroupDetail.tsx` | Thêm logic resolve page slug → group_id khi vào route `/pa/...` |
+| `src/index.css` | Cập nhật tất cả CSS variables (`:root` và `.dark`) sang Slate palette |
+
+### Giữ nguyên
+- Brand colors (UEH teal/orange)
+- Landing page tokens
+- Primary color (blue)
+- Stage colors
+- Font settings
+- Shadow system
 
