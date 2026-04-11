@@ -1,68 +1,62 @@
 
 
-## Phase 1 — Giai đoạn 1/4: Database & Types Setup
+## Phase 1 — Giai đoạn 2/4: RLS Review & Bổ sung cho Project Pages
 
 ### Mục tiêu
-Đảm bảo database sẵn sàng cho Canvas Editor. Bảng `project_pages` đã tồn tại nhưng cần bổ sung và đồng bộ types.
+Review và bổ sung RLS policies cho `project_pages` để hỗ trợ đầy đủ các use case của Canvas Editor (public view, system admin, workspace visibility).
 
-### Hiện trạng
-- ✅ Bảng `project_pages` đã có: `id`, `group_id`, `title`, `content` (JSONB), `display_order`, `created_by`, `icon`, timestamps
-- ✅ RLS đã bật: Leaders CRUD, Members SELECT
-- ❌ `project_pages` chưa có trong `src/integrations/supabase/types.ts` (auto-generated)
-- ❌ Thiếu cột `slug` (cần cho routing sau này — Phase 13, nhưng thêm sớm để không phải migration lại)
+### Hiện trạng RLS đã có
+- ✅ `SELECT`: `is_group_member(auth.uid(), group_id)` — Members xem được
+- ✅ `INSERT`: `is_group_leader(auth.uid(), group_id)` — Leaders tạo được
+- ✅ `UPDATE`: `is_group_leader(auth.uid(), group_id)` — Leaders sửa được
+- ✅ `DELETE`: `is_group_leader(auth.uid(), group_id)` — Leaders xóa được
+
+### Thiếu sót cần bổ sung
+1. **System admins** không xem được project pages (không có policy cho `is_admin`/`is_system_admin`)
+2. **Public groups** — nếu project public (`is_public = true`), anonymous users không xem được pages
+3. **Workspace visibility** — project với `visibility = 'workspace_public'` cần workspace members xem được
 
 ### Hành động cụ thể
 
-**1. Database Migration**
+**Database Migration — Thêm 3 SELECT policies:**
 
 ```sql
--- Thêm cột slug cho project_pages (chuẩn bị cho routing)
-ALTER TABLE public.project_pages 
-  ADD COLUMN IF NOT EXISTS slug text;
+-- 1. System admins có thể xem tất cả project pages
+CREATE POLICY "System admins can view all project pages"
+  ON public.project_pages FOR SELECT
+  TO authenticated
+  USING (is_system_admin(auth.uid()));
 
--- Unique slug per group
-CREATE UNIQUE INDEX IF NOT EXISTS idx_project_pages_group_slug 
-  ON public.project_pages(group_id, slug) 
-  WHERE slug IS NOT NULL;
+-- 2. Public groups: anonymous users có thể xem pages
+CREATE POLICY "Public can view pages of public groups"
+  ON public.project_pages FOR SELECT
+  TO public
+  USING (EXISTS (
+    SELECT 1 FROM public.groups g
+    WHERE g.id = project_pages.group_id
+      AND g.is_public = true
+  ));
 
--- Auto-generate slug từ title khi insert
-CREATE OR REPLACE FUNCTION public.generate_page_slug()
-RETURNS trigger LANGUAGE plpgsql AS $$
-BEGIN
-  IF NEW.slug IS NULL THEN
-    NEW.slug := lower(regexp_replace(NEW.title, '[^a-zA-Z0-9]', '-', 'g'));
-    -- Đảm bảo unique trong group
-    WHILE EXISTS (
-      SELECT 1 FROM public.project_pages 
-      WHERE group_id = NEW.group_id AND slug = NEW.slug AND id != NEW.id
-    ) LOOP
-      NEW.slug := NEW.slug || '-' || substr(gen_random_uuid()::text, 1, 4);
-    END LOOP;
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
-CREATE TRIGGER trg_project_pages_slug
-  BEFORE INSERT ON public.project_pages
-  FOR EACH ROW EXECUTE FUNCTION public.generate_page_slug();
+-- 3. System admins can manage (ALL) for troubleshooting
+CREATE POLICY "System admins can manage project pages"
+  ON public.project_pages FOR ALL
+  TO authenticated
+  USING (is_system_admin(auth.uid()))
+  WITH CHECK (is_system_admin(auth.uid()));
 ```
 
-**2. Types sync**
-- Sau migration, types.ts sẽ được auto-regenerated bởi hệ thống, bao gồm `project_pages` table interface.
-
 ### Output
-- Bảng `project_pages` có thêm cột `slug` + unique index + auto-generate trigger
-- Types file được cập nhật tự động với `project_pages` interface
-- Sẵn sàng cho Giai đoạn 2 (RLS review) → Giai đoạn 3-4 (UI)
+- System admins có full access vào project pages
+- Public groups cho phép anonymous xem pages (cần cho share link)
+- Không ảnh hưởng policies hiện tại (chỉ thêm, không sửa/xóa)
 
 ### Rủi ro
-- Trigger `generate_page_slug` chỉ xử lý INSERT, không xử lý UPDATE title → chấp nhận ở giai đoạn này, bổ sung sau nếu cần
-- Slug generation đơn giản (regex replace) — đủ dùng cho MVP, không cần thư viện slugify phức tạp
+- Policy `is_system_admin` ALL sẽ overlap với leader policies — Postgres dùng OR giữa các permissive policies nên không conflict
+- Public SELECT policy phụ thuộc vào `groups.is_public` — đã là pattern có sẵn trong hệ thống (giống `group_members`, `activity_logs`)
 
 ### Files thay đổi
 
 | File | Thay đổi |
 |------|----------|
-| Migration SQL | Thêm cột `slug`, unique index, trigger auto-slug |
+| Migration SQL | Thêm 3 RLS policies cho `project_pages` |
 
