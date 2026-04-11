@@ -7,6 +7,7 @@ export function getCustomSlashMenuItems(
   return [
     // === Basic ===
     {
+      key: 'heading_1',
       title: 'Heading 1',
       subtext: 'Large section heading',
       aliases: ['h1', 'heading1'],
@@ -20,6 +21,7 @@ export function getCustomSlashMenuItems(
       },
     },
     {
+      key: 'heading_2',
       title: 'Heading 2',
       subtext: 'Medium section heading',
       aliases: ['h2', 'heading2'],
@@ -33,6 +35,7 @@ export function getCustomSlashMenuItems(
       },
     },
     {
+      key: 'heading_3',
       title: 'Heading 3',
       subtext: 'Small section heading',
       aliases: ['h3', 'heading3'],
@@ -46,6 +49,7 @@ export function getCustomSlashMenuItems(
       },
     },
     {
+      key: 'paragraph',
       title: 'Paragraph',
       subtext: 'Plain text block',
       aliases: ['p', 'text'],
@@ -59,6 +63,7 @@ export function getCustomSlashMenuItems(
       },
     },
     {
+      key: 'bullet_list',
       title: 'Bullet List',
       subtext: 'Unordered list item',
       aliases: ['ul', 'bullet', 'list'],
@@ -72,6 +77,7 @@ export function getCustomSlashMenuItems(
       },
     },
     {
+      key: 'numbered_list',
       title: 'Numbered List',
       subtext: 'Ordered list item',
       aliases: ['ol', 'numbered', 'list'],
@@ -87,6 +93,7 @@ export function getCustomSlashMenuItems(
 
     // === Media ===
     {
+      key: 'image',
       title: 'Image',
       subtext: 'Insert an image',
       aliases: ['img', 'picture', 'photo'],
@@ -100,6 +107,7 @@ export function getCustomSlashMenuItems(
       },
     },
     {
+      key: 'video',
       title: 'Video',
       subtext: 'Embed a video',
       aliases: ['video', 'youtube', 'embed'],
@@ -115,6 +123,7 @@ export function getCustomSlashMenuItems(
 
     // === Advanced ===
     {
+      key: 'callout',
       title: 'Callout',
       subtext: 'Highlight important info',
       aliases: ['callout', 'alert', 'notice', 'info'],
@@ -128,6 +137,7 @@ export function getCustomSlashMenuItems(
       },
     },
     {
+      key: 'code_block',
       title: 'Code Block',
       subtext: 'Insert a code snippet',
       aliases: ['code', 'codeblock', 'pre'],
@@ -143,6 +153,7 @@ export function getCustomSlashMenuItems(
 
     // === Table ===
     {
+      key: 'table',
       title: 'Table',
       subtext: 'Insert a table',
       aliases: ['table', 'grid'],
