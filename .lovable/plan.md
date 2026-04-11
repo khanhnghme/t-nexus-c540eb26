@@ -1,72 +1,77 @@
 
 
-## Phase 17 — Mobile Responsive
+## Phase 19 & 20 — Keyboard Shortcuts + Canvas Activity Log
 
-### Mục tiêu
-Canvas hoạt động tốt trên mobile/tablet: sidebar thành drawer, task block chuyển card view, member block responsive grid, touch-friendly controls.
+### Phase 19: Keyboard Shortcuts
 
-### Hiện trạng
-- `useIsMobile()` hook đã có và đang dùng trong `CanvasPageView.tsx` (auto-close sidebar on mobile)
-- Sidebar width cứng `w-[220px]` / `max-md:w-[180px]`, không có drawer mode
-- Task list view dùng table-like row layout, chưa responsive cho mobile
-- Kanban view dùng horizontal columns, overflow trên mobile
-- Member block grid cứng `grid-cols-3`
-- `CanvasPageView` wrapper layout dùng `flex` không có mobile adaptation ngoài sidebar auto-close
+**Mục tiêu:** Power user experience với phím tắt tùy chỉnh cho Canvas.
 
-### Công việc
+BlockNote đã có sẵn các phím tắt cơ bản (Ctrl+B, Ctrl+I, Ctrl+/, etc.). Chỉ cần bổ sung:
 
-**1. Sidebar → Sheet/Drawer trên mobile**
+**1. Custom keyboard shortcuts hook**
 
-Trong `CanvasPageView.tsx`:
-- Khi `isMobile`, render `CanvasSidebar` bên trong `Sheet` (từ shadcn) thay vì inline flex
-- Toggle button mở Sheet, chọn page → auto đóng Sheet
-- Desktop giữ nguyên behavior hiện tại
+Tạo `src/hooks/useCanvasShortcuts.ts`:
+- `Ctrl+S` / `Cmd+S` — force save (trigger auto-save ngay lập tức)
+- `Ctrl+N` / `Cmd+N` — tạo page mới
+- `Ctrl+Shift+T` — insert task block vào editor
+- `Ctrl+?` / `Cmd+?` — mở shortcut help modal
+- `Ctrl+\` — toggle sidebar
+- `Ctrl+E` — toggle edit/view mode
 
-**2. Task List View — Card layout trên mobile**
+Hook nhận callbacks từ `CanvasPageView` và đăng ký global `keydown` listener. Cleanup khi unmount.
 
-Trong `TaskListView.tsx`:
-- Detect mobile via `useIsMobile()`
-- Mobile: render mỗi task dạng card (title + status badge + assignee + deadline stacked vertically)
-- Desktop: giữ nguyên row layout hiện tại
-- Hiện assignee và deadline trên mobile (hiện tại đang `hidden sm:flex`)
+**2. Shortcut help modal**
 
-**3. Kanban View — Vertical stack trên mobile**
+Tạo `src/components/canvas/ShortcutHelpDialog.tsx`:
+- Dialog hiển thị bảng phím tắt (2 cột: shortcut + mô tả)
+- Bao gồm cả BlockNote built-in shortcuts và custom shortcuts
+- Mở bằng `Ctrl+?` hoặc nút `?` trên header
 
-Trong `TaskKanbanView.tsx`:
-- Mobile: columns stack dọc thay vì flex-row, mỗi column full width
-- Hoặc horizontal scroll với snap points
-- Touch drag: đảm bảo native drag events hoạt động trên touch
+**3. Tích hợp vào CanvasPageView**
 
-**4. Member Block — Responsive grid**
+- Import `useCanvasShortcuts` và truyền callbacks (save, create page, toggle sidebar, toggle edit)
+- Thêm nút `?` icon trên header bar để mở shortcut help
 
-Trong `MemberBlock.tsx`:
-- Grid mode: `grid-cols-2` trên mobile, `grid-cols-3` trên desktop
-- List mode: giữ nguyên (đã OK)
+### Phase 20: Canvas Activity Log
 
-**5. Header bar responsive**
+**Mục tiêu:** Track thay đổi canvas (ai sửa gì, khi nào) — reuse hệ thống `activity_logs` đã có.
 
-Trong `CanvasPageView.tsx` header bar (line 223):
-- Mobile: ẩn text labels, chỉ hiện icons cho Edit/View và Template buttons
-- Wrap overflow nếu cần
+**1. Log canvas actions**
 
-**6. InlineTaskCreator responsive**
+Trong `CanvasPageView.tsx`, gọi `logActivity()` (từ `src/lib/activityLogger.ts`) khi:
+- Tạo page mới → `action: 'page_created'`, `actionType: 'project'`
+- Xóa page → `action: 'page_deleted'`
+- Đổi tên page → `action: 'page_renamed'`
+- Save content (debounced, chỉ log 1 lần mỗi session hoặc mỗi 5 phút) → `action: 'page_updated'`
 
-- Mobile: stack controls vertical thay vì inline row
-- Date picker và member picker đủ lớn để touch
+Không cần migration — bảng `activity_logs` đã tồn tại và đủ flexible (action TEXT, metadata JSONB).
+
+**2. "Last edited by" indicator**
+
+Trong `CanvasPageView.tsx` header hoặc `CanvasEditor.tsx`:
+- Query `activity_logs` cho page hiện tại, lấy record mới nhất với `action = 'page_updated'`
+- Hiển thị: "Chỉnh sửa lần cuối bởi X, 5 phút trước" dạng text nhỏ
+- Dùng `useQuery` với `staleTime: 60000` (refresh mỗi phút)
+
+**3. Hook `usePageLastEditor`**
+
+Tạo `src/hooks/usePageLastEditor.ts`:
+- Query `activity_logs` WHERE metadata->>'page_id' = pageId, ORDER BY created_at DESC, LIMIT 1
+- Join profiles để lấy tên người sửa
+- Return `{ editorName, editedAt, isLoading }`
 
 ### Files thay đổi
 
 | File | Thay đổi |
 |------|----------|
-| `src/components/canvas/CanvasPageView.tsx` | Sidebar → Sheet trên mobile, header responsive |
-| `src/components/canvas/CanvasSidebar.tsx` | Thêm prop/variant cho drawer mode |
-| `src/components/canvas/blocks/TaskListView.tsx` | Card layout trên mobile |
-| `src/components/canvas/blocks/TaskKanbanView.tsx` | Vertical stack trên mobile |
-| `src/components/canvas/blocks/MemberBlock.tsx` | Responsive grid cols |
-| `src/components/canvas/blocks/InlineTaskCreator.tsx` | Touch-friendly layout |
+| `src/hooks/useCanvasShortcuts.ts` | Mới — global keyboard listener |
+| `src/components/canvas/ShortcutHelpDialog.tsx` | Mới — modal hiển thị phím tắt |
+| `src/hooks/usePageLastEditor.ts` | Mới — query last editor |
+| `src/components/canvas/CanvasPageView.tsx` | Tích hợp shortcuts + logActivity + last edited indicator |
+| `src/components/canvas/CanvasEditor.tsx` | Expose force-save callback |
 
 ### Không làm
-- PWA / offline support
-- Native app wrapper
-- Gesture navigation (swipe between pages)
+- Custom keybinding configuration (user tự đổi phím tắt)
+- Diff/version history cho pages
+- Real-time activity feed
 
