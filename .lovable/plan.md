@@ -1,44 +1,44 @@
 
 
-## Phase 3 — Giai đoạn 3/4: Hiển thị project_mode trên Dashboard & Project Cards
+## Phase 3 — Giai đoạn 4/4: Polish & Edge Cases cho Mode System
 
 ### Mục tiêu
-Hiển thị badge cho biết project là "Basic" hay "Custom" trên card ở Dashboard và trang Groups, giúp user phân biệt nhanh loại project.
+Hoàn thiện Phase 3 bằng cách xử lý edge cases, cải thiện UX cho Mode Selector, và đảm bảo toàn bộ flow mode hoạt động nhất quán.
 
 ### Hiện trạng
-- ✅ Mode Selector hoạt động, project_mode được ghi vào DB
-- ✅ Workspace context truyền qua URL khi tạo Custom
-- ✅ GroupDetail phân luồng theo project_mode
-- ❌ Dashboard card (`DashboardProjectCard`) không hiện project_mode
-- ❌ Trang Groups list cũng không phân biệt project mode
+- ✅ Mode Selector UI hoạt động (1/4)
+- ✅ project_mode ghi đúng vào DB + workspace context truyền qua URL (2/4)
+- ✅ Badge "Custom" hiện trên Dashboard cards (3/4)
+- ❌ Mode Selector chưa có animation mở/đóng mượt
+- ❌ GroupDetail custom view chưa có header/back navigation (chỉ render CanvasPageView trơn)
+- ❌ Chưa có empty state khi chưa có project nào trên Groups page (cả Basic lẫn Custom)
+- ❌ Mode Selector dialog chưa có title/description rõ ràng
 
 ### Hành động cụ thể
 
-**1. Cập nhật `src/components/dashboard/DashboardProjectCard.tsx`**
-- Thêm badge nhỏ hiện mode: "Custom" (icon Palette) khi `project_mode === 'custom'`
-- Chỉ hiện badge cho Custom projects (Basic là mặc định, không cần badge)
-- Vị trí: góc trên trái của card image hoặc trong metadata row phía dưới
-- Style: badge nhỏ với backdrop-blur, tương tự badge "Public" đã có
+**1. Cải thiện Mode Selector Dialog (`src/pages/Groups.tsx`)**
+- Thêm title "Chọn loại dự án" và subtitle cho dialog chứa Mode Selector
+- Đảm bảo dialog đóng khi bấm outside hoặc Escape
+- Thêm animation fade-in cho dialog content
 
-**2. Cập nhật `src/pages/Groups.tsx`** — Project list hiện mode badge
-- Tại nơi render danh sách projects (nếu có list view ngoài card), thêm indicator tương tự
-- Đảm bảo data fetch đã include `project_mode` trong SELECT (verify query)
+**2. Cải thiện Custom Project trong GroupDetail (`src/pages/GroupDetail.tsx`)**
+- Thêm project header (tên project, back button) cho custom view — hiện tại chỉ render `CanvasPageView` trơn không có context
+- Đảm bảo user biết mình đang ở project nào khi xem canvas
 
-**3. Cập nhật `src/pages/Dashboard.tsx`** — Verify data fetch
-- Kiểm tra query lấy groups đã include `project_mode` hay không
-- Nếu dùng `select('*')` thì đã có sẵn, không cần sửa
-- Nếu select cụ thể columns → thêm `project_mode`
+**3. Cập nhật plan.md**
+- Đánh dấu Phase 3 hoàn tất
+- Ghi lại trạng thái sẵn sàng cho Phase tiếp theo
 
 ### Output
-- Cards trên Dashboard hiện badge "Custom" cho custom projects
-- Basic projects không có badge (clean, vì là default)
-- User dễ dàng phân biệt loại project ngay từ dashboard
+- Mode Selector dialog có title rõ ràng, UX mượt
+- Custom project view có header với tên project + navigation
+- Phase 3 hoàn tất, sẵn sàng chuyển Phase tiếp
 
 ### Files thay đổi
 
 | File | Thay đổi |
 |------|----------|
-| `src/components/dashboard/DashboardProjectCard.tsx` | Thêm badge "Custom" khi project_mode === 'custom' |
-| `src/pages/Groups.tsx` | Verify + hiện mode indicator nếu cần |
-| `src/pages/Dashboard.tsx` | Verify query include project_mode |
+| `src/pages/Groups.tsx` | Cải thiện dialog title/subtitle cho mode selector |
+| `src/pages/GroupDetail.tsx` | Thêm header cho custom project view |
+| `.lovable/plan.md` | Cập nhật trạng thái Phase 3 hoàn tất |
 
