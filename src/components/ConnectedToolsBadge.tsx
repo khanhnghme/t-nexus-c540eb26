@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import gmailLogo from '@/assets/gmail-logo.png';
 import googleDriveLogo from '@/assets/google-drive-logo.png';
 import googleCalendarLogo from '@/assets/google-calendar-logo.png';
@@ -34,10 +35,19 @@ export function ConnectedToolsInline({ detailed = true }: { detailed?: boolean }
 
 /**
  * Tailwind-styled Connected Tools section — for ServicePlan / Settings pages
+ * Clicking navigates to Account Settings integrations section
  */
 export function ConnectedToolsTailwind({ compact = false }: { compact?: boolean }) {
+  const navigate = useNavigate();
+
   return (
-    <div className={compact ? 'mt-2 pt-2 border-t border-border/50 space-y-1' : 'mt-4 pt-3 border-t border-border/50 space-y-2'}>
+    <div
+      className={`cursor-pointer hover:bg-accent/30 rounded-md transition-colors ${compact ? 'mt-2 pt-2 border-t border-border/50 space-y-1 px-1' : 'mt-4 pt-3 border-t border-border/50 space-y-2 px-1'}`}
+      onClick={() => navigate('/account-settings#integrations')}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && navigate('/account-settings#integrations')}
+    >
       <p className={`font-semibold text-foreground m-0 ${compact ? 'text-xs' : 'text-[13px]'}`}>Connected Tools</p>
       {GOOGLE_INTEGRATIONS.map(item => (
         <div key={item.label} className="flex items-center gap-2">

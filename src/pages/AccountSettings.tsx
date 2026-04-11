@@ -159,7 +159,7 @@ export default function AccountSettings() {
           </div>
 
           {/* Connected Services */}
-          <div className="p-5">
+          <div className="p-5" id="integrations">
             <div className="flex items-center gap-2 mb-3">
               <Link2 className="w-4 h-4 text-muted-foreground" />
               <h3 className="text-sm font-medium">{isVi ? 'Dịch vụ liên kết' : 'Connected Services'}</h3>
