@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Crown, Zap, Check, RefreshCw } from 'lucide-react';
-import { ConnectedToolsTailwind, shouldShowIntegrations } from '@/components/ConnectedToolsBadge';
+import { ConnectedToolsTailwind } from '@/components/ConnectedToolsBadge';
 
 export default function ServicePlanSection() {
   const { profile } = useAuth();
