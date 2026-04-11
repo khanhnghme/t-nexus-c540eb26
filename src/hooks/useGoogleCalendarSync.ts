@@ -127,7 +127,7 @@ export function useGoogleCalendarSync() {
     } finally {
       setIsSyncing(false);
     }
-  }, [user?.id, isConnected]);
+  }, [user?.id, isConnected, isSyncing]);
 
   return { isConnected, isSyncing, isChecking, connectedEmail, connect, disconnect, sync, checkConnection };
 }
