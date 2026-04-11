@@ -32,6 +32,7 @@ interface PageItem {
   title: string;
   display_order: number;
   icon?: string | null;
+  slug?: string | null;
 }
 
 interface CanvasSidebarProps {
