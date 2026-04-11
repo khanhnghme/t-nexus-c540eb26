@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useProjectPages, useCreatePage, useDeletePage } from "@/hooks/useProjectPages";
+import { useProjectPages, useCreatePage, useDeletePage, useUpdatePage } from "@/hooks/useProjectPages";
 import CanvasEditor from "./CanvasEditor";
 import CanvasSidebar from "./CanvasSidebar";
 import { Loader2, FileText, RefreshCw, Plus } from "lucide-react";
@@ -18,6 +18,7 @@ export default function CanvasPageView({ groupId, editable = false }: CanvasPage
   const { user } = useAuth();
   const createPage = useCreatePage();
   const deletePage = useDeletePage();
+  const updatePage = useUpdatePage();
   const [activePageId, setActivePageId] = useState<string | null>(null);
 
   // Auto-select first page or keep selection valid
@@ -55,10 +56,31 @@ export default function CanvasPageView({ groupId, editable = false }: CanvasPage
   const handleDeletePage = async (pageId: string) => {
     try {
       await deletePage.mutateAsync(pageId);
-      // If deleting active page, will auto-fallback via useEffect
       toast.success("Đã xóa trang.");
     } catch (err: any) {
       toast.error(err.message || "Không thể xóa trang.");
+    }
+  };
+
+  const handleRenamePage = async (pageId: string, newTitle: string) => {
+    try {
+      await updatePage.mutateAsync({ pageId, updates: { title: newTitle } });
+      toast.success("Đã đổi tên trang.");
+    } catch (err: any) {
+      toast.error(err.message || "Không thể đổi tên trang.");
+    }
+  };
+
+  const handleReorderPages = async (orderedIds: string[]) => {
+    if (!pages) return;
+    try {
+      await Promise.all(
+        orderedIds.map((id, index) =>
+          updatePage.mutateAsync({ pageId: id, updates: { display_order: index } })
+        )
+      );
+    } catch (err: any) {
+      toast.error(err.message || "Không thể sắp xếp lại trang.");
     }
   };
 
@@ -119,6 +141,8 @@ export default function CanvasPageView({ groupId, editable = false }: CanvasPage
         onSelectPage={setActivePageId}
         onCreatePage={handleCreatePage}
         onDeletePage={handleDeletePage}
+        onRenamePage={handleRenamePage}
+        onReorderPages={handleReorderPages}
         editable={editable}
         isCreating={createPage.isPending}
       />
