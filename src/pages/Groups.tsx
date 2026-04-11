@@ -85,6 +85,7 @@ export default function Groups() {
   const [groups, setGroups] = useState<GroupWithMembers[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [showModeSelector, setShowModeSelector] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const createLockRef = useRef(false);
   const idempotencyKeyRef = useRef(crypto.randomUUID());
