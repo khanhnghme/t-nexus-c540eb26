@@ -1,47 +1,41 @@
 
 
-## Phase 9 — Giai đoạn 1/4: Tạo ToggleBlock cơ bản
+## Phase 9 — Giai đoạn 2/4: Editable Content Area cho ToggleBlock
 
 ### Mục tiêu
-Tạo block `/toggle` (Accordion) cho phép user mở rộng/thu gọn nội dung. Giai đoạn 1 chỉ tạo block cơ bản với tiêu đề inline + toggle mở/đóng.
+Thay thế placeholder text "Toggle content area" bằng vùng nội dung editable — cho phép user nhập text bên trong toggle khi mở rộng.
+
+### Hiện trạng
+- Stage 1/4 hoàn thành: ToggleBlock render với tiêu đề inline + toggle mở/đóng
+- Khi mở: chỉ hiện static text "Toggle content area" (contentEditable=false)
+- User chưa thể nhập nội dung bên trong toggle
 
 ### Hành động
 
-**Tạo `src/components/canvas/blocks/ToggleBlock.tsx`**
-- Dùng `createReactBlockSpec` tương tự NoteBlock
-- PropSchema:
-  - `collapsed`: `{ default: "true" }` — trạng thái mở/đóng
-- Content: `"inline"` — tiêu đề toggle
-- Render:
-  - Icon mũi tên xoay (▶ khi đóng, ▼ khi mở) — click để toggle
-  - Tiêu đề inline bên phải mũi tên (contentRef)
-  - Khi mở: hiện placeholder text "Toggle content area" (sẽ nâng cấp ở giai đoạn sau)
-  - Style: border nhẹ, border-radius, padding tương tự NoteBlock
-
-**Cập nhật `src/components/canvas/CanvasEditor.tsx`**
-- Import `ToggleBlock` và đăng ký vào schema
+**Cập nhật `src/components/canvas/blocks/ToggleBlock.tsx`**
+- Thêm prop `bodyText` vào propSchema (default: `""`) — lưu nội dung bên trong toggle
+- Thay placeholder div bằng `<textarea>` hoặc `<div contentEditable>` cho phép nhập text
+- onChange: gọi `props.editor.updateBlock(props.block, { props: { bodyText: value } })` để persist
+- Placeholder text "Nhập nội dung..." khi rỗng
+- Style: `white-space: pre-wrap`, font-size nhỏ hơn tiêu đề, auto-resize theo nội dung
 
 ### Chi tiết kỹ thuật
 
 ```text
-Đóng:
-┌──────────────────────────────────┐
-│ ▶  Tiêu đề toggle               │
-└──────────────────────────────────┘
-
-Mở:
+Mở + editable:
 ┌──────────────────────────────────┐
 │ ▼  Tiêu đề toggle               │
-│    Nội dung bên trong...         │
+├──────────────────────────────────┤
+│    [Nhập nội dung...         ]   │ ← editable area
+│    [Nhiều dòng cũng được     ]   │
 └──────────────────────────────────┘
 
-propSchema: { collapsed: { default: "true" } }
-content: "inline"
-Toggle: click arrow → updateBlock({ props: { collapsed: toggled } })
+New prop: bodyText: { default: "" }
+Content area: contentEditable div hoặc textarea
+onInput/onChange → updateBlock({ props: { bodyText } })
 ```
 
 ### Không làm
-- Nested blocks bên trong toggle (giai đoạn 2)
 - Styling/theming cho toggle (giai đoạn 3)
 - Animation mở/đóng (giai đoạn 4)
 
@@ -49,6 +43,5 @@ Toggle: click arrow → updateBlock({ props: { collapsed: toggled } })
 
 | File | Thay đổi |
 |------|----------|
-| `src/components/canvas/blocks/ToggleBlock.tsx` | Tạo mới — toggle block |
-| `src/components/canvas/CanvasEditor.tsx` | Đăng ký toggleBlock vào schema |
+| `src/components/canvas/blocks/ToggleBlock.tsx` | Editable body area + bodyText prop |
 
