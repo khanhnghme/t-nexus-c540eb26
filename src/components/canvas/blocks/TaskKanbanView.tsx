@@ -7,22 +7,24 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Calendar, User, Trash2, Plus } from "lucide-react";
+import { Calendar, User, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { TaskRow, TaskHandlers, TaskStatus } from "./taskBlockTypes";
 import { statusConfig, statusColumns } from "./taskBlockTypes";
+import { InlineTaskCreator } from "./InlineTaskCreator";
 
 interface TaskKanbanViewProps {
   tasks: TaskRow[];
   editable: boolean;
+  groupId: string;
   newTitle: string;
   setNewTitle: (v: string) => void;
   adding: boolean;
   handlers: TaskHandlers;
 }
 
-export function TaskKanbanView({ tasks, editable, newTitle, setNewTitle, adding, handlers }: TaskKanbanViewProps) {
+export function TaskKanbanView({ tasks, editable, groupId, newTitle, setNewTitle, adding, handlers }: TaskKanbanViewProps) {
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const [editingTitleValue, setEditingTitleValue] = useState("");
@@ -180,22 +182,12 @@ export function TaskKanbanView({ tasks, editable, newTitle, setNewTitle, adding,
             </div>
 
             {editable && status === "TODO" && (
-              <div className="flex items-center gap-1 px-1.5 py-1.5 border-t">
-                <Plus className="h-3 w-3 text-muted-foreground shrink-0" />
-                <Input
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handlers.onAdd();
-                    }
-                  }}
-                  placeholder="Thêm..."
-                  className="h-6 text-xs border-none bg-transparent shadow-none focus-visible:ring-0 px-0"
-                  disabled={adding}
-                />
-              </div>
+              <InlineTaskCreator
+                groupId={groupId}
+                adding={adding}
+                onAdd={handlers.onAdd}
+                compact
+              />
             )}
           </div>
         );

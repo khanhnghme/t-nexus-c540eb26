@@ -166,6 +166,7 @@ function TaskListRenderer() {
         <TaskListView
           tasks={tasks}
           editable={editable}
+          groupId={groupId}
           newTitle={newTitle}
           setNewTitle={setNewTitle}
           adding={adding}
@@ -175,6 +176,7 @@ function TaskListRenderer() {
         <TaskKanbanView
           tasks={tasks}
           editable={editable}
+          groupId={groupId}
           newTitle={newTitle}
           setNewTitle={setNewTitle}
           adding={adding}
