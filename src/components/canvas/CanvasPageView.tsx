@@ -32,6 +32,7 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
   const [activePageId, setActivePageId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isEditMode, setIsEditMode] = useState(editable);
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
 
   // Default sidebar closed on mobile
   useEffect(() => {
@@ -266,6 +267,22 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
               </TooltipContent>
             </Tooltip>
           )}
+          {editable && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1.5 text-xs shrink-0"
+                  onClick={() => setSaveTemplateOpen(true)}
+                >
+                  <Save className="h-3 w-3" />
+                  Template
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Lưu trang này làm template</TooltipContent>
+            </Tooltip>
+          )}
         </div>
         <CanvasEditor
           key={activePage.id}
@@ -281,6 +298,16 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
           onChangeCover={(coverUrl) => handleChangeCover(activePage.id, coverUrl)}
         />
       </div>
+      {saveTemplateOpen && (
+        <Suspense fallback={null}>
+          <SaveAsTemplateDialog
+            open={saveTemplateOpen}
+            onOpenChange={setSaveTemplateOpen}
+            content={activePage.content as Json}
+            defaultName={activePage.title}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
