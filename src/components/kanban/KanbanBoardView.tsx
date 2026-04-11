@@ -1,4 +1,5 @@
 import { useKanbanBoard } from '@/hooks/useKanbanBoard';
+import { useLanguage } from '@/contexts/LanguageContext';
 import KanbanColumn from './KanbanColumn';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { TaskStatus } from '@/types/database';
@@ -9,15 +10,16 @@ interface KanbanBoardViewProps {
   onClickTask: (taskId: string) => void;
 }
 
-const COLUMN_LABELS: Record<TaskStatus, string> = {
-  TODO: 'Chờ làm',
-  IN_PROGRESS: 'Đang làm',
-  DONE: 'Hoàn thành',
-  VERIFIED: 'Đã duyệt',
-};
-
 export default function KanbanBoardView({ groupId, canEdit, onClickTask }: KanbanBoardViewProps) {
   const { columns, getColumnTasks, moveTask, isLoading } = useKanbanBoard(groupId);
+  const { t } = useLanguage();
+
+  const columnLabels: Record<TaskStatus, string> = {
+    TODO: t.kanban?.todo ?? 'Chờ làm',
+    IN_PROGRESS: t.kanban?.inProgress ?? 'Đang làm',
+    DONE: t.kanban?.done ?? 'Hoàn thành',
+    VERIFIED: t.kanban?.verified ?? 'Đã duyệt',
+  };
 
   if (isLoading) {
     return (
@@ -39,7 +41,7 @@ export default function KanbanBoardView({ groupId, canEdit, onClickTask }: Kanba
         <KanbanColumn
           key={status}
           status={status}
-          label={COLUMN_LABELS[status]}
+          label={columnLabels[status]}
           tasks={getColumnTasks(status)}
           onMoveTask={moveTask}
           onClickTask={onClickTask}

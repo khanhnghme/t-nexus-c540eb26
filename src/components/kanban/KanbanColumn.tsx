@@ -1,3 +1,4 @@
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import KanbanCard from './KanbanCard';
@@ -21,21 +22,20 @@ const STATUS_HEADER_COLOR: Record<TaskStatus, string> = {
 };
 
 export default function KanbanColumn({ status, label, tasks, onMoveTask, onClickTask, canEdit }: KanbanColumnProps) {
+  const { t } = useLanguage();
+
   return (
     <div className="flex flex-col min-w-[280px] w-[280px] bg-muted/30 rounded-lg border">
-      {/* Header */}
       <div className="p-3 border-b">
         <div className="flex items-center gap-2">
           <Badge className={`${STATUS_HEADER_COLOR[status]} text-xs`}>{label}</Badge>
           <span className="text-xs text-muted-foreground font-medium">{tasks.length}</span>
         </div>
       </div>
-
-      {/* Cards */}
       <ScrollArea className="flex-1 max-h-[calc(100vh-280px)]">
         <div className="p-2 space-y-2">
           {tasks.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-8">Không có task nào</p>
+            <p className="text-xs text-muted-foreground text-center py-8">{t.kanban?.noTasks ?? 'Không có task nào'}</p>
           ) : (
             tasks.map(task => (
               <KanbanCard
