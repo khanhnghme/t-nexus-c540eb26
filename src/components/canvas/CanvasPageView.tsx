@@ -234,6 +234,12 @@ export default function CanvasPageView({ groupId, editable = false }: CanvasPage
           editable={isEditMode}
           pageId={activePage.id}
           groupId={groupId}
+          title={activePage.title}
+          icon={activePage.icon}
+          coverUrl={activePage.cover_url}
+          onChangeTitle={(newTitle) => handleRenamePage(activePage.id, newTitle)}
+          onChangeIcon={(icon) => handleChangePageIcon(activePage.id, icon)}
+          onChangeCover={(coverUrl) => handleChangeCover(activePage.id, coverUrl)}
         />
       </div>
     </div>
