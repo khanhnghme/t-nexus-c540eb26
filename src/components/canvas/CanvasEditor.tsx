@@ -10,12 +10,14 @@ import { useUpdatePageContent } from "@/hooks/useProjectPages";
 import { Check, Cloud, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { TaskListBlock } from "./blocks/TaskBlock";
+import { MemberListBlock } from "./blocks/MemberBlock";
 import { TaskBlockProvider } from "./blocks/TaskBlockContext";
 
 const schema = BlockNoteSchema.create({
   blockSpecs: {
     ...defaultBlockSpecs,
     taskList: TaskListBlock(),
+    memberList: MemberListBlock(),
   },
 });
 
