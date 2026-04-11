@@ -1,126 +1,49 @@
 
 
-## Phase 5 — Kanban Board + Task Detail Enhancement + Project Calendar: Giai đoạn 1/4 (Database)
+## Phase 5 — Kanban + Task Attachments + Project Calendar: Giai đoạn 2/4 (Logic)
 
-Phase 4 hoàn thành: Task Table (Database View). Phase 5 kết hợp 3 tính năng: **(1) Kanban Board**, **(2) Task Detail Enhancement**, **(3) Calendar View tích hợp vào project**.
+Giai đoạn 1 đã hoàn thành: bảng `task_attachments` + RLS + storage bucket `task-attachments`. Giai đoạn 2 tập trung vào **logic hooks** cho 3 tính năng.
 
-### Đánh giá Database
+### Thay đổi
 
-**Kanban Board**: Không cần thay đổi database. Bảng `tasks` đã có cột `status` (TODO, IN_PROGRESS, DONE, VERIFIED) — đủ để làm các cột Kanban. Việc kéo thả card chỉ cần `UPDATE tasks SET status = ?`.
+**1. Tạo `src/hooks/useKanbanBoard.ts` — Kanban drag & drop logic**
+- Nhận `groupId`, fetch tasks từ Supabase (id, title, status, deadline, assignees, stage_name)
+- Nhóm tasks theo status thành 4 cột: TODO, IN_PROGRESS, DONE, VERIFIED
+- Hàm `moveTask(taskId, newStatus)` — update status trong DB + optimistic update qua `queryClient.setQueryData`
+- Hàm `getColumnTasks(status)` — trả về danh sách tasks cho mỗi cột
+- Sử dụng `useQuery` + `useMutation` từ TanStack Query
+- Re-use `TaskTableRow` type từ `useTaskTableData` hoặc define simplified `KanbanTask` type
 
-**Task Detail Enhancement**: Bảng `task_comments` đã tồn tại với đầy đủ cấu trúc (parent_id cho threaded replies). Tuy nhiên cần thêm:
-- Bảng `task_attachments` — cho phép đính kèm file vào task (hiện chưa có bảng này)
+**2. Tạo `src/hooks/useTaskAttachments.ts` — File attachment CRUD**
+- Nhận `taskId`
+- `useQuery` fetch attachments từ `task_attachments` table (join profiles cho uploader info)
+- `uploadAttachment(file: File)` — upload file lên storage bucket `task-attachments` (path: `{userId}/{taskId}/{fileName}`), insert record vào `task_attachments`
+- `deleteAttachment(attachmentId, filePath)` — xóa record + xóa file từ storage
+- `getDownloadUrl(filePath)` — tạo signed URL hoặc public URL
+- Trả về `{ attachments, isLoading, uploadAttachment, deleteAttachment, isUploading }`
 
-**Calendar View trong project**: Không cần thay đổi database. Trang Calendar (`/calendar`) đã tồn tại, chỉ cần embed một phiên bản filtered theo `group_id` vào project detail.
+**3. Tạo `src/hooks/useProjectCalendar.ts` — Calendar events filtered by project**
+- Nhận `groupId`
+- Re-use logic từ `Calendar.tsx` (line 52-99) nhưng filter chỉ theo 1 `groupId` thay vì tất cả groups
+- Fetch tasks có deadline thuộc group đó, map thành `CalendarEvent[]`
+- Fetch personal events của user (optional, có thể bỏ cho project calendar)
+- Trả về `{ events, isLoading, refetch }`
 
-### Thay đổi Database
+### Chi tiết kỹ thuật
 
-**1. Tạo bảng `task_attachments`**
-- `id` (uuid, PK)
-- `task_id` (uuid, FK → tasks.id ON DELETE CASCADE)
-- `user_id` (uuid, FK — người upload)
-- `file_name` (text)
-- `file_path` (text — storage path)
-- `file_size` (bigint)
-- `storage_name` (text — bucket name)
-- `content_type` (text — MIME type)
-- `created_at` (timestamptz)
+- Tất cả hooks sử dụng `useAuth()` cho user context
+- Sử dụng `useReadOnlyGuard()` cho mutation actions (upload, delete, moveTask)
+- Query keys pattern: `['kanban', groupId]`, `['task-attachments', taskId]`, `['project-calendar', groupId]`
+- `useKanbanBoard` invalidate cả `['task-table', groupId]` khi move task để sync với Task Table view
 
-**2. RLS policies cho `task_attachments`**
-- SELECT: group members có thể xem attachments của tasks trong group mình
-- INSERT: group members có thể upload (user_id = auth.uid())
-- DELETE: uploader hoặc group leader có thể xóa
+### Không thay đổi database
+### Không thay đổi UI (giai đoạn 3-4)
 
-**3. Storage bucket** (nếu chưa có)
-- Tạo bucket `task-attachments` cho file storage
-
-### Không thay đổi
-
-- Bảng `tasks` — đã có status, deadline, submission_link
-- Bảng `task_comments` — đã có threaded comments
-- Bảng `task_assignments` — đã có
-
-### Giai đoạn tiếp theo (preview)
-
-- **Giai đoạn 2/4 (Logic)**: Hook useKanbanBoard (drag state, status update), useTaskAttachments (upload/delete), useProjectCalendar (filter events by groupId)
-- **Giai đoạn 3/4 (UI)**: KanbanBoard component, TaskDetailPanel (enhanced), ProjectCalendarView
-- **Giai đoạn 4/4 (Integration)**: Tích hợp vào GroupDetail tabs, i18n, responsive
-
-### Migration SQL
-
-```sql
--- task_attachments table
-CREATE TABLE public.task_attachments (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  task_id uuid NOT NULL REFERENCES public.tasks(id) ON DELETE CASCADE,
-  user_id uuid NOT NULL,
-  file_name text NOT NULL,
-  file_path text NOT NULL,
-  file_size bigint NOT NULL DEFAULT 0,
-  storage_name text NOT NULL DEFAULT 'task-attachments',
-  content_type text,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.task_attachments ENABLE ROW LEVEL SECURITY;
-
--- SELECT: group members
-CREATE POLICY "Group members can view task attachments"
-ON public.task_attachments FOR SELECT TO authenticated
-USING (EXISTS (
-  SELECT 1 FROM tasks t
-  JOIN group_members gm ON gm.group_id = t.group_id
-  WHERE t.id = task_attachments.task_id
-    AND gm.user_id = auth.uid()
-));
-
--- INSERT: group members, own user_id
-CREATE POLICY "Group members can upload task attachments"
-ON public.task_attachments FOR INSERT TO authenticated
-WITH CHECK (
-  user_id = auth.uid()
-  AND EXISTS (
-    SELECT 1 FROM tasks t
-    JOIN group_members gm ON gm.group_id = t.group_id
-    WHERE t.id = task_attachments.task_id
-      AND gm.user_id = auth.uid()
-  )
-);
-
--- DELETE: uploader or group leader
-CREATE POLICY "Uploader or leader can delete task attachments"
-ON public.task_attachments FOR DELETE TO authenticated
-USING (
-  user_id = auth.uid()
-  OR EXISTS (
-    SELECT 1 FROM tasks t
-    WHERE t.id = task_attachments.task_id
-      AND is_group_leader(auth.uid(), t.group_id)
-  )
-);
-
--- Storage bucket
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('task-attachments', 'task-attachments', false)
-ON CONFLICT (id) DO NOTHING;
-
--- Storage policies
-CREATE POLICY "Group members can upload task attachment files"
-ON storage.objects FOR INSERT TO authenticated
-WITH CHECK (bucket_id = 'task-attachments');
-
-CREATE POLICY "Group members can view task attachment files"
-ON storage.objects FOR SELECT TO authenticated
-USING (bucket_id = 'task-attachments');
-
-CREATE POLICY "Users can delete own task attachment files"
-ON storage.objects FOR DELETE TO authenticated
-USING (bucket_id = 'task-attachments' AND (storage.foldername(name))[1] = auth.uid()::text);
-```
-
-### Files cần thay đổi
+### Files cần tạo
 
 | File | Thay đổi |
 |------|----------|
-| Database migration | Tạo bảng `task_attachments` + RLS + storage bucket |
+| `src/hooks/useKanbanBoard.ts` | **Tạo mới** — Kanban state + moveTask mutation |
+| `src/hooks/useTaskAttachments.ts` | **Tạo mới** — Attachment CRUD + storage |
+| `src/hooks/useProjectCalendar.ts` | **Tạo mới** — Calendar events by groupId |
 
