@@ -1486,6 +1486,16 @@ export const en = {
       projectDeleted: 'Project "{name}" deleted',
       cannotLoadInfo: 'Cannot load information',
     },
+    notionEditor: {
+      pages: 'Pages',
+      newPage: 'New page',
+      untitled: 'Untitled',
+      saving: 'Saving...',
+      saved: 'Saved',
+      unsaved: 'Unsaved',
+      noPages: 'No pages yet',
+      selectPage: 'Select a page to start editing',
+    },
     servicePlan: {
       goBack: 'Go back',
       title: 'Service Plan',
