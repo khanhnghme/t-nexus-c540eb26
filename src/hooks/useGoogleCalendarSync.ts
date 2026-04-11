@@ -99,7 +99,9 @@ export function useGoogleCalendarSync() {
 
       if (res.error) {
         // Handle 429 sync_in_progress gracefully
-        if (res.data?.error === 'sync_in_progress') {
+        // supabase.functions.invoke may put parsed body in res.data or in error.context
+        const errorBody = res.data;
+        if (errorBody?.error === 'sync_in_progress') {
           toast.info(locale === 'vi' ? 'Đồng bộ đang chạy, vui lòng đợi...' : 'Sync is already in progress, please wait...');
           return;
         }
@@ -114,6 +116,12 @@ export function useGoogleCalendarSync() {
       }
       return res.data;
     } catch (err: any) {
+      // Also catch sync_in_progress from FunctionsHttpError
+      const msg = err?.message || '';
+      if (msg.includes('sync_in_progress') || msg.includes('429')) {
+        toast.info(locale === 'vi' ? 'Đồng bộ đang chạy, vui lòng đợi...' : 'Sync is already in progress, please wait...');
+        return;
+      }
       toast.error(locale === 'vi' ? 'Đồng bộ Google Calendar thất bại' : 'Google Calendar sync failed');
       console.error(err);
     } finally {
