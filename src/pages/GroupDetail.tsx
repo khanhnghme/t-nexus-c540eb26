@@ -774,6 +774,7 @@ export default function GroupDetail() {
           </div>
         </Tabs>
       </div>
+      )}
 
       <TaskEditDialog task={editingTask} stages={stages} members={members} isOpen={!!editingTask} onClose={() => setEditingTask(null)} onSave={fetchGroupData} canEdit={isLeaderInGroup} groupCreatorId={group.created_by} />
       
