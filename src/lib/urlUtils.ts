@@ -38,11 +38,7 @@ export function isSlug(id: string): boolean {
  * Generate project URL using workspace slug + project slug
  * Format: /p/{workspace-slug}/{project-slug}
  */
-export function getProjectUrl(projectSlug: string, workspaceSlug?: string): string {
-  if (workspaceSlug) {
-    return `/p/${workspaceSlug}/${projectSlug}`;
-  }
-  // Fallback for legacy (should not happen in normal flow)
+export function getProjectUrl(projectSlug: string): string {
   return `/p/${projectSlug}`;
 }
 
@@ -50,10 +46,7 @@ export function getProjectUrl(projectSlug: string, workspaceSlug?: string): stri
  * Generate task URL with context
  * Format: /p/{workspace-slug}/{project-slug}/t/{task-slug}
  */
-export function getTaskUrl(projectSlug: string, taskSlug: string, workspaceSlug?: string): string {
-  if (workspaceSlug) {
-    return `/p/${workspaceSlug}/${projectSlug}/t/${taskSlug}`;
-  }
+export function getTaskUrl(projectSlug: string, taskSlug: string): string {
   return `/p/${projectSlug}/t/${taskSlug}`;
 }
 
@@ -71,12 +64,8 @@ export function getPublicProjectUrl(shareToken: string): string {
 export function getFilePreviewUrl(
   projectSlug: string,
   taskSlug: string,
-  fileIndex: number = 0,
-  workspaceSlug?: string
+  fileIndex: number = 0
 ): string {
-  if (workspaceSlug) {
-    return `/p/${workspaceSlug}/${projectSlug}/t/${taskSlug}/f/${fileIndex}`;
-  }
   return `/p/${projectSlug}/t/${taskSlug}/f/${fileIndex}`;
 }
 
@@ -84,10 +73,7 @@ export function getFilePreviewUrl(
  * Generate canvas page URL
  * Format: /p/{workspace-slug}/{project-slug}/page/{page-slug}
  */
-export function getCanvasPageUrl(projectSlug: string, pageSlug: string, workspaceSlug?: string): string {
-  if (workspaceSlug) {
-    return `/p/${workspaceSlug}/${projectSlug}/page/${pageSlug}`;
-  }
+export function getCanvasPageUrl(projectSlug: string, pageSlug: string): string {
   return `/p/${projectSlug}/page/${pageSlug}`;
 }
 

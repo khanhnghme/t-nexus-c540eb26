@@ -54,8 +54,6 @@ function NameCover({ name }: { name: string }) {
 }
 
 export default function DashboardProjectCard({ group, isHidden, isPending, onToggleHide }: DashboardProjectCardProps) {
-  const { activeWorkspace } = useWorkspace();
-  const wsSlug = activeWorkspace?.slug;
   const [imgError, setImgError] = useState(false);
 
   const formatDate = (dateString: string) => {
@@ -77,7 +75,7 @@ export default function DashboardProjectCard({ group, isHidden, isPending, onTog
   const Wrapper = isPending ? 'div' : Link;
   const wrapperProps = isPending
     ? {}
-    : { to: `/p/${wsSlug ? wsSlug + '/' : ''}${group.slug}` };
+    : { to: `/p/${group.slug}` };
 
   return (
     <Wrapper
