@@ -1,79 +1,66 @@
 
 
-## Phase 14 — Inline Task Creation nâng cao
+## Phase 15 — Performance Optimization
 
 ### Mục tiêu
-Nâng cấp trải nghiệm tạo task trong Task Block: thêm khả năng assign member và set deadline ngay khi tạo, không cần mở dialog.
+Canvas mượt mà với nhiều blocks, giảm re-renders không cần thiết, lazy load custom blocks, tối ưu auto-save.
 
 ### Hiện trạng
-- Inline "Add task" row đã có: gõ tên + Enter → tạo task với status "TODO"
-- Chưa có assign member khi tạo inline
-- Chưa có set deadline khi tạo inline
-- Member data đã có sẵn query pattern từ `MemberBlock.tsx` (`group_members` + `profiles`)
+- 5 custom blocks (TaskBlock, MemberBlock, CalendarBlock, NoteBlock, ToggleBlock) đều import trực tiếp, không lazy
+- Auto-save delay đang ở 1500ms
+- Không có React.memo hay virtualization
+- Skeleton loading đã có ở TaskBlock, chưa đồng nhất ở các block khác
 
 ### Công việc
 
-**1. Tạo component `InlineTaskCreator.tsx`**
+**1. Lazy load custom blocks**
 
-Thay thế input đơn giản hiện tại bằng component mới:
-- Input tên task (giữ nguyên Enter = tạo)
-- Nút assign member: dropdown hiển thị danh sách member của group (fetch từ `group_members`)
-- Nút set deadline: date picker popup (dùng `Calendar` component có sẵn)
-- Sau khi tạo task xong → auto insert `task_assignments` nếu có chọn member
-- UI compact: các nút icon nhỏ bên cạnh input, chỉ expand khi click
+Tạo `src/components/canvas/blocks/lazyBlocks.ts` — export lazy-wrapped versions của tất cả custom block renderers. Trong `CanvasEditor.tsx`, wrap mỗi block renderer bằng `React.lazy` + `Suspense` với Skeleton fallback.
 
-**2. Cập nhật `TaskBlock.tsx`**
+Lưu ý: BlockNote `createReactBlockSpec` cần component đồng bộ ở thời điểm tạo schema. Cách tiếp cận: giữ block spec wrapper đồng bộ, nhưng bên trong render component dùng lazy import cho phần nội dung nặng (data-fetching renderers như `TaskListRenderer`, `MemberListRenderer`, `CalendarRenderer`).
 
-- `handleAddTask` mở rộng: nhận thêm `assigneeId?: string` và `deadline?: string`
-- Sau khi insert task → nếu có `assigneeId` → insert vào `task_assignments`
-- Sau khi insert task → nếu có `deadline` → update task deadline
-- Cập nhật `TaskHandlers` type trong `taskBlockTypes.ts`: `onAdd` nhận params mới
+**2. React.memo cho block renderers**
 
-**3. Cập nhật `TaskListView.tsx` và `TaskKanbanView.tsx`**
+Wrap các inner renderer components bằng `React.memo`:
+- `TaskListRenderer` trong TaskBlock
+- `MemberListRenderer` trong MemberBlock  
+- `CalendarRenderer` trong CalendarBlock
+- `NoteCalloutRenderer` trong NoteBlock
+- `ToggleRenderer` trong ToggleBlock
 
-- Thay inline input cũ bằng `InlineTaskCreator`
-- Truyền `groupId` để component fetch member list
-- Giữ nguyên UX: focus vào input → gõ tên → tùy chọn assign/deadline → Enter
+**3. useMemo / useCallback audit**
 
-**4. Cập nhật `taskBlockTypes.ts`**
+Rà soát và thêm memoization cho:
+- `schema` object trong CanvasEditor (đã tạo ngoài component — OK)
+- `handlers` object trong TaskBlock (đã có useMemo — OK)
+- Props truyền xuống child components — đảm bảo stable references
 
-```typescript
-interface TaskHandlers {
-  onAdd: (params?: { assigneeId?: string; deadline?: string }) => Promise<void>;
-  // ... giữ nguyên các handler khác
-}
-```
+**4. Giảm auto-save delay xuống 800ms**
 
-### UI Design
+Trong `CanvasEditor.tsx`, đổi `delay: 1500` → `delay: 800` cho responsive hơn nhưng vẫn không spam API.
 
-```text
-┌─────────────────────────────────────────────────┐
-│ + │ Thêm công việc mới...  │ 👤 │ 📅 │        │
-│   │ [input text]           │[dp]│[dt]│        │
-└─────────────────────────────────────────────────┘
-     ↑ input                  ↑     ↑
-                         member  deadline
-                         picker  picker
-```
+**5. Skeleton loading đồng nhất cho tất cả custom blocks**
 
-- 👤 click → dropdown danh sách member, chọn 1 người
-- 📅 click → date picker popup
-- Sau khi chọn, hiện badge nhỏ (tên member / ngày) bên cạnh input
-- Enter hoặc click nút → tạo task + assign + deadline cùng lúc
-- Escape → reset form
+Thêm loading skeleton cho MemberBlock, CalendarBlock nếu chưa có. Tạo shared `BlockSkeleton` component dùng chung.
+
+**6. Debounce title edit trong PageHeader**
+
+Đảm bảo inline title edit có debounce trước khi gọi API update, tránh gọi API mỗi keystroke.
 
 ### Files thay đổi
 
 | File | Thay đổi |
 |------|----------|
-| `src/components/canvas/blocks/InlineTaskCreator.tsx` | Mới — inline form với member + deadline |
-| `src/components/canvas/blocks/taskBlockTypes.ts` | Update `onAdd` signature |
-| `src/components/canvas/blocks/TaskBlock.tsx` | Mở rộng `handleAddTask` với assign + deadline |
-| `src/components/canvas/blocks/TaskListView.tsx` | Dùng `InlineTaskCreator` thay input cũ |
-| `src/components/canvas/blocks/TaskKanbanView.tsx` | Dùng `InlineTaskCreator` thay input cũ |
+| `src/components/canvas/blocks/BlockSkeleton.tsx` | Mới — shared skeleton component |
+| `src/components/canvas/blocks/TaskBlock.tsx` | React.memo cho renderer |
+| `src/components/canvas/blocks/MemberBlock.tsx` | React.memo + skeleton loading |
+| `src/components/canvas/blocks/CalendarBlock.tsx` | React.memo + skeleton loading |
+| `src/components/canvas/blocks/NoteBlock.tsx` | React.memo |
+| `src/components/canvas/blocks/ToggleBlock.tsx` | React.memo |
+| `src/components/canvas/CanvasEditor.tsx` | Lazy load renderers + giảm delay 800ms |
+| `src/components/canvas/PageHeader.tsx` | Debounce title edit |
 
 ### Không làm
-- Assign nhiều member cùng lúc (chỉ 1 người khi inline create)
-- Priority/label khi tạo inline
-- Bulk task creation
+- Virtualization (react-window) — chỉ cần khi thực sự có > 50 blocks, phức tạp với BlockNote
+- Bundle splitting riêng cho từng block (không đáng với kích thước hiện tại)
 
