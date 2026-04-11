@@ -58,12 +58,13 @@ interface ExtendedGroup extends Group {
 }
 
 export default function GroupDetail() {
-  const { groupId, projectId, projectSlug, taskSlug, taskId: routeTaskId } = useParams<{ 
+  const { groupId, projectId, projectSlug, taskSlug, taskId: routeTaskId, pageSlug } = useParams<{ 
     groupId?: string; 
     projectId?: string; 
     projectSlug?: string;
     taskSlug?: string;
     taskId?: string;
+    pageSlug?: string;
   }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -488,7 +489,7 @@ export default function GroupDetail() {
             </div>
             <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">Canvas</Badge>
           </div>
-          <CanvasPageView groupId={group.id} editable={isLeaderInGroup} />
+          <CanvasPageView groupId={group.id} editable={isLeaderInGroup} projectSlug={projectSlug} initialPageSlug={pageSlug} />
         </div>
       ) : (
       <div>
