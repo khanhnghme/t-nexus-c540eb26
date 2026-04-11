@@ -295,6 +295,15 @@ export default function CalendarTaskDetailDialog({ open, onOpenChange, event, on
                           </div>
                         </div>
                       )}
+
+                      {/* Task ID */}
+                      <div className="rounded-lg border border-border bg-card p-4 space-y-2">
+                        <h3 className="text-sm font-semibold flex items-center gap-1.5">
+                          <Hash className="w-4 h-4 text-primary" />
+                          Mã sự kiện
+                        </h3>
+                        <TaskCopyableId label="Task ID" value={event.id?.slice(0, 8) || ''} fullValue={event.id} />
+                      </div>
                     </div>
                   </div>
                 )}
