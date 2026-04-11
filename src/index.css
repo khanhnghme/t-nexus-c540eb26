@@ -2180,3 +2180,26 @@ html.no-animations [data-state="active"][role="tabpanel"] {
   width: 32px;
   height: 32px;
 }
+
+/* ===== Canvas View Mode ===== */
+.view-mode {
+  caret-color: transparent;
+  user-select: text;
+}
+
+.view-mode [data-placeholder]::before {
+  display: none !important;
+}
+
+.view-mode .bn-block-content:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.view-mode .bn-editor {
+  padding-left: 0;
+}
+
+.view-mode .bn-block-group > .bn-block-outer {
+  margin-left: 0;
+}
