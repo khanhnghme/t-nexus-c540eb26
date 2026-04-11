@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useProjectPages, useCreatePage, useDeletePage, useUpdatePage } from "@/hooks/useProjectPages";
 import CanvasEditor from "./CanvasEditor";
 import CanvasSidebar from "./CanvasSidebar";
-import { Loader2, FileText, RefreshCw, Plus, PanelLeft, Pencil, Eye, Save, Menu } from "lucide-react";
+import { Loader2, FileText, RefreshCw, Plus, PanelLeft, Pencil, Eye, Save, Menu, Download, Link2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -12,6 +13,8 @@ import type { PartialBlock } from "@blocknote/core";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { Json } from "@/integrations/supabase/types";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { downloadMarkdown, downloadPdf } from "@/lib/canvasExport";
+import type { Block } from "@blocknote/core";
 
 const SaveAsTemplateDialog = lazy(() => import("./SaveAsTemplateDialog"));
 
