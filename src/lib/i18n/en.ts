@@ -1385,6 +1385,12 @@ export const en = {
       createDialogTitle: 'Create new project',
       willCreateIn: 'Project will be created in workspace',
       fillInfo: 'Fill in project information and add members (optional)',
+      // Project mode
+      projectModeLabel: 'Project type',
+      projectModeBasic: 'Basic',
+      projectModeBasicDesc: 'Manage tasks, stages, scores — fits most projects',
+      projectModeCustom: 'Custom (Notion-like)',
+      projectModeCustomDesc: 'Free-form block editor — ideal for notes, docs, wiki',
       projectInfo: 'Project information',
       projectName: 'Project name',
       projectNamePlaceholder: 'E.g: IT Course Project',

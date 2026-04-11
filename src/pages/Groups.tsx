@@ -43,6 +43,8 @@ import {
   GraduationCap,
   MessageSquare,
   ImagePlus,
+  LayoutList,
+  Blocks,
 } from 'lucide-react';
 import type { Group, GroupMember } from '@/types/database';
 import UserAvatar from '@/components/UserAvatar';
@@ -95,6 +97,7 @@ export default function Groups() {
   const [newGroupAdditionalInfo, setNewGroupAdditionalInfo] = useState('');
   const [groupImage, setGroupImage] = useState<File | null>(null);
   const [groupImagePreview, setGroupImagePreview] = useState<string | null>(null);
+  const [projectMode, setProjectMode] = useState<'basic' | 'custom'>('basic');
 
   // Member adding
   const [memberSearch, setMemberSearch] = useState('');
@@ -262,6 +265,7 @@ export default function Groups() {
     setSelectedMembers([]);
     setMemberSearch('');
     setSearchResults([]);
+    setProjectMode('basic');
   };
 
   const handleCreateGroup = async () => {
@@ -332,6 +336,7 @@ export default function Groups() {
           created_by: user!.id,
           slug: '',
           idempotency_key: idempotencyKeyRef.current,
+          project_mode: projectMode,
         };
 
       // Auto-assign workspace_id if workspace is active
@@ -525,6 +530,56 @@ export default function Groups() {
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-0 divide-y lg:divide-y-0 lg:divide-x">
                       {/* Left: Project Info - 3 cols */}
                       <div className="lg:col-span-3 p-6 space-y-5">
+                        {/* Project Mode Selector */}
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-1 text-sm font-semibold text-primary uppercase tracking-wide">
+                            <Blocks className="w-4 h-4" />
+                            {g.projectModeLabel}
+                          </Label>
+                          <div className="grid grid-cols-2 gap-3">
+                            <button
+                              type="button"
+                              onClick={() => setProjectMode('basic')}
+                              className={cn(
+                                "relative p-3 rounded-lg border-2 text-left transition-all",
+                                projectMode === 'basic'
+                                  ? "border-primary bg-primary/5 shadow-sm"
+                                  : "border-border hover:border-primary/40"
+                              )}
+                            >
+                              <div className="flex items-center gap-2 mb-1">
+                                <LayoutList className="w-4 h-4 text-primary" />
+                                <span className="font-semibold text-sm">{g.projectModeBasic}</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">{g.projectModeBasicDesc}</p>
+                              {projectMode === 'basic' && (
+                                <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary" />
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setProjectMode('custom')}
+                              className={cn(
+                                "relative p-3 rounded-lg border-2 text-left transition-all",
+                                projectMode === 'custom'
+                                  ? "border-primary bg-primary/5 shadow-sm"
+                                  : "border-border hover:border-primary/40"
+                              )}
+                            >
+                              <div className="flex items-center gap-2 mb-1">
+                                <Blocks className="w-4 h-4 text-primary" />
+                                <span className="font-semibold text-sm">{g.projectModeCustom}</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">{g.projectModeCustomDesc}</p>
+                              {projectMode === 'custom' && (
+                                <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+
+                        <Separator />
+
                         <div className="flex items-center gap-2 text-sm font-semibold text-primary uppercase tracking-wide">
                           <FileText className="w-4 h-4" />
                           {g.projectInfo}
