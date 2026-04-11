@@ -1466,6 +1466,16 @@ export const vi: Translations = {
       projectDeleted: 'Đã xóa project "{name}"',
       cannotLoadInfo: 'Không thể tải thông tin',
     },
+    notionEditor: {
+      pages: 'Trang',
+      newPage: 'Trang mới',
+      untitled: 'Chưa đặt tên',
+      saving: 'Đang lưu...',
+      saved: 'Đã lưu',
+      unsaved: 'Chưa lưu',
+      noPages: 'Chưa có trang nào',
+      selectPage: 'Chọn trang để bắt đầu chỉnh sửa',
+    },
     servicePlan: {
       goBack: 'Quay lại',
       title: 'Gói dịch vụ',
