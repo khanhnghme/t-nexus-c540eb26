@@ -3051,6 +3051,9 @@ export const en = {
     viewDetails: 'View details',
     upgrade: 'Upgrade',
     nextPlanFrom: '→ {plan} from {date}',
+    autoRenewLabel: 'Auto Renew',
+    autoRenewOn: 'On',
+    autoRenewOff: 'Off',
   },
 
   servicePlanFeatures: {

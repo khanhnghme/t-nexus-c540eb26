@@ -2978,6 +2978,9 @@ export const vi: Translations = {
     viewDetails: 'Xem chi tiết',
     upgrade: 'Nâng cấp',
     nextPlanFrom: '→ {plan} từ {date}',
+    autoRenewLabel: 'Tự động gia hạn',
+    autoRenewOn: 'Bật',
+    autoRenewOff: 'Tắt',
   },
 
   servicePlanFeatures: {

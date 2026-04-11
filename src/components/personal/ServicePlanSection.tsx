@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Crown, Zap, Check } from 'lucide-react';
+import { Crown, Zap, Check, RefreshCw } from 'lucide-react';
 import { ConnectedToolsTailwind, shouldShowIntegrations } from '@/components/ConnectedToolsBadge';
 
 export default function ServicePlanSection() {
