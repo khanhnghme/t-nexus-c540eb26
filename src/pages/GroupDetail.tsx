@@ -489,7 +489,7 @@ export default function GroupDetail() {
             </div>
             <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">Canvas</Badge>
           </div>
-          <CanvasPageView groupId={group.id} editable={isLeaderInGroup} />
+          <CanvasPageView groupId={group.id} editable={isLeaderInGroup} projectSlug={projectSlug} initialPageSlug={pageSlug} />
         </div>
       ) : (
       <div>
