@@ -2,6 +2,7 @@ import { useState, Suspense, lazy, useRef, useCallback, useEffect } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { Json } from "@/integrations/supabase/types";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
