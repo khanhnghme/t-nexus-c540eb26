@@ -1,58 +1,75 @@
 
 
-## Phase 12 — Giai đoạn 2/4: Cập nhật Service/Hooks hỗ trợ cover_url
+## Phase 12 — Hoàn thiện: Cover Image UI + Page Header
 
-### Mục tiêu
-Cập nhật `updatePage` service để chấp nhận `cover_url` parameter, cho phép client code lưu/xóa cover image cho page.
+### Tình trạng hiện tại
+- Stage 1 done: cột `cover_url` đã có trong DB
+- Stage 2 done: `updatePage` service + `handleChangeCover` handler đã có trong `CanvasPageView.tsx`
+- Icon/emoji picker đã hoạt động đầy đủ (Phase 11)
+- Chưa có UI hiển thị cover, chưa có cách chọn/upload cover
 
-### Hiện trạng
-- Giai đoạn 1 hoàn thành: cột `cover_url` đã có trong DB
-- `updatePage()` trong `projectPages.ts` chỉ chấp nhận `title`, `content`, `display_order`, `icon` — chưa có `cover_url`
-- Hook `useUpdatePage` đã hoạt động, chỉ cần mở rộng type
+### Công việc còn lại
 
-### Hành động
+**1. Tạo component `PageCoverImage.tsx`**
 
-**1. Cập nhật `updatePage` trong service**
+Component hiển thị cover image phía trên editor content:
+- Nếu `cover_url` có giá trị: render ảnh/gradient full-width, chiều cao ~180px
+- Nếu không có cover: không render gì (hoặc chỉ hiện nút "Add cover" khi hover, nếu editable)
+- Nút "Change cover" và "Remove cover" hiện khi hover (chỉ edit mode)
 
-Thêm `cover_url?: string | null` vào type parameter của hàm `updatePage`:
+**2. Tạo component `CoverPicker.tsx`**
 
-```typescript
-export async function updatePage(pageId: string, updates: {
-  title?: string;
-  content?: any;
-  display_order?: number;
-  icon?: string | null;
-  cover_url?: string | null;  // <-- thêm dòng này
-}) {
+Popover cho phép chọn cover:
+- Tab 1 — Preset gradients: 8-10 gradient CSS đẹp (lưu dạng CSS string vào `cover_url`)
+- Tab 2 — Preset solid colors: 6-8 màu solid
+- Tab 3 — URL ảnh: input nhập URL ảnh bên ngoài
+- Nút "Remove cover" để xóa
+
+Không cần storage bucket — chỉ dùng gradient CSS và URL ảnh bên ngoài ở phase này.
+
+**3. Tạo component `PageHeader.tsx`**
+
+Header lớn kiểu Notion phía trên editor:
+- Icon lớn (emoji, click để đổi nếu editable)
+- Title lớn (editable inline nếu edit mode)
+- Nút "Add icon" / "Add cover" hiện khi hover (nếu chưa có)
+
+**4. Tích hợp vào `CanvasEditor.tsx`**
+
+Thêm `PageHeader` + `PageCoverImage` phía trên `BlockNoteView`:
+- Truyền `cover_url`, `icon`, `title`, `editable` từ `CanvasPageView`
+- Gọi `handleChangeCover`, `handleChangePageIcon`, `handleRenamePage` qua props
+
+**5. Cập nhật `CanvasPageView.tsx`**
+
+- Truyền `activePage.cover_url`, `activePage.icon`, `activePage.title` xuống `CanvasEditor`
+- Truyền callbacks: `onChangeCover`, `onChangeIcon`, `onRenameTitle`
+
+### Preset gradients (ví dụ)
+
+```text
+linear-gradient(135deg, #667eea 0%, #764ba2 100%)
+linear-gradient(135deg, #f093fb 0%, #f5576c 100%)
+linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)
+linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)
+linear-gradient(135deg, #fa709a 0%, #fee140 100%)
+linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)
+linear-gradient(135deg, #fccb90 0%, #d57eeb 100%)
+linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)
 ```
-
-Không cần thay đổi logic bên trong vì đã dùng spread `...updates`.
-
-**2. Thêm handler `handleChangeCover` trong `CanvasPageView.tsx`**
-
-Thêm hàm xử lý tương tự `handleChangePageIcon`:
-
-```typescript
-const handleChangeCover = async (pageId: string, coverUrl: string | null) => {
-  try {
-    await updatePage.mutateAsync({ pageId, updates: { cover_url: coverUrl } });
-  } catch (err: any) {
-    toast.error(err.message || "Không thể thay đổi cover.");
-  }
-};
-```
-
-Chưa truyền xuống component nào (giai đoạn 3 sẽ làm UI).
-
-### Không làm
-- UI hiển thị/upload cover (giai đoạn 3)
-- Preset gradients (giai đoạn 3)
-- Storage bucket cho upload ảnh (giai đoạn 3)
 
 ### Files thay đổi
 
 | File | Thay đổi |
 |------|----------|
-| `src/services/projectPages.ts` | Thêm `cover_url` vào type của `updatePage` |
-| `src/components/canvas/CanvasPageView.tsx` | Thêm `handleChangeCover` handler |
+| `src/components/canvas/PageCoverImage.tsx` | Mới — hiển thị cover |
+| `src/components/canvas/CoverPicker.tsx` | Mới — chọn gradient/color/URL |
+| `src/components/canvas/PageHeader.tsx` | Mới — header lớn với icon + title + actions |
+| `src/components/canvas/CanvasEditor.tsx` | Thêm props, render PageHeader + PageCoverImage |
+| `src/components/canvas/CanvasPageView.tsx` | Truyền cover_url/icon/title + callbacks xuống editor |
+
+### Không làm
+- Upload ảnh lên storage (có thể bổ sung sau)
+- Slug routing (Phase 13)
+- Template system (Phase 16)
 
