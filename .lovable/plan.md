@@ -1,54 +1,66 @@
 
 
-## Fix: Cleanup Panel không xóa được dự án và workspace
+## Sửa URL: Quay lại cấu trúc 1 slug, bỏ workspace slug khỏi URL
 
-### Nguyên nhân gốc
+### Vấn đề
 
-Hàm `deleteProject()` trong `AccountCleanupPanel.tsx` thực hiện xóa **client-side** (dùng auth token của user), nên bị chặn bởi RLS trên nhiều bảng:
-
-- `activity_logs`: chỉ `system_admin` mới được DELETE
-- `submission_history`, `task_scores`, `task_comments`, `task_assignments`: không có hoặc RLS giới hạn DELETE
-- `score_appeals`, `appeal_attachments`, `notifications`, `meetings`, `meeting_attendance`, `project_messages`: thiếu DELETE policy cho project owner
-
-Khi bất kỳ 1 bảng nào từ chối DELETE → hàm throw error → dừng toàn bộ quá trình.
+Bạn muốn URL dạng `/p/{project-slug}/page/{page-slug}` (1 cấp) giống như dự án custom, nhưng code hiện tại đang tạo URL dạng `/p/{workspace-slug}/{project-slug}/page/{page-slug}` (2 cấp) — thừa và rối.
 
 ### Giải pháp
 
-**Chuyển logic xóa project sang edge function `workspace-management`** (đã có service role), thêm action `delete_project`.
+Quay lại cấu trúc URL 1 slug: `/p/{project-slug}`, đảm bảo project slug **đã unique toàn hệ thống** (database trigger `set_group_slug` đã xử lý điều này).
 
-#### 1. `supabase/functions/workspace-management/index.ts`
+#### 1. `src/App.tsx` — Xóa routes 2 cấp workspace
 
-Thêm action `delete_project`:
-- Validate caller là workspace owner hoặc group leader
-- Dùng `supabaseAdmin` (service role) để xóa toàn bộ data liên quan theo đúng thứ tự dependency:
-  - R2 files cleanup (task submissions, note attachments, project resources)
-  - `appeal_attachments` → `score_appeals` → `score_adjustment_history`
-  - `submission_history` → `task_note_attachments` → `task_notes`
-  - `task_scores` → `task_assignments` → `task_comments` → `tasks`
-  - `member_stage_scores` → `stage_weights` → `stages`
-  - `member_final_scores` → `meeting_attendance` → `meeting_messages` → `meetings`
-  - `pending_approvals` → `project_invitations` → `project_resources` → `resource_folders`
-  - `project_messages` → `activity_logs` → `notifications`
-  - `group_members` → `hidden_projects` → `canvas_pages` (nếu có)
-  - `groups`
+- Xóa các route `/p/:workspaceSlug/:projectSlug/...`
+- Giữ lại routes gốc: `/p/:projectSlug`, `/p/:projectSlug/page/:pageSlug`, `/p/:projectSlug/t/:taskSlug`, v.v.
 
-#### 2. `src/components/cleanup/AccountCleanupPanel.tsx`
+#### 2. `src/pages/GroupDetail.tsx` — Bỏ logic resolve workspace slug
 
-Thay thế hàm `deleteProject()` client-side bằng gọi edge function:
-```ts
-const deleteProject = async (groupId: string) => {
-  const { data, error } = await supabase.functions.invoke('workspace-management', {
-    body: { action: 'delete_project', group_id: groupId },
-  });
-  if (error || data?.error) throw new Error(data?.error || error.message);
-};
-```
-- Xóa import `deleteTaskFiles` (không cần nữa, edge function sẽ handle)
+- Xóa `workspaceSlug` khỏi `useParams`
+- Xóa logic redirect từ URL cũ sang URL mới có workspace
+- Giữ logic resolve project bằng `projectSlug` đơn giản
+
+#### 3. `src/lib/urlUtils.ts` — Đơn giản hóa các hàm URL
+
+- `getProjectUrl()` → luôn trả về `/p/{projectSlug}` (bỏ tham số `workspaceSlug`)
+- `getTaskUrl()` → `/p/{projectSlug}/t/{taskSlug}`
+- `getCanvasPageUrl()` → `/p/{projectSlug}/page/{pageSlug}`
+- `getFilePreviewUrl()` → `/p/{projectSlug}/t/{taskSlug}/f/{fileIndex}`
+
+#### 4. Các component sử dụng URL — Bỏ truyền workspace slug
+
+- `SidebarTreeNav.tsx`: bỏ `activeWorkspace?.slug` khỏi link
+- `DashboardProjectCard.tsx`: bỏ workspace slug khỏi project link
+- `TaskCard.tsx`: bỏ workspace slug khỏi task link
+- `Groups.tsx`: bỏ workspace slug khỏi project card link
+- `Communication.tsx`: bỏ workspace slug khỏi navigation
+- `CanvasPageView.tsx`: bỏ `workspaceSlug` prop
+
+#### 5. Migration SQL — Fix workspace slug cho đẹp (vẫn cần)
+
+Dù URL không dùng workspace slug nữa, vẫn nên fix hàm `generate_workspace_slug` để hỗ trợ tiếng Việt cho các nơi khác hiển thị tên workspace (settings, sidebar...).
+
+### Kết quả URL
+
+| Trước (rối) | Sau (sạch) |
+|---|---|
+| `/p/ws-286a93a2-0/khanhnghme-s-project-3` | `/p/khanhnghme-s-project-3` |
+| `/p/ws-286a93a2-0/khanhnghme-s-project-3/page/trang-2` | `/p/khanhnghme-s-project-3/page/trang-2` |
+| `/p/ws-286a93a2-0/khanhnghme-s-project-3/t/task-1` | `/p/khanhnghme-s-project-3/t/task-1` |
 
 ### Files thay đổi
 
 | File | Thay đổi |
 |------|----------|
-| `supabase/functions/workspace-management/index.ts` | Thêm action `delete_project` với service role |
-| `src/components/cleanup/AccountCleanupPanel.tsx` | Thay `deleteProject()` bằng gọi edge function |
+| `src/App.tsx` | Xóa routes 2 cấp workspace |
+| `src/pages/GroupDetail.tsx` | Bỏ workspace slug logic |
+| `src/lib/urlUtils.ts` | Đơn giản hóa URL functions |
+| `src/components/SidebarTreeNav.tsx` | Bỏ workspace slug khỏi links |
+| `src/components/dashboard/DashboardProjectCard.tsx` | Bỏ workspace slug |
+| `src/components/TaskCard.tsx` | Bỏ workspace slug |
+| `src/pages/Groups.tsx` | Bỏ workspace slug |
+| `src/pages/Communication.tsx` | Bỏ workspace slug |
+| `src/components/canvas/CanvasPageView.tsx` | Bỏ workspaceSlug prop |
+| Migration SQL | Fix `generate_workspace_slug` hỗ trợ tiếng Việt |
 
