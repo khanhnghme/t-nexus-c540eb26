@@ -167,7 +167,7 @@ export default function CanvasPageView({ groupId, editable = false }: CanvasPage
           onReorderPages={handleReorderPages}
           onChangePageIcon={handleChangePageIcon}
           onCollapse={() => setSidebarOpen(false)}
-          editable={editable}
+          editable={isEditMode}
           isCreating={createPage.isPending}
         />
       )}
@@ -191,12 +191,39 @@ export default function CanvasPageView({ groupId, editable = false }: CanvasPage
           {activePage.icon && (
             <span className="text-sm leading-none">{activePage.icon}</span>
           )}
-          <span className="text-muted-foreground truncate">{activePage.title}</span>
+          <span className="text-muted-foreground truncate flex-1">{activePage.title}</span>
+          {editable && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={isEditMode ? "secondary" : "ghost"}
+                  size="sm"
+                  className="h-7 gap-1.5 text-xs shrink-0"
+                  onClick={() => setIsEditMode((prev) => !prev)}
+                >
+                  {isEditMode ? (
+                    <>
+                      <Pencil className="h-3 w-3" />
+                      Sửa
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="h-3 w-3" />
+                      Xem
+                    </>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isEditMode ? "Chế độ chỉnh sửa" : "Chế độ xem trước"}
+              </TooltipContent>
+            </Tooltip>
+          )}
         </div>
         <CanvasEditor
           key={activePage.id}
           initialContent={initialContent}
-          editable={editable}
+          editable={isEditMode}
           pageId={activePage.id}
           groupId={groupId}
         />
