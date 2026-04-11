@@ -11,6 +11,7 @@ import { Check, Cloud, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { TaskListBlock } from "./blocks/TaskBlock";
 import { MemberListBlock } from "./blocks/MemberBlock";
+import { CalendarBlock } from "./blocks/CalendarBlock";
 import { TaskBlockProvider } from "./blocks/TaskBlockContext";
 
 const schema = BlockNoteSchema.create({
@@ -18,6 +19,7 @@ const schema = BlockNoteSchema.create({
     ...defaultBlockSpecs,
     taskList: TaskListBlock(),
     memberList: MemberListBlock(),
+    calendarView: CalendarBlock(),
   },
 });
 
