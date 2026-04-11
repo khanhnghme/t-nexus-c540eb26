@@ -719,35 +719,14 @@ export default function GroupDetail() {
               onRefreshTasks={fetchGroupData}
             />
           </TabsContent>
-                groupId={group.id}
-                groupName={group.name}
-                stages={stages}
-                members={members}
-                isLeader={isLeaderInGroup}
-                onRefreshTasks={fetchGroupData}
-              />
-            </TabsContent>
 
-            <TabsContent value="members" className="mt-6">
-              <MemberManagementCard members={members} isLeaderInGroup={isLeaderInGroup} isGroupCreator={isGroupCreator} groupId={group.id} currentUserId={user?.id || ''} groupCreatorId={group.created_by} onRefresh={fetchGroupData} />
-            </TabsContent>
+          <TabsContent value="members" className="mt-6">
+            <MemberManagementCard members={members} isLeaderInGroup={isLeaderInGroup} isGroupCreator={isGroupCreator} groupId={group.id} currentUserId={user?.id || ''} groupCreatorId={group.created_by} onRefresh={fetchGroupData} />
+          </TabsContent>
 
-            <TabsContent value="resources" className="mt-6">
-              <ProjectResources groupId={group.id} isLeader={isLeaderInGroup} />
-            </TabsContent>
-
-            <TabsContent value="scores" className="mt-6">
-              <ProcessScores 
-                groupId={group.id} 
-                stages={stages} 
-                members={members} 
-                tasks={tasks} 
-                isLeader={isLeaderInGroup}
-                scoreFinalizedAt={(group as any).score_finalized_at}
-                appealDeadlineHours={(group as any).appeal_deadline_hours ?? 48}
-                onRefreshGroup={fetchGroupData}
-              />
-            </TabsContent>
+          <TabsContent value="resources" className="mt-6">
+            <ProjectResources groupId={group.id} isLeader={isLeaderInGroup} />
+          </TabsContent>
 
             {(isGroupCreator || isAdmin) && (
               <TabsContent value="logs" className="mt-6">
