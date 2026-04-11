@@ -1,48 +1,57 @@
 
 
-## Fix chống tạo project trùng lặp — Idempotency
+## Phase 1 — Block Editor Core: Giai đoạn 1/2 (Database / Logic)
 
-### Hiện trạng
-
-`Groups.tsx` đã có:
-- ✅ `createLockRef` (useRef lock)
-- ✅ `isCreating` state → disable button + spinner "Đang tạo..."
-- ✅ Feedback toast sau khi tạo/lỗi
-
-**Thiếu**: Idempotency key — nếu request gửi 2 lần (network retry, browser refresh), backend vẫn tạo 2 project.
-
-`CreateWorkspace.tsx` cũng thiếu lock ref + idempotency.
+Theo nguyên tắc triển khai, Phase 1 chia thành 2 giai đoạn. Đây là **giai đoạn 1: Database / Logic**.
 
 ### Thay đổi
 
-**1. `src/pages/Groups.tsx`** — Thêm idempotency key
-- Generate UUID (`crypto.randomUUID()`) khi mở dialog
-- Gửi kèm `idempotency_key` trong `insert` data vào bảng `groups`
-- Reset key khi đóng dialog hoặc tạo thành công
+**1. Database Migration**
 
-**2. `src/pages/CreateWorkspace.tsx`** — Thêm lock ref + idempotency
-- Thêm `useRef` lock tương tự Groups
-- Generate idempotency key khi mount
-- Gửi kèm trong body tới edge function `workspace-management`
+Thêm cột `project_mode` vào bảng `groups` và tạo bảng `project_pages`:
 
-**3. Database migration** — Thêm cột `idempotency_key` vào bảng `groups`
-```sql
-ALTER TABLE public.groups ADD COLUMN idempotency_key uuid;
-CREATE UNIQUE INDEX idx_groups_idempotency_key ON public.groups(idempotency_key) WHERE idempotency_key IS NOT NULL;
+```text
+groups
+└── project_mode TEXT DEFAULT 'basic'   ← 'basic' | 'custom'
+
+project_pages (NEW)
+├── id          UUID PK
+├── group_id    UUID FK → groups(id) ON DELETE CASCADE
+├── title       TEXT DEFAULT 'Untitled'
+├── content     JSONB DEFAULT '[]'   ← BlockNote JSON blocks
+├── display_order INTEGER DEFAULT 0
+├── created_by  UUID FK → auth.users(id)
+├── created_at  TIMESTAMPTZ
+├── updated_at  TIMESTAMPTZ
 ```
-Unique index đảm bảo nếu insert trùng key → lỗi constraint → không tạo duplicate.
 
-**4. `supabase/functions/workspace-management/index.ts`** — Idempotency cho workspace
-- Nhận `idempotency_key` từ body
-- Check existing workspace với cùng key trước khi insert
-- Nếu đã tồn tại → trả về workspace cũ thay vì tạo mới
+**2. RLS Policies cho `project_pages`**
+- **SELECT**: project members (`is_group_member`)
+- **INSERT/UPDATE**: project leaders (`is_project_leader`)
+- **DELETE**: project leaders
+
+**3. Cập nhật `Groups.tsx` — Thêm mode selector**
+- Thêm state `projectMode` (`'basic' | 'custom'`)
+- Trong dialog tạo project, thêm 2 card chọn mode:
+  - **Basic**: Tasks, Stages, Scores — mặc định
+  - **Custom (Notion-like)**: Block editor tự do
+- Gửi `project_mode` trong insert data
+
+**4. Cập nhật `database.ts` type**
+- Thêm `project_mode?: 'basic' | 'custom'` vào interface `Group`
+
+### Chưa làm trong giai đoạn này
+- UI block editor (Phase 1, giai đoạn 2)
+- Cài BlockNote dependencies (Phase 1, giai đoạn 2)
+- Render khác nhau trong GroupDetail (Phase 1, giai đoạn 2)
 
 ### Files cần sửa
 
 | File | Thay đổi |
 |------|----------|
-| Migration SQL | Thêm cột `idempotency_key` + unique index trên `groups` |
-| `src/pages/Groups.tsx` | Generate + gửi idempotency_key |
-| `src/pages/CreateWorkspace.tsx` | Thêm lock ref + idempotency |
-| `supabase/functions/workspace-management/index.ts` | Check idempotency cho create_workspace |
+| Migration SQL | Thêm `project_mode` + tạo `project_pages` + RLS |
+| `src/pages/Groups.tsx` | Mode selector trong dialog tạo project |
+| `src/types/database.ts` | Thêm `project_mode` vào `Group` interface |
+| `src/lib/i18n/vi.ts` | Thêm i18n cho mode selector |
+| `src/lib/i18n/en.ts` | Thêm i18n cho mode selector |
 
