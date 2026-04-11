@@ -63,6 +63,11 @@ export default function BillingHistory() {
       supabase.from('orders').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50),
     ]);
 
+    const orderCodeMap: Record<string, string> = {};
+    (orderRes.data || []).forEach((o: any) => {
+      if (o.id && o.order_code) orderCodeMap[o.id] = o.order_code;
+    });
+
     const paymentRecords: BillingRecord[] = (payRes.data || []).map((r: any) => ({
       id: r.id,
       source: 'payment' as const,
@@ -79,7 +84,7 @@ export default function BillingHistory() {
       payment_method: r.payment_method,
       coupon_code: r.coupon_code,
       expires_at: null,
-      raw: r,
+      raw: { ...r, order_code: r.order_id ? orderCodeMap[r.order_id] : undefined },
     }));
 
     const completedOrderIds = new Set(paymentRecords.map(p => p.order_id).filter(Boolean));
@@ -206,7 +211,7 @@ export default function BillingHistory() {
                   >
                     <td className="px-5 py-3 text-sm"><DateTimeCell value={row.created_at} /></td>
                     <td className="px-5 py-3 text-sm font-mono text-xs text-muted-foreground">
-                      {row.raw?.order_code || `#${(row.order_id || row.id).slice(0, 8).toUpperCase()}`}
+                      {row.raw?.order_code || '—'}
                     </td>
                     <td className="px-5 py-3 text-sm font-medium">{formatPlanName(row.plan_purchased)}</td>
                     <td className="px-5 py-3 text-sm text-muted-foreground">{row.payment_method || '—'}</td>
