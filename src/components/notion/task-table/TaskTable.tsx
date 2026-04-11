@@ -1,9 +1,11 @@
 import { flexRender } from '@tanstack/react-table';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowUp, ArrowDown, ChevronsUpDown } from 'lucide-react';
 import { Table, TableHeader, TableHead, TableRow, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import UserAvatar from '@/components/UserAvatar';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useTaskTable } from './useTaskTable';
 import { useTaskTableFilters } from './useTaskTableFilters';
 import { STATUS_CONFIG } from './taskTableColumns';
@@ -51,12 +53,34 @@ function renderCell(columnId: string, value: unknown) {
 }
 
 export function TaskTable({ groupId }: TaskTableProps) {
-  const { table, isLoading, error, columnFilters, setColumnFilters, totalRows } = useTaskTable(groupId);
+  const { translations: { taskTable: tt } } = useLanguage();
+  const navigate = useNavigate();
+  const { slug } = useParams<{ slug: string }>();
+
+  const translations = {
+    title: tt.title,
+    status: tt.status,
+    assignees: tt.assignees,
+    deadline: tt.deadline,
+    stage: tt.stage,
+    submission: tt.submission,
+    fileAndLink: tt.fileAndLink,
+    fileOnly: tt.fileOnly,
+    linkOnly: tt.linkOnly,
+  };
+
+  const { table, isLoading, error, columnFilters, setColumnFilters, totalRows } = useTaskTable(groupId, translations);
   const data = table.options.data as TaskTableRow[];
   const filterValues = useTaskTableFilters(data);
 
+  const handleRowClick = (row: TaskTableRow) => {
+    if (slug) {
+      navigate(`/p/${slug}/t/${row.short_id || row.id}`);
+    }
+  };
+
   if (error) {
-    return <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">Failed to load tasks.</div>;
+    return <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{tt.loadError}</div>;
   }
 
   return (
@@ -96,20 +120,24 @@ export function TaskTable({ groupId }: TaskTableProps) {
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  {table.getAllColumns().map(col => (
+                  {table.getAllColumns().filter(c => c.getIsVisible()).map(col => (
                     <TableCell key={col.id}><Skeleton className="h-4 w-3/4" /></TableCell>
                   ))}
                 </TableRow>
               ))
             ) : table.getRowModel().rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={table.getAllColumns().length} className="h-24 text-center text-muted-foreground">
-                  No tasks found.
+                <TableCell colSpan={table.getVisibleLeafColumns().length} className="h-24 text-center text-muted-foreground">
+                  {tt.noTasks}
                 </TableCell>
               </TableRow>
             ) : (
               table.getRowModel().rows.map(row => (
-                <TableRow key={row.id}>
+                <TableRow
+                  key={row.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleRowClick(row.original)}
+                >
                   {row.getVisibleCells().map(cell => (
                     <TableCell key={cell.id}>
                       {renderCell(cell.column.id, cell.getValue())}

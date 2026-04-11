@@ -1,6 +1,7 @@
 import type { Table } from '@tanstack/react-table';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { TaskTableRow } from './useTaskTableData';
 
 interface TaskTablePaginationProps {
@@ -9,6 +10,7 @@ interface TaskTablePaginationProps {
 }
 
 export function TaskTablePagination({ table, totalRows }: TaskTablePaginationProps) {
+  const { translations: { taskTable: tt } } = useLanguage();
   const { pageIndex, pageSize } = table.getState().pagination;
   const filteredTotal = table.getFilteredRowModel().rows.length;
   const start = pageIndex * pageSize + 1;
@@ -19,8 +21,8 @@ export function TaskTablePagination({ table, totalRows }: TaskTablePaginationPro
   return (
     <div className="flex items-center justify-between text-xs text-muted-foreground">
       <span>
-        Showing {start}–{end} of {filteredTotal}
-        {filteredTotal !== totalRows && ` (filtered from ${totalRows})`}
+        {tt.showing} {start}–{end} {tt.of} {filteredTotal}
+        {filteredTotal !== totalRows && ` (${tt.filteredFrom} ${totalRows})`}
       </span>
       <div className="flex items-center gap-1">
         <Button variant="ghost" size="icon" className="h-7 w-7" disabled={!table.getCanPreviousPage()} onClick={() => table.previousPage()}>

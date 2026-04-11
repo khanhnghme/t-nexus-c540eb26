@@ -1,7 +1,8 @@
-import { X, Filter } from 'lucide-react';
+import { X, Filter, Search } from 'lucide-react';
 import type { ColumnFiltersState } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { STATUS_CONFIG } from './taskTableColumns';
 import { applyStatusFilter, applyStageFilter } from './useTaskTableFilters';
 import type { TaskTableRow } from './useTaskTableData';
@@ -19,12 +20,31 @@ interface TaskTableToolbarProps {
 }
 
 export function TaskTableToolbar({ filterValues, columnFilters, setColumnFilters }: TaskTableToolbarProps) {
+  const { translations: { taskTable: tt } } = useLanguage();
   const activeStatus = columnFilters.find(f => f.id === 'status')?.value as TaskTableRow['status'] | undefined;
   const activeStage = columnFilters.find(f => f.id === 'stage_name')?.value as string | undefined;
+  const titleFilter = (columnFilters.find(f => f.id === 'title')?.value as string) || '';
   const hasFilters = columnFilters.length > 0;
+
+  const setTitleFilter = (value: string) => {
+    setColumnFilters(prev => {
+      const without = prev.filter(f => f.id !== 'title');
+      return value ? [...without, { id: 'title', value }] : without;
+    });
+  };
 
   return (
     <div className="flex flex-wrap items-center gap-2">
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <Input
+          placeholder={tt.searchPlaceholder}
+          value={titleFilter}
+          onChange={e => setTitleFilter(e.target.value)}
+          className="h-7 w-48 pl-8 text-xs"
+        />
+      </div>
+
       <Filter className="h-4 w-4 text-muted-foreground" />
 
       {/* Status filters */}
@@ -56,7 +76,7 @@ export function TaskTableToolbar({ filterValues, columnFilters, setColumnFilters
                 variant={isActive ? 'default' : 'outline'}
                 size="sm"
                 className="h-7 text-xs"
-              onClick={() => applyStageFilter(setColumnFilters, isActive ? null : stage.name)}
+                onClick={() => applyStageFilter(setColumnFilters, isActive ? null : stage.name)}
               >
                 {stage.name}
               </Button>
@@ -70,7 +90,7 @@ export function TaskTableToolbar({ filterValues, columnFilters, setColumnFilters
         <>
           <span className="mx-1 h-4 w-px bg-border" />
           <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={() => setColumnFilters([])}>
-            <X className="mr-1 h-3 w-3" /> Clear
+            <X className="mr-1 h-3 w-3" /> {tt.clear}
           </Button>
         </>
       )}

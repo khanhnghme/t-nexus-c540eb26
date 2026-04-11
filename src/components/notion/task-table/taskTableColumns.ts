@@ -11,27 +11,39 @@ export const STATUS_CONFIG: Record<TaskTableRow['status'], { label: string; colo
   VERIFIED: { label: 'Verified', color: 'bg-blue-500/10 text-blue-600' },
 };
 
-export function getTaskTableColumns() {
+export interface TaskTableTranslations {
+  title: string;
+  status: string;
+  assignees: string;
+  deadline: string;
+  stage: string;
+  submission: string;
+  fileAndLink: string;
+  fileOnly: string;
+  linkOnly: string;
+}
+
+export function getTaskTableColumns(t?: TaskTableTranslations) {
   return [
     columnHelper.accessor('title', {
-      header: 'Title',
+      header: t?.title ?? 'Title',
       cell: info => info.getValue(),
       size: 280,
     }),
     columnHelper.accessor('status', {
-      header: 'Status',
+      header: t?.status ?? 'Status',
       cell: info => info.getValue(),
       size: 130,
       filterFn: 'equals',
     }),
     columnHelper.accessor('assignees', {
-      header: 'Assignees',
+      header: t?.assignees ?? 'Assignees',
       cell: info => info.getValue(),
       size: 160,
       enableSorting: false,
     }),
     columnHelper.accessor('deadline', {
-      header: 'Deadline',
+      header: t?.deadline ?? 'Deadline',
       cell: info => {
         const val = info.getValue();
         return val ? format(new Date(val), 'MMM d, yyyy') : '—';
@@ -40,17 +52,17 @@ export function getTaskTableColumns() {
       sortingFn: 'datetime',
     }),
     columnHelper.accessor('stage_name', {
-      header: 'Stage',
+      header: t?.stage ?? 'Stage',
       cell: info => info.getValue() || '—',
       size: 140,
     }),
     columnHelper.accessor('submission_method', {
-      header: 'Submission',
+      header: t?.submission ?? 'Submission',
       cell: info => {
         const map: Record<string, string> = {
-          both: 'File & Link',
-          file_only: 'File',
-          link_only: 'Link',
+          both: t?.fileAndLink ?? 'File & Link',
+          file_only: t?.fileOnly ?? 'File',
+          link_only: t?.linkOnly ?? 'Link',
         };
         return map[info.getValue()] || info.getValue();
       },

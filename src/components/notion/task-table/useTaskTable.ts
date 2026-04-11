@@ -8,13 +8,16 @@ import {
   type SortingState,
   type ColumnFiltersState,
   type PaginationState,
+  type VisibilityState,
 } from '@tanstack/react-table';
 import { useTaskTableData } from './useTaskTableData';
-import { getTaskTableColumns } from './taskTableColumns';
+import { getTaskTableColumns, type TaskTableTranslations } from './taskTableColumns';
+import { useIsMobile } from '@/hooks/use-mobile';
 
-export function useTaskTable(groupId: string | undefined) {
+export function useTaskTable(groupId: string | undefined, translations?: TaskTableTranslations) {
   const { data = [], isLoading, error } = useTaskTableData(groupId);
-  const columns = useMemo(() => getTaskTableColumns(), []);
+  const columns = useMemo(() => getTaskTableColumns(translations), [translations]);
+  const isMobile = useIsMobile();
 
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -23,10 +26,18 @@ export function useTaskTable(groupId: string | undefined) {
     pageSize: 20,
   });
 
+  const columnVisibility: VisibilityState = useMemo(() => {
+    if (!isMobile) return {};
+    return {
+      stage_name: false,
+      submission_method: false,
+    };
+  }, [isMobile]);
+
   const table = useReactTable({
     data,
     columns,
-    state: { sorting, columnFilters, pagination },
+    state: { sorting, columnFilters, pagination, columnVisibility },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onPaginationChange: setPagination,
