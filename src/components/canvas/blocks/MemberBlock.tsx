@@ -1,10 +1,10 @@
 import { createReactBlockSpec } from "@blocknote/react";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTaskBlockContext } from "./TaskBlockContext";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Users, List, LayoutGrid, UserPlus } from "lucide-react";
+import BlockSkeleton from "./BlockSkeleton";
 import UserAvatar from "@/components/UserAvatar";
 import { getProjectRoleLabel } from "@/lib/roleLabels";
 import { Toggle } from "@/components/ui/toggle";
@@ -18,7 +18,7 @@ interface MemberRow {
   avatar_url: string | null;
 }
 
-function MemberListRenderer() {
+const MemberListRenderer = memo(function MemberListRenderer() {
   const { groupId, editable } = useTaskBlockContext();
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,21 +79,7 @@ function MemberListRenderer() {
   }, [groupId, fetchMembers]);
 
   if (loading) {
-    return (
-      <div className="rounded-lg border bg-card p-3 space-y-2">
-        <div className="flex items-center gap-2 mb-2">
-          <Skeleton className="h-4 w-4" />
-          <Skeleton className="h-4 w-32" />
-        </div>
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="flex items-center gap-2">
-            <Skeleton className="h-7 w-7 rounded-full" />
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-5 w-16 ml-auto" />
-          </div>
-        ))}
-      </div>
-    );
+    return <BlockSkeleton variant="members" />;
   }
 
   return (

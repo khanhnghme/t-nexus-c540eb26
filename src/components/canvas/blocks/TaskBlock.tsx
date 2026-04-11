@@ -1,16 +1,16 @@
 import { createReactBlockSpec } from "@blocknote/react";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTaskBlockContext } from "./TaskBlockContext";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ListChecks, LayoutGrid, List } from "lucide-react";
 import { toast } from "sonner";
 import type { TaskRow, TaskHandlers, TaskStatus } from "./taskBlockTypes";
 import { TaskListView } from "./TaskListView";
 import { TaskKanbanView } from "./TaskKanbanView";
+import BlockSkeleton from "./BlockSkeleton";
 
-function TaskListRenderer() {
+const TaskListRenderer = memo(function TaskListRenderer() {
   const { groupId, editable } = useTaskBlockContext();
   const [tasks, setTasks] = useState<TaskRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,13 +129,7 @@ function TaskListRenderer() {
   }), [handleStatusChange, handleAddTask, handleDelete, handleUpdateTitle, handleUpdateDeadline]);
 
   if (loading) {
-    return (
-      <div className="space-y-2 p-3">
-        {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-10 w-full" />
-        ))}
-      </div>
-    );
+    return <BlockSkeleton variant="list" />;
   }
 
   return (

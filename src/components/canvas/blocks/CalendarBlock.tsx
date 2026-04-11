@@ -1,9 +1,9 @@
 import { createReactBlockSpec } from "@blocknote/react";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTaskBlockContext } from "./TaskBlockContext";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import BlockSkeleton from "./BlockSkeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, Plus } from "lucide-react";
@@ -28,7 +28,7 @@ interface DeadlineTask {
   status: string;
 }
 
-function CalendarRenderer() {
+const CalendarRenderer = memo(function CalendarRenderer() {
   const { groupId, editable } = useTaskBlockContext();
   const [tasks, setTasks] = useState<DeadlineTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,12 +109,7 @@ function CalendarRenderer() {
   );
 
   if (loading) {
-    return (
-      <div className="space-y-2 p-3">
-        <Skeleton className="h-5 w-40" />
-        <Skeleton className="h-48 w-full" />
-      </div>
-    );
+    return <BlockSkeleton variant="calendar" />;
   }
 
   return (

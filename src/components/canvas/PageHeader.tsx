@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { ImageIcon, SmilePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import EmojiPicker from "./EmojiPicker";
@@ -39,15 +39,35 @@ export default function PageHeader({
     }
   }, [editingTitle]);
 
-  const commitTitle = () => {
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  const commitTitle = useCallback(() => {
     setEditingTitle(false);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     const trimmed = localTitle.trim();
     if (trimmed && trimmed !== title) {
       onChangeTitle?.(trimmed);
     } else {
       setLocalTitle(title);
     }
-  };
+  }, [localTitle, title, onChangeTitle]);
+
+  const handleTitleInputChange = useCallback((value: string) => {
+    setLocalTitle(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const trimmed = value.trim();
+      if (trimmed && trimmed !== title) {
+        onChangeTitle?.(trimmed);
+      }
+    }, 600);
+  }, [title, onChangeTitle]);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   return (
     <div
@@ -97,7 +117,7 @@ export default function PageHeader({
         <input
           ref={inputRef}
           value={localTitle}
-          onChange={(e) => setLocalTitle(e.target.value)}
+          onChange={(e) => handleTitleInputChange(e.target.value)}
           onBlur={commitTitle}
           onKeyDown={(e) => {
             if (e.key === "Enter") commitTitle();
