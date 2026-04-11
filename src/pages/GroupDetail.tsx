@@ -37,6 +37,7 @@ import ProcessScores from '@/components/scores/ProcessScores';
 import ProjectResources from '@/components/ProjectResources';
 import ProjectEvidenceExport from '@/components/ProjectEvidenceExport';
 import GroupMeetings from '@/components/GroupMeetings';
+import CanvasPageView from '@/components/canvas/CanvasPageView';
 
 import type { Group, GroupMember, Task, Profile, Stage } from '@/types/database';
 import { DeadlineHourPicker } from '@/components/DeadlineHourPicker';
@@ -468,6 +469,9 @@ export default function GroupDetail() {
   return (
       <div>
 
+      {group.project_mode === 'custom' ? (
+        <CanvasPageView groupId={group.id} editable={isLeaderInGroup} />
+      ) : (
       <div>
         <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-0">
           {/* Hidden TabsList - using ProjectNavigation instead */}
@@ -770,6 +774,7 @@ export default function GroupDetail() {
           </div>
         </Tabs>
       </div>
+      )}
 
       <TaskEditDialog task={editingTask} stages={stages} members={members} isOpen={!!editingTask} onClose={() => setEditingTask(null)} onSave={fetchGroupData} canEdit={isLeaderInGroup} groupCreatorId={group.created_by} />
       
