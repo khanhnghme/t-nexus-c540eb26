@@ -692,7 +692,31 @@ export default function GroupDetail() {
               </TabsContent>
 
               <TabsContent value="tasks" className="mt-6">
-                <TaskListView stages={stages} tasks={tasks} members={members} isLeaderInGroup={isLeaderInGroup} groupId={group.id} groupSlug={group.slug} onRefresh={fetchGroupData} onEditTask={setEditingTask} onCreateTask={(stageId) => { setNewTaskStageId(stageId); setIsTaskDialogOpen(true); }} onEditStage={setEditingStage} onDeleteStage={setStageToDelete} onToggleStageHidden={handleToggleStageHidden} />
+                <div className="flex items-center justify-end mb-3 gap-1">
+                  <Button
+                    variant={taskViewMode === 'list' ? 'default' : 'ghost'}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setTaskViewMode('list')}
+                    title={t.taskTable?.listView ?? 'List view'}
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={taskViewMode === 'table' ? 'default' : 'ghost'}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setTaskViewMode('table')}
+                    title={t.taskTable?.tableView ?? 'Table view'}
+                  >
+                    <Table2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                {taskViewMode === 'list' ? (
+                  <TaskListView stages={stages} tasks={tasks} members={members} isLeaderInGroup={isLeaderInGroup} groupId={group.id} groupSlug={group.slug} onRefresh={fetchGroupData} onEditTask={setEditingTask} onCreateTask={(stageId) => { setNewTaskStageId(stageId); setIsTaskDialogOpen(true); }} onEditStage={setEditingStage} onDeleteStage={setStageToDelete} onToggleStageHidden={handleToggleStageHidden} />
+                ) : (
+                  <TaskTable groupId={group.id} />
+                )}
               </TabsContent>
 
               <TabsContent value="scores" className="mt-6">
