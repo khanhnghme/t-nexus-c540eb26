@@ -89,7 +89,7 @@ function blockToMarkdown(block: AnyBlock, depth = 0): string {
   return [text, childrenMd].filter(Boolean).join("\n");
 }
 
-export function blocksToMarkdown(blocks: AnyAnyBlock[], title?: string): string {
+export function blocksToMarkdown(blocks: AnyBlock[], title?: string): string {
   const lines: string[] = [];
   if (title) {
     lines.push(`# ${title}`, "");
@@ -101,7 +101,7 @@ export function blocksToMarkdown(blocks: AnyAnyBlock[], title?: string): string 
   return lines.join("\n");
 }
 
-export function downloadMarkdown(blocks: AnyAnyBlock[], title = "Untitled") {
+export function downloadMarkdown(blocks: AnyBlock[], title = "Untitled") {
   const md = blocksToMarkdown(blocks, title);
   const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -125,7 +125,7 @@ function getInlineText(block: AnyBlock): string {
     .join("") ?? "";
 }
 
-export function downloadPdf(blocks: AnyAnyBlock[], title = "Untitled") {
+export function downloadPdf(blocks: AnyBlock[], title = "Untitled") {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
