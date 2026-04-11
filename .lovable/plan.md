@@ -1,52 +1,55 @@
 
 
-## Phase 9 — Giai doan 3/4: Styling va Theming cho ToggleBlock
+## Phase 9 — Giai doan 4/4: Animation mo/dong cho ToggleBlock
 
 ### Muc tieu
-Nang cap giao dien ToggleBlock — them background color nhe, hover effect, va transition cho chevron icon de toggle tro nen dep va chuyen nghiep hon.
+Them animation mo/dong cho vung noi dung toggle — content area slide down khi mo, slide up khi dong, tao cam giac muot ma.
 
 ### Hien trang
-- Stage 1-2 hoan thanh: ToggleBlock co tieu de inline + editable textarea body
-- Style hien tai: chi co border co ban, chua co hover effect, chua co background, chevron chua co transition
+- Stage 1-3 hoan thanh: ToggleBlock co tieu de inline, editable body, styling/hover/chevron transition
+- Content area hien/an bang conditional render (`{!isCollapsed && ...}`) — khong co animation
 
 ### Hanh dong
 
 **Cap nhat `src/components/canvas/blocks/ToggleBlock.tsx`**
-- Them background nhe cho block (`hsl(var(--muted))` voi opacity thap)
-- Hover effect tren header row (background sang hon khi hover)
-- Transition rotate cho chevron icon (transform + transition 200ms)
-- Dung CSS transform `rotate(90deg)` thay vi swap giua ChevronRight/ChevronDown — chi dung 1 icon `ChevronRight` voi rotation
-- Them hover effect cho toggle button (border-radius, background on hover)
-- Typography: tinh chinh font-weight, line-height cho tieu de va body
+- Thay conditional render bang render luon content area nhung dung animation height + opacity
+- Dung pattern: container div voi `overflow: hidden`, `max-height` transition (0 khi dong, scrollHeight khi mo)
+- Kem theo opacity transition (0 → 1 khi mo, 1 → 0 khi dong)
+- Dung `useRef` de do `scrollHeight` cua content area
+- Dung `useEffect` de cap nhat max-height khi collapsed thay doi
+- Duration: 200ms ease, dong bo voi chevron rotation
+
+**Cap nhat `.lovable/plan.md`**
+- Ghi nhan Phase 9 hoan tat
 
 ### Chi tiet ky thuat
 
 ```text
-Truoc:
-┌──────────────────────────────────┐  ← border only
-│ ▶  Tieu de                       │
-└──────────────────────────────────┘
+Dong:
+  max-height: 0
+  opacity: 0
+  overflow: hidden
+  transition: max-height 200ms ease, opacity 150ms ease
 
-Sau:
-┌──────────────────────────────────┐  ← subtle background + border
-│ ▶  Tieu de                       │  ← hover: darker bg
-├──────────────────────────────────┤
-│    Noi dung...                   │
-└──────────────────────────────────┘
+Mo:
+  max-height: scrollHeight + "px"
+  opacity: 1
 
-Chevron: 1 icon ChevronRight
-  collapsed: transform: rotate(0)
-  expanded:  transform: rotate(90deg)
-  transition: transform 200ms ease
+Content div luon render (khong dung conditional)
+  → cho phep CSS transition hoat dong
+
+useRef → do scrollHeight
+useEffect([isCollapsed]) → cap nhat style
 ```
 
 ### Khong lam
-- Animation mo/dong cho content area (giai doan 4)
 - Thay doi prop schema
+- Thay doi logic toggle/body
 
 ### Files thay doi
 
 | File | Thay doi |
 |------|----------|
-| `src/components/canvas/blocks/ToggleBlock.tsx` | Styling + hover + chevron transition |
+| `src/components/canvas/blocks/ToggleBlock.tsx` | Animation mo/dong |
+| `.lovable/plan.md` | Phase 9 hoan tat |
 
