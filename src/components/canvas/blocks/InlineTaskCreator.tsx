@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import {
@@ -113,12 +113,12 @@ export function InlineTaskCreator({ groupId, adding, onAdd, compact = false }: I
         <PopoverTrigger asChild>
           <button
             className={cn(
-              "text-muted-foreground hover:text-primary transition-colors shrink-0",
+              "text-muted-foreground hover:text-primary transition-colors shrink-0 p-1 -m-1",
               assignee && "text-primary"
             )}
             title="Gán thành viên"
           >
-            <User className={cn(compact ? "h-3 w-3" : "h-3.5 w-3.5")} />
+            <User className={cn(compact ? "h-3.5 w-3.5" : "h-4 w-4", "sm:h-3.5 sm:w-3.5")} />
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-48 p-1" align="end">
@@ -154,12 +154,12 @@ export function InlineTaskCreator({ groupId, adding, onAdd, compact = false }: I
         <PopoverTrigger asChild>
           <button
             className={cn(
-              "text-muted-foreground hover:text-primary transition-colors shrink-0",
+              "text-muted-foreground hover:text-primary transition-colors shrink-0 p-1 -m-1",
               deadline && "text-primary"
             )}
             title="Đặt deadline"
           >
-            <Calendar className={cn(compact ? "h-3 w-3" : "h-3.5 w-3.5")} />
+            <Calendar className={cn(compact ? "h-3.5 w-3.5" : "h-4 w-4", "sm:h-3.5 sm:w-3.5")} />
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="end">

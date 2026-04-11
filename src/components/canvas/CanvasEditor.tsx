@@ -61,9 +61,24 @@ export default function CanvasEditor({
   const [serializedContent] = useState("");
   const [currentContent, setCurrentContent] = useState(serializedContent);
 
+  const safeInitialContent = useMemo(() => {
+    if (!initialContent?.length) return undefined;
+    // Filter out blocks with unknown types that would crash BlockNote
+    const validTypes = new Set(Object.keys(schema.blockSpecs));
+    const filterBlocks = (blocks: PartialBlock[]): PartialBlock[] =>
+      blocks
+        .filter((b) => !b.type || validTypes.has(b.type))
+        .map((b) => ({
+          ...b,
+          children: b.children?.length ? filterBlocks(b.children as PartialBlock[]) : b.children,
+        }));
+    const filtered = filterBlocks(initialContent);
+    return filtered.length ? filtered : undefined;
+  }, [initialContent]);
+
   const editor = useCreateBlockNote({
     schema,
-    initialContent: initialContent?.length ? (initialContent as any) : undefined,
+    initialContent: safeInitialContent as any,
   });
 
   const handleSave = useCallback(
