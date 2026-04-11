@@ -33,6 +33,23 @@ interface TaskAssignee {
   student_id?: string;
   avatar_url?: string | null;
 }
+function TaskCopyableId({ label, value, fullValue }: { label: string; value: string; fullValue?: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(fullValue || value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+  return (
+    <div className="flex items-center gap-2 min-w-0">
+      <span className="text-xs text-muted-foreground shrink-0">{label}:</span>
+      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded border border-border truncate max-w-[180px]">{value}</code>
+      <button onClick={handleCopy} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+        {copied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+      </button>
+    </div>
+  );
+}
 
 export default function CalendarTaskDetailDialog({ open, onOpenChange, event, onRefresh }: CalendarTaskDetailDialogProps) {
   const { user } = useAuth();
