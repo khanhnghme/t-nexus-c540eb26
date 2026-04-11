@@ -314,6 +314,52 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
               <TooltipContent>Lưu trang này làm template</TooltipContent>
             </Tooltip>
           )}
+          {/* Export dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs shrink-0">
+                <Download className="h-3 w-3" />
+                <span className="hidden sm:inline">Export</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => {
+                const content = activePage.content as unknown as any[];
+                downloadPdf(content || [], activePage.title);
+                toast.success("Đã export PDF!");
+              }}>
+                Export PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                const content = activePage.content as unknown as any[];
+                downloadMarkdown(content || [], activePage.title);
+                toast.success("Đã export Markdown!");
+              }}>
+                Export Markdown
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {/* Copy share link */}
+          {projectSlug && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1.5 text-xs shrink-0"
+                  onClick={() => {
+                    const url = `${window.location.origin}/share/${projectSlug}/page/${activePage.slug || ""}`;
+                    navigator.clipboard.writeText(url);
+                    toast.success("Đã copy link trang!");
+                  }}
+                >
+                  <Link2 className="h-3 w-3" />
+                  <span className="hidden sm:inline">Share</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Copy link chia sẻ trang</TooltipContent>
+            </Tooltip>
+          )}
         </div>
         <CanvasEditor
           key={activePage.id}
