@@ -2560,6 +2560,50 @@ export type Database = {
           },
         ]
       }
+      task_attachments: {
+        Row: {
+          content_type: string | null
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          storage_name: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number
+          id?: string
+          storage_name?: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          storage_name?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_attachments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_comments: {
         Row: {
           content: string
