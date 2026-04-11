@@ -422,9 +422,9 @@ function CellContent({ value }: { value: CellValue }) {
 const CONNECTED_TOOLS_CATEGORY: FeatureCategory = {
   category: 'Connected Tools',
   rows: [
-    { label: 'Email Integration', free: false, plus: false, pro: true, business: true, enterprise: true },
-    { label: 'Google Drive', free: false, plus: false, pro: true, business: true, enterprise: true },
-    { label: 'Calendar Sync (Two-way)', free: false, plus: false, pro: true, business: true, enterprise: true },
+    { label: 'Email Integration', free: false, plus: false, pro: 'Unlimited', business: 'Unlimited', enterprise: 'Unlimited' },
+    { label: 'Google Drive', free: false, plus: false, pro: 'Unlimited', business: 'Unlimited', enterprise: 'Unlimited' },
+    { label: 'Calendar Sync (Two-way)', free: false, plus: false, pro: 'Unlimited', business: 'Unlimited', enterprise: 'Unlimited' },
   ],
 };
 

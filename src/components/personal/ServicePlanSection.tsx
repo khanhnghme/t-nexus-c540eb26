@@ -77,7 +77,7 @@ export default function ServicePlanSection() {
               <span className="text-muted-foreground">{f}</span>
             </div>
           ))}
-          {shouldShowIntegrations(plan) && <ConnectedToolsTailwind compact />}
+          <ConnectedToolsTailwind compact planKey={plan} />
         </div>
 
         <div className="flex gap-2">

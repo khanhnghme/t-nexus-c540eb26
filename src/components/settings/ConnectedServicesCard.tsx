@@ -1,16 +1,20 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useGoogleCalendarSync } from '@/hooks/useGoogleCalendarSync';
 import { useGmailSync } from '@/hooks/useGmailSync';
 import { useGoogleDriveConnect } from '@/hooks/useGoogleDriveConnect';
+import { shouldShowIntegrations } from '@/components/ConnectedToolsBadge';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Lock, Zap } from 'lucide-react';
 import googleCalendarLogo from '@/assets/google-calendar-logo.png';
 import gmailLogo from '@/assets/gmail-logo.png';
 import googleDriveLogo from '@/assets/google-drive-logo.png';
@@ -28,10 +32,15 @@ interface ServiceInfo {
 }
 
 export default function ConnectedServicesCard() {
+  const { profile } = useAuth();
   const { locale } = useLanguage();
+  const navigate = useNavigate();
   const isVi = locale === 'vi';
   const [disconnectTarget, setDisconnectTarget] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState(false);
+
+  const plan = profile?.user_plan || 'plan_free';
+  const canUse = shouldShowIntegrations(plan);
 
   const calendar = useGoogleCalendarSync();
   const gmail = useGmailSync();
@@ -88,10 +97,29 @@ export default function ConnectedServicesCard() {
 
   return (
     <>
+      {!canUse && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 mb-3">
+          <Lock className="w-4 h-4 text-amber-500 shrink-0" />
+          <p className="text-xs text-amber-700 dark:text-amber-300 flex-1">
+            {isVi
+              ? 'Dịch vụ liên kết khả dụng từ gói Pro trở lên'
+              : 'Connected Tools available from Pro plan and above'}
+          </p>
+          <Button
+            size="sm"
+            className="h-6 px-2.5 text-[10px] bg-amber-500 hover:bg-amber-600 text-white shrink-0"
+            onClick={() => navigate('/upgrade?from=settings')}
+          >
+            <Zap className="w-3 h-3 mr-0.5" />
+            {isVi ? 'Nâng cấp' : 'Upgrade'}
+          </Button>
+        </div>
+      )}
+
       <div className="divide-y divide-border">
         {services.map((s) => (
-          <div key={s.key} className="flex items-center gap-3 py-3.5 first:pt-0 last:pb-0">
-            {s.isChecking ? (
+          <div key={s.key} className={`flex items-center gap-3 py-3.5 first:pt-0 last:pb-0 ${!canUse ? 'opacity-50' : ''}`}>
+            {s.isChecking && canUse ? (
               <>
                 <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
                 <div className="flex-1 space-y-1.5">
@@ -111,10 +139,19 @@ export default function ConnectedServicesCard() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium leading-none">{s.name}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {s.isConnected && s.email ? s.email : s.description}
+                    {!canUse
+                      ? (isVi ? 'Yêu cầu gói Pro+' : 'Requires Pro+')
+                      : s.isConnected && s.email
+                        ? s.email
+                        : s.description}
                   </p>
                 </div>
-                {s.isConnected ? (
+                {!canUse ? (
+                  <Badge variant="secondary" className="text-[10px] bg-muted text-muted-foreground shrink-0">
+                    <Lock className="w-3 h-3 mr-1" />
+                    Pro+
+                  </Badge>
+                ) : s.isConnected ? (
                   <div className="flex items-center gap-2.5 shrink-0">
                     <span className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />

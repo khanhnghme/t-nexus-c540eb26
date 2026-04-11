@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import gmailLogo from '@/assets/gmail-logo.png';
 import googleDriveLogo from '@/assets/google-drive-logo.png';
@@ -35,10 +35,11 @@ export function ConnectedToolsInline({ detailed = true }: { detailed?: boolean }
 
 /**
  * Tailwind-styled Connected Tools section — for ServicePlan / Settings pages
- * Clicking navigates to Account Settings integrations section
+ * Shows locked state for Free/Plus plans, unlocked for Pro+
  */
-export function ConnectedToolsTailwind({ compact = false }: { compact?: boolean }) {
+export function ConnectedToolsTailwind({ compact = false, planKey }: { compact?: boolean; planKey?: string }) {
   const navigate = useNavigate();
+  const canUse = planKey ? shouldShowIntegrations(planKey) : true;
 
   return (
     <div
@@ -48,10 +49,22 @@ export function ConnectedToolsTailwind({ compact = false }: { compact?: boolean 
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && navigate('/account-settings#integrations')}
     >
-      <p className={`font-semibold text-foreground m-0 ${compact ? 'text-xs' : 'text-[13px]'}`}>Connected Tools</p>
+      <p className={`font-semibold text-foreground m-0 ${compact ? 'text-xs' : 'text-[13px]'}`}>
+        Connected Tools
+        {!canUse && (
+          <span className="ml-1.5 inline-flex items-center gap-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+            <Lock className="w-2.5 h-2.5" />
+            Pro+
+          </span>
+        )}
+      </p>
       {GOOGLE_INTEGRATIONS.map(item => (
-        <div key={item.label} className="flex items-center gap-2">
-          <Check size={compact ? 13 : 15} className="text-primary shrink-0" strokeWidth={2.5} />
+        <div key={item.label} className={`flex items-center gap-2 ${!canUse ? 'opacity-50' : ''}`}>
+          {canUse ? (
+            <Check size={compact ? 13 : 15} className="text-primary shrink-0" strokeWidth={2.5} />
+          ) : (
+            <Lock size={compact ? 11 : 13} className="text-muted-foreground shrink-0" />
+          )}
           <img src={item.logo} alt={item.label} className={`shrink-0 object-contain ${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
           <span className={`text-muted-foreground leading-relaxed ${compact ? 'text-xs' : 'text-[13px]'}`}>{item.label}</span>
         </div>
