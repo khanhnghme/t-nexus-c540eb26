@@ -1,55 +1,45 @@
 
 
-## Phase 1 — Block Editor Core: Giai đoạn 2/2 (UI / Integration)
+## Phase 2 — Page Management: Giai đoạn 1/2 (Database / Logic)
 
-Giai đoạn 1 đã hoàn thành: bảng `project_pages`, cột `project_mode` trên `groups`, mode selector trong dialog tạo project. Giai đoạn 2 tập trung vào **cài đặt BlockNote và render editor trong project Custom**.
+Phase 1 đã hoàn thành: editor hoạt động, autosave, tạo page mới. Phase 2 tập trung vào **quản lý pages**: đổi tên, xóa, sắp xếp lại, icon emoji.
 
-### Thay đổi
+### Thay đổi Database
 
-**1. Cài đặt dependencies**
-- `@blocknote/core`, `@blocknote/react`, `@blocknote/mantine`
+**1. Migration**
+- Thêm cột `icon` (TEXT, nullable) vào bảng `project_pages` — lưu emoji cho mỗi page
+- Tạo trigger `updated_at` tự động cập nhật khi row thay đổi (hiện đang set thủ công trong code)
 
-**2. `src/components/notion/NotionEditor.tsx` — Tạo mới**
-- Wrap `BlockNoteView` với `useCreateBlockNote`
-- Props: `pageId`, `initialContent`, `onChange`, `editable`
-- Hỗ trợ: text, heading, list, image (các block mặc định của BlockNote)
-- Tích hợp `useAutosave` để tự động lưu content (JSON) vào bảng `project_pages`
-- Hiển thị trạng thái saving (spinner nhỏ)
+**2. Cập nhật RLS policies**
+- Hiện tại chỉ leader (via `is_project_leader`) mới INSERT/UPDATE/DELETE
+- Giữ nguyên — không thay đổi RLS trong phase này
+- Lý do: chỉ leader mới nên quản lý pages (rename, delete, reorder)
 
-**3. `src/components/notion/NotionPageList.tsx` — Tạo mới**
-- Sidebar nhỏ hiển thị danh sách pages của project Custom
-- Nút "+" tạo page mới (insert vào `project_pages`)
-- Click chọn page → load content vào editor
-- Sắp xếp theo `display_order`
+### Thay đổi Logic (trong code)
 
-**4. `src/components/notion/CustomProjectView.tsx` — Tạo mới**
-- Layout wrapper: sidebar pages (trái) + editor (phải)
-- Quản lý state: `selectedPageId`, load/save logic
-- Tự tạo page đầu tiên nếu project chưa có page nào
+**3. `CustomProjectView.tsx` — Thêm handlers**
+- `handleRenamePage(pageId, newTitle)` — update title trong DB + state
+- `handleDeletePage(pageId)` — delete page, auto-select page khác
+- `handleReorderPages(reorderedPages)` — update `display_order` batch
+- `handleUpdateIcon(pageId, icon)` — update icon emoji
 
-**5. `src/pages/GroupDetail.tsx` — Render theo mode**
-- Kiểm tra `group.project_mode`
-- Nếu `'custom'`: render `<CustomProjectView>` thay vì tabs tasks/stages hiện tại
-- Nếu `'basic'`: giữ nguyên UI hiện tại
-- Vẫn giữ các tab chung: members, settings, logs (nếu có quyền)
+**4. `NotionPageList.tsx` — Cập nhật PageItem type**
+- Thêm `icon?: string` vào `PageItem` interface
+- Thêm props cho rename, delete, reorder handlers (chưa render UI — để giai đoạn 2)
 
-**6. i18n**
-- Thêm text: "Untitled", "New page", "Saving...", "Saved"
+**5. `CustomProjectView.tsx` — Fetch thêm icon**
+- Select thêm `icon` trong query `fetchPages`
 
-### Chưa làm
-- Slash commands tuỳ chỉnh (Phase 3)
-- Task table/Kanban blocks (Phase 4-7)
-- Không thay đổi database
+### Chưa làm trong giai đoạn này
+- UI cho rename/delete/reorder (giai đoạn 2)
+- Drag-drop reorder (giai đoạn 2)
+- Emoji picker (giai đoạn 2)
 
-### Files cần tạo/sửa
+### Files cần sửa
 
 | File | Thay đổi |
 |------|----------|
-| `package.json` | Thêm BlockNote dependencies |
-| `src/components/notion/NotionEditor.tsx` | **Tạo mới** — BlockNote editor |
-| `src/components/notion/NotionPageList.tsx` | **Tạo mới** — Pages sidebar |
-| `src/components/notion/CustomProjectView.tsx` | **Tạo mới** — Layout wrapper |
-| `src/pages/GroupDetail.tsx` | Conditional render theo `project_mode` |
-| `src/lib/i18n/vi.ts` | Thêm i18n |
-| `src/lib/i18n/en.ts` | Thêm i18n |
+| Migration SQL | Thêm `icon` + trigger `updated_at` |
+| `src/components/notion/CustomProjectView.tsx` | Thêm handlers + fetch icon |
+| `src/components/notion/NotionPageList.tsx` | Cập nhật PageItem type + thêm handler props |
 
