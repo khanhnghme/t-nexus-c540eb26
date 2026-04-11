@@ -211,6 +211,19 @@ export interface Stage {
 
 export type InvitationStatus = 'pending' | 'accepted' | 'rejected' | 'cancelled';
 
+export interface ProjectPage {
+  id: string;
+  group_id: string;
+  title: string;
+  slug: string | null;
+  content: any;
+  display_order: number;
+  icon: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ProjectInvitation {
   id: string;
   group_id: string;
