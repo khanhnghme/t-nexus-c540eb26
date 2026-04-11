@@ -1369,6 +1369,12 @@ export const vi: Translations = {
       createDialogTitle: 'Tạo dự án mới',
       willCreateIn: 'Dự án sẽ được tạo trong workspace',
       fillInfo: 'Điền thông tin dự án và thêm thành viên (tùy chọn)',
+      // Project mode
+      projectModeLabel: 'Loại dự án',
+      projectModeBasic: 'Cơ bản',
+      projectModeBasicDesc: 'Quản lý tasks, giai đoạn, chấm điểm — phù hợp đa số dự án',
+      projectModeCustom: 'Tùy chỉnh (Notion-like)',
+      projectModeCustomDesc: 'Block editor tự do — phù hợp ghi chú, tài liệu, wiki',
       projectInfo: 'Thông tin dự án',
       projectName: 'Tên dự án',
       projectNamePlaceholder: 'VD: Đồ án môn học CNTT',
