@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { FileText, Plus, Trash2, Loader2, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import EmojiPicker from "./EmojiPicker";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import {
@@ -25,6 +26,7 @@ interface PageItem {
   id: string;
   title: string;
   display_order: number;
+  icon?: string | null;
 }
 
 interface CanvasSidebarProps {
@@ -35,6 +37,7 @@ interface CanvasSidebarProps {
   onDeletePage: (pageId: string) => void;
   onRenamePage?: (pageId: string, newTitle: string) => void;
   onReorderPages?: (orderedIds: string[]) => void;
+  onChangePageIcon?: (pageId: string, icon: string | null) => void;
   editable: boolean;
   isCreating?: boolean;
 }
@@ -107,6 +110,7 @@ export default function CanvasSidebar({
   onDeletePage,
   onRenamePage,
   onReorderPages,
+  onChangePageIcon,
   editable,
   isCreating,
 }: CanvasSidebarProps) {
@@ -183,8 +187,29 @@ export default function CanvasSidebar({
                           <span className="pl-2" />
                         )}
 
-                        <FileText className="h-3.5 w-3.5 shrink-0" />
-
+                        {editable ? (
+                          <EmojiPicker
+                            currentEmoji={page.icon}
+                            onSelect={(emoji) => onChangePageIcon?.(page.id, emoji)}
+                          >
+                            <button
+                              className="shrink-0 hover:bg-accent/50 rounded p-0.5 transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {page.icon ? (
+                                <span className="text-sm leading-none">{page.icon}</span>
+                              ) : (
+                                <FileText className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                          </EmojiPicker>
+                        ) : (
+                          page.icon ? (
+                            <span className="text-sm leading-none shrink-0">{page.icon}</span>
+                          ) : (
+                            <FileText className="h-3.5 w-3.5 shrink-0" />
+                          )
+                        )}
                         <InlineRenameTitle
                           title={page.title}
                           editable={editable}
