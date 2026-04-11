@@ -11,6 +11,7 @@ const NOTE_COLORS: Record<string, { bg: string; border: string; dot: string }> =
 };
 
 const COLOR_KEYS = Object.keys(NOTE_COLORS);
+const ICON_PRESETS = ["💡", "⚠️", "📌", "✅", "❌", "ℹ️"];
 
 export const NoteCalloutBlock = createReactBlockSpec(
   {
@@ -24,6 +25,7 @@ export const NoteCalloutBlock = createReactBlockSpec(
   {
     render: (props) => {
       const [hovered, setHovered] = useState(false);
+      const [showIconPicker, setShowIconPicker] = useState(false);
       const icon = props.block.props.icon || "💡";
       const color = props.block.props.color || "#f0f9ff";
       const style = NOTE_COLORS[color] || NOTE_COLORS["#f0f9ff"];
@@ -31,7 +33,7 @@ export const NoteCalloutBlock = createReactBlockSpec(
       return (
         <div
           onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
+          onMouseLeave={() => { setHovered(false); setShowIconPicker(false); }}
           style={{ position: "relative", margin: "0.25rem 0" }}
         >
           {hovered && (
@@ -84,15 +86,63 @@ export const NoteCalloutBlock = createReactBlockSpec(
             }}
           >
             <span
+              onClick={() => setShowIconPicker((v) => !v)}
               style={{
                 fontSize: "1.25rem",
                 lineHeight: "1.5rem",
                 flexShrink: 0,
                 userSelect: "none",
+                cursor: "pointer",
+                position: "relative",
               }}
               contentEditable={false}
             >
               {icon}
+              {showIconPicker && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    left: 0,
+                    marginTop: 4,
+                    display: "grid",
+                    gridTemplateColumns: "repeat(3, 1fr)",
+                    gap: 2,
+                    padding: "4px 6px",
+                    background: "#fff",
+                    borderRadius: 6,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
+                    zIndex: 20,
+                  }}
+                >
+                  {ICON_PRESETS.map((ic) => (
+                    <button
+                      key={ic}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        (props.editor as any).updateBlock(props.block, {
+                          props: { icon: ic },
+                        });
+                        setShowIconPicker(false);
+                      }}
+                      style={{
+                        width: 28,
+                        height: 28,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderRadius: 4,
+                        border: "none",
+                        background: ic === icon ? "#e0e7ff" : "transparent",
+                        cursor: "pointer",
+                        fontSize: "1rem",
+                      }}
+                    >
+                      {ic}
+                    </button>
+                  ))}
+                </div>
+              )}
             </span>
             <div style={{ flex: 1, minWidth: 0 }} ref={props.contentRef} />
           </div>
