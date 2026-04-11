@@ -1,66 +1,56 @@
 
 
-## Phase 2 — Giai đoạn 2/4: Auto-save & Load content từ DB
+## Phase 2 — Giai đoạn 3/4: Canvas View trong Project Detail
 
 ### Mục tiêu
-Kết nối CanvasEditor với database: auto-save content khi gõ (debounced), load lại content khi mở page. Wire `CreateCustomProject` để thực sự tạo project + page trong DB.
+Khi mở project có `project_mode: 'custom'`, hiển thị Canvas Editor thay vì giao diện task management mặc định. Load pages từ DB và cho phép edit với auto-save.
 
 ### Hiện trạng
-- ✅ Service layer + hooks cho `project_pages` CRUD đã sẵn sàng
-- ✅ `CanvasEditor` component hoạt động với `onChange` callback
-- ✅ `CreateCustomProject.tsx` có form đầy đủ nhưng chỉ `console.log`
-- ❌ Chưa có auto-save logic
-- ❌ Chưa có hook `useAutosave` cho debounced saving
-- ❌ `handleCreate` chưa insert vào DB
+- ✅ Service + hooks CRUD cho `project_pages` hoạt động
+- ✅ `CanvasEditor` có auto-save + save indicator
+- ✅ `CreateCustomProject` tạo group + page trong DB thành công
+- ❌ `GroupDetail.tsx` (~787 dòng) luôn render task management UI, không phân biệt `project_mode`
+- ❌ Chưa có page để view/edit canvas content sau khi tạo project
 
 ### Hành động cụ thể
 
-**1. Tạo `src/hooks/useAutosave.ts`** — Generic debounced auto-save hook
-- Input: `data` (serialized content string), `onSave` callback, `delay` (default 1500ms)
-- Output: `{ isSaving, lastSaved, hasUnsavedChanges, forceSave, resetSavedData }`
-- Logic: so sánh `data` với `lastSavedData` ref → nếu khác thì debounce → gọi `onSave`
-- Cleanup timeout on unmount
+**1. Tạo `src/components/canvas/CanvasPageView.tsx`** — Wrapper component cho canvas mode
 
-**2. Cập nhật `CreateCustomProject.tsx`** — Wire DB insert
-- Import `useCreatePage` mutation
-- Import `useAuth` để lấy `user.id` cho `created_by`
-- `handleCreate`: 
-  1. Insert `groups` record với `project_mode: 'custom'` (hoặc chỉ tạo page trước, group creation sẽ ở Phase 3)
-  2. Tạm thời: chỉ insert `project_pages` với `group_id` hardcode hoặc tạo group trước
-  3. Redirect sau khi tạo thành công
-- Vì chưa có mode selector (Phase 3), `handleCreate` sẽ:
-  - Tạo group mới (dùng existing group creation logic) với `project_mode: 'custom'`
-  - Insert 1 default page với editor content
-  - Navigate tới project page sau khi thành công
+- Nhận `groupId` prop
+- Dùng `useProjectPages(groupId)` fetch danh sách pages
+- Render page đầu tiên (default) trong `CanvasEditor` với `pageId` prop → kích hoạt auto-save
+- Handle loading state và empty state (khi chưa có page nào)
+- Hiển thị page title phía trên editor
+- Chỉ cho phép edit nếu user là leader/admin (dùng role check từ `GroupDetail`)
 
-**3. Tạo component/page để edit existing page** — Integrate auto-save
-- Tạo hoặc mở rộng `CanvasEditor` để nhận `pageId` prop
-- Khi có `pageId`: fetch content từ DB → hydrate editor với `initialContent`
-- Auto-save: mỗi khi `onChange` fire → serialize → pass vào `useAutosave` → gọi `useUpdatePageContent`
-- Hiển thị save indicator: "Saving...", "Saved ✓", "Unsaved changes"
+**2. Cập nhật `GroupDetail.tsx`** — Phân luồng theo `project_mode`
 
-### Điều chỉnh scope
-Vì Phase 3 mới xử lý mode selector và group creation flow, giai đoạn này sẽ focus vào:
-1. Hook `useAutosave` (generic, reusable)
-2. Wire `CreateCustomProject` để tạo group + page thực tế trong DB
-3. Auto-save content khi edit page đã tồn tại
+- Sau khi fetch group data, kiểm tra `project_mode`
+- Nếu `project_mode === 'custom'` → render `CanvasPageView` thay vì tabs (Tasks, Dashboard, Members...)
+- Giữ nguyên sidebar info card và member card cho custom projects
+- Truyền `isLeader`/`editable` prop xuống `CanvasPageView`
+
+**3. Đảm bảo navigation hoạt động**
+
+- Sau khi tạo project ở `/create-custom`, navigate tới `/groups/:groupId`
+- `GroupDetail` detect `project_mode === 'custom'` → render canvas view
+- Breadcrumb và back button hoạt động bình thường
 
 ### Output
-- Bấm "Create Project" → tạo group + page trong DB → redirect
-- Mở lại page → load đúng content đã lưu
-- Gõ text → auto-save sau 1.5s → hiện indicator "Saved ✓"
-- Nếu mất mạng/lỗi → hiện lỗi, không mất data local
+- Tạo custom project → redirect → thấy canvas editor với content đã lưu
+- Gõ thêm nội dung → auto-save hoạt động
+- Mở lại project → load đúng content từ DB
+- Basic mode projects không bị ảnh hưởng
 
 ### Rủi ro
-- Group creation cần `workspace_id` — đã có workspace selector trong form
-- `idempotency_key` cần cho group creation (pattern đã có trong project) — áp dụng
-- BlockNote `editor.document` serialize thành JSON lớn — chưa giới hạn ở giai đoạn này
+- `GroupDetail.tsx` rất lớn (787 dòng) — cần sửa tối thiểu, chỉ thêm conditional render
+- Group data hiện tại có thể không include `project_mode` trong SELECT — cần verify
+- Role check cho editable cần map đúng với RLS policies đã có
 
 ### Files thay đổi
 
 | File | Thay đổi |
 |------|----------|
-| `src/hooks/useAutosave.ts` | **Mới** — Generic debounced auto-save hook |
-| `src/pages/CreateCustomProject.tsx` | Wire DB: tạo group + page, redirect, save indicator |
-| `src/components/canvas/CanvasEditor.tsx` | Thêm support load từ DB + auto-save integration |
+| `src/components/canvas/CanvasPageView.tsx` | **Mới** — Canvas view wrapper với page loading + editor |
+| `src/pages/GroupDetail.tsx` | Thêm conditional: nếu `project_mode === 'custom'` → render CanvasPageView |
 
