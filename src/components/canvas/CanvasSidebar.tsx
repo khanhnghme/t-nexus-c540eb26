@@ -1,9 +1,14 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { FileText, Plus, Trash2, Loader2, GripVertical } from "lucide-react";
+import { FileText, Plus, Trash2, Loader2, GripVertical, PanelLeftClose } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import EmojiPicker from "./EmojiPicker";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +43,7 @@ interface CanvasSidebarProps {
   onRenamePage?: (pageId: string, newTitle: string) => void;
   onReorderPages?: (orderedIds: string[]) => void;
   onChangePageIcon?: (pageId: string, icon: string | null) => void;
+  onCollapse?: () => void;
   editable: boolean;
   isCreating?: boolean;
 }
@@ -111,6 +117,7 @@ export default function CanvasSidebar({
   onRenamePage,
   onReorderPages,
   onChangePageIcon,
+  onCollapse,
   editable,
   isCreating,
 }: CanvasSidebarProps) {
@@ -123,26 +130,48 @@ export default function CanvasSidebar({
   };
 
   return (
-    <div className="w-[220px] shrink-0 border-r bg-muted/30 flex flex-col">
+    <div className="w-[220px] max-md:w-[180px] shrink-0 border-r bg-muted/30 flex flex-col">
       <div className="flex items-center justify-between px-3 py-2 border-b">
         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
           Trang
         </span>
-        {editable && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            onClick={onCreatePage}
-            disabled={isCreating}
-          >
-            {isCreating ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Plus className="h-3.5 w-3.5" />
-            )}
-          </Button>
-        )}
+        <div className="flex items-center gap-0.5">
+          {editable && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={onCreatePage}
+                  disabled={isCreating}
+                >
+                  {isCreating ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Plus className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Tạo trang mới</TooltipContent>
+            </Tooltip>
+          )}
+          {onCollapse && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={onCollapse}
+                >
+                  <PanelLeftClose className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Ẩn sidebar</TooltipContent>
+            </Tooltip>
+          )}
+        </div>
       </div>
 
       <ScrollArea className="flex-1">
@@ -218,14 +247,19 @@ export default function CanvasSidebar({
 
                         {editable && pages.length > 1 && (
                           <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <button
-                                className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive shrink-0"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </button>
-                            </AlertDialogTrigger>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <AlertDialogTrigger asChild>
+                                  <button
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive shrink-0"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </button>
+                                </AlertDialogTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent side="right">Xóa trang</TooltipContent>
+                            </Tooltip>
                             <AlertDialogContent>
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Xóa trang "{page.title}"?</AlertDialogTitle>

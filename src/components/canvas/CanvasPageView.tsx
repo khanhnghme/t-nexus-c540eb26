@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { useProjectPages, useCreatePage, useDeletePage, useUpdatePage } from "@/hooks/useProjectPages";
 import CanvasEditor from "./CanvasEditor";
 import CanvasSidebar from "./CanvasSidebar";
-import { Loader2, FileText, RefreshCw, Plus } from "lucide-react";
+import { Loader2, FileText, RefreshCw, Plus, PanelLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { PartialBlock } from "@blocknote/core";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CanvasPageViewProps {
   groupId: string;
@@ -19,7 +21,14 @@ export default function CanvasPageView({ groupId, editable = false }: CanvasPage
   const createPage = useCreatePage();
   const deletePage = useDeletePage();
   const updatePage = useUpdatePage();
+  const isMobile = useIsMobile();
   const [activePageId, setActivePageId] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Default sidebar closed on mobile
+  useEffect(() => {
+    setSidebarOpen(!isMobile);
+  }, [isMobile]);
 
   // Auto-select first page or keep selection valid
   useEffect(() => {
@@ -143,19 +152,46 @@ export default function CanvasPageView({ groupId, editable = false }: CanvasPage
 
   return (
     <div className="flex border rounded-lg bg-card overflow-hidden" style={{ minHeight: 400 }}>
-      <CanvasSidebar
-        pages={pages.map((p) => ({ id: p.id, title: p.title, display_order: p.display_order, icon: p.icon }))}
-        activePageId={activePage.id}
-        onSelectPage={setActivePageId}
-        onCreatePage={handleCreatePage}
-        onDeletePage={handleDeletePage}
-        onRenamePage={handleRenamePage}
-        onReorderPages={handleReorderPages}
-        onChangePageIcon={handleChangePageIcon}
-        editable={editable}
-        isCreating={createPage.isPending}
-      />
+      {sidebarOpen && (
+        <CanvasSidebar
+          pages={pages.map((p) => ({ id: p.id, title: p.title, display_order: p.display_order, icon: p.icon }))}
+          activePageId={activePage.id}
+          onSelectPage={(id) => {
+            setActivePageId(id);
+            if (isMobile) setSidebarOpen(false);
+          }}
+          onCreatePage={handleCreatePage}
+          onDeletePage={handleDeletePage}
+          onRenamePage={handleRenamePage}
+          onReorderPages={handleReorderPages}
+          onChangePageIcon={handleChangePageIcon}
+          onCollapse={() => setSidebarOpen(false)}
+          editable={editable}
+          isCreating={createPage.isPending}
+        />
+      )}
       <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 px-3 py-1.5 border-b text-sm">
+          {!sidebarOpen && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 shrink-0"
+                  onClick={() => setSidebarOpen(true)}
+                >
+                  <PanelLeft className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Hiện sidebar</TooltipContent>
+            </Tooltip>
+          )}
+          {activePage.icon && (
+            <span className="text-sm leading-none">{activePage.icon}</span>
+          )}
+          <span className="text-muted-foreground truncate">{activePage.title}</span>
+        </div>
         <CanvasEditor
           key={activePage.id}
           initialContent={initialContent}
