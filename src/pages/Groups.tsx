@@ -451,12 +451,8 @@ export default function Groups() {
             </p>
           </div>
 
-          {/* Create project CTA - always visible */}
-          <Dialog open={isDialogOpen} onOpenChange={(open) => {
-            if (!canCreateProject) return;
-            setIsDialogOpen(open);
-            if (!open) resetForm();
-          }}>
+          {/* Mode Selector Dialog */}
+          <Dialog open={showModeSelector} onOpenChange={setShowModeSelector}>
             <DialogTrigger asChild disabled={!canCreateProject}>
               <div className={`relative overflow-hidden rounded-xl border-2 border-dashed p-5 transition-all duration-300 ${
                 canCreateProject
@@ -488,10 +484,29 @@ export default function Groups() {
                 </div>
               </div>
             </DialogTrigger>
-              <DialogContent
-                className="p-0 gap-0 border-0 bg-transparent shadow-none [&>button]:hidden"
-                style={{ maxWidth: 'none', width: 'auto' }}
-              >
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Chọn loại dự án</DialogTitle>
+                <DialogDescription>Chọn cách bạn muốn quản lý dự án</DialogDescription>
+              </DialogHeader>
+              <ProjectModeSelector
+                onSelectBasic={() => {
+                  setShowModeSelector(false);
+                  setIsDialogOpen(true);
+                }}
+                onSelectCustom={() => {
+                  setShowModeSelector(false);
+                  navigate('/create-custom');
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+
+          {/* Basic project creation dialog */}
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) resetForm();
+          }}>
                 <div
                   className="bg-background border rounded-xl overflow-hidden flex flex-col"
                   style={{ width: '1280px', maxWidth: '95vw', height: '720px', maxHeight: '90vh' }}
