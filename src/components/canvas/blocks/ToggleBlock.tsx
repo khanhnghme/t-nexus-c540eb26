@@ -1,6 +1,6 @@
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useState } from "react";
 import { createReactBlockSpec } from "@blocknote/react";
-import { ChevronRight, ChevronDown } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
 export const ToggleBlock = createReactBlockSpec(
   {
@@ -15,6 +15,7 @@ export const ToggleBlock = createReactBlockSpec(
     render: (props) => {
       const isCollapsed = props.block.props.collapsed === "true";
       const textareaRef = useRef<HTMLTextAreaElement>(null);
+      const [headerHovered, setHeaderHovered] = useState(false);
 
       const handleToggle = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -41,18 +42,24 @@ export const ToggleBlock = createReactBlockSpec(
             border: "1px solid hsl(var(--border))",
             borderRadius: "0.5rem",
             overflow: "hidden",
+            background: "hsl(var(--muted) / 0.3)",
           }}
         >
           <div
+            onMouseEnter={() => setHeaderHovered(true)}
+            onMouseLeave={() => setHeaderHovered(false)}
             style={{
               display: "flex",
               alignItems: "center",
               gap: "0.5rem",
               padding: "0.625rem 0.75rem",
+              cursor: "pointer",
+              transition: "background 150ms ease",
+              background: headerHovered ? "hsl(var(--muted) / 0.5)" : "transparent",
             }}
+            onClick={handleToggle}
           >
-            <button
-              onClick={handleToggle}
+            <span
               contentEditable={false}
               style={{
                 display: "flex",
@@ -61,18 +68,23 @@ export const ToggleBlock = createReactBlockSpec(
                 width: "1.25rem",
                 height: "1.25rem",
                 flexShrink: 0,
-                border: "none",
-                background: "transparent",
-                cursor: "pointer",
-                padding: 0,
+                borderRadius: "0.25rem",
                 color: "hsl(var(--muted-foreground))",
+                transition: "background 150ms ease",
               }}
             >
-              {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-            </button>
+              <ChevronRight
+                size={16}
+                style={{
+                  transform: isCollapsed ? "rotate(0deg)" : "rotate(90deg)",
+                  transition: "transform 200ms ease",
+                }}
+              />
+            </span>
             <div
-              style={{ flex: 1, minWidth: 0, fontWeight: 500 }}
+              style={{ flex: 1, minWidth: 0, fontWeight: 500, lineHeight: "1.4" }}
               ref={props.contentRef}
+              onClick={(e) => e.stopPropagation()}
             />
           </div>
           {!isCollapsed && (
@@ -98,7 +110,7 @@ export const ToggleBlock = createReactBlockSpec(
                   background: "transparent",
                   color: "hsl(var(--muted-foreground))",
                   fontSize: "0.875rem",
-                  lineHeight: "1.5",
+                  lineHeight: "1.6",
                   whiteSpace: "pre-wrap",
                   overflow: "hidden",
                   fontFamily: "inherit",
