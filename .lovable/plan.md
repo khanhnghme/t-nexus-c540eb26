@@ -1,49 +1,68 @@
 
 
-## Phase 5 — Kanban + Task Attachments + Project Calendar: Giai đoạn 2/4 (Logic)
+## Phase 5 — Kanban + Task Detail + Project Calendar: Giai đoạn 3/4 (UI Design & Build)
 
-Giai đoạn 1 đã hoàn thành: bảng `task_attachments` + RLS + storage bucket `task-attachments`. Giai đoạn 2 tập trung vào **logic hooks** cho 3 tính năng.
+Giai đoạn 1-2 hoàn thành: database (`task_attachments` + storage) và logic hooks (`useKanbanBoard`, `useTaskAttachments`, `useProjectCalendar`). Giai đoạn 3 tập trung **build UI components**.
+
+**Lưu ý**: Build error `@/hooks/useAuth` hiện tại là stale — code đã đúng `@/contexts/AuthContext`. Sẽ được fix kèm trong lần build này.
 
 ### Thay đổi
 
-**1. Tạo `src/hooks/useKanbanBoard.ts` — Kanban drag & drop logic**
-- Nhận `groupId`, fetch tasks từ Supabase (id, title, status, deadline, assignees, stage_name)
-- Nhóm tasks theo status thành 4 cột: TODO, IN_PROGRESS, DONE, VERIFIED
-- Hàm `moveTask(taskId, newStatus)` — update status trong DB + optimistic update qua `queryClient.setQueryData`
-- Hàm `getColumnTasks(status)` — trả về danh sách tasks cho mỗi cột
-- Sử dụng `useQuery` + `useMutation` từ TanStack Query
-- Re-use `TaskTableRow` type từ `useTaskTableData` hoặc define simplified `KanbanTask` type
+**1. Tạo `src/components/kanban/KanbanBoard.tsx` — Main Kanban component**
+- Nhận `groupId` prop, sử dụng `useKanbanBoard` hook
+- Render 4 cột: TODO, IN_PROGRESS, DONE, VERIFIED với header + count badge
+- Mỗi cột chứa danh sách `KanbanCard`
+- Hỗ trợ drag & drop giữa các cột (dùng HTML5 native drag API hoặc đơn giản hơn: dropdown chuyển status trên mỗi card)
+- Loading skeleton khi fetch data
 
-**2. Tạo `src/hooks/useTaskAttachments.ts` — File attachment CRUD**
-- Nhận `taskId`
-- `useQuery` fetch attachments từ `task_attachments` table (join profiles cho uploader info)
-- `uploadAttachment(file: File)` — upload file lên storage bucket `task-attachments` (path: `{userId}/{taskId}/{fileName}`), insert record vào `task_attachments`
-- `deleteAttachment(attachmentId, filePath)` — xóa record + xóa file từ storage
-- `getDownloadUrl(filePath)` — tạo signed URL hoặc public URL
-- Trả về `{ attachments, isLoading, uploadAttachment, deleteAttachment, isUploading }`
+**2. Tạo `src/components/kanban/KanbanCard.tsx` — Task card trong Kanban**
+- Hiển thị: title, deadline (color-coded nếu quá hạn), assignee avatars, stage badge
+- Click vào card → navigate đến task detail
+- Dropdown/button để quick-move status (gọi `moveTask`)
+- Style: Card nhỏ gọn, border-left color theo status
+- Ẩn task có `is_hidden = true` (hoặc hiển thị mờ)
 
-**3. Tạo `src/hooks/useProjectCalendar.ts` — Calendar events filtered by project**
-- Nhận `groupId`
-- Re-use logic từ `Calendar.tsx` (line 52-99) nhưng filter chỉ theo 1 `groupId` thay vì tất cả groups
-- Fetch tasks có deadline thuộc group đó, map thành `CalendarEvent[]`
-- Fetch personal events của user (optional, có thể bỏ cho project calendar)
-- Trả về `{ events, isLoading, refetch }`
+**3. Tạo `src/components/kanban/KanbanColumn.tsx` — Wrapper cho mỗi cột**
+- Header với tên status (Vietnamese) + task count
+- Scrollable container cho cards
+- Drop zone styling khi drag over
+- Empty state message
+
+**4. Tạo `src/components/task-detail/TaskAttachments.tsx` — File attachment UI**
+- Nhận `taskId`, `canEdit` props, sử dụng `useTaskAttachments` hook
+- Upload zone (click hoặc drag file) — hiển thị khi `canEdit`
+- Danh sách attachments: icon theo file type, tên file, size, uploader, ngày upload
+- Download button (dùng `getSignedUrl`)
+- Delete button (chỉ hiển thị cho uploader hoặc leader)
+- Loading/uploading states
+
+**5. Tạo `src/components/calendar/ProjectCalendarView.tsx` — Calendar embed cho project**
+- Nhận `groupId` prop, sử dụng `useProjectCalendar` hook
+- Re-use các calendar sub-components đã có: `CalendarMonthView`, `CalendarWeekView`, `CalendarDayView`, `CalendarHeader`
+- Simplified version: chỉ hiển thị task deadlines của project (không có personal events, không có Google sync)
+- Click event → navigate đến task detail
+
+**6. Tạo `src/components/kanban/index.ts` — Barrel export**
 
 ### Chi tiết kỹ thuật
 
-- Tất cả hooks sử dụng `useAuth()` cho user context
-- Sử dụng `useReadOnlyGuard()` cho mutation actions (upload, delete, moveTask)
-- Query keys pattern: `['kanban', groupId]`, `['task-attachments', taskId]`, `['project-calendar', groupId]`
-- `useKanbanBoard` invalidate cả `['task-table', groupId]` khi move task để sync với Task Table view
+- KanbanBoard: grid layout `grid-cols-4` trên desktop, scroll horizontal trên mobile
+- KanbanCard: sử dụng `UserAvatar` component có sẵn cho assignee avatars
+- TaskAttachments: file size format (KB/MB), MIME type icon mapping
+- ProjectCalendarView: re-use `CalendarHeader` cho navigation (prev/next month, view mode toggle)
+- Tất cả components sử dụng shadcn/ui primitives (Card, Badge, Button, ScrollArea)
 
 ### Không thay đổi database
-### Không thay đổi UI (giai đoạn 3-4)
+### Không thay đổi logic hooks (đã hoàn thành ở giai đoạn 2)
 
 ### Files cần tạo
 
 | File | Thay đổi |
 |------|----------|
-| `src/hooks/useKanbanBoard.ts` | **Tạo mới** — Kanban state + moveTask mutation |
-| `src/hooks/useTaskAttachments.ts` | **Tạo mới** — Attachment CRUD + storage |
-| `src/hooks/useProjectCalendar.ts` | **Tạo mới** — Calendar events by groupId |
+| `src/components/kanban/KanbanBoard.tsx` | **Tạo mới** — Main Kanban grid |
+| `src/components/kanban/KanbanColumn.tsx` | **Tạo mới** — Column wrapper |
+| `src/components/kanban/KanbanCard.tsx` | **Tạo mới** — Task card |
+| `src/components/kanban/index.ts` | **Tạo mới** — Barrel export |
+| `src/components/task-detail/TaskAttachments.tsx` | **Tạo mới** — Attachment upload/list UI |
+| `src/components/calendar/ProjectCalendarView.tsx` | **Tạo mới** — Embedded project calendar |
 
