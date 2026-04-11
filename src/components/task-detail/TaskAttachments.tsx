@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { useTaskAttachments } from '@/hooks/useTaskAttachments';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import UserAvatar from '@/components/UserAvatar';
@@ -30,6 +31,7 @@ function getFileIcon(contentType: string | null, fileName: string) {
 
 export default function TaskAttachments({ taskId, canEdit, isLeader }: TaskAttachmentsProps) {
   const { user } = useAuth();
+  const { translations: t } = useLanguage();
   const { attachments, isLoading, uploadAttachment, deleteAttachment, getSignedUrl, isUploading, isDeleting } = useTaskAttachments(taskId);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -58,7 +60,7 @@ export default function TaskAttachments({ taskId, canEdit, isLeader }: TaskAttac
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
             <Paperclip className="w-4 h-4" />
-            Tệp đính kèm
+            {t.taskAttachments?.title ?? 'Tệp đính kèm'}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -75,7 +77,7 @@ export default function TaskAttachments({ taskId, canEdit, isLeader }: TaskAttac
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm flex items-center gap-2">
             <Paperclip className="w-4 h-4" />
-            Tệp đính kèm ({attachments.length})
+            {t.taskAttachments?.title ?? 'Tệp đính kèm'} ({attachments.length})
           </CardTitle>
           {canEdit && (
             <>
@@ -93,7 +95,7 @@ export default function TaskAttachments({ taskId, canEdit, isLeader }: TaskAttac
                 disabled={isUploading}
               >
                 {isUploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
-                Tải lên
+                {t.taskAttachments?.upload ?? 'Tải lên'}
               </Button>
             </>
           )}
@@ -101,7 +103,7 @@ export default function TaskAttachments({ taskId, canEdit, isLeader }: TaskAttac
       </CardHeader>
       <CardContent>
         {attachments.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-4">Chưa có tệp đính kèm nào</p>
+          <p className="text-xs text-muted-foreground text-center py-4">{t.taskAttachments?.noAttachments ?? 'Chưa có tệp đính kèm nào'}</p>
         ) : (
           <div className="space-y-2">
             {attachments.map(att => (

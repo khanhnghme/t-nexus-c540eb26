@@ -3317,5 +3317,32 @@ export const vi: Translations = {
     searchPlaceholder: 'Tìm kiếm task...',
     listView: 'Dạng danh sách',
     tableView: 'Dạng bảng',
+    kanbanView: 'Bảng Kanban',
+    calendarView: 'Lịch biểu',
+  },
+
+  kanban: {
+    todo: 'Chờ làm',
+    inProgress: 'Đang làm',
+    done: 'Hoàn thành',
+    verified: 'Đã duyệt',
+    noTasks: 'Không có task nào',
+    moveStatus: 'Chuyển trạng thái',
+    overdue: 'Quá hạn: ',
+  },
+
+  taskAttachments: {
+    title: 'Tệp đính kèm',
+    upload: 'Tải lên',
+    noAttachments: 'Chưa có tệp đính kèm nào',
+  },
+
+  projectCalendar: {
+    title: 'Lịch biểu',
+    today: 'Hôm nay',
+    month: 'Tháng',
+    week: 'Tuần',
+    day: 'Ngày',
+    deadlineCount: 'deadline',
   },
 };

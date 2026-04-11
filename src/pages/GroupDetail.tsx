@@ -30,7 +30,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Users, Loader2, ArrowLeft, Layers, Trash2, Calendar, Clock, List, Table2 } from 'lucide-react';
+import { Plus, Users, Loader2, ArrowLeft, Layers, Trash2, Calendar, Clock, List, Table2, LayoutGrid, CalendarDays } from 'lucide-react';
+import KanbanBoardView from '@/components/kanban/KanbanBoardView';
+import ProjectCalendarView from '@/components/calendar/ProjectCalendarView';
 
 import AccessDenied from '@/components/AccessDenied';
 
@@ -90,7 +92,7 @@ export default function GroupDetail() {
   const [isGroupCreator, setIsGroupCreator] = useState(false);
   
   const [hasActiveMeeting, setHasActiveMeeting] = useState(false);
-  const [taskViewMode, setTaskViewMode] = useState<'list' | 'table'>('list');
+  const [taskViewMode, setTaskViewMode] = useState<'list' | 'table' | 'kanban' | 'calendar'>('list');
   
   // Compute available tabs based on permissions
   const availableTabs = [
@@ -711,11 +713,47 @@ export default function GroupDetail() {
                   >
                     <Table2 className="h-4 w-4" />
                   </Button>
+                  <Button
+                    variant={taskViewMode === 'kanban' ? 'default' : 'ghost'}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setTaskViewMode('kanban')}
+                    title={t.taskTable?.kanbanView ?? 'Kanban'}
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={taskViewMode === 'calendar' ? 'default' : 'ghost'}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setTaskViewMode('calendar')}
+                    title={t.taskTable?.calendarView ?? 'Calendar'}
+                  >
+                    <CalendarDays className="h-4 w-4" />
+                  </Button>
                 </div>
-                {taskViewMode === 'list' ? (
+                {taskViewMode === 'list' && (
                   <TaskListView stages={stages} tasks={tasks} members={members} isLeaderInGroup={isLeaderInGroup} groupId={group.id} groupSlug={group.slug} onRefresh={fetchGroupData} onEditTask={setEditingTask} onCreateTask={(stageId) => { setNewTaskStageId(stageId); setIsTaskDialogOpen(true); }} onEditStage={setEditingStage} onDeleteStage={setStageToDelete} onToggleStageHidden={handleToggleStageHidden} />
-                ) : (
+                )}
+                {taskViewMode === 'table' && (
                   <TaskTable groupId={group.id} />
+                )}
+                {taskViewMode === 'kanban' && (
+                  <KanbanBoardView
+                    groupId={group.id}
+                    canEdit={isLeaderInGroup || members.some(m => m.user_id === user?.id)}
+                    onClickTask={(taskId) => {
+                      const task = tasks.find(t => t.id === taskId);
+                      if (task && group.slug && (task as any).short_id) {
+                        navigate(`/p/${group.slug}/task/${(task as any).short_id}`);
+                      } else {
+                        navigate(`/groups/${group.id}/tasks/${taskId}`);
+                      }
+                    }}
+                  />
+                )}
+                {taskViewMode === 'calendar' && (
+                  <ProjectCalendarView groupId={group.id} projectSlug={group.slug || undefined} />
                 )}
               </TabsContent>
 

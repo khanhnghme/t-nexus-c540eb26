@@ -1,3 +1,4 @@
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,13 +21,6 @@ interface KanbanCardProps {
   canEdit: boolean;
 }
 
-const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
-  { value: 'TODO', label: 'Chờ làm' },
-  { value: 'IN_PROGRESS', label: 'Đang làm' },
-  { value: 'DONE', label: 'Hoàn thành' },
-  { value: 'VERIFIED', label: 'Đã duyệt' },
-];
-
 const STATUS_BORDER_COLOR: Record<TaskStatus, string> = {
   TODO: 'border-l-muted-foreground',
   IN_PROGRESS: 'border-l-warning',
@@ -35,8 +29,16 @@ const STATUS_BORDER_COLOR: Record<TaskStatus, string> = {
 };
 
 export default function KanbanCard({ task, onMoveTask, onClickTask, canEdit }: KanbanCardProps) {
+  const { translations: t } = useLanguage();
   const effectiveDeadline = task.extended_deadline || task.deadline;
   const overdue = isDeadlineOverdue(effectiveDeadline) && task.status !== 'DONE' && task.status !== 'VERIFIED';
+
+  const statusOptions: { value: TaskStatus; label: string }[] = [
+    { value: 'TODO', label: t.kanban?.todo ?? 'Chờ làm' },
+    { value: 'IN_PROGRESS', label: t.kanban?.inProgress ?? 'Đang làm' },
+    { value: 'DONE', label: t.kanban?.done ?? 'Hoàn thành' },
+    { value: 'VERIFIED', label: t.kanban?.verified ?? 'Đã duyệt' },
+  ];
 
   return (
     <Card
@@ -44,25 +46,21 @@ export default function KanbanCard({ task, onMoveTask, onClickTask, canEdit }: K
       onClick={() => onClickTask(task.id)}
     >
       <CardContent className="p-3 space-y-2">
-        {/* Title */}
         <h4 className="text-sm font-medium leading-tight line-clamp-2">{task.title}</h4>
 
-        {/* Stage badge */}
         {task.stage_name && (
           <Badge variant="outline" className="text-[10px] h-5">
             {task.stage_name}
           </Badge>
         )}
 
-        {/* Deadline */}
         {effectiveDeadline && (
           <div className={`flex items-center gap-1 text-xs ${overdue ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
             <Calendar className="w-3 h-3" />
-            <span>{overdue ? 'Quá hạn: ' : ''}{formatDeadlineShortVN(effectiveDeadline)}</span>
+            <span>{overdue ? (t.kanban?.overdue ?? 'Quá hạn: ') : ''}{formatDeadlineShortVN(effectiveDeadline)}</span>
           </div>
         )}
 
-        {/* Assignees */}
         {task.assignees.length > 0 && (
           <div className="flex items-center gap-1.5">
             <Users className="w-3 h-3 text-muted-foreground" />
@@ -85,17 +83,16 @@ export default function KanbanCard({ task, onMoveTask, onClickTask, canEdit }: K
           </div>
         )}
 
-        {/* Quick move status */}
         {canEdit && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
               <Button variant="ghost" size="sm" className="h-6 text-xs w-full justify-between px-2">
-                Chuyển trạng thái
+                {t.kanban?.moveStatus ?? 'Chuyển trạng thái'}
                 <ChevronDown className="w-3 h-3" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" onClick={e => e.stopPropagation()}>
-              {STATUS_OPTIONS.filter(s => s.value !== task.status).map(s => (
+              {statusOptions.filter(s => s.value !== task.status).map(s => (
                 <DropdownMenuItem key={s.value} onClick={() => onMoveTask(task.id, s.value)}>
                   {s.label}
                 </DropdownMenuItem>

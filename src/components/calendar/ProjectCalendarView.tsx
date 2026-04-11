@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useProjectCalendar } from '@/hooks/useProjectCalendar';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import CalendarMonthView from './CalendarMonthView';
 import CalendarWeekView from './CalendarWeekView';
@@ -22,6 +23,7 @@ interface ProjectCalendarViewProps {
 
 export default function ProjectCalendarView({ groupId, projectSlug }: ProjectCalendarViewProps) {
   const { events, isLoading } = useProjectCalendar(groupId);
+  const { translations: t } = useLanguage();
   const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month');
@@ -69,19 +71,18 @@ export default function ProjectCalendarView({ groupId, projectSlug }: ProjectCal
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <CalendarIcon className="w-4 h-4 text-muted-foreground" />
           <h3 className="font-semibold text-sm capitalize">{title}</h3>
-          <Badge variant="outline" className="text-[10px]">{events.length} deadline</Badge>
+          <Badge variant="outline" className="text-[10px]">{events.length} {t.projectCalendar?.deadlineCount ?? 'deadline'}</Badge>
         </div>
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handlePrevious}>
             <ChevronLeft className="w-4 h-4" />
           </Button>
           <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setCurrentDate(new Date())}>
-            Hôm nay
+            {t.projectCalendar?.today ?? 'Hôm nay'}
           </Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleNext}>
             <ChevronRight className="w-4 h-4" />
@@ -95,39 +96,23 @@ export default function ProjectCalendarView({ groupId, projectSlug }: ProjectCal
                 className="h-7 text-xs rounded-none first:rounded-l-md last:rounded-r-md"
                 onClick={() => setViewMode(mode)}
               >
-                {mode === 'month' ? 'Tháng' : mode === 'week' ? 'Tuần' : 'Ngày'}
+                {mode === 'month' ? (t.projectCalendar?.month ?? 'Tháng') : mode === 'week' ? (t.projectCalendar?.week ?? 'Tuần') : (t.projectCalendar?.day ?? 'Ngày')}
               </Button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Calendar view */}
       {viewMode === 'month' && (
-        <CalendarMonthView
-          currentDate={currentDate}
-          events={events}
-          onDayClick={handleDayClick}
-          onEventClick={handleEventClick}
-        />
+        <CalendarMonthView currentDate={currentDate} events={events} onDayClick={handleDayClick} onEventClick={handleEventClick} />
       )}
       {viewMode === 'week' && (
-        <CalendarWeekView
-          currentDate={currentDate}
-          events={events}
-          onDayClick={handleDayClick}
-          onEventClick={handleEventClick}
-        />
+        <CalendarWeekView currentDate={currentDate} events={events} onDayClick={handleDayClick} onEventClick={handleEventClick} />
       )}
       {viewMode === 'day' && (
-        <CalendarDayView
-          currentDate={currentDate}
-          events={events}
-          onEventClick={handleEventClick}
-        />
+        <CalendarDayView currentDate={currentDate} events={events} onEventClick={handleEventClick} />
       )}
 
-      {/* Day detail */}
       <CalendarDayDetail
         open={dayDetailOpen && !!selectedDay}
         onOpenChange={(open) => { setDayDetailOpen(open); if (!open) setSelectedDay(null); }}
