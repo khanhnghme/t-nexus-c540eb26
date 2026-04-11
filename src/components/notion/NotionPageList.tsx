@@ -235,13 +235,13 @@ export default function NotionPageList({ pages, selectedPageId, onSelectPage, on
         </div>
       </ScrollArea>
 
-      {/* Emoji Picker Popover */}
+      {/* Emoji Picker */}
       {emojiPageId && (
-        <Popover open={!!emojiPageId} onOpenChange={(open) => !open && setEmojiPageId(null)}>
-          <PopoverTrigger asChild>
-            <span className="sr-only">emoji trigger</span>
-          </PopoverTrigger>
-          <PopoverContent className="w-64 p-2" side="right" align="start">
+        <div className="fixed inset-0 z-50" onClick={() => setEmojiPageId(null)}>
+          <div
+            className="absolute left-48 top-20 w-64 p-2 rounded-md border bg-popover shadow-md"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="grid grid-cols-8 gap-1">
               {EMOJI_LIST.map((emoji) => (
                 <button
@@ -253,8 +253,8 @@ export default function NotionPageList({ pages, selectedPageId, onSelectPage, on
                 </button>
               ))}
             </div>
-          </PopoverContent>
-        </Popover>
+          </div>
+        </div>
       )}
 
       {/* Delete Confirmation */}
