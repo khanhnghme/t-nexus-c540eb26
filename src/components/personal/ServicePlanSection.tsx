@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Crown, Zap, Check } from 'lucide-react';
+import { Crown, Zap, Check, RefreshCw } from 'lucide-react';
 import { ConnectedToolsTailwind, shouldShowIntegrations } from '@/components/ConnectedToolsBadge';
 
 export default function ServicePlanSection() {
@@ -55,6 +55,15 @@ export default function ServicePlanSection() {
                     ? new Date(profile.plan_expires_at).toLocaleDateString()
                     : '—')}
               </p>
+             )}
+            {isPremium && (
+              <div className="flex items-center gap-1.5 text-xs mt-0.5">
+                <RefreshCw className="w-3 h-3 text-muted-foreground" />
+                <span className="text-muted-foreground">{t.autoRenewLabel}:</span>
+                <span className={profile?.auto_renew ? 'text-emerald-500 font-medium' : 'text-orange-500 font-medium'}>
+                  {profile?.auto_renew ? t.autoRenewOn : t.autoRenewOff}
+                </span>
+              </div>
             )}
           </div>
         </div>
