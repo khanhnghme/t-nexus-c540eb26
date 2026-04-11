@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useProjectPages, useCreatePage, useDeletePage, useUpdatePage } from "@/hooks/useProjectPages";
 import CanvasEditor from "./CanvasEditor";
 import CanvasSidebar from "./CanvasSidebar";
-import { Loader2, FileText, RefreshCw, Plus, PanelLeft, Pencil, Eye, Save, Menu } from "lucide-react";
+import { Loader2, FileText, RefreshCw, Plus, PanelLeft, Pencil, Eye, Save, Menu, Download, Link2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -12,6 +13,8 @@ import type { PartialBlock } from "@blocknote/core";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { Json } from "@/integrations/supabase/types";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { downloadMarkdown, downloadPdf } from "@/lib/canvasExport";
+import type { Block } from "@blocknote/core";
 
 const SaveAsTemplateDialog = lazy(() => import("./SaveAsTemplateDialog"));
 
@@ -309,6 +312,52 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Lưu trang này làm template</TooltipContent>
+            </Tooltip>
+          )}
+          {/* Export dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs shrink-0">
+                <Download className="h-3 w-3" />
+                <span className="hidden sm:inline">Export</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => {
+                const content = activePage.content as unknown as any[];
+                downloadPdf(content || [], activePage.title);
+                toast.success("Đã export PDF!");
+              }}>
+                Export PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                const content = activePage.content as unknown as any[];
+                downloadMarkdown(content || [], activePage.title);
+                toast.success("Đã export Markdown!");
+              }}>
+                Export Markdown
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {/* Copy share link */}
+          {projectSlug && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1.5 text-xs shrink-0"
+                  onClick={() => {
+                    const url = `${window.location.origin}/share/${projectSlug}/page/${activePage.slug || ""}`;
+                    navigator.clipboard.writeText(url);
+                    toast.success("Đã copy link trang!");
+                  }}
+                >
+                  <Link2 className="h-3 w-3" />
+                  <span className="hidden sm:inline">Share</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Copy link chia sẻ trang</TooltipContent>
             </Tooltip>
           )}
         </div>
