@@ -86,7 +86,7 @@ export function useGoogleCalendarSync() {
   }, [user?.id]);
 
   const sync = useCallback(async () => {
-    if (!user?.id || !isConnected) return;
+    if (!user?.id || !isConnected || isSyncing) return;
     setIsSyncing(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -127,7 +127,7 @@ export function useGoogleCalendarSync() {
     } finally {
       setIsSyncing(false);
     }
-  }, [user?.id, isConnected]);
+  }, [user?.id, isConnected, isSyncing]);
 
   return { isConnected, isSyncing, isChecking, connectedEmail, connect, disconnect, sync, checkConnection };
 }
