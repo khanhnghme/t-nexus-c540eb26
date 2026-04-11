@@ -198,6 +198,13 @@ export default function GroupDetail() {
         // Lookup by semantic slug (primary method)
         const { data } = await supabase.from('groups').select('*').eq('slug', routeId).maybeSingle();
         groupData = data;
+      }
+      
+      if (!groupData) {
+        toast({ title: tc.error, description: gd.notFound, variant: 'destructive' });
+        navigate('/groups');
+        return;
+      }
       
       setGroup(groupData as ExtendedGroup);
       const resolvedGroupId = groupData.id;
