@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
@@ -23,6 +23,8 @@ export default function CreateWorkspace() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const createLockRef = useRef(false);
+  const idempotencyKeyRef = useRef(crypto.randomUUID());
 
   const { guardAction: guardReadOnly } = useReadOnlyGuard();
 
@@ -30,11 +32,13 @@ export default function CreateWorkspace() {
     e.preventDefault();
     if (guardReadOnly()) return;
     if (!user || !name.trim()) return;
+    if (createLockRef.current || isSubmitting) return;
 
+    createLockRef.current = true;
     setIsSubmitting(true);
     try {
       const { data, error } = await supabase.functions.invoke('workspace-management', {
-        body: { action: 'create_workspace', name: name.trim(), description: description.trim() || null },
+        body: { action: 'create_workspace', name: name.trim(), description: description.trim() || null, idempotency_key: idempotencyKeyRef.current },
       });
 
       if (error) throw error;
@@ -47,11 +51,13 @@ export default function CreateWorkspace() {
         localStorage.setItem('tnexus_active_workspace', data.workspace.id);
       }
 
+      idempotencyKeyRef.current = crypto.randomUUID();
       navigate('/workspace/settings');
     } catch (err: any) {
       toast.error(err.message || cw.errorToast);
     } finally {
       setIsSubmitting(false);
+      createLockRef.current = false;
     }
   };
 
