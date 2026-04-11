@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Users, Calendar, Globe, EyeOff, Eye, Clock } from 'lucide-react';
+import { FileText, Users, Calendar, Globe, EyeOff, Eye, Clock, Palette } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { fixStorageUrl } from '@/lib/urlUtils';
 import type { Group } from '@/types/database';
@@ -104,6 +104,15 @@ export default function DashboardProjectCard({ group, isHidden, isPending, onTog
               Chờ duyệt
             </Badge>
           </div>
+        )}
+        {group.project_mode === 'custom' && !isPending && (
+          <Badge
+            variant="secondary"
+            className="absolute top-2 left-2 text-[10px] bg-background/90 backdrop-blur-sm px-1.5 py-0.5 gap-0.5"
+          >
+            <Palette className="w-2.5 h-2.5" />
+            Custom
+          </Badge>
         )}
         {group.is_public && !isPending && (
           <Badge
