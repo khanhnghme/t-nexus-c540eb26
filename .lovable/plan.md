@@ -1,37 +1,32 @@
 
 
-## Fix: Back button, PayPal glow, và popup xác nhận cho addon checkout
+## Xóa logo icon, chỉ giữ logo text làm nhận diện thương hiệu
 
-### Vấn đề từ screenshot và mô tả
+### Phạm vi thay đổi
 
-1. **Back button không hoạt động**: Trong `CheckoutLayoutWrapper` (onboarding layout), nút "Quay lại" trong dialog luôn navigate về `/onboarding` — nhưng với dashboard flow thì `CheckoutPayment.tsx` dùng `navigate(-1)` là đúng. Vấn đề: khi không phải onboarding, nút Back trong `CheckoutPayment` gọi `navigate(-1)` nhưng có thể history stack rỗng.
+Xóa tất cả references đến file `t-nexus-logo.png` (logo icon hình ảnh), chỉ giữ lại 2 file logo text: `t-nexus-text.png` (dark) và `t-nexus-text-white.png` (light).
 
-2. **PayPal buttons phát sáng qua dialog**: Trong `AddonCheckoutPayment.tsx` chưa có class `invisible` khi dialog mở — PayPal iframe xuyên qua overlay.
-
-3. **Addon checkout thiếu popup xác nhận back**: `AddonCheckoutPayment.tsx` không có `showBackDialog` + countdown logic.
-
-### Thay đổi cụ thể
-
-**1. `src/pages/CheckoutPayment.tsx`**
-- Fix nút "Quay lại" trong back dialog: thay `navigate(-1)` bằng `navigate('/checkout', { replace: true })` (quay về step 1) cho dashboard flow, hoặc nếu từ onboarding thì không cần vì layout đã xử lý.
-
-**2. `src/pages/AddonCheckoutPayment.tsx`**
-- Thêm state `showBackDialog`, `backDialogTimeLeft`
-- Thêm `useEffect` countdown timer (copy logic từ CheckoutPayment)
-- Thêm nút Back ở đầu trang (trước header)
-- Thêm Back Confirmation Dialog (giống CheckoutPayment)
-- Wrap PayPal buttons với `invisible` class khi `showBackDialog || showCancelDialog` đang mở
-- Nút "Quay lại" trong dialog → `navigate('/addon-checkout')` (quay về step 1 addon)
-
-**3. `src/components/layout/CheckoutLayoutWrapper.tsx`**
-- Fix `isPaymentPage` check: thêm detect `/addon-checkout/` routes (hiện chỉ check `/checkout/payment`)
-- Nút "Quay lại" trong dialog: navigate phù hợp theo route (onboarding vs addon)
-
-### Files cần sửa
+### Files cần sửa (10 files)
 
 | File | Thay đổi |
 |------|----------|
-| `src/pages/CheckoutPayment.tsx` | Fix navigate trong back dialog |
-| `src/pages/AddonCheckoutPayment.tsx` | Thêm back button + confirmation dialog + invisible PayPal |
-| `src/components/layout/CheckoutLayoutWrapper.tsx` | Detect addon routes + fix navigation |
+| **`src/components/TNexusLogo.tsx`** | Xóa import `tNexusLogo`, xóa `variant="icon"`, xóa `variant="full"` (icon+text). Chỉ giữ `variant="text"`. Xóa `TNexusIcon` export. |
+| **`src/pages/Landing.tsx`** | Xóa import `tNexusLogo`. Thay tất cả chỗ dùng icon logo bằng text logo (`tNexusTextWhite`). Header, hero section, feature badge, footer — chỉ hiển thị text logo. |
+| **`src/components/layout/TopBar.tsx`** | Xóa import `tNexusLogo`. Bỏ `<img src={tNexusLogo}>`, chỉ giữ text logo. |
+| **`src/components/layout/DashboardLayout.tsx`** | Xóa import `tNexusLogo`. Sidebar và mobile header — bỏ icon logo, chỉ giữ text logo. |
+| **`src/pages/Guide.tsx`** | Xóa import `tNexusLogo`. Header chỉ hiển thị text logo. |
+| **`src/pages/Pricing.tsx`** | Xóa import `tNexusLogo`. Chỉ giữ text logo. |
+| **`src/pages/Download.tsx`** | Xóa import `tNexusLogo`. Chỉ giữ text logo. |
+| **`src/pages/ResetPassword.tsx`** | Đã dùng `variant="text"` — không cần đổi. |
+| **`src/lib/projectEvidencePdf.ts`** | Thay `ettLogoImage` từ icon sang text logo (`t-nexus-text.png`). |
+| **`src/lib/activityLogPdf.ts`** | Thay `ettLogoUrl` từ icon sang text logo (`t-nexus-text.png`). |
+
+### Không xóa file asset
+
+File `src/assets/t-nexus-logo.png` sẽ được giữ lại trong repo nhưng không còn được import ở bất kỳ đâu, tránh rủi ro nếu cần rollback.
+
+### Không ảnh hưởng
+
+- Các file chỉ dùng `variant="text"` (MemberAuthForm, RememberLoginScreen, Terms, Privacy, PricingDocs) — không cần thay đổi.
+- `CheckoutLayoutWrapper.tsx` — đã dùng text logo, không có icon logo.
 
