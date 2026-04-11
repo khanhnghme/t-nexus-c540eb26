@@ -1,8 +1,9 @@
-import { useProjectPages, useCreatePage } from "@/hooks/useProjectPages";
+import { useState, useEffect } from "react";
+import { useProjectPages, useCreatePage, useDeletePage } from "@/hooks/useProjectPages";
 import CanvasEditor from "./CanvasEditor";
+import CanvasSidebar from "./CanvasSidebar";
 import { Loader2, FileText, RefreshCw, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { PartialBlock } from "@blocknote/core";
@@ -16,20 +17,48 @@ export default function CanvasPageView({ groupId, editable = false }: CanvasPage
   const { data: pages, isLoading, error, refetch } = useProjectPages(groupId);
   const { user } = useAuth();
   const createPage = useCreatePage();
+  const deletePage = useDeletePage();
+  const [activePageId, setActivePageId] = useState<string | null>(null);
 
-  const handleCreateFirstPage = async () => {
+  // Auto-select first page or keep selection valid
+  useEffect(() => {
+    if (!pages?.length) {
+      setActivePageId(null);
+      return;
+    }
+    const ids = pages.map((p) => p.id);
+    if (!activePageId || !ids.includes(activePageId)) {
+      setActivePageId(ids[0]);
+    }
+  }, [pages, activePageId]);
+
+  const handleCreatePage = async () => {
     if (!user) return;
     try {
-      await createPage.mutateAsync({
+      const maxOrder = pages?.length
+        ? Math.max(...pages.map((p) => p.display_order)) + 1
+        : 0;
+      const newPage = await createPage.mutateAsync({
         group_id: groupId,
-        title: "Untitled Page",
+        title: `Trang ${(pages?.length ?? 0) + 1}`,
         content: [{ type: "paragraph", content: [] }],
         created_by: user.id,
-        display_order: 0,
+        display_order: maxOrder,
       });
+      setActivePageId(newPage.id);
       toast.success("Đã tạo trang mới!");
     } catch (err: any) {
       toast.error(err.message || "Không thể tạo trang.");
+    }
+  };
+
+  const handleDeletePage = async (pageId: string) => {
+    try {
+      await deletePage.mutateAsync(pageId);
+      // If deleting active page, will auto-fallback via useEffect
+      toast.success("Đã xóa trang.");
+    } catch (err: any) {
+      toast.error(err.message || "Không thể xóa trang.");
     }
   };
 
@@ -53,9 +82,7 @@ export default function CanvasPageView({ groupId, editable = false }: CanvasPage
     );
   }
 
-  const page = pages?.[0];
-
-  if (!page) {
+  if (!pages?.length) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
         <FileText className="h-8 w-8" />
@@ -63,7 +90,7 @@ export default function CanvasPageView({ groupId, editable = false }: CanvasPage
         {editable && (
           <Button
             size="sm"
-            onClick={handleCreateFirstPage}
+            onClick={handleCreatePage}
             disabled={createPage.isPending}
           >
             {createPage.isPending ? (
@@ -78,22 +105,29 @@ export default function CanvasPageView({ groupId, editable = false }: CanvasPage
     );
   }
 
-  const initialContent = Array.isArray(page.content)
-    ? (page.content as unknown as PartialBlock[])
+  const activePage = pages.find((p) => p.id === activePageId) ?? pages[0];
+
+  const initialContent = Array.isArray(activePage.content)
+    ? (activePage.content as unknown as PartialBlock[])
     : undefined;
 
   return (
-    <div className="px-4 md:px-6 py-4">
-      <div className="flex items-center gap-2 mb-3">
-        <h2 className="text-lg font-semibold">{page.title}</h2>
-        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Canvas</Badge>
-      </div>
-      <div className="border rounded-lg bg-card">
+    <div className="flex border rounded-lg bg-card overflow-hidden" style={{ minHeight: 400 }}>
+      <CanvasSidebar
+        pages={pages.map((p) => ({ id: p.id, title: p.title, display_order: p.display_order }))}
+        activePageId={activePage.id}
+        onSelectPage={setActivePageId}
+        onCreatePage={handleCreatePage}
+        onDeletePage={handleDeletePage}
+        editable={editable}
+        isCreating={createPage.isPending}
+      />
+      <div className="flex-1 min-w-0">
         <CanvasEditor
-          key={page.id}
+          key={activePage.id}
           initialContent={initialContent}
           editable={editable}
-          pageId={page.id}
+          pageId={activePage.id}
         />
       </div>
     </div>
