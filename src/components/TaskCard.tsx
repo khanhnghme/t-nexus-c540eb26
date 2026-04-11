@@ -17,10 +17,11 @@ interface TaskCardProps {
   task: Task & { task_assignments?: (TaskAssignment & { profiles?: Profile })[]; extended_deadline?: string };
   groupId: string;
   groupSlug?: string;
+  wsShortId?: string;
   showLink?: boolean;
 }
 
-export function TaskCard({ task, groupId, groupSlug, showLink = true }: TaskCardProps) {
+export function TaskCard({ task, groupId, groupSlug, wsShortId, showLink = true }: TaskCardProps) {
   // Handle extended deadline
   const hasExtension = !!(task as any).extended_deadline;
   const effectiveDeadline = hasExtension ? (task as any).extended_deadline : task.deadline;
@@ -167,9 +168,15 @@ export function TaskCard({ task, groupId, groupSlug, showLink = true }: TaskCard
   );
 
   if (showLink) {
-    // Use semantic URL with slugs if available
-    const projectPath = groupSlug ? `/p/${groupSlug}` : `/groups/${groupId}`;
-    const taskPath = task.slug ? `${projectPath}/t/${task.slug}` : `${projectPath}?tab=tasks&task=${task.id}`;
+    // Use new URL format with workspace short_id
+    let taskPath: string;
+    if (wsShortId && groupSlug && task.slug) {
+      taskPath = `/pr/ws-${wsShortId}/${groupSlug}/t/${task.slug}`;
+    } else if (groupSlug) {
+      taskPath = `/p/${groupSlug}${task.slug ? `/t/${task.slug}` : `?tab=tasks&task=${task.id}`}`;
+    } else {
+      taskPath = `/groups/${groupId}?tab=tasks&task=${task.id}`;
+    }
     
     return (
       <Link to={taskPath} className="block">

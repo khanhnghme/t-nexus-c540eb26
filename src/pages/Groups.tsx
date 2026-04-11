@@ -829,7 +829,7 @@ export default function Groups() {
               const gradient = gradients[index % gradients.length];
 
               return (
-                <Link key={group.id} to={`/p/${group.slug}`}>
+                <Link key={group.id} to={activeWorkspace?.short_id ? `/pr/ws-${activeWorkspace.short_id}/${group.slug}` : `/p/${group.slug}`}>
                   <div className="group relative h-full rounded-2xl overflow-hidden transition-all duration-500 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-primary/20 bg-card border border-border shadow-md shadow-black/5 hover:border-primary/40">
                     {/* Decorative top accent bar */}
                     <div className={`h-1 bg-gradient-to-r ${gradient}`} />
