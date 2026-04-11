@@ -97,17 +97,24 @@ export function useGoogleCalendarSync() {
         body: { action: 'sync' },
       });
 
-      if (res.error) throw res.error;
+      if (res.error) {
+        // Handle 429 sync_in_progress gracefully
+        if (res.data?.error === 'sync_in_progress') {
+          toast.info(locale === 'vi' ? 'Đồng bộ đang chạy, vui lòng đợi...' : 'Sync is already in progress, please wait...');
+          return;
+        }
+        throw res.error;
+      }
       const { push, pull } = res.data;
-      const total = (push?.created || 0) + (push?.updated || 0) + (pull?.created || 0);
+      const total = (push?.created || 0) + (push?.updated || 0) + (pull?.created || 0) + (pull?.updated || 0);
       if (total > 0) {
-        toast.success(`Đã đồng bộ ${total} sự kiện với Google Calendar`);
+        toast.success(locale === 'vi' ? `Đã đồng bộ ${total} sự kiện với Google Calendar` : `Synced ${total} events with Google Calendar`);
       } else {
-        toast.info('Google Calendar đã đồng bộ, không có thay đổi mới');
+        toast.info(locale === 'vi' ? 'Google Calendar đã đồng bộ, không có thay đổi mới' : 'Google Calendar synced, no new changes');
       }
       return res.data;
     } catch (err: any) {
-      toast.error('Đồng bộ Google Calendar thất bại');
+      toast.error(locale === 'vi' ? 'Đồng bộ Google Calendar thất bại' : 'Google Calendar sync failed');
       console.error(err);
     } finally {
       setIsSyncing(false);
