@@ -1,5 +1,8 @@
 import jsPDF from "jspdf";
-import type { Block } from "@blocknote/core";
+
+// Use `any` for blocks since our custom block types (taskList, memberList, etc.)
+// are not part of BlockNote's default Block type union.
+type AnyBlock = any;
 
 // ─── Markdown Export ───
 
