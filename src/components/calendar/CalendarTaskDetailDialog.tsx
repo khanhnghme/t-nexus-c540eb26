@@ -152,6 +152,7 @@ export default function CalendarTaskDetailDialog({ open, onOpenChange, event, on
   const handleOpenInProject = () => {
     if (event.projectSlug && event.taskSlug) {
       onOpenChange(false);
+      // Legacy fallback - calendar events may not have wsShortId yet
       navigate(`/p/${event.projectSlug}/t/${event.taskSlug}?tab=submit`);
     }
   };

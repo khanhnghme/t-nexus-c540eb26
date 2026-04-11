@@ -171,7 +171,9 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
   const handleRenamePage = async (pageId: string, newTitle: string) => {
     try {
       const result = await updatePage.mutateAsync({ pageId, updates: { title: newTitle } });
-      if (projectSlug && result.slug && pageId === activePageId) {
+      if (wsShortId && result.slug && pageId === activePageId) {
+        navigate(`/pa/ws-${wsShortId}/${result.slug}`, { replace: true });
+      } else if (projectSlug && result.slug && pageId === activePageId) {
         navigate(`/p/${projectSlug}/page/${result.slug}`, { replace: true });
       }
       doLog("page_renamed", `Đổi tên trang thành "${newTitle}"`, { page_id: pageId });
