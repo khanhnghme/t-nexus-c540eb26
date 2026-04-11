@@ -1,20 +1,54 @@
 
 
-## Phase 8 — Hoàn tất ✅
+## Phase 9 — Giai đoạn 1/4: Tạo ToggleBlock cơ bản
 
-### Block `/note` — Callout Block với Rich Text
+### Mục tiêu
+Tạo block `/toggle` (Accordion) cho phép user mở rộng/thu gọn nội dung. Giai đoạn 1 chỉ tạo block cơ bản với tiêu đề inline + toggle mở/đóng.
 
-**Trạng thái**: Hoàn tất 4/4 giai đoạn
+### Hành động
 
-| Giai đoạn | Nội dung | Trạng thái |
-|-----------|----------|------------|
-| 1/4 | Tạo NoteBlock cơ bản với icon + color | ✅ |
-| 2/4 | Color Picker UI (hover toolbar) | ✅ |
-| 3/4 | Icon Picker UI (click dropdown) | ✅ |
-| 4/4 | Multi-line support + styling | ✅ |
+**Tạo `src/components/canvas/blocks/ToggleBlock.tsx`**
+- Dùng `createReactBlockSpec` tương tự NoteBlock
+- PropSchema:
+  - `collapsed`: `{ default: "true" }` — trạng thái mở/đóng
+- Content: `"inline"` — tiêu đề toggle
+- Render:
+  - Icon mũi tên xoay (▶ khi đóng, ▼ khi mở) — click để toggle
+  - Tiêu đề inline bên phải mũi tên (contentRef)
+  - Khi mở: hiện placeholder text "Toggle content area" (sẽ nâng cấp ở giai đoạn sau)
+  - Style: border nhẹ, border-radius, padding tương tự NoteBlock
 
-### Tính năng
-- 6 preset colors với color picker toolbar khi hover
-- 6 preset icons với icon picker dropdown khi click
-- Multi-line support (white-space: pre-wrap)
-- Inline rich text content
+**Cập nhật `src/components/canvas/CanvasEditor.tsx`**
+- Import `ToggleBlock` và đăng ký vào schema
+
+### Chi tiết kỹ thuật
+
+```text
+Đóng:
+┌──────────────────────────────────┐
+│ ▶  Tiêu đề toggle               │
+└──────────────────────────────────┘
+
+Mở:
+┌──────────────────────────────────┐
+│ ▼  Tiêu đề toggle               │
+│    Nội dung bên trong...         │
+└──────────────────────────────────┘
+
+propSchema: { collapsed: { default: "true" } }
+content: "inline"
+Toggle: click arrow → updateBlock({ props: { collapsed: toggled } })
+```
+
+### Không làm
+- Nested blocks bên trong toggle (giai đoạn 2)
+- Styling/theming cho toggle (giai đoạn 3)
+- Animation mở/đóng (giai đoạn 4)
+
+### Files thay đổi
+
+| File | Thay đổi |
+|------|----------|
+| `src/components/canvas/blocks/ToggleBlock.tsx` | Tạo mới — toggle block |
+| `src/components/canvas/CanvasEditor.tsx` | Đăng ký toggleBlock vào schema |
+
