@@ -14,22 +14,24 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Calendar, User, Trash2, Plus, ListChecks } from "lucide-react";
+import { Calendar, User, Trash2, ListChecks } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { TaskRow, TaskHandlers } from "./taskBlockTypes";
 import { statusConfig } from "./taskBlockTypes";
+import { InlineTaskCreator } from "./InlineTaskCreator";
 
 interface TaskListViewProps {
   tasks: TaskRow[];
   editable: boolean;
+  groupId: string;
   newTitle: string;
   setNewTitle: (v: string) => void;
   adding: boolean;
   handlers: TaskHandlers;
 }
 
-export function TaskListView({ tasks, editable, newTitle, setNewTitle, adding, handlers }: TaskListViewProps) {
+export function TaskListView({ tasks, editable, groupId, newTitle, setNewTitle, adding, handlers }: TaskListViewProps) {
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const [editingTitleValue, setEditingTitleValue] = useState("");
 
@@ -165,22 +167,11 @@ export function TaskListView({ tasks, editable, newTitle, setNewTitle, adding, h
       )}
 
       {editable && (
-        <div className="flex items-center gap-2 px-3 py-2 border-t bg-muted/20">
-          <Plus className="h-4 w-4 text-muted-foreground shrink-0" />
-          <Input
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handlers.onAdd();
-              }
-            }}
-            placeholder="Thêm công việc mới..."
-            className="h-7 text-sm border-none bg-transparent shadow-none focus-visible:ring-0 px-0"
-            disabled={adding}
-          />
-        </div>
+        <InlineTaskCreator
+          groupId={groupId}
+          adding={adding}
+          onAdd={handlers.onAdd}
+        />
       )}
     </>
   );

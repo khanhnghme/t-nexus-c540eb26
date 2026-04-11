@@ -52,7 +52,7 @@ function TaskListRenderer() {
     );
   }, []);
 
-  const handleAddTask = useCallback(async () => {
+  const handleAddTask = useCallback(async (params?: { assigneeId?: string; deadline?: string }) => {
     const title = newTitle.trim();
     if (!title || !groupId) return;
 
@@ -65,16 +65,24 @@ function TaskListRenderer() {
       return;
     }
 
-    const { error } = await supabase.from("tasks").insert({
+    const { data: taskData, error } = await supabase.from("tasks").insert({
       title,
       group_id: groupId,
       status: "TODO",
       created_by: userId,
-    });
+      deadline: params?.deadline || null,
+    }).select("id").single();
 
-    if (error) {
+    if (error || !taskData) {
       toast.error("Không thể tạo công việc");
     } else {
+      if (params?.assigneeId) {
+        await supabase.from("task_assignments").insert({
+          task_id: taskData.id,
+          user_id: params.assigneeId,
+          assigned_by: userId,
+        });
+      }
       setNewTitle("");
       await fetchTasks();
     }
