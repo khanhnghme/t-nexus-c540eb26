@@ -51,6 +51,28 @@ function CalendarRenderer() {
     fetchTasks();
   }, [fetchTasks]);
 
+  // Realtime subscription
+  useEffect(() => {
+    if (!groupId) return;
+    const channel = supabase
+      .channel(`calendar-tasks-${groupId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tasks',
+          filter: `group_id=eq.${groupId}`,
+        },
+        () => fetchTasks()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [groupId, fetchTasks]);
+
   // Group tasks by date string for quick lookup
   const tasksByDate = useMemo(() => {
     const map = new Map<string, DeadlineTask[]>();
