@@ -15,7 +15,7 @@ import { useEffect } from 'react';
 // Custom schema with callout block
 const schema = BlockNoteSchema.create().extend({
   blockSpecs: {
-    callout: CalloutBlock,
+    callout: CalloutBlock(),
   },
 });
 
