@@ -17,6 +17,7 @@ export interface CalendarEvent {
   description?: string;
   source?: 'internal' | 'external';
   googleEventId?: string;
+  internalId?: string;
 }
 
 export interface PersonalEvent {

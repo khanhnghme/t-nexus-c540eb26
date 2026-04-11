@@ -16,7 +16,7 @@ import UserAvatar from '@/components/UserAvatar';
 import TaskSubmissionDialog from '@/components/TaskSubmissionDialog';
 import {
   Clock, CheckCircle2, AlertTriangle, ExternalLink, Send,
-  Calendar, Users, FileText, Loader2, Circle, Target, FolderOpen
+  Calendar, Users, FileText, Loader2, Circle, Target, FolderOpen, Hash, Copy, Check
 } from 'lucide-react';
 import type { Task, TaskStatus } from '@/types/database';
 
@@ -32,6 +32,23 @@ interface TaskAssignee {
   full_name: string;
   student_id?: string;
   avatar_url?: string | null;
+}
+function TaskCopyableId({ label, value, fullValue }: { label: string; value: string; fullValue?: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(fullValue || value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+  return (
+    <div className="flex items-center gap-2 min-w-0">
+      <span className="text-xs text-muted-foreground shrink-0">{label}:</span>
+      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded border border-border truncate max-w-[180px]">{value}</code>
+      <button onClick={handleCopy} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+        {copied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+      </button>
+    </div>
+  );
 }
 
 export default function CalendarTaskDetailDialog({ open, onOpenChange, event, onRefresh }: CalendarTaskDetailDialogProps) {
@@ -295,6 +312,15 @@ export default function CalendarTaskDetailDialog({ open, onOpenChange, event, on
                           </div>
                         </div>
                       )}
+
+                      {/* Task ID */}
+                      <div className="rounded-lg border border-border bg-card p-4 space-y-2">
+                        <h3 className="text-sm font-semibold flex items-center gap-1.5">
+                          <Hash className="w-4 h-4 text-primary" />
+                          Mã sự kiện
+                        </h3>
+                        <TaskCopyableId label="Task ID" value={event.id?.slice(0, 8) || ''} fullValue={event.id} />
+                      </div>
                     </div>
                   </div>
                 )}

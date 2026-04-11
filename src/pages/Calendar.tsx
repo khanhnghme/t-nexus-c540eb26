@@ -119,6 +119,8 @@ export default function CalendarPage() {
         color: ev.color,
         description: ev.description,
         source: ev.source || 'internal',
+        googleEventId: ev.google_event_id || undefined,
+        internalId: ev.id,
       }));
     },
     enabled: !!user?.id,

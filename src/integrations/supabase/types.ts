@@ -1586,6 +1586,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           end_time: string | null
+          google_event_id: string | null
           id: string
           source: string
           start_time: string
@@ -1598,6 +1599,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           end_time?: string | null
+          google_event_id?: string | null
           id?: string
           source?: string
           start_time: string
@@ -1610,6 +1612,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           end_time?: string | null
+          google_event_id?: string | null
           id?: string
           source?: string
           start_time?: string
