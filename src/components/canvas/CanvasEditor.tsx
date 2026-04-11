@@ -21,6 +21,7 @@ const schema = BlockNoteSchema.create({
     taskList: TaskListBlock(),
     memberList: MemberListBlock(),
     calendarView: CalendarBlock(),
+    noteCallout: NoteCalloutBlock(),
   },
 });
 
