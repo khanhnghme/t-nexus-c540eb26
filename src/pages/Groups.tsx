@@ -95,6 +95,7 @@ export default function Groups() {
   const [newGroupAdditionalInfo, setNewGroupAdditionalInfo] = useState('');
   const [groupImage, setGroupImage] = useState<File | null>(null);
   const [groupImagePreview, setGroupImagePreview] = useState<string | null>(null);
+  const [projectMode, setProjectMode] = useState<'basic' | 'custom'>('basic');
 
   // Member adding
   const [memberSearch, setMemberSearch] = useState('');
@@ -262,6 +263,7 @@ export default function Groups() {
     setSelectedMembers([]);
     setMemberSearch('');
     setSearchResults([]);
+    setProjectMode('basic');
   };
 
   const handleCreateGroup = async () => {
@@ -332,6 +334,7 @@ export default function Groups() {
           created_by: user!.id,
           slug: '',
           idempotency_key: idempotencyKeyRef.current,
+          project_mode: projectMode,
         };
 
       // Auto-assign workspace_id if workspace is active
