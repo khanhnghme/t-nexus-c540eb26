@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState } from "react";
+import { useRef, useCallback, useState, useEffect } from "react";
 import { createReactBlockSpec } from "@blocknote/react";
 import { ChevronRight } from "lucide-react";
 
@@ -15,7 +15,18 @@ export const ToggleBlock = createReactBlockSpec(
     render: (props) => {
       const isCollapsed = props.block.props.collapsed === "true";
       const textareaRef = useRef<HTMLTextAreaElement>(null);
+      const bodyContainerRef = useRef<HTMLDivElement>(null);
       const [headerHovered, setHeaderHovered] = useState(false);
+      const [maxHeight, setMaxHeight] = useState(isCollapsed ? "0px" : "500px");
+
+      useEffect(() => {
+        if (!isCollapsed) {
+          const el = bodyContainerRef.current;
+          setMaxHeight(el ? `${el.scrollHeight}px` : "500px");
+        } else {
+          setMaxHeight("0px");
+        }
+      }, [isCollapsed, props.block.props.bodyText]);
 
       const handleToggle = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -87,14 +98,18 @@ export const ToggleBlock = createReactBlockSpec(
               onClick={(e) => e.stopPropagation()}
             />
           </div>
-          {!isCollapsed && (
-            <div
-              contentEditable={false}
-              style={{
-                padding: "0.5rem 0.75rem 0.75rem 2.5rem",
-                borderTop: "1px solid hsl(var(--border))",
-              }}
-            >
+          <div
+            ref={bodyContainerRef}
+            contentEditable={false}
+            style={{
+              maxHeight,
+              opacity: isCollapsed ? 0 : 1,
+              overflow: "hidden",
+              transition: "max-height 200ms ease, opacity 150ms ease",
+              borderTop: isCollapsed ? "none" : "1px solid hsl(var(--border))",
+            }}
+          >
+            <div style={{ padding: "0.5rem 0.75rem 0.75rem 2.5rem" }}>
               <textarea
                 ref={textareaRef}
                 value={props.block.props.bodyText}
@@ -102,6 +117,7 @@ export const ToggleBlock = createReactBlockSpec(
                 placeholder="Nhập nội dung..."
                 onFocus={(e) => autoResize(e.target)}
                 rows={1}
+                tabIndex={isCollapsed ? -1 : 0}
                 style={{
                   width: "100%",
                   border: "none",
@@ -119,7 +135,7 @@ export const ToggleBlock = createReactBlockSpec(
                 }}
               />
             </div>
-          )}
+          </div>
         </div>
       );
     },
