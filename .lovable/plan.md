@@ -1,60 +1,52 @@
 
 
-## Fix Spam Sự Kiện + Hiển Thị Mã Sự Kiện
+## Nâng cấp Connected Tools — Điều hướng tập trung về Cài đặt
 
-### Nguyên nhân gốc spam
+### Hiện trạng
+- **Calendar page** (`CalendarHeader.tsx`): Có nút Google Calendar Connect trực tiếp (connect/disconnect/sync)
+- **Account Settings** (`AccountSettings.tsx`): Đã có `ConnectedServicesCard` — nơi tập trung quản lý cả 3 dịch vụ (Calendar, Gmail, Drive)
+- **Pricing/Upgrade**: Connected Tools hiện chỉ show ✓/— (boolean), không có giới hạn cụ thể
 
-Dữ liệu hiện tại: **47 external events** trong `personal_events`, nhiều event bị trùng 2-3 lần (cùng title, khác `google_event_id`). Nguyên nhân:
+### Thay đổi
 
-1. **Tasks bị push nhiều lần ra Google** — Các lần sync trước (trước khi có fix idempotent) đã tạo nhiều Google Calendar events cho cùng 1 task
-2. **PULL kéo lại các event trùng** — Mỗi Google event có ID riêng, nên PULL tạo personal_event mới cho mỗi bản trùng
-3. **PULL không nhận diện event từ task** — Khi Google trả về event có title `[ProjectName] TaskTitle`, PULL không biết đây là task đã push, vẫn tạo personal_event
+**1. Calendar Header — Thay nút Connect bằng nút điều hướng**
 
-### Kế hoạch fix — 2 phần
+File: `src/components/calendar/CalendarHeader.tsx`
+- Khi chưa kết nối Google Calendar: thay nút "Google Calendar" (connect trực tiếp) → nút "Kết nối Calendar" điều hướng đến `/account-settings` (scroll đến phần Connected Services)
+- Khi đã kết nối: giữ nút Sync + trạng thái "Đã kết nối", nhưng nút "Ngắt kết nối" trong dropdown → điều hướng đến `/account-settings` thay vì disconnect trực tiếp
 
----
+File: `src/components/calendar/GoogleCalendarConnect.tsx`
+- Cập nhật: khi chưa kết nối → `navigate('/account-settings#integrations')` thay vì gọi `onConnect`
+- Khi đã kết nối: giữ nguyên Sync + dropdown nhưng "Ngắt kết nối" → điều hướng settings
 
-### Phần 1: Dọn dẹp dữ liệu + Fix logic Edge Function
+**2. Pricing & Upgrade — Thêm chi tiết Connected Tools**
 
-**1.1 Dọn dữ liệu duplicate** (dùng insert tool)
-- Xóa personal_events trùng lặp (giữ bản mới nhất cho mỗi `google_event_id` group by title+start_time)
-- Xóa sync_map entries tương ứng
+File: `src/pages/Pricing.tsx` + `src/pages/Upgrade.tsx`
+- Thay đổi bảng so sánh Connected Tools từ boolean (✓/—) sang text cụ thể:
+  - Free: — (không có)
+  - Plus: — (không có)
+  - Pro: "Unlimited" (✓)
+  - Business: "Unlimited" (✓)
+  - Enterprise: "Unlimited" (✓)
+- Giữ nguyên hiển thị hiện tại vì không có giới hạn số lượng
 
-**1.2 Sửa Edge Function PULL logic** (`google-calendar-sync/index.ts`)
+**3. ConnectedToolsBadge — Thêm click điều hướng**
 
-Thêm bước nhận diện event đã push từ task: trước khi tạo personal_event mới, check sync_map xem google_event_id có thuộc task nào không (vì task push tạo sync_map entry với `local_event_type: 'task'`). Hiện tại code chỉ check `allKnownGoogleIds` Set nhưng Set này build từ sync_map nên lẽ ra phải hoạt động — vấn đề là các lần sync cũ tạo Google events mà không có sync_map entry.
+File: `src/components/ConnectedToolsBadge.tsx`
+- `ConnectedToolsTailwind` (dùng trong ServicePlanSection): khi click → navigate đến `/account-settings#integrations`
+- `ConnectedToolsInline` (dùng trong Pricing): giữ nguyên (không cần click)
 
-Fix thực tế: Trong PULL, sau khi check `allKnownGoogleIds`, thêm check title pattern — nếu title bắt đầu bằng `[` và match pattern `[ProjectName] TaskTitle`, skip event đó (vì nó là task đã push).
+**4. Account Settings — Thêm anchor ID**
 
-**1.3 Thêm `google_event_id` column vào `personal_events`** (Migration)
-
-Thêm cột `google_event_id TEXT` nullable vào `personal_events` để lưu trực tiếp mapping, giúp query đơn giản hơn và hiển thị trên UI.
-
----
-
-### Phần 2: Nâng cấp UI hiển thị mã sự kiện
-
-**2.1 `CalendarEvent` type** — Thêm `googleEventId?: string`
-
-**2.2 Query Calendar.tsx** — Map `google_event_id` từ personal_events query
-
-**2.3 EventDetailDialog** — Hiển thị:
-- Mã sự kiện nội bộ (UUID rút gọn 8 ký tự)
-- Mã Google Event ID (nếu có) với icon copy
-
-**2.4 CalendarTaskDetailDialog** — Hiển thị mã task ID
-
----
+File: `src/pages/AccountSettings.tsx`
+- Thêm `id="integrations"` vào section Connected Services để hỗ trợ scroll-to khi navigate từ trang khác
 
 ### Files cần sửa
 
 | File | Thay đổi |
 |------|----------|
-| Migration SQL | Thêm `google_event_id` vào `personal_events` |
-| Data cleanup SQL | Xóa duplicate events + sync_map |
-| `supabase/functions/google-calendar-sync/index.ts` | Skip task-originated events trong PULL, lưu `google_event_id` vào personal_events |
-| `src/types/calendar.ts` | Thêm `googleEventId` |
-| `src/pages/Calendar.tsx` | Map `google_event_id` |
-| `src/components/calendar/EventDetailDialog.tsx` | Hiển thị mã ID + copy button |
-| `src/components/calendar/CalendarTaskDetailDialog.tsx` | Hiển thị mã task ID |
+| `src/components/calendar/GoogleCalendarConnect.tsx` | Nút connect → navigate settings; disconnect trong dropdown → navigate settings |
+| `src/components/calendar/CalendarHeader.tsx` | Cập nhật props nếu cần |
+| `src/components/ConnectedToolsBadge.tsx` | Thêm onClick navigate cho Tailwind variant |
+| `src/pages/AccountSettings.tsx` | Thêm `id="integrations"` + scroll-to logic |
 
