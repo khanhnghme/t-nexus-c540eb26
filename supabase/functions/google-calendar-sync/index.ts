@@ -68,7 +68,6 @@ async function gcalRequest(accessToken: string, path: string, method = "GET", bo
   return method === "DELETE" ? null : res.json();
 }
 
-// Acquire optimistic lock via DB function (handles timestamp comparison correctly)
 async function acquireLock(supabase: any, userId: string): Promise<boolean> {
   const { data, error } = await supabase.rpc("acquire_sync_lock", {
     p_user_id: userId,
@@ -83,6 +82,11 @@ async function acquireLock(supabase: any, userId: string): Promise<boolean> {
 
 async function releaseLock(supabase: any, userId: string) {
   await supabase.rpc("release_sync_lock", { p_user_id: userId });
+}
+
+// Check if a Google event title matches the pattern of a pushed task: [ProjectName] TaskTitle
+function isTaskOriginatedEvent(summary: string): boolean {
+  return /^\[.+\]\s.+/.test(summary || "");
 }
 
 Deno.serve(async (req) => {
@@ -181,6 +185,12 @@ Deno.serve(async (req) => {
       // Track all known google_event_ids (initial + newly pushed)
       const allKnownGoogleIds = new Set((syncMap || []).map((s: any) => s.google_event_id));
 
+      // Build set of task titles pushed to Google for dedup during PULL
+      const pushedTaskTitles = new Set<string>();
+      for (const task of tasks) {
+        pushedTaskTitles.add(`[${task.groups?.name}] ${task.title}`);
+      }
+
       // Push personal events
       for (const ev of (personalEvents || [])) {
         const key = `personal:${ev.id}`;
@@ -207,6 +217,8 @@ Deno.serve(async (req) => {
               google_calendar_id: calendarId,
               last_synced_at: new Date().toISOString(),
             }, { onConflict: "user_id,local_event_id,local_event_type" });
+            // Save google_event_id directly on personal_events
+            await supabase.from("personal_events").update({ google_event_id: created.id }).eq("id", ev.id);
             allKnownGoogleIds.add(created.id);
             pushResults.created++;
           }
@@ -290,6 +302,15 @@ Deno.serve(async (req) => {
             continue;
           }
 
+          // Skip events that match task push title pattern (prevents pulling back pushed tasks)
+          const summary = gev.summary || "";
+          if (isTaskOriginatedEvent(summary) && pushedTaskTitles.has(summary)) {
+            // Add to known IDs so we don't process again
+            allKnownGoogleIds.add(gev.id);
+            pullResults.skipped++;
+            continue;
+          }
+
           const startTime = gev.start?.dateTime || (gev.start?.date ? `${gev.start.date}T00:00:00` : null);
           const endTime = gev.end?.dateTime || gev.end?.date || null;
 
@@ -314,6 +335,7 @@ Deno.serve(async (req) => {
                 description: gev.description || null,
                 start_time: startTime,
                 end_time: endTime,
+                google_event_id: gev.id,
               }).eq("id", existingMapping.local_event_id);
               await supabase.from("calendar_sync_map").update({ last_synced_at: new Date().toISOString() }).eq("id", existingMapping.id);
               pullResults.updated++;
@@ -329,6 +351,7 @@ Deno.serve(async (req) => {
                   end_time: endTime,
                   color: "#4285f4",
                   source: "external",
+                  google_event_id: gev.id,
                 })
                 .select("id")
                 .single();
@@ -359,7 +382,6 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } finally {
-      // Always release lock
       await releaseLock(supabase, userId);
     }
   } catch (err) {
