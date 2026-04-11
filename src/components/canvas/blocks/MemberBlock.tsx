@@ -105,9 +105,15 @@ export const MemberListBlock = createReactBlockSpec(
   {
     type: "memberList" as const,
     propSchema: {},
-    content: "none" as const,
+    content: "none",
   },
   {
-    render: () => <MemberListRenderer />,
+    render: () => {
+      return (
+        <div className="my-2" contentEditable={false}>
+          <MemberListRenderer />
+        </div>
+      );
+    },
   }
 );
