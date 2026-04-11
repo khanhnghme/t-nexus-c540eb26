@@ -53,6 +53,7 @@ export async function updatePage(pageId: string, updates: {
   content?: any;
   display_order?: number;
   icon?: string | null;
+  cover_url?: string | null;
 }) {
   const { data, error } = await supabase
     .from("project_pages")
