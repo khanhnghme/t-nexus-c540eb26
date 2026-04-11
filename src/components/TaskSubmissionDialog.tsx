@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import submissionIllustration from '@/assets/submission-confirm-illustration.png';
 import {
   Dialog,
