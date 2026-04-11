@@ -1,4 +1,4 @@
-import { useState, Suspense, lazy, useRef, useCallback } from "react";
+import { useState, Suspense, lazy, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,7 +43,18 @@ export default function CreateCustomProject() {
   const idempotencyKeyRef = useRef(crypto.randomUUID());
   const createLockRef = useRef(false);
 
-  const canCreate = projectName.trim().length > 0 && selectedWorkspaceId && !isCreating;
+  // Auto-select workspace if only one available
+  useEffect(() => {
+    if (!selectedWorkspaceId && workspaces.length === 1) {
+      setSelectedWorkspaceId(workspaces[0].id);
+    }
+  }, [workspaces, selectedWorkspaceId]);
+
+  const nameError = projectName.trim().length > 0 && projectName.trim().length < 2
+    ? "Tên project phải có ít nhất 2 ký tự"
+    : null;
+
+  const canCreate = projectName.trim().length >= 2 && selectedWorkspaceId && !isCreating && !nameError;
 
   const handleCreate = useCallback(async () => {
     if (!user || !canCreate || createLockRef.current) return;
@@ -51,7 +62,6 @@ export default function CreateCustomProject() {
     setIsCreating(true);
 
     try {
-      // 1. Create group with project_mode: 'custom'
       const { data: newGroup, error: groupError } = await supabase
         .from("groups")
         .insert({
@@ -66,9 +76,16 @@ export default function CreateCustomProject() {
         .select()
         .single();
 
-      if (groupError) throw groupError;
+      if (groupError) {
+        // Handle duplicate idempotency_key
+        if (groupError.code === "23505" && groupError.message?.includes("idempotency_key")) {
+          toast.info("Project này đã được tạo trước đó.");
+          navigate("/dashboard");
+          return;
+        }
+        throw groupError;
+      }
 
-      // 2. Add creator as project_admin
       const { error: memberError } = await supabase
         .from("group_members")
         .insert({
@@ -78,7 +95,6 @@ export default function CreateCustomProject() {
         });
       if (memberError) throw memberError;
 
-      // 3. Create default page with editor content
       await createPage({
         group_id: newGroup.id,
         title: "Untitled Page",
@@ -87,11 +103,11 @@ export default function CreateCustomProject() {
         display_order: 0,
       });
 
-      toast.success("Project created successfully!");
+      toast.success("Tạo project thành công!");
       navigate(`/projects/${newGroup.id}`);
     } catch (error: any) {
       console.error("Create project error:", error);
-      toast.error(error.message || "Failed to create project");
+      toast.error(error.message || "Không thể tạo project");
       createLockRef.current = false;
     } finally {
       setIsCreating(false);
@@ -100,7 +116,6 @@ export default function CreateCustomProject() {
 
   return (
     <div className="container max-w-7xl mx-auto py-6 px-4 space-y-6">
-      {/* Breadcrumb */}
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -113,7 +128,6 @@ export default function CreateCustomProject() {
         </BreadcrumbList>
       </Breadcrumb>
 
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
@@ -129,11 +143,8 @@ export default function CreateCustomProject() {
         </Button>
       </div>
 
-      {/* 2-column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
-        {/* Left sidebar — metadata */}
         <div className="space-y-5">
-          {/* Workspace selector */}
           <div className="space-y-2">
             <Label>Workspace</Label>
             {wsLoading ? (
@@ -159,7 +170,6 @@ export default function CreateCustomProject() {
             )}
           </div>
 
-          {/* Project name */}
           <div className="space-y-2">
             <Label htmlFor="projectName">Project Name *</Label>
             <Input
@@ -168,9 +178,11 @@ export default function CreateCustomProject() {
               onChange={(e) => setProjectName(e.target.value)}
               placeholder="Enter project name..."
             />
+            {nameError && (
+              <p className="text-xs text-destructive">{nameError}</p>
+            )}
           </div>
 
-          {/* Description */}
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea
@@ -182,7 +194,6 @@ export default function CreateCustomProject() {
             />
           </div>
 
-          {/* Actions */}
           <div className="flex flex-col gap-2 pt-2">
             <Button disabled={!canCreate} onClick={handleCreate}>
               {isCreating ? (
@@ -198,7 +209,6 @@ export default function CreateCustomProject() {
           </div>
         </div>
 
-        {/* Right — editor */}
         <div className="border rounded-lg min-h-[500px] bg-background overflow-hidden">
           <Suspense
             fallback={
@@ -209,7 +219,7 @@ export default function CreateCustomProject() {
             }
           >
             <CanvasEditor
-              editable={true}
+              editable={!isCreating}
               onChange={(content) => {
                 editorContentRef.current = content;
               }}
