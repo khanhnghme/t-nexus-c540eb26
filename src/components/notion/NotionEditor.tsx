@@ -87,7 +87,7 @@ export default function NotionEditor({ pageId, initialContent, editable = true, 
             triggerCharacter="/"
             getItems={async (query) =>
               filterSuggestionItems(
-                [...getDefaultReactSlashMenuItems(editor), ...getCustomSlashMenuItems(editor)],
+                [...getDefaultReactSlashMenuItems(editor), ...getCustomSlashMenuItems(editor)] as any[],
                 query
               )
             }
