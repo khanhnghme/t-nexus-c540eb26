@@ -1,57 +1,55 @@
 
 
-## Phase 1 — Block Editor Core: Giai đoạn 1/2 (Database / Logic)
+## Phase 1 — Block Editor Core: Giai đoạn 2/2 (UI / Integration)
 
-Theo nguyên tắc triển khai, Phase 1 chia thành 2 giai đoạn. Đây là **giai đoạn 1: Database / Logic**.
+Giai đoạn 1 đã hoàn thành: bảng `project_pages`, cột `project_mode` trên `groups`, mode selector trong dialog tạo project. Giai đoạn 2 tập trung vào **cài đặt BlockNote và render editor trong project Custom**.
 
 ### Thay đổi
 
-**1. Database Migration**
+**1. Cài đặt dependencies**
+- `@blocknote/core`, `@blocknote/react`, `@blocknote/mantine`
 
-Thêm cột `project_mode` vào bảng `groups` và tạo bảng `project_pages`:
+**2. `src/components/notion/NotionEditor.tsx` — Tạo mới**
+- Wrap `BlockNoteView` với `useCreateBlockNote`
+- Props: `pageId`, `initialContent`, `onChange`, `editable`
+- Hỗ trợ: text, heading, list, image (các block mặc định của BlockNote)
+- Tích hợp `useAutosave` để tự động lưu content (JSON) vào bảng `project_pages`
+- Hiển thị trạng thái saving (spinner nhỏ)
 
-```text
-groups
-└── project_mode TEXT DEFAULT 'basic'   ← 'basic' | 'custom'
+**3. `src/components/notion/NotionPageList.tsx` — Tạo mới**
+- Sidebar nhỏ hiển thị danh sách pages của project Custom
+- Nút "+" tạo page mới (insert vào `project_pages`)
+- Click chọn page → load content vào editor
+- Sắp xếp theo `display_order`
 
-project_pages (NEW)
-├── id          UUID PK
-├── group_id    UUID FK → groups(id) ON DELETE CASCADE
-├── title       TEXT DEFAULT 'Untitled'
-├── content     JSONB DEFAULT '[]'   ← BlockNote JSON blocks
-├── display_order INTEGER DEFAULT 0
-├── created_by  UUID FK → auth.users(id)
-├── created_at  TIMESTAMPTZ
-├── updated_at  TIMESTAMPTZ
-```
+**4. `src/components/notion/CustomProjectView.tsx` — Tạo mới**
+- Layout wrapper: sidebar pages (trái) + editor (phải)
+- Quản lý state: `selectedPageId`, load/save logic
+- Tự tạo page đầu tiên nếu project chưa có page nào
 
-**2. RLS Policies cho `project_pages`**
-- **SELECT**: project members (`is_group_member`)
-- **INSERT/UPDATE**: project leaders (`is_project_leader`)
-- **DELETE**: project leaders
+**5. `src/pages/GroupDetail.tsx` — Render theo mode**
+- Kiểm tra `group.project_mode`
+- Nếu `'custom'`: render `<CustomProjectView>` thay vì tabs tasks/stages hiện tại
+- Nếu `'basic'`: giữ nguyên UI hiện tại
+- Vẫn giữ các tab chung: members, settings, logs (nếu có quyền)
 
-**3. Cập nhật `Groups.tsx` — Thêm mode selector**
-- Thêm state `projectMode` (`'basic' | 'custom'`)
-- Trong dialog tạo project, thêm 2 card chọn mode:
-  - **Basic**: Tasks, Stages, Scores — mặc định
-  - **Custom (Notion-like)**: Block editor tự do
-- Gửi `project_mode` trong insert data
+**6. i18n**
+- Thêm text: "Untitled", "New page", "Saving...", "Saved"
 
-**4. Cập nhật `database.ts` type**
-- Thêm `project_mode?: 'basic' | 'custom'` vào interface `Group`
+### Chưa làm
+- Slash commands tuỳ chỉnh (Phase 3)
+- Task table/Kanban blocks (Phase 4-7)
+- Không thay đổi database
 
-### Chưa làm trong giai đoạn này
-- UI block editor (Phase 1, giai đoạn 2)
-- Cài BlockNote dependencies (Phase 1, giai đoạn 2)
-- Render khác nhau trong GroupDetail (Phase 1, giai đoạn 2)
-
-### Files cần sửa
+### Files cần tạo/sửa
 
 | File | Thay đổi |
 |------|----------|
-| Migration SQL | Thêm `project_mode` + tạo `project_pages` + RLS |
-| `src/pages/Groups.tsx` | Mode selector trong dialog tạo project |
-| `src/types/database.ts` | Thêm `project_mode` vào `Group` interface |
-| `src/lib/i18n/vi.ts` | Thêm i18n cho mode selector |
-| `src/lib/i18n/en.ts` | Thêm i18n cho mode selector |
+| `package.json` | Thêm BlockNote dependencies |
+| `src/components/notion/NotionEditor.tsx` | **Tạo mới** — BlockNote editor |
+| `src/components/notion/NotionPageList.tsx` | **Tạo mới** — Pages sidebar |
+| `src/components/notion/CustomProjectView.tsx` | **Tạo mới** — Layout wrapper |
+| `src/pages/GroupDetail.tsx` | Conditional render theo `project_mode` |
+| `src/lib/i18n/vi.ts` | Thêm i18n |
+| `src/lib/i18n/en.ts` | Thêm i18n |
 
