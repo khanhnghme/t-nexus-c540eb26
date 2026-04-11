@@ -1951,8 +1951,8 @@ export const vi: Translations = {
       limitSaved: 'Đã lưu giới hạn',
       limitDesc: 'Tối đa {n} thành viên',
       maxMembers: 'người tối đa',
-      shareCodeDesc: 'Chia sẻ mã 4 số này cho thành viên muốn tự tham gia project',
-      enableJoinCode: 'Bật để tạo mã 4 chữ số cho thành viên tự tham gia',
+      shareCodeDesc: 'Chia sẻ mã 6 ký tự này cho thành viên muốn tự tham gia project',
+      enableJoinCode: 'Bật để tạo mã 6 ký tự cho thành viên tự tham gia',
       error: 'Lỗi',
     },
     members: {

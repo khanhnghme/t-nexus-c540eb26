@@ -32,7 +32,12 @@ interface ShareSettingsCardProps {
 // generateToken removed — now using project slug as share_token
 
 function generateJoinCode(): string {
-  return Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
 }
 
 export default function ShareSettingsCard({
@@ -461,12 +466,12 @@ export default function ShareSettingsCard({
                 </CollapsibleContent>
               </Collapsible>
               <p className="text-xs text-muted-foreground">
-                Chia sẻ mã 4 số này cho thành viên muốn tự tham gia project
+                Chia sẻ mã 6 ký tự này cho thành viên muốn tự tham gia project
               </p>
             </>
           ) : (
             <p className="text-sm text-muted-foreground py-2">
-              Bật để tạo mã 4 chữ số cho thành viên tự tham gia
+              Bật để tạo mã 6 ký tự cho thành viên tự tham gia
             </p>
           )}
         </CardContent>

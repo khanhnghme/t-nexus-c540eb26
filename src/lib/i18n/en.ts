@@ -1996,8 +1996,8 @@ export const en = {
       limitSaved: 'Limit saved',
       limitDesc: 'Maximum {n} members',
       maxMembers: 'maximum members',
-      shareCodeDesc: 'Share this 4-digit code with people who want to join',
-      enableJoinCode: 'Enable to create a 4-digit code for self-joining',
+      shareCodeDesc: 'Share this 6-character code with people who want to join',
+      enableJoinCode: 'Enable to create a 6-character code for self-joining',
       error: 'Error',
     },
     members: {
