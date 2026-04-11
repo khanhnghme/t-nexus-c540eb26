@@ -1,73 +1,44 @@
 
 
-## Redesign Canvas UI theo ngôn ngữ thiết kế AFFiNE
+## Tích hợp File Upload vào Canvas Editor qua R2 Storage
 
-### Phân tích so sánh hiện tại vs AFFiNE
+### Cách hoạt động
 
-Nhìn vào screenshot AFFiNE app:
-- **TopBar**: Rất mỏng, chỉ hiện icon mode (Doc/Edgeless), tên trang ở giữa, và nút Share + layout toggle ở phải
-- **Sidebar**: Sạch sẽ, không border nặng, nhóm theo Favorites/Organize/Tags/Collections/Others
-- **Editor area**: Toàn màn hình, không border/rounded corners, title cực lớn, nội dung trung tâm hóa với max-width
-- **Canvas toolbar**: Thanh toolbar nằm trong content area, không phải trên header
+BlockNote hỗ trợ `uploadFile` callback trong `useCreateBlockNote`. Khi user kéo thả ảnh/file hoặc dùng slash menu (Image, Video, Audio, File), BlockNote gọi callback này và nhận lại URL để hiển thị.
 
-**Hiện tại T-Nexus Canvas** có vấn đề:
-1. TopBar hiển thị "Chi tiết dự án / Canvas" — thừa, không cần thiết cho Custom mode
-2. Có thêm 1 header row (Back + Project name + Canvas badge) bên trong GroupDetail — trùng lặp
-3. CanvasPageView có thêm toolbar bar (icon + title + Edit/Template/Export/Share/Help) — quá nhiều nút
-4. Editor bọc trong `border rounded-lg bg-card` — trông như widget thay vì workspace toàn màn hình
-5. Canvas sidebar hẹp, có border, trông tách biệt
+### Thay đổi
 
-### Kế hoạch thay đổi
+#### 1. `src/components/canvas/CanvasEditor.tsx`
 
-#### 1. GroupDetail.tsx — Canvas mode fullscreen
-- Bỏ header row (back button + project name + badge) vì TopBar đã có breadcrumb
-- Bỏ `border rounded-lg` wrapper, để CanvasPageView chiếm full content area
-- Thêm padding nhỏ hoặc không padding
+- Thêm `uploadFile` function vào config `useCreateBlockNote`:
+  - Upload file lên R2 bucket `project-resources` với path `canvas/{groupId}/{pageId}/{timestamp}_{filename}`
+  - Sau khi upload thành công, INSERT record vào `project_resources` với:
+    - `group_id`, `uploaded_by` (user.id)
+    - `name`: tên file gốc
+    - `file_path`: public URL từ R2
+    - `storage_name`: R2 path
+    - `file_size`: file.size (bytes) → tự động tính vào storage quota qua `get_account_storage_usage()`
+    - `file_type`: file.type
+    - `category`: `'canvas-attachment'`
+    - `resource_type`: `'file'`
+  - Trả về public URL cho BlockNote hiển thị
+- Nhận thêm prop `userId` từ `CanvasPageView` (hoặc dùng `useAuth` trực tiếp trong editor)
+- Import `r2Storage` và `supabase`
 
-#### 2. TopBar.tsx — Custom mode cải tiến theo AFFiNE
-- Khi `projectMode === 'custom'`: hiển thị theo phong cách AFFiNE
-  - Trái: icon sidebar toggle (PanelLeft)
-  - Giữa: mode icons (Doc icon) + tên trang hiện tại + chevron dropdown
-  - Phải: Star/Favorite + Share button + MoreOptions (...)
-- Bỏ badge "Canvas", thay bằng visual indicator tinh tế hơn
+#### 2. `src/components/canvas/CanvasPageView.tsx`
 
-#### 3. CanvasPageView.tsx — Toolbar tinh gọn kiểu AFFiNE
-- Bỏ outer `border rounded-lg bg-card overflow-hidden` wrapper
-- Thanh toolbar trên cùng: thu gọn, chỉ hiện icon (không text), mỏng hơn
-- Di chuyển Edit/View toggle thành icon-only
-- Gom Export/Template/Share vào "..." dropdown menu
-- Last editor indicator giữ lại nhưng style nhỏ hơn
+- Khi xóa page (`handleDeletePage`), thêm cleanup:
+  - Query `project_resources` WHERE `group_id = groupId` AND `category = 'canvas-attachment'` AND `storage_name LIKE 'canvas/{groupId}/{pageId}/%'`
+  - Xóa files trên R2 và xóa records trong DB
 
-#### 4. CanvasSidebar.tsx — Thiết kế lại theo AFFiNE sidebar
-- Background nhẹ hơn (không `bg-muted/30`, dùng subtle bg)
-- Bỏ uppercase "TRANG" header, thay bằng nhóm tự nhiên
-- Page items: indent tự nhiên, hover effect subtle
-- Active page: highlight nhẹ kiểu AFFiNE (bg-accent mỏng + thanh dọc bên trái)
-- Search pages input nhỏ ở trên
-
-#### 5. CanvasEditor.tsx + PageHeader.tsx — Notion/AFFiNE style
-- Title lớn hơn (text-4xl → text-5xl), font-weight 700
-- Centering nội dung với max-width ~720px và margin auto
-- Save status indicator nhỏ gọn hơn, float ở góc
-
-#### 6. CSS updates (index.css)
-- Custom mode: ẩn TopBar row cũ hoặc style lại
-- Content area không border, không rounded
+### Không cần migration
+- Bảng `project_resources` đã có đủ cột (`file_size`, `storage_name`, `category`, `file_type`)
+- `get_account_storage_usage()` đã tính `project_resources.file_size` → dung lượng tự động cộng vào tổng
 
 ### Files thay đổi
 
 | File | Thay đổi |
 |------|----------|
-| `src/pages/GroupDetail.tsx` | Bỏ header row cho custom mode, fullscreen canvas |
-| `src/components/layout/TopBar.tsx` | Redesign custom mode layout theo AFFiNE |
-| `src/components/canvas/CanvasPageView.tsx` | Bỏ border wrapper, toolbar tinh gọn, gom actions vào dropdown |
-| `src/components/canvas/CanvasSidebar.tsx` | Redesign theo AFFiNE sidebar style |
-| `src/components/canvas/CanvasEditor.tsx` | Center content, save indicator gọn hơn |
-| `src/components/canvas/PageHeader.tsx` | Title lớn hơn, centered layout |
-
-### Không làm
-- Edgeless/Whiteboard mode (cần tldraw, scope riêng)
-- Journal feature
-- Tags/Collections system
-- AI Intelligence panel
+| `src/components/canvas/CanvasEditor.tsx` | Thêm `uploadFile` handler với R2 + ghi `project_resources` |
+| `src/components/canvas/CanvasPageView.tsx` | Cleanup canvas attachments khi xóa page |
 
