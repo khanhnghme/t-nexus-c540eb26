@@ -1,43 +1,14 @@
 import { createReactBlockSpec } from "@blocknote/react";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTaskBlockContext } from "./TaskBlockContext";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ListChecks, Calendar, User, Trash2, Plus } from "lucide-react";
-import { format } from "date-fns";
+import { ListChecks, LayoutGrid, List } from "lucide-react";
 import { toast } from "sonner";
-
-interface TaskRow {
-  id: string;
-  title: string;
-  status: string;
-  deadline: string | null;
-  task_assignments: {
-    profiles: { full_name: string; avatar_url: string | null } | null;
-  }[];
-}
-
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
-  TODO: { label: "Cần làm", variant: "outline" },
-  IN_PROGRESS: { label: "Đang làm", variant: "secondary" },
-  DONE: { label: "Hoàn thành", variant: "default" },
-  VERIFIED: { label: "Đã duyệt", variant: "default" },
-};
+import type { TaskRow, TaskHandlers, TaskStatus } from "./taskBlockTypes";
+import { TaskListView } from "./TaskListView";
+import { TaskKanbanView } from "./TaskKanbanView";
 
 function TaskListRenderer() {
   const { groupId, editable } = useTaskBlockContext();
@@ -45,6 +16,7 @@ function TaskListRenderer() {
   const [loading, setLoading] = useState(true);
   const [newTitle, setNewTitle] = useState("");
   const [adding, setAdding] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
 
   const fetchTasks = useCallback(async () => {
     if (!groupId) return;
@@ -65,7 +37,7 @@ function TaskListRenderer() {
     fetchTasks();
   }, [fetchTasks]);
 
-  const handleStatusChange = async (taskId: string, newStatus: "TODO" | "IN_PROGRESS" | "DONE" | "VERIFIED") => {
+  const handleStatusChange = useCallback(async (taskId: string, newStatus: TaskStatus) => {
     const { error } = await supabase
       .from("tasks")
       .update({ status: newStatus })
@@ -78,9 +50,9 @@ function TaskListRenderer() {
     setTasks((prev) =>
       prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
     );
-  };
+  }, []);
 
-  const handleAddTask = async () => {
+  const handleAddTask = useCallback(async () => {
     const title = newTitle.trim();
     if (!title || !groupId) return;
 
@@ -107,9 +79,9 @@ function TaskListRenderer() {
       await fetchTasks();
     }
     setAdding(false);
-  };
+  }, [newTitle, groupId, fetchTasks]);
 
-  const handleDelete = async (taskId: string, taskTitle: string) => {
+  const handleDelete = useCallback(async (taskId: string, taskTitle: string) => {
     if (!confirm(`Xóa công việc "${taskTitle}"?`)) return;
 
     const { error } = await supabase.from("tasks").delete().eq("id", taskId);
@@ -118,7 +90,13 @@ function TaskListRenderer() {
       return;
     }
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
-  };
+  }, []);
+
+  const handlers: TaskHandlers = useMemo(() => ({
+    onStatusChange: handleStatusChange,
+    onAdd: handleAddTask,
+    onDelete: handleDelete,
+  }), [handleStatusChange, handleAddTask, handleDelete]);
 
   if (loading) {
     return (
@@ -136,97 +114,42 @@ function TaskListRenderer() {
         <ListChecks className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm font-medium">Danh sách công việc</span>
         <Badge variant="secondary" className="ml-auto text-xs">{tasks.length}</Badge>
+        <div className="flex items-center border rounded-md overflow-hidden ml-1">
+          <button
+            onClick={() => setViewMode("list")}
+            className={`p-1 transition-colors ${viewMode === "list" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+            title="Danh sách"
+          >
+            <List className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => setViewMode("kanban")}
+            className={`p-1 transition-colors ${viewMode === "kanban" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+            title="Kanban"
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
 
-      {tasks.length === 0 && !editable && (
-        <div className="flex flex-col items-center justify-center py-6 text-muted-foreground gap-2 bg-muted/30">
-          <ListChecks className="h-6 w-6" />
-          <p className="text-sm">Chưa có công việc nào trong dự án.</p>
-        </div>
-      )}
-
-      {tasks.length > 0 && (
-        <div className="divide-y">
-          {tasks.map((task) => {
-            const cfg = statusConfig[task.status] ?? statusConfig.TODO;
-            const assignees = task.task_assignments
-              ?.map((a) => a.profiles?.full_name)
-              .filter(Boolean);
-
-            return (
-              <div
-                key={task.id}
-                className="group flex items-center gap-3 px-3 py-2 text-sm hover:bg-muted/30 transition-colors"
-              >
-                <span className="flex-1 truncate font-medium">{task.title}</span>
-
-                {editable ? (
-                  <Select
-                    value={task.status}
-                    onValueChange={(v) => handleStatusChange(task.id, v as "TODO" | "IN_PROGRESS" | "DONE" | "VERIFIED")}
-                  >
-                    <SelectTrigger className="h-6 w-auto min-w-[90px] text-xs px-2 py-0 border-none bg-transparent">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(statusConfig).map(([key, val]) => (
-                        <SelectItem key={key} value={key} className="text-xs">
-                          {val.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Badge variant={cfg.variant} className="shrink-0 text-xs">
-                    {cfg.label}
-                  </Badge>
-                )}
-
-                {assignees && assignees.length > 0 && (
-                  <span className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground shrink-0 max-w-[120px] truncate">
-                    <User className="h-3 w-3" />
-                    {assignees[0]}
-                    {assignees.length > 1 && ` +${assignees.length - 1}`}
-                  </span>
-                )}
-                {task.deadline && (
-                  <span className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-                    <Calendar className="h-3 w-3" />
-                    {format(new Date(task.deadline), "dd/MM")}
-                  </span>
-                )}
-
-                {editable && (
-                  <button
-                    onClick={() => handleDelete(task.id, task.title)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive shrink-0"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {editable && (
-        <div className="flex items-center gap-2 px-3 py-2 border-t bg-muted/20">
-          <Plus className="h-4 w-4 text-muted-foreground shrink-0" />
-          <Input
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleAddTask();
-              }
-            }}
-            placeholder="Thêm công việc mới..."
-            className="h-7 text-sm border-none bg-transparent shadow-none focus-visible:ring-0 px-0"
-            disabled={adding}
-          />
-        </div>
+      {viewMode === "list" ? (
+        <TaskListView
+          tasks={tasks}
+          editable={editable}
+          newTitle={newTitle}
+          setNewTitle={setNewTitle}
+          adding={adding}
+          handlers={handlers}
+        />
+      ) : (
+        <TaskKanbanView
+          tasks={tasks}
+          editable={editable}
+          newTitle={newTitle}
+          setNewTitle={setNewTitle}
+          adding={adding}
+          handlers={handlers}
+        />
       )}
     </div>
   );
