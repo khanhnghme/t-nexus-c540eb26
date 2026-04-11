@@ -84,8 +84,6 @@ export default function GroupDetail() {
   // Resolved workspace slug for URL generation
   const [resolvedWsSlug, setResolvedWsSlug] = useState<string | null>(workspaceSlug || null);
 
-  const { setProjectInfo, setProjectNavProps } = useDashboardLayoutContext();
-  
   const [group, setGroup] = useState<ExtendedGroup | null>(null);
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
