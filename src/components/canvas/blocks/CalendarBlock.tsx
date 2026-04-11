@@ -328,7 +328,7 @@ const CalendarRenderer = memo(function CalendarRenderer() {
       })()}
     </div>
   );
-}
+});
 
 export const CalendarBlock = createReactBlockSpec(
   {

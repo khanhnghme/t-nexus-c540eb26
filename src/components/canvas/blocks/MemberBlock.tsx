@@ -162,7 +162,7 @@ const MemberListRenderer = memo(function MemberListRenderer() {
       )}
     </div>
   );
-}
+});
 
 export const MemberListBlock = createReactBlockSpec(
   {

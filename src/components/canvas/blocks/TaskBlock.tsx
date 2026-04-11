@@ -179,7 +179,7 @@ const TaskListRenderer = memo(function TaskListRenderer() {
       )}
     </div>
   );
-}
+});
 
 export const TaskListBlock = createReactBlockSpec(
   {
