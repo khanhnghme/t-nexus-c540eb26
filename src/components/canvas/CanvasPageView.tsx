@@ -15,6 +15,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import type { Json } from "@/integrations/supabase/types";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { downloadMarkdown, downloadPdf } from "@/lib/canvasExport";
+import { r2Storage } from "@/lib/r2Storage";
+import { supabase } from "@/integrations/supabase/client";
 import type { Block } from "@blocknote/core";
 import { useCanvasShortcuts } from "@/hooks/useCanvasShortcuts";
 import { usePageLastEditor } from "@/hooks/usePageLastEditor";
