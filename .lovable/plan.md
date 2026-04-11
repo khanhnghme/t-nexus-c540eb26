@@ -1,52 +1,49 @@
 
 
-## Phase 6 — Giai doan 2/4: Realtime Subscribe cho Member Block
+## Phase 6 — Giai doan 3/4: Grid View Toggle cho Member Block
 
 ### Muc tieu
-Tu dong cap nhat danh sach thanh vien khi co thay doi (them/xoa member) ma khong can reload trang.
+Them che do xem Grid (dang luoi) ben canh List view hien tai, cho phep user chuyen doi giua 2 che do hien thi.
 
 ### Hien trang
-- Stage 1/4 hoan thanh: MemberBlock hien thi read-only, fetch 1 lan khi mount
-- Khi co nguoi join/leave project, block khong tu cap nhat
+- Stage 1/4: Read-only member list — hoan thanh
+- Stage 2/4: Realtime subscription — hoan thanh
+- Hien tai chi co list view (danh sach doc)
 
 ### Hanh dong cu the
 
-**1. Tao migration: enable realtime cho bang `group_members`**
-- `ALTER PUBLICATION supabase_realtime ADD TABLE public.group_members;`
-
-**2. Cap nhat `src/components/canvas/blocks/MemberBlock.tsx`**
-- Sau khi fetch xong, subscribe realtime channel `group_members` filtered theo `group_id`
-- Khi nhan event INSERT/DELETE → goi lai `fetchMembers()` de refresh danh sach
-- Cleanup: unsubscribe khi component unmount
+**1. Cap nhat `src/components/canvas/blocks/MemberBlock.tsx`**
+- Them state `viewMode: "list" | "grid"` (default: "list")
+- Them toggle button (List / LayoutGrid icon) ben canh count badge trong header
+- List view: giu nguyen layout hien tai
+- Grid view: render members dang grid (2-3 cot), moi member la 1 card nho voi avatar lon hon, ten, role badge
 
 ### Chi tiet ky thuat
 
 ```text
-MemberListRenderer:
-  useEffect #1 → fetchMembers() (giu nguyen)
-  
-  useEffect #2 → realtime subscribe
-    const channel = supabase
-      .channel(`members-${groupId}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'group_members',
-        filter: `group_id=eq.${groupId}`
-      }, () => fetchMembers())
-      .subscribe()
+Header:
+  ┌──────────────────────────────────────────┐
+  │ 👥 Thanh vien du an   [List|Grid] [count]│
+  └──────────────────────────────────────────┘
 
-    return () => supabase.removeChannel(channel)
+Grid View:
+  ┌────────────┐  ┌────────────┐  ┌────────────┐
+  │  [Avatar]  │  │  [Avatar]  │  │  [Avatar]  │
+  │  Nguyen A  │  │  Tran B    │  │  Le C      │
+  │  Owner     │  │  Admin     │  │  Member    │
+  └────────────┘  └────────────┘  └────────────┘
+
+Toggle:
+  useState("list") → click icon → setViewMode("grid")
+  List icon: <List />    Grid icon: <LayoutGrid />
 ```
 
 ### Khong lam trong giai doan nay
-- Grid view toggle (giai doan 3)
 - Invite member tu block (giai doan 4)
 
 ### Files thay doi
 
 | File | Thay doi |
 |------|----------|
-| `src/components/canvas/blocks/MemberBlock.tsx` | Them realtime subscription |
-| Migration SQL | Enable realtime cho `group_members` |
+| `src/components/canvas/blocks/MemberBlock.tsx` | Them grid view + toggle button |
 
