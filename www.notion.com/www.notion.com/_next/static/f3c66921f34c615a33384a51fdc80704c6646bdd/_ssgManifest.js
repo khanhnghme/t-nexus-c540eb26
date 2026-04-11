@@ -1,2 +1,0 @@
-self.__SSG_MANIFEST = new Set(["\u002Fproduct\u002Fspeed"]);
-self.__SSG_MANIFEST_CB && self.__SSG_MANIFEST_CB()
