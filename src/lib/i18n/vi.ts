@@ -1475,6 +1475,12 @@ export const vi: Translations = {
       unsaved: 'Chưa lưu',
       noPages: 'Chưa có trang nào',
       selectPage: 'Chọn trang để bắt đầu chỉnh sửa',
+      rename: 'Đổi tên',
+      delete: 'Xóa',
+      changeIcon: 'Đổi biểu tượng',
+      confirmDeleteTitle: 'Xóa trang',
+      confirmDeleteDesc: 'Bạn có chắc chắn muốn xóa trang này? Hành động này không thể hoàn tác.',
+      cancel: 'Hủy',
     },
     servicePlan: {
       goBack: 'Quay lại',
