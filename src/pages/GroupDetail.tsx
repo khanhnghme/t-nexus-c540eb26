@@ -39,7 +39,7 @@ import ProjectEvidenceExport from '@/components/ProjectEvidenceExport';
 import GroupMeetings from '@/components/GroupMeetings';
 
 import type { Group, GroupMember, Task, Profile, Stage } from '@/types/database';
-import { DeadlineHourPicker } from '@/components/DeadlineHourPicker';
+import CustomProjectView from '@/components/notion/CustomProjectView';
 import { notifyTaskAssigned } from '@/lib/notifications';
 import { deleteWithUndo } from '@/lib/deleteWithUndo';
 import { logActivity } from '@/lib/activityLogger';
