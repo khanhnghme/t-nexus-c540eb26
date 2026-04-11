@@ -1,8 +1,9 @@
 import { normalizeStorageUrl } from '@/lib/r2Storage';
 
 // URL utilities for semantic, human-readable URLs
-// Format: /p/{name-slug} for projects (clean, no random IDs)
-// Format: /p/{project-slug}/t/{task-slug} for tasks
+// Format: /pr/ws-{wsShortId}/{project-slug} for projects
+// Format: /pr/ws-{wsShortId}/{project-slug}/t/{task-slug} for tasks
+// Format: /pa/ws-{wsShortId}/{page-slug} for pages
 
 /**
  * Fix storage URLs that may point to old/different Supabase instances.
@@ -30,24 +31,31 @@ export function isShortId(id: string): boolean {
  * Check if a string is a semantic slug (name-based, no random prefix)
  */
 export function isSlug(id: string): boolean {
-  // Slug is any non-UUID, non-shortId string with at least one character
   return !isUUID(id) && !isShortId(id) && id.length > 0;
 }
 
 /**
- * Generate project URL using slug
- * Format: /p/{name-slug}
+ * Generate project URL using workspace short_id and project slug
+ * Format: /pr/ws-{wsShortId}/{project-slug}
  */
-export function getProjectUrl(slug: string): string {
-  return `/p/${slug}`;
+export function getProjectUrl(wsShortId: string, projectSlug: string): string {
+  return `/pr/ws-${wsShortId}/${projectSlug}`;
 }
 
 /**
  * Generate task URL with context
- * Format: /p/{project-slug}/t/{task-slug}
+ * Format: /pr/ws-{wsShortId}/{project-slug}/t/{task-slug}
  */
-export function getTaskUrl(projectSlug: string, taskSlug: string): string {
-  return `/p/${projectSlug}/t/${taskSlug}`;
+export function getTaskUrl(wsShortId: string, projectSlug: string, taskSlug: string): string {
+  return `/pr/ws-${wsShortId}/${projectSlug}/t/${taskSlug}`;
+}
+
+/**
+ * Generate page URL
+ * Format: /pa/ws-{wsShortId}/{page-slug}
+ */
+export function getPageUrl(wsShortId: string, pageSlug: string): string {
+  return `/pa/ws-${wsShortId}/${pageSlug}`;
 }
 
 /**
@@ -59,15 +67,15 @@ export function getPublicProjectUrl(shareToken: string): string {
 
 /**
  * Generate file preview URL - semantic format
- * Format: /p/{project-slug}/t/{task-slug}/f/{file-index}
- * Fallback: /f?p={project}&t={task}&i={index}
+ * Format: /pr/ws-{wsShortId}/{project-slug}/t/{task-slug}/f/{file-index}
  */
 export function getFilePreviewUrl(
+  wsShortId: string,
   projectSlug: string,
   taskSlug: string,
   fileIndex: number = 0
 ): string {
-  return `/p/${projectSlug}/t/${taskSlug}/f/${fileIndex}`;
+  return `/pr/ws-${wsShortId}/${projectSlug}/t/${taskSlug}/f/${fileIndex}`;
 }
 
 /**
