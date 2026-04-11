@@ -3059,6 +3059,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          idempotency_key: string | null
           logo_url: string | null
           max_members: number
           max_projects: number
@@ -3072,6 +3073,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          idempotency_key?: string | null
           logo_url?: string | null
           max_members?: number
           max_projects?: number
@@ -3085,6 +3087,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          idempotency_key?: string | null
           logo_url?: string | null
           max_members?: number
           max_projects?: number
