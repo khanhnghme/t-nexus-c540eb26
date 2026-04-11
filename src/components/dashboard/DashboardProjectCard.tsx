@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { FileText, Users, Calendar, Globe, EyeOff, Eye, Clock, Palette } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { fixStorageUrl } from '@/lib/urlUtils';
-import { useWorkspace } from '@/contexts/WorkspaceContext';
 import type { Group } from '@/types/database';
 
 interface DashboardProjectCardProps {
