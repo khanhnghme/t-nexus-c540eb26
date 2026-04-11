@@ -25,6 +25,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { createPage } from "@/services/projectPages";
 import { ArrowLeft, Loader2, Plus } from "lucide-react";
+import { getProjectUrl } from "@/lib/urlUtils";
 import { toast } from "sonner";
 import type { Block } from "@blocknote/core";
 
