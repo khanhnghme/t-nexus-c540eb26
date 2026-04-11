@@ -71,6 +71,14 @@ export default function CanvasPageView({ groupId, editable = false }: CanvasPage
     }
   };
 
+  const handleChangePageIcon = async (pageId: string, icon: string | null) => {
+    try {
+      await updatePage.mutateAsync({ pageId, updates: { icon } });
+    } catch (err: any) {
+      toast.error(err.message || "Không thể thay đổi icon.");
+    }
+  };
+
   const handleReorderPages = async (orderedIds: string[]) => {
     if (!pages) return;
     try {
@@ -136,13 +144,14 @@ export default function CanvasPageView({ groupId, editable = false }: CanvasPage
   return (
     <div className="flex border rounded-lg bg-card overflow-hidden" style={{ minHeight: 400 }}>
       <CanvasSidebar
-        pages={pages.map((p) => ({ id: p.id, title: p.title, display_order: p.display_order }))}
+        pages={pages.map((p) => ({ id: p.id, title: p.title, display_order: p.display_order, icon: p.icon }))}
         activePageId={activePage.id}
         onSelectPage={setActivePageId}
         onCreatePage={handleCreatePage}
         onDeletePage={handleDeletePage}
         onRenamePage={handleRenamePage}
         onReorderPages={handleReorderPages}
+        onChangePageIcon={handleChangePageIcon}
         editable={editable}
         isCreating={createPage.isPending}
       />
