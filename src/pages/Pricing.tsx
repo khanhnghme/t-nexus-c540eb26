@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useState, useMemo } from 'react';
 import { Check, ArrowLeft, Plus, Minus } from 'lucide-react';
-import tNexusLogo from '@/assets/t-nexus-logo.png';
 import tNexusText from '@/assets/t-nexus-text.png';
 import gmailLogo from '@/assets/gmail-logo.png';
 import googleDriveLogo from '@/assets/google-drive-logo.png';
@@ -94,8 +93,7 @@ export default function Pricing() {
       }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 52 }}>
           <Link to={lp('/')} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-            <img src={tNexusLogo} alt="T-Nexus" style={{ height: 26, width: 26 }} />
-            <img src={tNexusText} alt="T-Nexus" className="hidden sm:block" style={{ height: 16 }} />
+            <img src={tNexusText} alt="T-Nexus" style={{ height: 16 }} />
           </Link>
           <Link
             to={lp('/')}
@@ -629,14 +627,11 @@ function PricingFooter({ tp, tc, lp }: { tp: any; tc: any; lp: (path: string) =>
           
           {/* Brand & Description */}
           <div style={{ flex: '1 1 340px', maxWidth: 440 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-              <img src={tNexusLogo} alt="T-Nexus icon" style={{ height: 56, width: 56 }} />
-              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <p style={{ margin: '0 0 6px 0', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.32em', color: '#a5a29a' }}>
-                  {tc.tNexusPlatform}
-                </p>
-                <img src={tNexusText} alt="T-Nexus" style={{ height: 36, objectFit: 'contain', objectPosition: 'left' }} />
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', marginBottom: 20 }}>
+              <p style={{ margin: '0 0 6px 0', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.32em', color: '#a5a29a' }}>
+                {tc.tNexusPlatform}
+              </p>
+              <img src={tNexusText} alt="T-Nexus" style={{ height: 36, objectFit: 'contain', objectPosition: 'left' }} />
             </div>
             <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: '#787774' }}>
               {tc.footerDescription}

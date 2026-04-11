@@ -48,7 +48,6 @@ import SidebarTreeNav from '@/components/SidebarTreeNav';
 import AdminSidebarNav from '@/components/AdminSidebarNav';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
-import tNexusLogo from '@/assets/t-nexus-logo.png';
 import tNexusTextWhite from '@/assets/t-nexus-text-white.png';
 import UserChangePasswordDialog from '@/components/UserChangePasswordDialog';
 import AvatarUpload from '@/components/AvatarUpload';
@@ -127,7 +126,6 @@ function WorkspaceSwitcherCell({ collapsed }: { collapsed: boolean }) {
   if (!isAvailable || !activeWorkspace) {
     return (
       <Link to="/dashboard" className="flex items-center gap-2 min-w-0">
-        <img src={tNexusLogo} alt="T-Nexus" className="h-7 w-7 shrink-0" />
         <span className="sidebar-logo-text whitespace-nowrap overflow-hidden">
           <img src={tNexusTextWhite} alt="T-Nexus" className="h-[15px] w-auto max-w-full" />
         </span>
@@ -364,7 +362,6 @@ export default function DashboardLayout({
           <Menu className="w-5 h-5" />
         </button>
         <Link to="/dashboard" className="flex items-center gap-2">
-          <img src={tNexusLogo} alt="T-Nexus" className="h-7 w-7" />
           <img src={tNexusTextWhite} alt="T-Nexus" className="h-4 w-auto mobile-logo-text" />
         </Link>
         <div className="flex items-center gap-1" />

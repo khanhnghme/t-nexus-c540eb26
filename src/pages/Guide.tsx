@@ -1,6 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
-import tNexusLogo from '@/assets/t-nexus-logo.png';
 import tNexusTextWhite from '@/assets/t-nexus-text-white.png';
 import { ArrowLeft } from 'lucide-react';
 import LanguageToggle from '@/components/LanguageToggle';
@@ -42,7 +41,6 @@ export default function Guide() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <LanguageToggle />
             <Link to={prefix || '/'} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <img src={tNexusLogo} alt="T-Nexus" style={{ height: 28, width: 28 }} />
               <img src={tNexusTextWhite} alt="T-Nexus" style={{ height: 14, filter: 'invert(1)' }} />
             </Link>
           </div>
