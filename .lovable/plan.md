@@ -1,47 +1,44 @@
 
 
-## Phase 2 — Page Management: Giai đoạn 2/2 (UI / Integration)
+## Phase 3 — Slash Commands & Editor Customization: Giai đoạn 1/4 (Database)
 
-Giai đoạn 1 đã hoàn thành: handlers cho rename/delete/reorder/icon đã có trong `CustomProjectView.tsx`, props đã defined trong `NotionPageList.tsx`. Giai đoạn 2 tập trung vào **xây dựng UI tương tác** cho các chức năng này.
+Phase 2 đã hoàn thành: page management (rename, delete, reorder, icon). Phase 3 tập trung vào **tuỳ chỉnh Slash Commands và block types** trong BlockNote editor.
 
-### Thay đổi
+### Đánh giá Database
 
-**1. `NotionPageList.tsx` — Context menu cho mỗi page**
-- Right-click (hoặc icon `...`) trên page item → hiện context menu (DropdownMenu)
-- Menu items:
-  - **Rename** → hiện inline input thay thế title, Enter để save, Esc để cancel
-  - **Change icon** → hiện emoji picker popover (dùng danh sách emoji phổ biến, không cần thư viện nặng)
-  - **Delete** → confirm dialog trước khi xóa
-- Chỉ hiện menu khi `isLeader === true`
-- Hiển thị icon emoji thay vì `FileText` nếu page có `icon`
+Phase này **không cần thay đổi database**. Slash commands và block customization hoàn toàn là cấu hình frontend — BlockNote lưu kết quả dưới dạng JSON blocks trong cột `content` hiện có của `project_pages`.
 
-**2. `NotionPageList.tsx` — Drag & drop reorder**
-- Sử dụng native HTML5 drag events (`draggable`, `onDragStart`, `onDragOver`, `onDrop`)
-- Không cần thêm thư viện — giữ đơn giản
-- Visual indicator khi đang drag (opacity, border highlight)
-- Chỉ cho phép drag khi `isLeader === true`
+### Thay đổi Logic (giai đoạn 1)
 
-**3. `NotionPageList.tsx` — Inline rename**
-- State `renamingPageId` + `renameValue`
-- Khi chọn Rename từ menu → set `renamingPageId`, render `<Input>` thay vì text
-- Enter → gọi `onRenamePage`, Esc → cancel
-- Auto-focus input khi bắt đầu rename
+**1. `src/components/notion/slash-menu/slashMenuItems.ts` — Tạo mới**
+- Định nghĩa danh sách custom slash menu items cho BlockNote
+- Các nhóm:
+  - **Basic**: Heading 1/2/3, Paragraph, Bullet List, Numbered List
+  - **Media**: Image, Video (embed URL)
+  - **Advanced**: Callout/Alert box, Code block, Divider, Quote
+  - **Table**: Table block
+- Mỗi item có: `title`, `subtext`, `group`, `icon`, `aliases` (từ khoá tìm kiếm)
+- Export function `getCustomSlashMenuItems(editor)` trả về mảng items tương thích BlockNote API
 
-**4. Confirm delete dialog**
-- Dùng `AlertDialog` component có sẵn
-- Hiện tên page đang xóa
-- Nút xác nhận destructive
+**2. `src/components/notion/slash-menu/calloutBlock.ts` — Tạo mới**
+- Custom block type "Callout" (info/warning/success/error)
+- Sử dụng BlockNote `createReactBlockSpec` API
+- Định nghĩa schema: `type`, `content` props
+- Export block spec để register vào editor
 
-**5. i18n**
-- Thêm text: "Rename", "Delete", "Change icon", "Confirm delete", "Are you sure?"
+**3. `src/components/notion/slash-menu/index.ts` — Barrel export**
+- Re-export tất cả từ các file trên
 
-### Không thay đổi database
+### Chưa làm trong giai đoạn này
+- Tích hợp vào `NotionEditor.tsx` (giai đoạn 2 — logic integration)
+- Render UI cho custom blocks (giai đoạn 3-4)
+- i18n cho slash menu (giai đoạn 3-4)
 
-### Files cần sửa
+### Files cần tạo
 
 | File | Thay đổi |
 |------|----------|
-| `src/components/notion/NotionPageList.tsx` | Context menu, inline rename, drag-drop, emoji picker, delete confirm |
-| `src/lib/i18n/vi.ts` | Thêm i18n cho menu items |
-| `src/lib/i18n/en.ts` | Thêm i18n cho menu items |
+| `src/components/notion/slash-menu/slashMenuItems.ts` | **Tạo mới** — Custom slash menu items definition |
+| `src/components/notion/slash-menu/calloutBlock.ts` | **Tạo mới** — Callout custom block spec |
+| `src/components/notion/slash-menu/index.ts` | **Tạo mới** — Barrel export |
 
