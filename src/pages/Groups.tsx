@@ -406,8 +406,9 @@ export default function Groups() {
       });
     } finally {
       setIsCreating(false);
+      createLockRef.current = false;
     }
-  };
+  }, [guardReadOnly, isCreating, newGroupName, g, toast, activeWorkspace, user, supabase, wsAvailable, groupImage, selectedMembers, profile, resetForm, fetchGroups]);
 
   const getRoleBadge = (role: string) => {
     switch (role) {
