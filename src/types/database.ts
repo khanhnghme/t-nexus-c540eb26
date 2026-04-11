@@ -144,7 +144,7 @@ export interface Group {
   leader_id?: string | null;
   workspace_id?: string | null;
   visibility?: ProjectVisibility;
-  project_mode?: 'basic' | 'custom';
+  project_mode?: string;
 }
 
 export interface GroupMember {
