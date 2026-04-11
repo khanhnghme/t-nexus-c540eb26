@@ -1481,6 +1481,18 @@ export const vi: Translations = {
       confirmDeleteTitle: 'Xóa trang',
       confirmDeleteDesc: 'Bạn có chắc chắn muốn xóa trang này? Hành động này không thể hoàn tác.',
       cancel: 'Hủy',
+      slashMenu: {
+        image: 'Hình ảnh',
+        imageDesc: 'Chèn hình ảnh',
+        video: 'Video',
+        videoDesc: 'Nhúng video',
+        callout: 'Callout',
+        calloutDesc: 'Đánh dấu thông tin quan trọng',
+        codeBlock: 'Khối mã',
+        codeBlockDesc: 'Chèn đoạn mã',
+        table: 'Bảng',
+        tableDesc: 'Chèn bảng',
+      },
     },
     servicePlan: {
       goBack: 'Quay lại',

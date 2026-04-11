@@ -53,6 +53,35 @@
   margin: 0.25rem 0;
 }
 
+/* Dark mode support */
+.dark .bn-editor,
+.dark .bn-container {
+  color: hsl(var(--foreground));
+}
+
+.dark .bn-suggestion-menu {
+  background-color: hsl(var(--popover)) !important;
+  border-color: hsl(var(--border)) !important;
+  box-shadow: 0 4px 24px -4px hsl(var(--foreground) / 0.25) !important;
+}
+
+.dark .bn-suggestion-menu-item[aria-selected="true"],
+.dark .bn-suggestion-menu-item:hover {
+  background-color: hsl(var(--accent)) !important;
+}
+
+.dark .bn-suggestion-menu-item .bn-suggestion-menu-item-title {
+  color: hsl(var(--foreground));
+}
+
+.dark .bn-suggestion-menu-item .bn-suggestion-menu-item-subtitle {
+  color: hsl(var(--muted-foreground));
+}
+
+.dark .bn-suggestion-menu-label {
+  color: hsl(var(--muted-foreground));
+}
+
 /* Mobile adjustments */
 @media (max-width: 640px) {
   .bn-editor {
