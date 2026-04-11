@@ -33,10 +33,12 @@ export default function CreateCustomProject() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { workspaces, activeWorkspace, isLoading: wsLoading } = useWorkspace();
+  const [searchParams] = useSearchParams();
+  const workspaceFromUrl = searchParams.get("workspace");
   const [projectName, setProjectName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState(
-    activeWorkspace?.id ?? ""
+    workspaceFromUrl || activeWorkspace?.id || ""
   );
   const [isCreating, setIsCreating] = useState(false);
   const editorContentRef = useRef<Block[]>([]);
