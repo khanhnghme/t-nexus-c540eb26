@@ -1,57 +1,64 @@
 
 
-## Phase 7 — Giai doan 3/4: Click ngay hien danh sach tasks (Selected Day Panel)
+## Phase 7 — Giai doan 4/4: Click ngay de tao task voi deadline tu Calendar Block
 
 ### Muc tieu
-Khi user click vao 1 ngay co deadline tren mini calendar, hien thi danh sach tasks cua ngay do phia duoi calendar (thay vi chi tooltip khi hover).
+Khi user click vao 1 ngay **khong co task** (hoac bam nut "+" trong selected day panel), hien thi input tao task nhanh voi deadline tu dong set bang ngay do. Chi cho phep khi `editable === true`. Cap nhat plan.md ghi nhan Phase 7 hoan tat.
 
 ### Hien trang
-- Stage 1/4: Read-only mini calendar voi dots — hoan thanh
-- Stage 2/4: Realtime subscription — hoan thanh
-- Hien tai chi co tooltip khi hover, khong co cach xem chi tiet khi click
+- Stage 1-3 hoan thanh: mini calendar, realtime, selected day panel
+- Chua co cach tao task tu calendar block
+- TaskBlock da co pattern `handleAddTask` — reuse logic tuong tu
 
 ### Hanh dong
 
 **Cap nhat `src/components/canvas/blocks/CalendarBlock.tsx`**
-- Them state `selectedDay: Date | null`
-- Khi click vao ngay co tasks → set `selectedDay` (dung `onSelect` cua DayPicker mode="single")
-- Click lai ngay da chon → bo chon (`setSelectedDay(null)`)
-- Khi `selectedDay` co gia tri va co tasks → render panel phia duoi calendar:
-  - Header: ngay duoc chon (dd/MM/yyyy)
-  - Danh sach tasks: title + status badge + deadline time
-  - Moi task hien thi status voi mau tuong ung (done = xanh, in_progress = vang, todo = xam)
-- Xoa state `hoveredDay` khong con dung
+
+1. **Hien thi selected day panel cho moi ngay** (ke ca ngay khong co task) — hien tai chi hien khi co tasks
+2. **Them inline input tao task** trong selected day panel:
+   - Input text + nut "Them" (hoac Enter)
+   - Chi hien khi `editable === true` (lay tu `useTaskBlockContext`)
+   - Khi submit: insert task voi `group_id`, `title`, `status: "TODO"`, `deadline` = selectedDay (set gio 23:59), `created_by` = current user
+   - Realtime se tu dong cap nhat calendar dots
+3. **Khi click ngay khong co task** → van hien selected day panel voi thong bao "Khong co deadline" + input tao task
+
+**Cap nhat `.lovable/plan.md`** — ghi nhan Phase 7 hoan tat
 
 ### Chi tiet ky thuat
 
 ```text
-Layout khi chon ngay 09/04/2026:
+Selected Day Panel (updated):
 ┌──────────────────────────────────┐
-│ 📅 Lich deadline           [12] │
-├──────────────────────────────────┤
-│      << Thang 4, 2026 >>        │
-│  CN  T2  T3  T4  T5  T6  T7    │
-│   ...  [9]  ...                 │
-│              ↑ selected          │
-├──────────────────────────────────┤
 │  09/04/2026                      │
 │  • Task A          [In Progress] │
 │  • Task B          [Done]        │
-│  • Task C          [Todo]        │
+│  ─────────────────────────────── │
+│  [+ Them task deadline...]  [Add]│
 └──────────────────────────────────┘
 
-onSelect callback:
-  if (day && isSameDay(day, selectedDay)) setSelectedDay(null)
-  else setSelectedDay(day)
+Ngay khong co task:
+┌──────────────────────────────────┐
+│  10/04/2026                      │
+│  Khong co deadline               │
+│  [+ Them task deadline...]  [Add]│
+└──────────────────────────────────┘
+
+Insert logic (reuse pattern tu TaskBlock):
+  supabase.from("tasks").insert({
+    title, group_id: groupId,
+    status: "TODO", created_by: userId,
+    deadline: format(selectedDay, "yyyy-MM-dd") + "T23:59:00"
+  })
 ```
 
 ### Khong lam
-- Tao task tu calendar (giai doan 4)
-- Month/Week view toggle (ngoai scope Phase 7)
+- Sua/xoa task tu calendar block
+- Month/Week view toggle (ngoai scope)
 
 ### Files thay doi
 
 | File | Thay doi |
 |------|----------|
-| `src/components/canvas/blocks/CalendarBlock.tsx` | Them selected day panel + onSelect logic |
+| `src/components/canvas/blocks/CalendarBlock.tsx` | Them inline task creation + hien panel cho moi ngay |
+| `.lovable/plan.md` | Phase 7 hoan tat |
 
