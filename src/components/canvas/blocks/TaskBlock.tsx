@@ -52,8 +52,8 @@ function TaskListRenderer() {
     );
   }, []);
 
-  const handleAddTask = useCallback(async (params?: { assigneeId?: string; deadline?: string }) => {
-    const title = newTitle.trim();
+  const handleAddTask = useCallback(async (params?: { title?: string; assigneeId?: string; deadline?: string }) => {
+    const title = (params?.title || newTitle).trim();
     if (!title || !groupId) return;
 
     setAdding(true);

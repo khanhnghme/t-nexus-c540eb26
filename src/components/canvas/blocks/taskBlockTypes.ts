@@ -20,7 +20,7 @@ export type TaskStatus = (typeof statusColumns)[number];
 
 export interface TaskHandlers {
   onStatusChange: (taskId: string, newStatus: TaskStatus) => Promise<void>;
-  onAdd: (params?: { assigneeId?: string; deadline?: string }) => Promise<void>;
+  onAdd: (params?: { title?: string; assigneeId?: string; deadline?: string }) => Promise<void>;
   onDelete: (taskId: string, taskTitle: string) => Promise<void>;
   onUpdateTitle: (taskId: string, newTitle: string) => Promise<void>;
   onUpdateDeadline: (taskId: string, newDeadline: string | null) => Promise<void>;

@@ -20,7 +20,7 @@ interface GroupMember {
 interface InlineTaskCreatorProps {
   groupId: string;
   adding: boolean;
-  onAdd: (params?: { assigneeId?: string; deadline?: string }) => Promise<void>;
+  onAdd: (params?: { title?: string; assigneeId?: string; deadline?: string }) => Promise<void>;
   compact?: boolean;
 }
 
