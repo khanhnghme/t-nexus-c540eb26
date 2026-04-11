@@ -15,6 +15,8 @@ import { CalendarBlock } from "./blocks/CalendarBlock";
 import { NoteCalloutBlock } from "./blocks/NoteBlock";
 import { ToggleBlock } from "./blocks/ToggleBlock";
 import { TaskBlockProvider } from "./blocks/TaskBlockContext";
+import PageCoverImage from "./PageCoverImage";
+import PageHeader from "./PageHeader";
 
 const schema = BlockNoteSchema.create({
   blockSpecs: {
@@ -33,6 +35,12 @@ interface CanvasEditorProps {
   onChange?: (content: Block[]) => void;
   pageId?: string;
   groupId?: string;
+  title?: string;
+  icon?: string | null;
+  coverUrl?: string | null;
+  onChangeTitle?: (title: string) => void;
+  onChangeIcon?: (icon: string | null) => void;
+  onChangeCover?: (coverUrl: string | null) => void;
 }
 
 export default function CanvasEditor({
@@ -41,6 +49,12 @@ export default function CanvasEditor({
   onChange,
   pageId,
   groupId,
+  title = "Untitled",
+  icon,
+  coverUrl,
+  onChangeTitle,
+  onChangeIcon,
+  onChangeCover,
 }: CanvasEditorProps) {
   const { resolvedTheme } = useTheme();
   const updatePageContent = useUpdatePageContent();
@@ -104,6 +118,16 @@ export default function CanvasEditor({
           {saveStatus.text}
         </div>
       )}
+      <PageCoverImage coverUrl={coverUrl} editable={editable} onChangeCover={onChangeCover} />
+      <PageHeader
+        title={title}
+        icon={icon}
+        coverUrl={coverUrl}
+        editable={editable}
+        onChangeTitle={onChangeTitle}
+        onChangeIcon={onChangeIcon}
+        onChangeCover={onChangeCover}
+      />
       <div className={`p-2 ${!editable ? "view-mode" : ""}`}>
         <BlockNoteView
           editor={editor}
