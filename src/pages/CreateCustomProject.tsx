@@ -1,4 +1,4 @@
-import { useState, Suspense, lazy, useRef } from "react";
+import { useState, Suspense, lazy, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,32 +20,83 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { createPage } from "@/services/projectPages";
 import { ArrowLeft, Loader2, Plus } from "lucide-react";
+import { toast } from "sonner";
 import type { Block } from "@blocknote/core";
 
 const CanvasEditor = lazy(() => import("@/components/canvas/CanvasEditor"));
 
 export default function CreateCustomProject() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { workspaces, activeWorkspace, isLoading: wsLoading } = useWorkspace();
   const [projectName, setProjectName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState(
     activeWorkspace?.id ?? ""
   );
+  const [isCreating, setIsCreating] = useState(false);
   const editorContentRef = useRef<Block[]>([]);
+  const idempotencyKeyRef = useRef(crypto.randomUUID());
+  const createLockRef = useRef(false);
 
-  const canCreate = projectName.trim().length > 0 && selectedWorkspaceId;
+  const canCreate = projectName.trim().length > 0 && selectedWorkspaceId && !isCreating;
 
-  const handleCreate = () => {
-    const payload = {
-      name: projectName.trim(),
-      workspace_id: selectedWorkspaceId,
-      description: description.trim() || null,
-      content: editorContentRef.current,
-    };
-    console.log("[CreateCustomProject] payload ready for Phase 2:", payload);
-  };
+  const handleCreate = useCallback(async () => {
+    if (!user || !canCreate || createLockRef.current) return;
+    createLockRef.current = true;
+    setIsCreating(true);
+
+    try {
+      // 1. Create group with project_mode: 'custom'
+      const { data: newGroup, error: groupError } = await supabase
+        .from("groups")
+        .insert({
+          name: projectName.trim(),
+          description: description.trim() || null,
+          created_by: user.id,
+          workspace_id: selectedWorkspaceId,
+          project_mode: "custom",
+          slug: "",
+          idempotency_key: idempotencyKeyRef.current,
+        })
+        .select()
+        .single();
+
+      if (groupError) throw groupError;
+
+      // 2. Add creator as project_admin
+      const { error: memberError } = await supabase
+        .from("group_members")
+        .insert({
+          group_id: newGroup.id,
+          user_id: user.id,
+          role: "project_admin" as any,
+        });
+      if (memberError) throw memberError;
+
+      // 3. Create default page with editor content
+      await createPage({
+        group_id: newGroup.id,
+        title: "Untitled Page",
+        content: editorContentRef.current.length > 0 ? editorContentRef.current : [{ type: "paragraph", content: [] }],
+        created_by: user.id,
+        display_order: 0,
+      });
+
+      toast.success("Project created successfully!");
+      navigate(`/projects/${newGroup.id}`);
+    } catch (error: any) {
+      console.error("Create project error:", error);
+      toast.error(error.message || "Failed to create project");
+      createLockRef.current = false;
+    } finally {
+      setIsCreating(false);
+    }
+  }, [user, canCreate, projectName, description, selectedWorkspaceId, navigate]);
 
   return (
     <div className="container max-w-7xl mx-auto py-6 px-4 space-y-6">
@@ -134,8 +185,12 @@ export default function CreateCustomProject() {
           {/* Actions */}
           <div className="flex flex-col gap-2 pt-2">
             <Button disabled={!canCreate} onClick={handleCreate}>
-              <Plus className="mr-1 h-4 w-4" />
-              Create Project
+              {isCreating ? (
+                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="mr-1 h-4 w-4" />
+              )}
+              {isCreating ? "Creating..." : "Create Project"}
             </Button>
             <Button variant="outline" onClick={() => navigate(-1)}>
               Cancel
