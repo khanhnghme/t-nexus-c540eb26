@@ -1,70 +1,48 @@
 
 
-## Refactor hệ thống mã tham gia: 4 số → 6 ký tự (A-Z + 0-9)
+## Fix chống tạo project trùng lặp — Idempotency
 
-### Tổng quan
+### Hiện trạng
 
-Chuyển hoàn toàn từ mã 4 chữ số (`0000`–`9999`) sang mã 6 ký tự chữ hoa + số (`A7K2X9`), áp dụng cho toàn bộ project hiện có và mới.
+`Groups.tsx` đã có:
+- ✅ `createLockRef` (useRef lock)
+- ✅ `isCreating` state → disable button + spinner "Đang tạo..."
+- ✅ Feedback toast sau khi tạo/lỗi
 
-### 1. Database Migration
+**Thiếu**: Idempotency key — nếu request gửi 2 lần (network retry, browser refresh), backend vẫn tạo 2 project.
 
+`CreateWorkspace.tsx` cũng thiếu lock ref + idempotency.
+
+### Thay đổi
+
+**1. `src/pages/Groups.tsx`** — Thêm idempotency key
+- Generate UUID (`crypto.randomUUID()`) khi mở dialog
+- Gửi kèm `idempotency_key` trong `insert` data vào bảng `groups`
+- Reset key khi đóng dialog hoặc tạo thành công
+
+**2. `src/pages/CreateWorkspace.tsx`** — Thêm lock ref + idempotency
+- Thêm `useRef` lock tương tự Groups
+- Generate idempotency key khi mount
+- Gửi kèm trong body tới edge function `workspace-management`
+
+**3. Database migration** — Thêm cột `idempotency_key` vào bảng `groups`
 ```sql
--- Migrate tất cả project có join_code sang mã mới 6 ký tự
--- Sử dụng function để generate + đảm bảo unique
-CREATE OR REPLACE FUNCTION public.generate_join_code_6()
-RETURNS text LANGUAGE plpgsql AS $$
-DECLARE
-  chars TEXT := 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  result TEXT;
-  i INT;
-BEGIN
-  LOOP
-    result := '';
-    FOR i IN 1..6 LOOP
-      result := result || substr(chars, floor(random()*36)::int + 1, 1);
-    END LOOP;
-    EXIT WHEN NOT EXISTS (SELECT 1 FROM public.groups WHERE join_code = result);
-  END LOOP;
-  RETURN result;
-END;
-$$;
-
--- Migrate all existing join codes
-UPDATE public.groups 
-SET join_code = public.generate_join_code_6() 
-WHERE join_code IS NOT NULL;
+ALTER TABLE public.groups ADD COLUMN idempotency_key uuid;
+CREATE UNIQUE INDEX idx_groups_idempotency_key ON public.groups(idempotency_key) WHERE idempotency_key IS NOT NULL;
 ```
+Unique index đảm bảo nếu insert trùng key → lỗi constraint → không tạo duplicate.
 
-### 2. `ShareSettingsCard.tsx` — Generate code mới
-
-- `generateJoinCode()`: đổi từ `Math.floor(random*10000).padStart(4,'0')` → generate 6 ký tự `A-Z0-9`
-- UI hiển thị mã: giữ `tracking-[0.5em] font-mono`, format rõ ràng
-
-### 3. `JoinByCodeDialog.tsx` — Input 6 ký tự
-
-- Đổi `digits` state từ `['','','','']` → `['','','','','','']` (6 ô)
-- `handleDigitChange`: chấp nhận `A-Z0-9` thay vì chỉ `\d`, auto uppercase
-- Validation: `code.length !== 6 || !/^[A-Z0-9]{6}$/.test(code)` thay vì `^\d{4}$`
-- `handlePaste`: parse 6 ký tự, uppercase, lọc chỉ `A-Z0-9`
-- UI text: "6 ký tự" thay "4 chữ số", `inputMode="text"` thay `numeric`
-
-### 4. i18n updates
-
-- `vi.ts`: `shareCodeDesc` → "Chia sẻ mã 6 ký tự này...", `enableJoinCode` → "Bật để tạo mã 6 ký tự..."
-- `en.ts`: `shareCodeDesc` → "Share this 6-character code...", `enableJoinCode` → "Enable to create a 6-character code..."
-
-### 5. Edge function (`team-assistant/index.ts`)
-
-- Cập nhật prompt text: "mã 4 số" → "mã 6 ký tự"
+**4. `supabase/functions/workspace-management/index.ts`** — Idempotency cho workspace
+- Nhận `idempotency_key` từ body
+- Check existing workspace với cùng key trước khi insert
+- Nếu đã tồn tại → trả về workspace cũ thay vì tạo mới
 
 ### Files cần sửa
 
 | File | Thay đổi |
 |------|----------|
-| **Migration SQL** | Tạo `generate_join_code_6()` + migrate data |
-| `src/components/ShareSettingsCard.tsx` | `generateJoinCode()` → 6 chars A-Z0-9 |
-| `src/components/JoinByCodeDialog.tsx` | 6 input boxes, accept A-Z0-9, auto uppercase, validation |
-| `src/lib/i18n/vi.ts` | Cập nhật text mô tả |
-| `src/lib/i18n/en.ts` | Cập nhật text mô tả |
-| `supabase/functions/team-assistant/index.ts` | Cập nhật prompt text |
+| Migration SQL | Thêm cột `idempotency_key` + unique index trên `groups` |
+| `src/pages/Groups.tsx` | Generate + gửi idempotency_key |
+| `src/pages/CreateWorkspace.tsx` | Thêm lock ref + idempotency |
+| `supabase/functions/workspace-management/index.ts` | Check idempotency cho create_workspace |
 
