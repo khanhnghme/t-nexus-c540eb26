@@ -2006,6 +2006,7 @@ export type Database = {
       project_pages: {
         Row: {
           content: Json
+          cover_url: string | null
           created_at: string
           created_by: string
           display_order: number
@@ -2018,6 +2019,7 @@ export type Database = {
         }
         Insert: {
           content?: Json
+          cover_url?: string | null
           created_at?: string
           created_by: string
           display_order?: number
@@ -2030,6 +2032,7 @@ export type Database = {
         }
         Update: {
           content?: Json
+          cover_url?: string | null
           created_at?: string
           created_by?: string
           display_order?: number
