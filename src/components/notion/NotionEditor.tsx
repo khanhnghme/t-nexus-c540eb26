@@ -1,19 +1,30 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
-import { Block } from '@blocknote/core';
+import { BlockNoteSchema, defaultBlockSpecs, defaultInlineContentSpecs, defaultStyleSchema, filterSuggestionItems } from '@blocknote/core';
+import { SuggestionMenuController, getDefaultReactSlashMenuItems } from '@blocknote/react';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 import { useAutosave } from '@/hooks/useAutosave';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Check } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { CalloutBlock, getCustomSlashMenuItems } from './slash-menu';
+import { useEffect } from 'react';
+
+// Custom schema with callout block
+const schema = BlockNoteSchema.create({
+  blockSpecs: {
+    ...defaultBlockSpecs,
+    callout: CalloutBlock,
+  },
+});
 
 interface NotionEditorProps {
   pageId: string;
-  initialContent: Block[];
+  initialContent: any[];
   editable?: boolean;
-  onContentChange?: (content: Block[]) => void;
+  onContentChange?: (content: any[]) => void;
 }
 
 export default function NotionEditor({ pageId, initialContent, editable = true, onContentChange }: NotionEditorProps) {
@@ -21,7 +32,8 @@ export default function NotionEditor({ pageId, initialContent, editable = true, 
   const nt = (t as any).notionEditor || {};
 
   const editor = useCreateBlockNote({
-    initialContent: initialContent.length > 0 ? initialContent : undefined,
+    schema,
+    initialContent: initialContent.length > 0 ? initialContent as any : undefined,
   }, [pageId]);
 
   const { isSaving, lastSaved, hasUnsavedChanges, resetSavedData } = useAutosave({
@@ -66,10 +78,21 @@ export default function NotionEditor({ pageId, initialContent, editable = true, 
           editor={editor}
           editable={editable}
           theme="light"
+          slashMenu={false}
           onChange={() => {
-            onContentChange?.(editor.document as Block[]);
+            onContentChange?.(editor.document as any[]);
           }}
-        />
+        >
+          <SuggestionMenuController
+            triggerCharacter="/"
+            getItems={async (query) =>
+              filterSuggestionItems(
+                [...getDefaultReactSlashMenuItems(editor), ...getCustomSlashMenuItems(editor)],
+                query
+              )
+            }
+          />
+        </BlockNoteView>
       </div>
     </div>
   );
