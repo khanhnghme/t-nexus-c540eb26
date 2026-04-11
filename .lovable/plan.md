@@ -1,97 +1,60 @@
 
 
-## Phân tích nguyên nhân chính xác lỗi 429 sync_in_progress
+## Fix Spam Sự Kiện + Hiển Thị Mã Sự Kiện
 
-### Nguyên nhân gốc (3 vấn đề)
+### Nguyên nhân gốc spam
 
-**1. Lock bị kẹt vĩnh viễn khi edge function timeout/crash**
+Dữ liệu hiện tại: **47 external events** trong `personal_events`, nhiều event bị trùng 2-3 lần (cùng title, khác `google_event_id`). Nguyên nhân:
 
-Khi edge function bị timeout (mặc định ~60s) hoặc crash giữa chừng, `releaseLock()` trong `finally` block không kịp chạy → `sync_locked_at` vẫn giữ giá trị cũ. Mặc dù có timeout 30s trong `acquireLock`, vấn đề nằm ở cách filter `.or()` xây dựng timestamp.
+1. **Tasks bị push nhiều lần ra Google** — Các lần sync trước (trước khi có fix idempotent) đã tạo nhiều Google Calendar events cho cùng 1 task
+2. **PULL kéo lại các event trùng** — Mỗi Google event có ID riêng, nên PULL tạo personal_event mới cho mỗi bản trùng
+3. **PULL không nhận diện event từ task** — Khi Google trả về event có title `[ProjectName] TaskTitle`, PULL không biết đây là task đã push, vẫn tạo personal_event
 
-**2. Filter `.or()` trong `acquireLock` có thể parse sai**
-
-```typescript
-.or(`sync_locked_at.is.null,sync_locked_at.lt.${lockExpiry}`)
-```
-
-Biến `lockExpiry` là ISO string (vd: `2026-04-11T07:30:00.000Z`). Khi nối trực tiếp vào chuỗi `.or()`, dấu chấm `.` trong `.000Z` có thể bị PostgREST hiểu nhầm là delimiter, khiến filter không match → lock không bao giờ hết hạn → 429 mãi mãi.
-
-**3. Không có guard `isSyncing` phía client**
-
-```typescript
-const sync = useCallback(async () => {
-  if (!user?.id || !isConnected) return; // ← thiếu check isSyncing
-  setIsSyncing(true);
-```
-
-User click nhanh 2 lần → 2 request đồng thời → request thứ 2 luôn bị 429.
+### Kế hoạch fix — 2 phần
 
 ---
 
-### Kế hoạch fix
+### Phần 1: Dọn dẹp dữ liệu + Fix logic Edge Function
 
-**1. Sửa `acquireLock` — dùng DB function thay vì `.or()` filter**
+**1.1 Dọn dữ liệu duplicate** (dùng insert tool)
+- Xóa personal_events trùng lặp (giữ bản mới nhất cho mỗi `google_event_id` group by title+start_time)
+- Xóa sync_map entries tương ứng
 
-Tạo một database function `acquire_sync_lock(p_user_id, p_lock_timeout_seconds)` để xử lý lock an toàn bằng SQL thuần, tránh vấn đề PostgREST filter parsing:
+**1.2 Sửa Edge Function PULL logic** (`google-calendar-sync/index.ts`)
 
-```sql
-CREATE OR REPLACE FUNCTION public.acquire_sync_lock(p_user_id UUID, p_timeout_seconds INT DEFAULT 30)
-RETURNS BOOLEAN
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE updated_count INT;
-BEGIN
-  UPDATE google_calendar_tokens 
-  SET sync_locked_at = now()
-  WHERE user_id = p_user_id 
-    AND (sync_locked_at IS NULL OR sync_locked_at < now() - (p_timeout_seconds || ' seconds')::interval)
-  ;
-  GET DIAGNOSTICS updated_count = ROW_COUNT;
-  RETURN updated_count > 0;
-END; $$;
-```
+Thêm bước nhận diện event đã push từ task: trước khi tạo personal_event mới, check sync_map xem google_event_id có thuộc task nào không (vì task push tạo sync_map entry với `local_event_type: 'task'`). Hiện tại code chỉ check `allKnownGoogleIds` Set nhưng Set này build từ sync_map nên lẽ ra phải hoạt động — vấn đề là các lần sync cũ tạo Google events mà không có sync_map entry.
 
-**2. Sửa `releaseLock` — dùng DB function tương tự**
+Fix thực tế: Trong PULL, sau khi check `allKnownGoogleIds`, thêm check title pattern — nếu title bắt đầu bằng `[` và match pattern `[ProjectName] TaskTitle`, skip event đó (vì nó là task đã push).
 
-```sql
-CREATE OR REPLACE FUNCTION public.release_sync_lock(p_user_id UUID)
-RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  UPDATE google_calendar_tokens SET sync_locked_at = NULL WHERE user_id = p_user_id;
-END; $$;
-```
+**1.3 Thêm `google_event_id` column vào `personal_events`** (Migration)
 
-**3. Sửa edge function `google-calendar-sync/index.ts`**
+Thêm cột `google_event_id TEXT` nullable vào `personal_events` để lưu trực tiếp mapping, giúp query đơn giản hơn và hiển thị trên UI.
 
-- Thay `acquireLock()` bằng `supabase.rpc('acquire_sync_lock', { p_user_id: userId })`
-- Thay `releaseLock()` bằng `supabase.rpc('release_sync_lock', { p_user_id: userId })`
-- Đảm bảo `releaseLock` vẫn nằm trong `finally` block
+---
 
-**4. Sửa `useGoogleCalendarSync.ts` — thêm guard**
+### Phần 2: Nâng cấp UI hiển thị mã sự kiện
 
-```typescript
-const sync = useCallback(async () => {
-  if (!user?.id || !isConnected || isSyncing) return; // thêm isSyncing
-  setIsSyncing(true);
-  // ...
-}, [user?.id, isConnected, isSyncing]); // thêm isSyncing vào deps
-```
+**2.1 `CalendarEvent` type** — Thêm `googleEventId?: string`
 
-**5. Clear lock hiện tại — migration SQL**
+**2.2 Query Calendar.tsx** — Map `google_event_id` từ personal_events query
 
-```sql
-UPDATE public.google_calendar_tokens SET sync_locked_at = NULL;
-```
+**2.3 EventDetailDialog** — Hiển thị:
+- Mã sự kiện nội bộ (UUID rút gọn 8 ký tự)
+- Mã Google Event ID (nếu có) với icon copy
+
+**2.4 CalendarTaskDetailDialog** — Hiển thị mã task ID
+
+---
 
 ### Files cần sửa
 
 | File | Thay đổi |
 |------|----------|
-| Migration SQL | Tạo 2 DB functions + clear stale locks |
-| `supabase/functions/google-calendar-sync/index.ts` | Dùng RPC thay `.or()` filter |
-| `src/hooks/useGoogleCalendarSync.ts` | Thêm `isSyncing` guard |
-
-### Kết quả sau fix
-- Lock không bao giờ bị kẹt vĩnh viễn (DB function xử lý timestamp so sánh chính xác)
-- Client ngăn double-click gửi 2 request
-- Lock tự hết hạn sau 30s dù edge function crash
+| Migration SQL | Thêm `google_event_id` vào `personal_events` |
+| Data cleanup SQL | Xóa duplicate events + sync_map |
+| `supabase/functions/google-calendar-sync/index.ts` | Skip task-originated events trong PULL, lưu `google_event_id` vào personal_events |
+| `src/types/calendar.ts` | Thêm `googleEventId` |
+| `src/pages/Calendar.tsx` | Map `google_event_id` |
+| `src/components/calendar/EventDetailDialog.tsx` | Hiển thị mã ID + copy button |
+| `src/components/calendar/CalendarTaskDetailDialog.tsx` | Hiển thị mã task ID |
 
