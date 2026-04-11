@@ -263,7 +263,7 @@ export default function Groups() {
     setSearchResults([]);
   };
 
-  const handleCreateGroup = useCallback(async () => {
+  const handleCreateGroup = async () => {
     if (guardReadOnly()) return;
     // Prevent duplicate submissions
     if (createLockRef.current || isCreating) return;
@@ -408,7 +408,7 @@ export default function Groups() {
       setIsCreating(false);
       createLockRef.current = false;
     }
-  }, [guardReadOnly, isCreating, newGroupName, g, toast, activeWorkspace, user, supabase, wsAvailable, groupImage, selectedMembers, profile, resetForm, fetchGroups]);
+  };
 
   const getRoleBadge = (role: string) => {
     switch (role) {
