@@ -131,6 +131,7 @@ export default function TaskSubmissionDialog({
 }: TaskSubmissionDialogProps) {
   const { toast } = useToast();
   const { user, profile, isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab || 'requirements');
   

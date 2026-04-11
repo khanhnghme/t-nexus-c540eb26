@@ -125,6 +125,7 @@ export default function ResourceUploadDialog({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
 
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('file');
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const [pendingLinks, setPendingLinks] = useState<PendingLink[]>([]);
