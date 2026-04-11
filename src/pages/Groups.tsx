@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { fixStorageUrl } from '@/lib/urlUtils';
 import { Link } from 'react-router-dom';
@@ -84,6 +84,7 @@ export default function Groups() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const createLockRef = useRef(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupDescription, setNewGroupDescription] = useState('');
   const [newGroupClassCode, setNewGroupClassCode] = useState('');
@@ -264,6 +265,9 @@ export default function Groups() {
 
   const handleCreateGroup = async () => {
     if (guardReadOnly()) return;
+    // Prevent duplicate submissions
+    if (createLockRef.current || isCreating) return;
+    
     if (!newGroupName.trim()) {
       toast({
         title: g.errorTitle,
@@ -309,9 +313,10 @@ export default function Groups() {
       }
     } catch (limitErr) {
       console.warn('Error checking project limit:', limitErr);
-      // Continue with creation if limit check fails
     }
 
+    // Lock to prevent double submission
+    createLockRef.current = true;
     setIsCreating(true);
 
     try {
@@ -401,6 +406,7 @@ export default function Groups() {
       });
     } finally {
       setIsCreating(false);
+      createLockRef.current = false;
     }
   };
 
