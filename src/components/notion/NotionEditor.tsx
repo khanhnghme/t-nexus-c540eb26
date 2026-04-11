@@ -13,9 +13,8 @@ import { CalloutBlock, getCustomSlashMenuItems } from './slash-menu';
 import { useEffect } from 'react';
 
 // Custom schema with callout block
-const schema = BlockNoteSchema.create({
+const schema = BlockNoteSchema.create().extend({
   blockSpecs: {
-    ...defaultBlockSpecs,
     callout: CalloutBlock,
   },
 });
