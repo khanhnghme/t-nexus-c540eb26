@@ -1,41 +1,39 @@
 
 
-## Phase 10 — Giai đoạn 1/4: Toggle Edit/View Mode cho Admin
+## Phase 10 — Giai đoạn 2/4: Ẩn Slash Menu và Drag Handles ở View Mode
 
 ### Mục tiêu
-Thêm nút toggle cho phép Admin/Owner chuyển giữa chế độ "Chỉnh sửa" và "Xem trước" trên header của Canvas. Member/Guest luôn ở chế độ View.
+Khi admin chuyển sang View mode (hoặc member/guest xem), ẩn các UI elements chỉ dành cho editing: slash menu (`/`), drag handles (kéo block), side menu, và formatting toolbar.
 
 ### Hiện trạng
-- `CanvasPageView` nhận prop `editable` từ `GroupDetail.tsx` (dựa trên `isLeaderInGroup`)
-- `editable` được truyền thẳng xuống `CanvasEditor` → `BlockNoteView`
-- Chưa có UI toggle để admin xem trước (preview) trang trước khi publish
+- Stage 1 hoàn thành: toggle Edit/View button trên header, `isEditMode` state truyền xuống `CanvasEditor`
+- `BlockNoteView` nhận `editable={false}` khi View mode — tuy nhiên một số UI elements như side menu, formatting toolbar vẫn có thể hiển thị tùy cấu hình
 
 ### Hành động
 
-**Cập nhật `src/components/canvas/CanvasPageView.tsx`**
-- Thêm state `isEditMode` (default: `true` khi `editable=true`)
-- Truyền `isEditMode` (thay vì `editable`) xuống `CanvasEditor` và `CanvasSidebar`
-- Thêm toggle button trên header bar (cạnh tên page):
-  - Icon: `Pencil` (edit) / `Eye` (view)
-  - Tooltip: "Chế độ chỉnh sửa" / "Chế độ xem trước"
-  - Chỉ hiển thị khi `editable=true` (admin/owner)
-- Khi ở View mode: ẩn nút tạo trang, ẩn nút xóa/rename trên sidebar
+**Cập nhật `src/components/canvas/CanvasEditor.tsx`**
+- Khi `editable=false`: truyền thêm props để ẩn side menu và formatting toolbar
+  - `sideMenu={false}` — ẩn drag handle + add button bên trái block
+  - `formattingToolbar={false}` — ẩn toolbar khi select text
+  - `slashMenu={false}` — ẩn slash menu (/) 
+- Kiểm tra BlockNoteView API: nếu dùng prop-based approach không khả thi thì wrap với conditional component overrides
+- Thêm CSS class `.view-mode` lên container div khi `editable=false` để có thể target thêm bằng CSS nếu cần (ẩn cursor caret, padding adjustments)
 
 ### Chi tiết kỹ thuật
 
 ```text
-Header bar (admin):
-┌──────────────────────────────────────────┐
-│ [≡] 📄 Trang 1          [✏️ Sửa | 👁 Xem] │
-└──────────────────────────────────────────┘
+Edit mode (editable=true):
+  BlockNoteView: full UI — side menu, slash menu, formatting toolbar
 
-editable=true + isEditMode=true  → full editing
-editable=true + isEditMode=false → preview (view-only)
-editable=false                   → view-only, no toggle
+View mode (editable=false):
+  BlockNoteView: editable=false
+  + sideMenu={false}
+  + formattingToolbar={false}  
+  + slashMenu={false}
+  + CSS class "view-mode" trên container
 ```
 
 ### Không làm
-- Ẩn slash menu / drag handles (giai đoạn 2)
 - Styling cho view mode (giai đoạn 3)
 - Permission check nâng cao (giai đoạn 4)
 
@@ -43,5 +41,5 @@ editable=false                   → view-only, no toggle
 
 | File | Thay đổi |
 |------|----------|
-| `src/components/canvas/CanvasPageView.tsx` | Toggle state + button UI |
+| `src/components/canvas/CanvasEditor.tsx` | Ẩn side menu, slash menu, formatting toolbar khi view mode |
 
