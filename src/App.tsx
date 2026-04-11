@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -214,6 +214,7 @@ function AppRoutes() {
           <Route path="/workspace/settings" element={<WorkspaceSettings />} />
           <Route path="/workspace/members" element={<WorkspaceMembers />} />
           <Route path="/upgrade" element={<Upgrade />} />
+          <Route path="/create-custom" element={<Suspense fallback={null}><CreateCustomProject /></Suspense>} />
           <Route path="/service-plan" element={<ServicePlan />} />
           <Route path="/billing-history" element={<BillingHistory />} />
         </Route>
