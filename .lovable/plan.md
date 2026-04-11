@@ -1,53 +1,70 @@
 
 
-## Phase 1 — Giai đoạn 4/4: Tích hợp trang test vào layout + Polish UI
+## Phase 2 — Giai đoạn 1/4: Service layer & Hook cho Project Pages CRUD
 
 ### Mục tiêu
-Hoàn thiện trang `/create-custom` để sẵn sàng cho Phase 2 (lưu DB). Đảm bảo trang nằm trong layout chính, có breadcrumb/navigation, và editor UI được polish.
+Tạo service layer và React hook để đọc/ghi `project_pages` từ database. Đây là nền tảng để giai đoạn sau (auto-save, load content) hoạt động.
 
 ### Hiện trạng
-- ✅ Giai đoạn 1: DB slug column + trigger
-- ✅ Giai đoạn 2: RLS policies bổ sung
-- ✅ Giai đoạn 3: BlockNote installed, CanvasEditor component, route `/create-custom`
-- ❌ Trang `/create-custom` hiện tại rất bare-bones: chỉ có Input + Editor, không có layout wrapper, không có nút tạo project, không có workspace selector
+- ✅ Bảng `project_pages` đã có: `id`, `group_id`, `title`, `content` (JSONB), `display_order`, `slug`, `icon`, `created_by`, timestamps
+- ✅ RLS policies đầy đủ (member SELECT, leader INSERT/UPDATE/DELETE, system admin ALL, public SELECT)
+- ✅ `CanvasEditor` component hoạt động, trang `/create-custom` render được
+- ❌ Chưa có service/hook nào tương tác với `project_pages`
+- ❌ `handleCreate` trong `CreateCustomProject.tsx` chỉ `console.log`
 
 ### Hành động cụ thể
 
-**1. Wrap trang trong ProtectedLayout (nếu chưa có)**
-- Kiểm tra route trong App.tsx đã nằm trong ProtectedLayout chưa → đảm bảo user phải đăng nhập
-- Thêm breadcrumb: Home → Create Custom Project
+**1. Tạo `src/services/projectPages.ts`** — Service layer thuần
 
-**2. Nâng cấp `CreateCustomProject.tsx`**
-- Thêm workspace selector dropdown (chọn workspace để tạo project vào)
-- Thêm description textarea (optional)
-- Thêm nút "Tạo dự án" (disabled khi chưa nhập tên)
-- Nút chưa kết nối DB — chỉ console.log payload để verify data flow
-- Thêm nút "Quay lại" / Cancel
-- Layout: 2 phần — sidebar trái (metadata: tên, workspace, description) + editor chiếm phần chính bên phải
+```typescript
+// Các hàm:
+// - fetchPagesByGroupId(groupId) → SELECT * FROM project_pages WHERE group_id = ? ORDER BY display_order
+// - createPage({ group_id, title, content, created_by, display_order }) → INSERT
+// - updatePageContent(pageId, content) → UPDATE content, updated_at
+// - deletePage(pageId) → DELETE
+// - upsertPage({ id?, group_id, title, content, ... }) → UPSERT (cho auto-save sau này)
+```
 
-**3. Polish CanvasEditor**
-- Thêm placeholder text khi editor trống: "Gõ '/' để thêm block..."
-- Đảm bảo min-height và padding hợp lý
-- Test dark mode rendering
+**2. Tạo `src/hooks/useProjectPages.ts`** — React Query hook
 
-**4. Verify data flow**
-- Khi bấm "Tạo dự án": log ra `{ projectName, workspaceId, editorContent }` 
-- Đây là chuẩn bị cho Phase 2 khi sẽ thực sự insert vào DB
+- `useProjectPages(groupId)` — fetch all pages cho một project, cached với React Query
+- `useCreatePage()` — mutation tạo page mới
+- `useUpdatePageContent()` — mutation cập nhật content
+- `useDeletePage()` — mutation xóa page
+- Invalidate query cache sau mỗi mutation
+
+**3. Tạo type `ProjectPage` trong `src/types/database.ts`**
+
+```typescript
+export interface ProjectPage {
+  id: string;
+  group_id: string;
+  title: string;
+  slug: string | null;
+  content: any; // JSONB — BlockNote document
+  display_order: number;
+  icon: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+```
 
 ### Output
-- Trang `/create-custom` có layout đầy đủ, giống production-ready
-- User flow: chọn workspace → nhập tên → viết content trong editor → bấm "Tạo dự án" (log only)
-- Sẵn sàng 100% cho Phase 2 (chỉ cần thay console.log bằng Supabase insert)
+- Service functions sẵn sàng gọi Supabase SDK cho project_pages CRUD
+- React Query hooks sẵn sàng dùng trong components
+- Type-safe với `ProjectPage` interface
+- Chưa kết nối vào UI — giai đoạn 2 sẽ wire vào `CreateCustomProject` và auto-save
 
 ### Rủi ro
-- Workspace selector cần fetch danh sách workspaces của user — phải handle loading state
-- Editor content serialization: `JSON.stringify(editor.document)` có thể lớn — chưa cần giới hạn ở giai đoạn này
+- `content` column là `Json` type trong Supabase types — cần cast khi dùng với BlockNote `Block[]`
+- React Query cache key phải unique theo `groupId` để tránh stale data giữa các project
 
 ### Files thay đổi
 
 | File | Thay đổi |
 |------|----------|
-| `src/pages/CreateCustomProject.tsx` | Nâng cấp UI: workspace selector, description, buttons, layout 2 cột |
-| `src/components/canvas/CanvasEditor.tsx` | Thêm placeholder prop, padding |
-| `src/App.tsx` | Verify route nằm trong ProtectedLayout (có thể không cần sửa) |
+| `src/types/database.ts` | Thêm `ProjectPage` interface |
+| `src/services/projectPages.ts` | **Mới** — CRUD functions cho project_pages |
+| `src/hooks/useProjectPages.ts` | **Mới** — React Query hooks |
 
