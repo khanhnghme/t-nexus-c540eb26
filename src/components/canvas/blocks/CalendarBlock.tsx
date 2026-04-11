@@ -1,0 +1,210 @@
+import { createReactBlockSpec } from "@blocknote/react";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useTaskBlockContext } from "./TaskBlockContext";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CalendarDays } from "lucide-react";
+import { DayPicker } from "react-day-picker";
+import { format, isSameDay } from "date-fns";
+import { vi } from "date-fns/locale";
+import { parseLocalDateTime } from "@/lib/datetime";
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+interface DeadlineTask {
+  id: string;
+  title: string;
+  deadline: string;
+  status: string;
+}
+
+function CalendarRenderer() {
+  const { groupId } = useTaskBlockContext();
+  const [tasks, setTasks] = useState<DeadlineTask[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [month, setMonth] = useState(new Date());
+  const [hoveredDay, setHoveredDay] = useState<Date | null>(null);
+
+  const fetchTasks = useCallback(async () => {
+    if (!groupId) return;
+    const { data } = await supabase
+      .from("tasks")
+      .select("id, title, deadline, status")
+      .eq("group_id", groupId)
+      .not("deadline", "is", null)
+      .order("deadline", { ascending: true });
+
+    if (data) {
+      setTasks(data as DeadlineTask[]);
+    }
+    setLoading(false);
+  }, [groupId]);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
+  // Group tasks by date string for quick lookup
+  const tasksByDate = useMemo(() => {
+    const map = new Map<string, DeadlineTask[]>();
+    tasks.forEach((t) => {
+      const d = parseLocalDateTime(t.deadline);
+      if (!d) return;
+      const key = format(d, "yyyy-MM-dd");
+      const arr = map.get(key) || [];
+      arr.push(t);
+      map.set(key, arr);
+    });
+    return map;
+  }, [tasks]);
+
+  const deadlineDates = useMemo(() => {
+    const dates: Date[] = [];
+    tasksByDate.forEach((_, key) => {
+      dates.push(new Date(key + "T00:00:00"));
+    });
+    return dates;
+  }, [tasksByDate]);
+
+  const getTasksForDay = useCallback(
+    (day: Date) => {
+      const key = format(day, "yyyy-MM-dd");
+      return tasksByDate.get(key) || [];
+    },
+    [tasksByDate]
+  );
+
+  if (loading) {
+    return (
+      <div className="space-y-2 p-3">
+        <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-48 w-full" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="select-none">
+      {/* Header */}
+      <div className="flex items-center gap-2 px-3 py-2 border-b">
+        <CalendarDays className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm font-medium">Lịch deadline</span>
+        <Badge variant="secondary" className="text-[10px] ml-auto">
+          {tasks.length}
+        </Badge>
+      </div>
+
+      {/* Calendar */}
+      <div className="p-2 flex justify-center">
+        <TooltipProvider delayDuration={200}>
+          <DayPicker
+            mode="single"
+            month={month}
+            onMonthChange={setMonth}
+            locale={vi}
+            showOutsideDays
+            className={cn("p-3 pointer-events-auto")}
+            classNames={{
+              months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+              month: "space-y-4",
+              caption: "flex justify-center pt-1 relative items-center",
+              caption_label: "text-sm font-medium",
+              nav: "space-x-1 flex items-center",
+              nav_button: cn(
+                buttonVariants({ variant: "outline" }),
+                "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
+              ),
+              nav_button_previous: "absolute left-1",
+              nav_button_next: "absolute right-1",
+              table: "w-full border-collapse space-y-1",
+              head_row: "flex",
+              head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
+              row: "flex w-full mt-2",
+              cell: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
+              day: cn(
+                buttonVariants({ variant: "ghost" }),
+                "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
+              ),
+              day_today: "bg-accent text-accent-foreground",
+              day_outside: "day-outside text-muted-foreground opacity-50",
+              day_disabled: "text-muted-foreground opacity-50",
+              day_hidden: "invisible",
+            }}
+            modifiers={{
+              hasDeadline: deadlineDates,
+            }}
+            modifiersClassNames={{
+              hasDeadline: "calendar-deadline-dot",
+            }}
+            components={{
+              DayContent: ({ date }) => {
+                const dayTasks = getTasksForDay(date);
+                const hasDeadline = dayTasks.length > 0;
+
+                const content = (
+                  <div className="relative flex items-center justify-center w-full h-full">
+                    <span>{date.getDate()}</span>
+                    {hasDeadline && (
+                      <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 flex gap-0.5">
+                        {dayTasks.slice(0, 3).map((_, i) => (
+                          <span
+                            key={i}
+                            className="block h-1 w-1 rounded-full bg-primary"
+                          />
+                        ))}
+                      </span>
+                    )}
+                  </div>
+                );
+
+                if (!hasDeadline) return content;
+
+                return (
+                  <Tooltip>
+                    <TooltipTrigger asChild>{content}</TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[200px]">
+                      <p className="font-medium text-xs mb-1">
+                        {format(date, "dd/MM/yyyy")}
+                      </p>
+                      <ul className="space-y-0.5">
+                        {dayTasks.map((t) => (
+                          <li key={t.id} className="text-xs truncate">
+                            • {t.title}
+                          </li>
+                        ))}
+                      </ul>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              },
+            }}
+          />
+        </TooltipProvider>
+      </div>
+    </div>
+  );
+}
+
+export const CalendarBlock = createReactBlockSpec(
+  {
+    type: "calendarView" as const,
+    propSchema: {},
+    content: "none",
+  },
+  {
+    render: () => {
+      return (
+        <div className="my-2" contentEditable={false}>
+          <CalendarRenderer />
+        </div>
+      );
+    },
+  }
+);
