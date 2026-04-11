@@ -514,7 +514,7 @@ export default function GroupDetail() {
 
       {group.project_mode === 'custom' ? (
         <div className="animate-fade-in h-[calc(100vh-48px)]">
-          <CanvasPageView groupId={group.id} editable={isLeaderInGroup} projectSlug={projectSlug} initialPageSlug={pageSlug} />
+          <CanvasPageView groupId={group.id} editable={isLeaderInGroup} projectSlug={projectSlug} workspaceSlug={resolvedWsSlug || undefined} initialPageSlug={pageSlug} />
         </div>
       ) : (
       <div>
