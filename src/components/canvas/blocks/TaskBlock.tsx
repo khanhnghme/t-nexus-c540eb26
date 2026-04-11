@@ -52,8 +52,8 @@ function TaskListRenderer() {
     );
   }, []);
 
-  const handleAddTask = useCallback(async () => {
-    const title = newTitle.trim();
+  const handleAddTask = useCallback(async (params?: { title?: string; assigneeId?: string; deadline?: string }) => {
+    const title = (params?.title || newTitle).trim();
     if (!title || !groupId) return;
 
     setAdding(true);
@@ -65,16 +65,24 @@ function TaskListRenderer() {
       return;
     }
 
-    const { error } = await supabase.from("tasks").insert({
+    const { data: taskData, error } = await supabase.from("tasks").insert({
       title,
       group_id: groupId,
       status: "TODO",
       created_by: userId,
-    });
+      deadline: params?.deadline || null,
+    }).select("id").single();
 
-    if (error) {
+    if (error || !taskData) {
       toast.error("Không thể tạo công việc");
     } else {
+      if (params?.assigneeId) {
+        await supabase.from("task_assignments").insert({
+          task_id: taskData.id,
+          user_id: params.assigneeId,
+          assigned_by: userId,
+        });
+      }
       setNewTitle("");
       await fetchTasks();
     }
@@ -158,6 +166,7 @@ function TaskListRenderer() {
         <TaskListView
           tasks={tasks}
           editable={editable}
+          groupId={groupId}
           newTitle={newTitle}
           setNewTitle={setNewTitle}
           adding={adding}
@@ -167,6 +176,7 @@ function TaskListRenderer() {
         <TaskKanbanView
           tasks={tasks}
           editable={editable}
+          groupId={groupId}
           newTitle={newTitle}
           setNewTitle={setNewTitle}
           adding={adding}
