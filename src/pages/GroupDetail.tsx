@@ -178,29 +178,40 @@ export default function GroupDetail() {
   const [editingStage, setEditingStage] = useState<Stage | null>(null);
   const [stageToDelete, setStageToDelete] = useState<Stage | null>(null);
 
-  useEffect(() => { if (routeId) fetchGroupData(); }, [routeId]);
+  useEffect(() => { if (routeId || pageSlug) fetchGroupData(); }, [routeId, pageSlug]);
 
   const fetchGroupData = async () => {
-    if (!routeId) return;
+    if (!routeId && !pageSlug) return;
     
     try {
-      // Support UUID, short_id, and semantic slug lookup
-      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      const shortIdPattern = /^[a-z0-9]{8}$/i;
-      
       let groupData;
-      if (uuidPattern.test(routeId)) {
-        // Lookup by UUID
-        const { data } = await supabase.from('groups').select('*').eq('id', routeId).single();
-        groupData = data;
-      } else if (shortIdPattern.test(routeId)) {
-        // Lookup by short_id (legacy support)
-        const { data } = await supabase.from('groups').select('*').eq('short_id', routeId).single();
-        groupData = data;
-      } else {
-        // Lookup by semantic slug (primary method)
-        const { data } = await supabase.from('groups').select('*').eq('slug', routeId).single();
-        groupData = data;
+
+      if (!routeId && pageSlug) {
+        // Route /pa/:wsParam/:pageSlug — resolve group_id from page slug
+        const { data: pageData } = await supabase
+          .from('project_pages')
+          .select('group_id')
+          .eq('slug', pageSlug)
+          .single();
+        if (pageData) {
+          const { data } = await supabase.from('groups').select('*').eq('id', pageData.group_id).single();
+          groupData = data;
+        }
+      } else if (routeId) {
+        // Support UUID, short_id, and semantic slug lookup
+        const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const shortIdPattern = /^[a-z0-9]{8}$/i;
+        
+        if (uuidPattern.test(routeId)) {
+          const { data } = await supabase.from('groups').select('*').eq('id', routeId).single();
+          groupData = data;
+        } else if (shortIdPattern.test(routeId)) {
+          const { data } = await supabase.from('groups').select('*').eq('short_id', routeId).single();
+          groupData = data;
+        } else {
+          const { data } = await supabase.from('groups').select('*').eq('slug', routeId).single();
+          groupData = data;
+        }
       }
       
       if (!groupData) {
