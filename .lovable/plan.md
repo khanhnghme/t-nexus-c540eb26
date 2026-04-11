@@ -1,53 +1,52 @@
 
 
-## Phase 2 — Giai đoạn 4/4: Error handling, Edge cases & UI Polish
+## Phase 3 — Giai đoạn 1/4: Mode Selector UI Component
 
-### Muc tieu
-Hoàn thiện Phase 2 bằng cách xử lý các edge case, cải thiện error handling, và polish UI cho toàn bộ flow: tạo project → view canvas → auto-save.
+### Mục tiêu
+Khi user bấm "Tạo dự án" trên trang Groups, hiện bước chọn mode (Basic / Custom) trước khi mở form tạo project. Basic → mở dialog cũ. Custom → navigate tới `/create-custom`.
 
-### Hien trang
-- ✅ Service layer + hooks CRUD hoạt động
-- ✅ Auto-save + save indicator trong CanvasEditor
-- ✅ CreateCustomProject tạo group + page + redirect
-- ✅ GroupDetail phân luồng theo project_mode
-- ❌ CanvasPageView chưa có nút tạo page khi empty (leader)
-- ❌ Chưa handle trường hợp mất kết nối / save thất bại rõ ràng
-- ❌ CanvasEditor chưa có loading skeleton khi hydrate content
-- ❌ CreateCustomProject chưa handle duplicate idempotency_key gracefully
+### Hiện trạng
+- ✅ Phase 2 hoàn tất: CRUD + auto-save + error handling
+- ✅ `/create-custom` page hoạt động đầy đủ
+- ✅ `GroupDetail` phân luồng theo `project_mode`
+- ❌ Bấm "Tạo dự án" → mở thẳng dialog Basic, không có lựa chọn mode
+- ❌ Chưa có component Mode Selector
 
-### Hanh dong cu the
+### Hành động cụ thể
 
-**1. Cập nhật `CanvasPageView.tsx`** — Empty state cho leader + error retry
-- Khi không có page nào + user là leader → hiện nút "Tạo trang đầu tiên" (gọi `useCreatePage`)
-- Thêm nút retry khi fetch lỗi
-- Hiện badge `project_mode: custom` nhỏ trên header
+**1. Tạo `src/components/ProjectModeSelector.tsx`** — Component chọn mode
 
-**2. Cập nhật `CanvasEditor.tsx`** — Error toast + save retry
-- Khi auto-save thất bại → hiện toast error với message rõ ràng
-- Save indicator: thêm trạng thái "Error" (màu đỏ) khi save fail
-- Đổi save status text sang tiếng Việt (Đang lưu... / Đã lưu / Chưa lưu / Lỗi)
+- 2 cards ngang nhau: **Basic** và **Custom**
+- Basic card: icon Layers/ListChecks, mô tả "Quản lý task, stage, deadline theo flow chuẩn"
+- Custom card: icon FileText/Palette, mô tả "Canvas tự do với block editor"
+- Props: `onSelectBasic: () => void`, `onSelectCustom: () => void`
+- Styling: hover effect, selected state, responsive
 
-**3. Cập nhật `CreateCustomProject.tsx`** — Validation + UX
-- Trim project name, validate min length (2 chars)
-- Handle duplicate idempotency_key error → hiện toast "Project đã được tạo"
-- Auto-select workspace nếu chỉ có 1 workspace
-- Disable editor khi đang creating để tránh mất content
+**2. Cập nhật `src/pages/Groups.tsx`** — Thêm bước chọn mode
 
-**4. Cập nhật `useAutosave.ts`** — Error callback
-- Thêm `onError` callback option để caller có thể handle (toast, retry UI)
-- Track `saveError` state để UI hiển thị
+- Thêm state `showModeSelector: boolean` (default false)
+- Khi bấm "Tạo dự án":
+  - Nếu `showModeSelector === false` → set `showModeSelector = true`, mở dialog hiện ModeSelector
+  - Chọn Basic → đóng mode selector, mở dialog tạo project cũ (`isDialogOpen = true`)
+  - Chọn Custom → đóng dialog, navigate tới `/create-custom`
+- Flow: Click CTA → Mode Selector dialog → chọn mode → tiếp tục
+
+**3. Đảm bảo không ảnh hưởng flow cũ**
+
+- Dialog tạo project Basic giữ nguyên 100% logic hiện tại
+- Chỉ thêm 1 bước trung gian (mode selector) trước khi mở dialog cũ
+- Permission check `canCreateProject` vẫn áp dụng
 
 ### Output
-- Flow tạo + xem + edit hoạt động ổn định, xử lý lỗi rõ ràng
-- UX mượt: empty state có action, error có retry, save có feedback đầy đủ
-- Sẵn sàng chuyển sang Phase 3 (Mode Selector)
+- Bấm "Tạo dự án" → hiện 2 cards chọn mode
+- Chọn Basic → mở dialog tạo project như cũ
+- Chọn Custom → navigate `/create-custom`
+- UI đẹp, responsive, có animation nhẹ
 
-### Files thay doi
+### Files thay đổi
 
 | File | Thay đổi |
 |------|----------|
-| `src/components/canvas/CanvasPageView.tsx` | Empty state action + error retry |
-| `src/components/canvas/CanvasEditor.tsx` | Error toast + Vietnamese labels + error state |
-| `src/pages/CreateCustomProject.tsx` | Validation + duplicate handling + auto-select workspace |
-| `src/hooks/useAutosave.ts` | Thêm `onError` callback + `saveError` state |
+| `src/components/ProjectModeSelector.tsx` | **Mới** — Component 2 cards chọn Basic/Custom |
+| `src/pages/Groups.tsx` | Thêm state + dialog mode selector trước dialog tạo project |
 
