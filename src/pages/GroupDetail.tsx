@@ -58,12 +58,13 @@ interface ExtendedGroup extends Group {
 }
 
 export default function GroupDetail() {
-  const { groupId, projectId, projectSlug, taskSlug, taskId: routeTaskId } = useParams<{ 
+  const { groupId, projectId, projectSlug, taskSlug, taskId: routeTaskId, pageSlug } = useParams<{ 
     groupId?: string; 
     projectId?: string; 
     projectSlug?: string;
     taskSlug?: string;
     taskId?: string;
+    pageSlug?: string;
   }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
