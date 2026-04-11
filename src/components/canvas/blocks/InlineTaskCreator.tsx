@@ -57,6 +57,7 @@ export function InlineTaskCreator({ groupId, adding, onAdd, compact = false }: I
     if (!trimmed || adding) return;
 
     await onAdd({
+      title: trimmed,
       assigneeId: assignee?.user_id,
       deadline: deadline?.toISOString(),
     });
