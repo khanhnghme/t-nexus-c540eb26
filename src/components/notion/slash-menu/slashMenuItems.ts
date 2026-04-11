@@ -8,6 +8,7 @@ type SlashMenuItem = {
   aliases?: string[];
   group?: string;
   badge?: string;
+  icon?: string;
 };
 
 export function getCustomSlashMenuItems(

@@ -5,6 +5,7 @@ import { BlockNoteSchema, filterSuggestionItems } from '@blocknote/core';
 import { SuggestionMenuController, getDefaultReactSlashMenuItems } from '@blocknote/react';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
+import './notion-editor.css';
 import { useAutosave } from '@/hooks/useAutosave';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Check } from 'lucide-react';
