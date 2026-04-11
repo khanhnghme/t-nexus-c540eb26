@@ -1,31 +1,29 @@
 
 
-## Fix: Nút "Về Dashboard" → "Về Lịch sử thanh toán" khi mở từ billing history
+## Hiển thị đúng trạng thái "Tự động gia hạn" trong MyPlan
 
-### Phân tích
+### Vấn đề
 
-Trang `/checkout/summary/:orderCode` có nút "Go to Dashboard" luôn navigate về `/dashboard`. Khi người dùng mở trang này từ `/billing-history`, nút này nên quay về `/billing-history` thay vì dashboard.
+Component `ServicePlanSection` (card MyPlan ở trang Personal) không hiển thị trạng thái tự động gia hạn. Giá trị `profile?.auto_renew` có sẵn nhưng chưa được sử dụng.
 
 ### Thay đổi
 
-**File: `src/pages/CheckoutSummary.tsx`**
+**File: `src/components/personal/ServicePlanSection.tsx`**
 
-1. Detect nguồn truy cập: kiểm tra `document.referrer` hoặc dùng `sessionStorage` flag. Cách đơn giản nhất: dùng `location.state` hoặc check nếu history trước đó là billing-history. Tuy nhiên cách đáng tin nhất là kiểm tra `sessionStorage.getItem('checkout_from')`:
-   - Nếu `checkout_from === 'onboarding'` → đã có logic "Continue Setup"
-   - Nếu `checkout_from === 'billing'` → quay về `/billing-history`
-   - Mặc định → quay về `/dashboard`
+Thêm một dòng hiển thị trạng thái auto-renew cho user premium, nằm dưới phần `nextPlan` info, trong khối header:
 
-2. Tại `BillingHistory.tsx`: khi click vào row để navigate sang summary, set `sessionStorage.setItem('checkout_from', 'billing')`.
+- Import thêm icon `RefreshCw` và `Minus`
+- Nếu `isPremium`: hiển thị dòng "Tự động gia hạn: Bật/Tắt" với màu emerald (bật) hoặc orange (tắt)
+- Dùng translations `t.autoRenewLabel`, `t.autoRenewOn`, `t.autoRenewOff`
 
-3. Tại `CheckoutSummary.tsx` section actions (status completed):
-   - Thêm case `checkout_from === 'billing'` → nút hiển thị "Lịch sử thanh toán" / "Billing History" với icon `Receipt`, navigate về `/billing-history`.
+**File: `src/lib/i18n/vi.ts` + `src/lib/i18n/en.ts`**
 
-4. Clean up `sessionStorage` khi navigate.
+Thêm translations vào `servicePlanSection`:
+- `autoRenewLabel`: "Tự động gia hạn" / "Auto Renew"
+- `autoRenewOn`: "Bật" / "On"
+- `autoRenewOff`: "Tắt" / "Off"
 
-### Files cần sửa
+### Kết quả
 
-| File | Thay đổi |
-|------|----------|
-| `src/pages/BillingHistory.tsx` | Set `sessionStorage('checkout_from', 'billing')` khi navigate sang summary |
-| `src/pages/CheckoutSummary.tsx` | Thêm case billing → nút quay về `/billing-history` |
+Card MyPlan sẽ hiển thị chính xác trạng thái auto-renew từ database (`profile.auto_renew`) cho user có gói premium.
 
