@@ -1495,6 +1495,12 @@ export const en = {
       unsaved: 'Unsaved',
       noPages: 'No pages yet',
       selectPage: 'Select a page to start editing',
+      rename: 'Rename',
+      delete: 'Delete',
+      changeIcon: 'Change icon',
+      confirmDeleteTitle: 'Delete page',
+      confirmDeleteDesc: 'Are you sure you want to delete this page? This action cannot be undone.',
+      cancel: 'Cancel',
     },
     servicePlan: {
       goBack: 'Go back',
