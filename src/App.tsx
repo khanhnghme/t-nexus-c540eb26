@@ -18,6 +18,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 
 import { supabase } from "@/integrations/supabase/client";
 import PageTransition from "@/components/PageTransition";
+import { LegacyProjectRedirect, LegacyTaskRedirect, LegacyPageRedirect, LegacyFileRedirect, LegacyGroupRedirect } from "@/components/LegacyRedirects";
 
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import CheckoutLayoutWrapper from "@/components/layout/CheckoutLayoutWrapper";
