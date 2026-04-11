@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import type { TaskRow, TaskHandlers, TaskStatus } from "./taskBlockTypes";
 import { statusConfig, statusColumns } from "./taskBlockTypes";
 import { InlineTaskCreator } from "./InlineTaskCreator";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface TaskKanbanViewProps {
   tasks: TaskRow[];
@@ -25,6 +26,7 @@ interface TaskKanbanViewProps {
 }
 
 export function TaskKanbanView({ tasks, editable, groupId, newTitle, setNewTitle, adding, handlers }: TaskKanbanViewProps) {
+  const isMobile = useIsMobile();
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const [editingTitleValue, setEditingTitleValue] = useState("");
@@ -72,7 +74,10 @@ export function TaskKanbanView({ tasks, editable, groupId, newTitle, setNewTitle
   }, {} as Record<string, TaskRow[]>);
 
   return (
-    <div className="grid grid-cols-4 gap-2 p-2 min-h-[120px]">
+    <div className={cn(
+      "gap-2 p-2 min-h-[120px]",
+      isMobile ? "flex flex-col" : "grid grid-cols-4"
+    )}>
       {statusColumns.map((status) => {
         const cfg = statusConfig[status];
         const colTasks = tasksByStatus[status] || [];

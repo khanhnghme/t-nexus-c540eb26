@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import type { TaskRow, TaskHandlers } from "./taskBlockTypes";
 import { statusConfig } from "./taskBlockTypes";
 import { InlineTaskCreator } from "./InlineTaskCreator";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface TaskListViewProps {
   tasks: TaskRow[];
@@ -32,6 +33,7 @@ interface TaskListViewProps {
 }
 
 export function TaskListView({ tasks, editable, groupId, newTitle, setNewTitle, adding, handlers }: TaskListViewProps) {
+  const isMobile = useIsMobile();
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const [editingTitleValue, setEditingTitleValue] = useState("");
 
@@ -67,6 +69,84 @@ export function TaskListView({ tasks, editable, groupId, newTitle, setNewTitle, 
               ?.map((a) => a.profiles?.full_name)
               .filter(Boolean);
 
+            if (isMobile) {
+              // Mobile card layout
+              return (
+                <div
+                  key={task.id}
+                  className="group flex flex-col gap-1.5 px-3 py-2.5 text-sm hover:bg-muted/30 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    {editable && editingTitleId === task.id ? (
+                      <Input
+                        value={editingTitleValue}
+                        onChange={(e) => setEditingTitleValue(e.target.value)}
+                        onBlur={() => saveTitle(task.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") { e.preventDefault(); saveTitle(task.id); }
+                          if (e.key === "Escape") setEditingTitleId(null);
+                        }}
+                        autoFocus
+                        className="flex-1 h-7 text-sm border-none bg-transparent shadow-none focus-visible:ring-1 focus-visible:ring-primary/30 px-1"
+                      />
+                    ) : (
+                      <span
+                        className={cn("flex-1 font-medium", editable && "cursor-pointer active:text-primary")}
+                        onClick={() => editable && startEditTitle(task)}
+                      >
+                        {task.title}
+                      </span>
+                    )}
+                    {editable && (
+                      <button
+                        onClick={() => handlers.onDelete(task.id, task.title)}
+                        className="text-muted-foreground hover:text-destructive shrink-0 p-1"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {editable ? (
+                      <Select
+                        value={task.status}
+                        onValueChange={(v) => handlers.onStatusChange(task.id, v as any)}
+                      >
+                        <SelectTrigger className="h-6 w-auto min-w-[90px] text-xs px-2 py-0 border-none bg-transparent">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(statusConfig).map(([key, val]) => (
+                            <SelectItem key={key} value={key} className="text-xs">
+                              {val.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Badge variant={cfg.variant} className="shrink-0 text-xs">
+                        {cfg.label}
+                      </Badge>
+                    )}
+                    {assignees && assignees.length > 0 && (
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                        <User className="h-3 w-3" />
+                        {assignees[0]}
+                        {assignees.length > 1 && ` +${assignees.length - 1}`}
+                      </span>
+                    )}
+                    {task.deadline && (
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                        <Calendar className="h-3 w-3" />
+                        {format(new Date(task.deadline), "dd/MM")}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            }
+
+            // Desktop row layout
             return (
               <div
                 key={task.id}

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useProjectPages, useCreatePage, useDeletePage, useUpdatePage } from "@/hooks/useProjectPages";
 import CanvasEditor from "./CanvasEditor";
 import CanvasSidebar from "./CanvasSidebar";
-import { Loader2, FileText, RefreshCw, Plus, PanelLeft, Pencil, Eye, Save } from "lucide-react";
+import { Loader2, FileText, RefreshCw, Plus, PanelLeft, Pencil, Eye, Save, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import type { PartialBlock } from "@blocknote/core";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { Json } from "@/integrations/supabase/types";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 
 const SaveAsTemplateDialog = lazy(() => import("./SaveAsTemplateDialog"));
 
@@ -201,7 +202,8 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
 
   return (
     <div className="flex border rounded-lg bg-card overflow-hidden" style={{ minHeight: 400 }}>
-      {sidebarOpen && (
+      {/* Desktop sidebar */}
+      {!isMobile && sidebarOpen && (
         <CanvasSidebar
           pages={pages.map((p) => ({ id: p.id, title: p.title, display_order: p.display_order, icon: p.icon, slug: p.slug }))}
           activePageId={activePage.id}
@@ -219,18 +221,44 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
           isCreating={createPage.isPending}
         />
       )}
+
+      {/* Mobile sidebar as Sheet */}
+      {isMobile && (
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <SheetContent side="left" className="w-[260px] p-0">
+            <SheetTitle className="sr-only">Trang</SheetTitle>
+            <CanvasSidebar
+              pages={pages.map((p) => ({ id: p.id, title: p.title, display_order: p.display_order, icon: p.icon, slug: p.slug }))}
+              activePageId={activePage.id}
+              onSelectPage={(pageId) => {
+                const page = pages.find((p) => p.id === pageId);
+                if (page) navigateToPage(page);
+              }}
+              onCreatePage={handleCreatePage}
+              onDeletePage={handleDeletePage}
+              onRenamePage={handleRenamePage}
+              onReorderPages={handleReorderPages}
+              onChangePageIcon={handleChangePageIcon}
+              editable={isEditMode}
+              isCreating={createPage.isPending}
+              isDrawer
+            />
+          </SheetContent>
+        </Sheet>
+      )}
+
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 px-3 py-1.5 border-b text-sm">
-          {!sidebarOpen && (
+        <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 border-b text-sm overflow-x-auto">
+          {(!sidebarOpen || isMobile) && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 shrink-0"
+                  className="h-7 w-7 sm:h-6 sm:w-6 shrink-0"
                   onClick={() => setSidebarOpen(true)}
                 >
-                  <PanelLeft className="h-3.5 w-3.5" />
+                  {isMobile ? <Menu className="h-4 w-4" /> : <PanelLeft className="h-3.5 w-3.5" />}
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right">Hiện sidebar</TooltipContent>
@@ -239,7 +267,7 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
           {activePage.icon && (
             <span className="text-sm leading-none">{activePage.icon}</span>
           )}
-          <span className="text-muted-foreground truncate flex-1">{activePage.title}</span>
+          <span className="text-muted-foreground truncate flex-1 text-xs sm:text-sm">{activePage.title}</span>
           {editable && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -252,12 +280,12 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
                   {isEditMode ? (
                     <>
                       <Pencil className="h-3 w-3" />
-                      Sửa
+                      <span className="hidden sm:inline">Sửa</span>
                     </>
                   ) : (
                     <>
                       <Eye className="h-3 w-3" />
-                      Xem
+                      <span className="hidden sm:inline">Xem</span>
                     </>
                   )}
                 </Button>
@@ -277,7 +305,7 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
                   onClick={() => setSaveTemplateOpen(true)}
                 >
                   <Save className="h-3 w-3" />
-                  Template
+                  <span className="hidden sm:inline">Template</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Lưu trang này làm template</TooltipContent>

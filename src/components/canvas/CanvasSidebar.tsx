@@ -47,6 +47,7 @@ interface CanvasSidebarProps {
   onCollapse?: () => void;
   editable: boolean;
   isCreating?: boolean;
+  isDrawer?: boolean;
 }
 
 function InlineRenameTitle({
@@ -121,6 +122,7 @@ export default function CanvasSidebar({
   onCollapse,
   editable,
   isCreating,
+  isDrawer = false,
 }: CanvasSidebarProps) {
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination || result.source.index === result.destination.index) return;
@@ -131,7 +133,10 @@ export default function CanvasSidebar({
   };
 
   return (
-    <div className="w-[220px] max-md:w-[180px] shrink-0 border-r bg-muted/30 flex flex-col">
+    <div className={cn(
+      "shrink-0 bg-muted/30 flex flex-col",
+      isDrawer ? "w-full h-full" : "w-[220px] max-md:w-[180px] border-r"
+    )}>
       <div className="flex items-center justify-between px-3 py-2 border-b">
         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
           Trang
@@ -157,7 +162,7 @@ export default function CanvasSidebar({
               <TooltipContent side="bottom">Tạo trang mới</TooltipContent>
             </Tooltip>
           )}
-          {onCollapse && (
+          {onCollapse && !isDrawer && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
