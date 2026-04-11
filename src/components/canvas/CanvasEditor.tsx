@@ -12,6 +12,9 @@ import { toast } from "sonner";
 import { TaskListBlock } from "./blocks/TaskBlock";
 import { MemberListBlock } from "./blocks/MemberBlock";
 import { CalendarBlock } from "./blocks/CalendarBlock";
+import { r2Storage } from "@/lib/r2Storage";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { NoteCalloutBlock } from "./blocks/NoteBlock";
 import { ToggleBlock } from "./blocks/ToggleBlock";
 import { TaskBlockProvider } from "./blocks/TaskBlockContext";
@@ -61,9 +64,43 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
   onChangeCover,
 }, ref) {
   const { resolvedTheme } = useTheme();
+  const { user } = useAuth();
   const updatePageContent = useUpdatePageContent();
   const [serializedContent] = useState("");
   const [currentContent, setCurrentContent] = useState(serializedContent);
+
+  const uploadFile = useCallback(async (file: File): Promise<string> => {
+    if (!user || !groupId || !pageId) {
+      throw new Error("Không thể upload: thiếu thông tin.");
+    }
+    const timestamp = Date.now();
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const r2Path = `canvas/${groupId}/${pageId}/${timestamp}_${safeName}`;
+
+    const { data, error } = await r2Storage.from("project-resources").upload(r2Path, file, {
+      contentType: file.type,
+      upsert: false,
+    });
+    if (error) throw new Error(error.message);
+
+    const { data: urlData } = r2Storage.from("project-resources").getPublicUrl(r2Path);
+    const publicUrl = urlData.publicUrl;
+
+    // Track in project_resources for storage quota
+    await supabase.from("project_resources").insert({
+      group_id: groupId,
+      uploaded_by: user.id,
+      name: file.name,
+      file_path: publicUrl,
+      storage_name: r2Path,
+      file_size: file.size,
+      file_type: file.type,
+      category: "canvas-attachment",
+      resource_type: "file",
+    });
+
+    return publicUrl;
+  }, [user, groupId, pageId]);
 
   const safeInitialContent = useMemo(() => {
     if (!initialContent?.length) return undefined;
@@ -82,6 +119,7 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
   const editor = useCreateBlockNote({
     schema,
     initialContent: safeInitialContent as any,
+    uploadFile,
   });
 
   const handleSave = useCallback(

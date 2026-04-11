@@ -128,6 +128,29 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
   const handleDeletePage = async (pageId: string) => {
     try {
       const page = pages?.find(p => p.id === pageId);
+
+      // Cleanup canvas attachments from R2 + DB
+      try {
+        const prefix = `canvas/${groupId}/${pageId}/`;
+        const { data: attachments } = await supabase
+          .from("project_resources")
+          .select("id, storage_name")
+          .eq("group_id", groupId)
+          .eq("category", "canvas-attachment")
+          .like("storage_name", `${prefix}%`);
+
+        if (attachments?.length) {
+          const r2Paths = attachments.map(a => a.storage_name).filter(Boolean);
+          if (r2Paths.length) {
+            await r2Storage.from("project-resources").remove(r2Paths);
+          }
+          const ids = attachments.map(a => a.id);
+          await supabase.from("project_resources").delete().in("id", ids);
+        }
+      } catch {
+        // Non-blocking: cleanup failure shouldn't prevent page deletion
+      }
+
       await deletePage.mutateAsync(pageId);
       doLog("page_deleted", `Xóa trang "${page?.title || ""}"`, { page_id: pageId });
       toast.success("Đã xóa trang.");
