@@ -389,6 +389,11 @@ export default function CheckoutSummary() {
                 <ArrowRight className="w-4 h-4 mr-2" />
                 {isVi ? 'Tiếp tục thiết lập' : 'Continue Setup'}
               </Button>
+            ) : sessionStorage.getItem('checkout_from') === 'billing' ? (
+              <Button onClick={() => { sessionStorage.removeItem('checkout_from'); navigate('/billing-history'); }} className="flex-1">
+                <Receipt className="w-4 h-4 mr-2" />
+                {isVi ? 'Lịch sử thanh toán' : 'Billing History'}
+              </Button>
             ) : (
               <Button onClick={() => navigate('/dashboard')} className="flex-1">
                 <Home className="w-4 h-4 mr-2" />
