@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAccountLimitsCheck } from '@/hooks/useAccountLimitsCheck';
-import { deleteTaskFiles } from '@/lib/storageCleanup';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -355,51 +355,12 @@ export function AccountCleanupPanel({ onCleanupComplete }: AccountCleanupPanelPr
   };
 
   const deleteProject = async (groupId: string) => {
-    // Clean up files first
-    const { data: tasks } = await supabase.from('tasks').select('id').eq('group_id', groupId);
-    if (tasks) {
-      for (const task of tasks) {
-        await deleteTaskFiles(task.id);
-      }
+    const { data, error } = await supabase.functions.invoke('workspace-management', {
+      body: { action: 'delete_project', group_id: groupId },
+    });
+    if (error || data?.error) {
+      throw new Error(data?.error || error?.message || 'Failed to delete project');
     }
-
-    // Delete related data in order
-    const taskIds = (tasks || []).map(t => t.id);
-    if (taskIds.length > 0) {
-      await supabase.from('submission_history').delete().in('task_id', taskIds);
-      await supabase.from('task_scores').delete().in('task_id', taskIds);
-      await supabase.from('task_assignments').delete().in('task_id', taskIds);
-      await supabase.from('task_comments').delete().in('task_id', taskIds);
-    }
-
-    const { data: taskNotes } = taskIds.length > 0 
-      ? await supabase.from('task_notes').select('id').in('task_id', taskIds)
-      : { data: [] as { id: string }[] };
-    if (taskNotes && taskNotes.length > 0) {
-      await supabase.from('task_note_attachments').delete().in('note_id', taskNotes.map(n => n.id));
-      await supabase.from('task_notes').delete().in('id', taskNotes.map(n => n.id));
-    }
-
-    await supabase.from('tasks').delete().eq('group_id', groupId);
-
-    // Delete stages & stage scores
-    const { data: stages } = await supabase.from('stages').select('id').eq('group_id', groupId);
-    if (stages && stages.length > 0) {
-      await supabase.from('member_stage_scores').delete().in('stage_id', stages.map(s => s.id));
-      await supabase.from('stage_weights').delete().in('stage_id', stages.map(s => s.id));
-      await supabase.from('stages').delete().eq('group_id', groupId);
-    }
-
-    await supabase.from('member_final_scores').delete().eq('group_id', groupId);
-    await supabase.from('pending_approvals').delete().eq('group_id', groupId);
-    await supabase.from('project_invitations').delete().eq('group_id', groupId);
-    await supabase.from('project_resources').delete().eq('group_id', groupId);
-    await supabase.from('resource_folders').delete().eq('group_id', groupId);
-    await supabase.from('project_messages').delete().eq('group_id', groupId);
-    await supabase.from('activity_logs').delete().eq('group_id', groupId);
-    await supabase.from('group_members').delete().eq('group_id', groupId);
-    await supabase.from('hidden_projects').delete().eq('group_id', groupId);
-    await supabase.from('groups').delete().eq('id', groupId);
   };
 
   const formatStorage = (mb: number) => mb >= 1000 ? `${(mb / 1000).toFixed(1)} GB` : `${mb} MB`;

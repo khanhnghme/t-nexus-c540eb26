@@ -10,6 +10,7 @@ type Action =
   | "create_workspace"
   | "update_workspace"
   | "delete_workspace"
+  | "delete_project"
   | "invite_workspace_member"
   | "invite_project_guest"
   | "accept_invite"
@@ -757,6 +758,148 @@ serve(async (req: Request) => {
           role: "workspace_admin",
         });
 
+      return json({ success: true });
+    }
+
+    // ═══════════════════════════════════════════════
+    // DELETE PROJECT (service role - bypasses RLS)
+    // ═══════════════════════════════════════════════
+    if (body.action === "delete_project") {
+      if (!callerId) return err("Authentication required", 401);
+      if (!body.group_id) return err("group_id required");
+
+      // Validate: caller must be workspace owner or project leader
+      const { data: group } = await supabaseAdmin
+        .from("groups")
+        .select("id, workspace_id")
+        .eq("id", body.group_id)
+        .single();
+
+      if (!group) return err("Project not found", 404);
+
+      const { data: isWsOwner } = await supabaseAdmin.rpc("is_workspace_owner", {
+        _user_id: callerId,
+        _workspace_id: group.workspace_id,
+      });
+      const { data: isProjLeader } = await supabaseAdmin.rpc("is_project_leader", {
+        _user_id: callerId,
+        _group_id: body.group_id,
+      });
+
+      if (!isWsOwner && !isProjLeader) {
+        return err("Only workspace owner or project leader can delete a project", 403);
+      }
+
+      const groupId = body.group_id;
+
+      // Get all task IDs for this project
+      const { data: tasks } = await supabaseAdmin
+        .from("tasks")
+        .select("id")
+        .eq("group_id", groupId);
+      const taskIds = (tasks || []).map((t: any) => t.id);
+
+      // Get all stage IDs
+      const { data: stages } = await supabaseAdmin
+        .from("stages")
+        .select("id")
+        .eq("group_id", groupId);
+      const stageIds = (stages || []).map((s: any) => s.id);
+
+      // Get meeting IDs
+      const { data: meetings } = await supabaseAdmin
+        .from("meetings")
+        .select("id")
+        .eq("group_id", groupId);
+      const meetingIds = (meetings || []).map((m: any) => m.id);
+
+      // Delete in dependency order using service role
+      if (taskIds.length > 0) {
+        // Score appeals & attachments
+        const { data: taskScores } = await supabaseAdmin
+          .from("task_scores")
+          .select("id")
+          .in("task_id", taskIds);
+        const scoreIds = (taskScores || []).map((s: any) => s.id);
+        
+        if (scoreIds.length > 0) {
+          // appeal_attachments → score_appeals
+          const { data: appeals } = await supabaseAdmin
+            .from("score_appeals")
+            .select("id")
+            .in("task_score_id", scoreIds);
+          const appealIds = (appeals || []).map((a: any) => a.id);
+          if (appealIds.length > 0) {
+            await supabaseAdmin.from("appeal_attachments").delete().in("appeal_id", appealIds);
+            await supabaseAdmin.from("score_appeals").delete().in("id", appealIds);
+          }
+          await supabaseAdmin.from("score_adjustment_history").delete().in("target_id", scoreIds);
+          await supabaseAdmin.from("task_scores").delete().in("id", scoreIds);
+        }
+
+        // submission_history
+        await supabaseAdmin.from("submission_history").delete().in("task_id", taskIds);
+
+        // task_note_attachments → task_notes
+        const { data: taskNotes } = await supabaseAdmin
+          .from("task_notes")
+          .select("id")
+          .in("task_id", taskIds);
+        const noteIds = (taskNotes || []).map((n: any) => n.id);
+        if (noteIds.length > 0) {
+          await supabaseAdmin.from("task_note_attachments").delete().in("note_id", noteIds);
+          await supabaseAdmin.from("task_notes").delete().in("id", noteIds);
+        }
+
+        // task_attachments, task_assignments, task_comments
+        await supabaseAdmin.from("task_attachments").delete().in("task_id", taskIds);
+        await supabaseAdmin.from("task_assignments").delete().in("task_id", taskIds);
+        await supabaseAdmin.from("task_comments").delete().in("task_id", taskIds);
+
+        // notifications referencing tasks
+        await supabaseAdmin.from("notifications").delete().in("task_id", taskIds);
+      }
+
+      // Delete tasks
+      await supabaseAdmin.from("tasks").delete().eq("group_id", groupId);
+
+      // Stages: member_stage_scores → stage_weights → stages
+      if (stageIds.length > 0) {
+        await supabaseAdmin.from("member_stage_scores").delete().in("stage_id", stageIds);
+        await supabaseAdmin.from("stage_weights").delete().in("stage_id", stageIds);
+      }
+      await supabaseAdmin.from("stages").delete().eq("group_id", groupId);
+
+      // Meetings: attendance → messages → meetings
+      if (meetingIds.length > 0) {
+        await supabaseAdmin.from("meeting_attendance").delete().in("meeting_id", meetingIds);
+        await supabaseAdmin.from("meeting_messages").delete().in("meeting_id", meetingIds);
+      }
+      await supabaseAdmin.from("meetings").delete().eq("group_id", groupId);
+
+      // Other project-level data
+      await supabaseAdmin.from("member_final_scores").delete().eq("group_id", groupId);
+      await supabaseAdmin.from("pending_approvals").delete().eq("group_id", groupId);
+      await supabaseAdmin.from("project_invitations").delete().eq("group_id", groupId);
+      await supabaseAdmin.from("project_resources").delete().eq("group_id", groupId);
+      await supabaseAdmin.from("resource_folders").delete().eq("group_id", groupId);
+      await supabaseAdmin.from("project_messages").delete().eq("group_id", groupId);
+      await supabaseAdmin.from("project_pages").delete().eq("group_id", groupId);
+      await supabaseAdmin.from("activity_logs").delete().eq("group_id", groupId);
+      await supabaseAdmin.from("notifications").delete().eq("group_id", groupId);
+      await supabaseAdmin.from("feedbacks").delete().eq("group_id", groupId);
+      await supabaseAdmin.from("group_members").delete().eq("group_id", groupId);
+      await supabaseAdmin.from("hidden_projects").delete().eq("group_id", groupId);
+
+      // Finally delete the group itself
+      const { error: delErr } = await supabaseAdmin
+        .from("groups")
+        .delete()
+        .eq("id", groupId);
+
+      if (delErr) return err(delErr.message);
+
+      console.log(`[workspace-mgmt] Project ${groupId} deleted by ${callerId}`);
       return json({ success: true });
     }
 
