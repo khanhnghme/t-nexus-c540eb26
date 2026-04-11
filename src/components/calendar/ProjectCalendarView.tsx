@@ -42,6 +42,7 @@ export default function ProjectCalendarView({ groupId, projectSlug }: ProjectCal
 
   const handleDayClick = (date: Date) => {
     setSelectedDay(date);
+    setDayDetailOpen(true);
   };
 
   const handleEventClick = (event: CalendarEvent) => {
