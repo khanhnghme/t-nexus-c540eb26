@@ -1,36 +1,37 @@
 
 
-## Phase 3 — Slash Commands & Editor Customization: Giai đoạn 3/4 (UI Design & Build)
+## Phase 3 — Slash Commands & Editor Customization: Giai đoạn 4/4 (Final Polish & Testing)
 
-Giai đoạn 1-2 đã hoàn thành: CalloutBlock đã được định nghĩa và tích hợp vào editor, slash menu custom đã hoạt động. Giai đoạn 3 tập trung vào **styling và polish UI** cho editor.
+Giai đoạn 1-3 đã hoàn thành: CalloutBlock định nghĩa, tích hợp vào editor, styling CSS. Giai đoạn 4 tập trung vào **polish cuối cùng và đảm bảo chất lượng**.
 
 ### Thay đổi
 
-**1. `calloutBlock.tsx` — Nâng cấp styling**
-- Chuyển từ inline styles sang Tailwind CSS classes để nhất quán với dự án
-- Thêm dark mode support (hiện chỉ có light colors)
-- Cải thiện hover effect trên icon (tooltip hint "Click to change type")
-- Thêm transition animation khi chuyển callout type
+**1. `calloutBlock.tsx` — Fix `CalloutBlock` export**
+- Hiện tại `CalloutBlock` được gọi như function `CalloutBlock()` trong `NotionEditor.tsx` nhưng `createReactBlockSpec` trả về object, không phải function — cần verify và fix nếu sai
 
-**2. `slashMenuItems.ts` — Thêm icon cho menu items**
-- Thêm property `icon` cho mỗi slash menu item (sử dụng emoji hoặc Lucide icon name)
-- Giúp slash menu dễ nhận diện hơn khi user gõ `/`
+**2. `slashMenuItems.ts` — Loại bỏ items trùng với default**
+- Hiện tại custom items (Heading 1/2/3, Paragraph, Bullet List, Numbered List) trùng với `getDefaultReactSlashMenuItems` — gây duplicate trong slash menu
+- Chỉ giữ lại items thực sự custom: Callout, Code Block, Table, Image, Video
+- Hoặc loại bỏ hoàn toàn `getDefaultReactSlashMenuItems` và chỉ dùng custom list
 
-**3. CSS cho editor — Tạo `src/components/notion/notion-editor.css`**
-- Custom styles cho BlockNote editor container (padding, typography)
-- Style cho slash menu dropdown (border-radius, shadow, spacing)
-- Style cho callout block trong editor context
-- Responsive adjustments cho mobile view
+**3. `notion-editor.css` — Dark mode support**
+- Thêm dark mode overrides cho slash menu và callout block
+- Sử dụng `.dark` class hoặc `prefers-color-scheme`
+
+**4. i18n — Thêm translations cho slash menu**
+- Thêm text cho slash menu items vào `vi.ts` và `en.ts`
+- Titles: "Heading 1", "Bullet List", "Callout", etc.
+- Subtexts: "Large section heading", "Highlight important info", etc.
 
 ### Không thay đổi database
-### Không thay đổi logic (đã hoàn thành ở giai đoạn 1-2)
 
-### Files cần sửa/tạo
+### Files cần sửa
 
 | File | Thay đổi |
 |------|----------|
-| `src/components/notion/slash-menu/calloutBlock.tsx` | Upgrade styling, dark mode, transitions |
-| `src/components/notion/slash-menu/slashMenuItems.ts` | Thêm icons cho menu items |
-| `src/components/notion/notion-editor.css` | **Tạo mới** — Custom CSS cho editor |
-| `src/components/notion/NotionEditor.tsx` | Import CSS file mới |
+| `src/components/notion/slash-menu/calloutBlock.tsx` | Verify export pattern |
+| `src/components/notion/slash-menu/slashMenuItems.ts` | Remove duplicate items, chỉ giữ custom |
+| `src/components/notion/notion-editor.css` | Dark mode support |
+| `src/lib/i18n/vi.ts` | Thêm slash menu translations |
+| `src/lib/i18n/en.ts` | Thêm slash menu translations |
 
