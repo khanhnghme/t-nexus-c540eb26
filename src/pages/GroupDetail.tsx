@@ -656,38 +656,69 @@ export default function GroupDetail() {
           </div>
 
           <div className="px-4 md:px-6">
-            <TabsContent value="overview" className="mt-6">
-              <GroupDashboard
-                tasks={tasks}
-                members={members}
-                stages={stages}
-                createdBy={group.created_by}
-                groupName={group.name}
-                groupDescription={group.description}
-                imageUrl={group.image_url}
-                canEdit={isLeaderInGroup}
-                onEditInfo={() => setIsEditInfoOpen(true)}
-                courseInfo={{
-                  class_code: group.class_code,
-                  instructor_name: group.instructor_name,
-                  instructor_email: group.instructor_email,
-                  zalo_link: group.zalo_link,
-                  additional_info: group.additional_info,
-                  description: group.description,
-                }}
-              />
-              {/* Hidden GroupInfoCard - only shown as dialog when edit is triggered */}
-              {isLeaderInGroup && isEditInfoOpen && (
-                <GroupInfoCard group={group} canEdit={true} onUpdate={() => { fetchGroupData(); setIsEditInfoOpen(false); }} dialogOnly initialOpen onClose={() => setIsEditInfoOpen(false)} />
-              )}
-            </TabsContent>
+          {(group as any).project_mode === 'custom' ? (
+            <>
+              <TabsContent value="overview" className="mt-6">
+                <CustomProjectView groupId={group.id} isLeader={isLeaderInGroup} />
+              </TabsContent>
+            </>
+          ) : (
+            <>
+              <TabsContent value="overview" className="mt-6">
+                <GroupDashboard
+                  tasks={tasks}
+                  members={members}
+                  stages={stages}
+                  createdBy={group.created_by}
+                  groupName={group.name}
+                  groupDescription={group.description}
+                  imageUrl={group.image_url}
+                  canEdit={isLeaderInGroup}
+                  onEditInfo={() => setIsEditInfoOpen(true)}
+                  courseInfo={{
+                    class_code: group.class_code,
+                    instructor_name: group.instructor_name,
+                    instructor_email: group.instructor_email,
+                    zalo_link: group.zalo_link,
+                    additional_info: group.additional_info,
+                    description: group.description,
+                  }}
+                />
+                {isLeaderInGroup && isEditInfoOpen && (
+                  <GroupInfoCard group={group} canEdit={true} onUpdate={() => { fetchGroupData(); setIsEditInfoOpen(false); }} dialogOnly initialOpen onClose={() => setIsEditInfoOpen(false)} />
+                )}
+              </TabsContent>
 
-            <TabsContent value="tasks" className="mt-6">
-              <TaskListView stages={stages} tasks={tasks} members={members} isLeaderInGroup={isLeaderInGroup} groupId={group.id} groupSlug={group.slug} onRefresh={fetchGroupData} onEditTask={setEditingTask} onCreateTask={(stageId) => { setNewTaskStageId(stageId); setIsTaskDialogOpen(true); }} onEditStage={setEditingStage} onDeleteStage={setStageToDelete} onToggleStageHidden={handleToggleStageHidden} />
-            </TabsContent>
+              <TabsContent value="tasks" className="mt-6">
+                <TaskListView stages={stages} tasks={tasks} members={members} isLeaderInGroup={isLeaderInGroup} groupId={group.id} groupSlug={group.slug} onRefresh={fetchGroupData} onEditTask={setEditingTask} onCreateTask={(stageId) => { setNewTaskStageId(stageId); setIsTaskDialogOpen(true); }} onEditStage={setEditingStage} onDeleteStage={setStageToDelete} onToggleStageHidden={handleToggleStageHidden} />
+              </TabsContent>
 
-            <TabsContent value="meetings" className="mt-6">
-              <GroupMeetings
+              <TabsContent value="scores" className="mt-6">
+                <ProcessScores 
+                  groupId={group.id} 
+                  stages={stages} 
+                  members={members} 
+                  tasks={tasks} 
+                  isLeader={isLeaderInGroup}
+                  scoreFinalizedAt={(group as any).score_finalized_at}
+                  appealDeadlineHours={(group as any).appeal_deadline_hours ?? 48}
+                  onRefreshGroup={fetchGroupData}
+                />
+              </TabsContent>
+            </>
+          )}
+
+          {/* Shared tabs for both modes */}
+          <TabsContent value="meetings" className="mt-6">
+            <GroupMeetings
+              groupId={group.id}
+              groupName={group.name}
+              stages={stages}
+              members={members}
+              isLeader={isLeaderInGroup}
+              onRefreshTasks={fetchGroupData}
+            />
+          </TabsContent>
                 groupId={group.id}
                 groupName={group.name}
                 stages={stages}
