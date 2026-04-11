@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -7,8 +8,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Calendar, User, Trash2, Plus, ListChecks } from "lucide-react";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import type { TaskRow, TaskHandlers } from "./taskBlockTypes";
 import { statusConfig } from "./taskBlockTypes";
 
@@ -22,6 +30,22 @@ interface TaskListViewProps {
 }
 
 export function TaskListView({ tasks, editable, newTitle, setNewTitle, adding, handlers }: TaskListViewProps) {
+  const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
+  const [editingTitleValue, setEditingTitleValue] = useState("");
+
+  const startEditTitle = (task: TaskRow) => {
+    setEditingTitleId(task.id);
+    setEditingTitleValue(task.title);
+  };
+
+  const saveTitle = (taskId: string) => {
+    const trimmed = editingTitleValue.trim();
+    if (trimmed && trimmed !== tasks.find((t) => t.id === taskId)?.title) {
+      handlers.onUpdateTitle(taskId, trimmed);
+    }
+    setEditingTitleId(null);
+  };
+
   if (tasks.length === 0 && !editable) {
     return (
       <div className="flex flex-col items-center justify-center py-6 text-muted-foreground gap-2 bg-muted/30">
@@ -46,7 +70,26 @@ export function TaskListView({ tasks, editable, newTitle, setNewTitle, adding, h
                 key={task.id}
                 className="group flex items-center gap-3 px-3 py-2 text-sm hover:bg-muted/30 transition-colors"
               >
-                <span className="flex-1 truncate font-medium">{task.title}</span>
+                {editable && editingTitleId === task.id ? (
+                  <Input
+                    value={editingTitleValue}
+                    onChange={(e) => setEditingTitleValue(e.target.value)}
+                    onBlur={() => saveTitle(task.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") { e.preventDefault(); saveTitle(task.id); }
+                      if (e.key === "Escape") setEditingTitleId(null);
+                    }}
+                    autoFocus
+                    className="flex-1 h-7 text-sm border-none bg-transparent shadow-none focus-visible:ring-1 focus-visible:ring-primary/30 px-1"
+                  />
+                ) : (
+                  <span
+                    className={cn("flex-1 truncate font-medium", editable && "cursor-pointer hover:text-primary")}
+                    onClick={() => editable && startEditTitle(task)}
+                  >
+                    {task.title}
+                  </span>
+                )}
 
                 {editable ? (
                   <Select
@@ -77,11 +120,34 @@ export function TaskListView({ tasks, editable, newTitle, setNewTitle, adding, h
                     {assignees.length > 1 && ` +${assignees.length - 1}`}
                   </span>
                 )}
-                {task.deadline && (
-                  <span className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-                    <Calendar className="h-3 w-3" />
-                    {format(new Date(task.deadline), "dd/MM")}
-                  </span>
+
+                {editable ? (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground shrink-0 hover:text-primary transition-colors">
+                        <Calendar className="h-3 w-3" />
+                        {task.deadline ? format(new Date(task.deadline), "dd/MM") : "Hạn"}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={task.deadline ? new Date(task.deadline) : undefined}
+                        onSelect={(date) => {
+                          handlers.onUpdateDeadline(task.id, date ? date.toISOString() : null);
+                        }}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                ) : (
+                  task.deadline && (
+                    <span className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                      <Calendar className="h-3 w-3" />
+                      {format(new Date(task.deadline), "dd/MM")}
+                    </span>
+                  )
                 )}
 
                 {editable && (
