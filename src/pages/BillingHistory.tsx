@@ -205,7 +205,10 @@ export default function BillingHistory() {
                       const finalStatuses = ['completed', 'failed', 'cancelled', 'expired'];
                       if (finalStatuses.includes(row.status)) {
                         const code = row.raw?.order_code;
-                        if (code) navigate(`/checkout/summary/${code}`);
+                        if (code) {
+                          sessionStorage.setItem('checkout_from', 'billing');
+                          navigate(`/checkout/summary/${code}`);
+                        }
                       }
                     }}
                   >
