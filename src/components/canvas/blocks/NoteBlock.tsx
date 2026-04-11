@@ -144,7 +144,7 @@ export const NoteCalloutBlock = createReactBlockSpec(
                 </div>
               )}
             </span>
-            <div style={{ flex: 1, minWidth: 0 }} ref={props.contentRef} />
+            <div style={{ flex: 1, minWidth: 0, whiteSpace: "pre-wrap", minHeight: "1.5rem" }} ref={props.contentRef} />
           </div>
         </div>
       );
