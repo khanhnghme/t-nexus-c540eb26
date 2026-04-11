@@ -1,37 +1,43 @@
 
 
-## Phase 4 — Giai đoạn 2/4: Đổi tên page & Drag-drop sắp xếp thứ tự
+## Phase 4 — Giai doan 3/4: Page Icon/Emoji cho Sidebar
 
-### Mục tiêu
-Cho phép user đổi tên page trực tiếp từ sidebar và kéo thả để sắp xếp lại thứ tự pages.
+### Muc tieu
+Cho phep user chon emoji/icon cho moi page, hien thi trong sidebar thay vi icon FileText mac dinh. Giup phan biet nhanh cac trang.
 
-### Hành động cụ thể
+### Hien trang
+- DB `project_pages` da co column `icon` (nullable string) — service layer da ho tro `icon` trong create va update
+- Sidebar hien tai dung `FileText` icon co dinh cho moi page
+- Chua co UI de chon/thay doi icon
 
-**1. Cập nhật `src/components/canvas/CanvasSidebar.tsx`** — Inline rename
-- Double-click vào tên page chuyển sang input field inline (editable mode)
-- Enter hoặc blur để save, Escape để cancel
-- Gọi callback `onRenamePage(pageId, newTitle)` lên parent
-- Chỉ cho phép rename khi `editable === true`
+### Hanh dong cu the
 
-**2. Cập nhật `src/components/canvas/CanvasSidebar.tsx`** — Drag & drop reorder
-- Sử dụng `@dnd-kit/core` + `@dnd-kit/sortable` (hoặc thư viện tương tự đã có trong project)
-- Wrap danh sách pages trong `SortableContext`, mỗi page item là `useSortable`
-- Khi drop xong, gọi callback `onReorderPages(orderedIds)` lên parent
-- Hiện drag handle icon (GripVertical) khi hover, chỉ khi editable
+**1. Tao Emoji Picker component (`src/components/canvas/EmojiPicker.tsx`)**
+- Popover chua grid cac emoji pho bien (20-30 emoji thong dung: documents, folders, stars, flags, colors...)
+- Nhan prop `onSelect(emoji: string)` va `currentEmoji?: string`
+- Co option "Remove" de xoa icon (set ve null)
+- Khong dung thu vien ngoai, chi dung emoji Unicode + Popover co san
 
-**3. Cập nhật `src/components/canvas/CanvasPageView.tsx`** — Handle rename & reorder
-- Thêm handler `handleRenamePage`: gọi `useUpdatePage` với `{ title: newTitle }`
-- Thêm handler `handleReorderPages`: tính lại `display_order` cho từng page, gọi `useUpdatePage` cho mỗi page thay đổi thứ tự
-- Truyền 2 callbacks mới xuống `CanvasSidebar`
+**2. Cap nhat `src/components/canvas/CanvasSidebar.tsx`**
+- Thay `FileText` icon bang emoji tu `page.icon` neu co, giu `FileText` lam fallback
+- Khi editable: click vao icon/emoji mo EmojiPicker popover
+- Goi callback `onChangePageIcon(pageId, emoji | null)` khi chon
+- Them prop `onChangePageIcon` vao interface
 
-**4. Install dependency (nếu chưa có)**
-- Kiểm tra và cài `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities` nếu chưa có trong project
+**3. Cap nhat `src/components/canvas/CanvasPageView.tsx`**
+- Them handler `handleChangePageIcon`: goi `useUpdatePage` voi `{ icon: emoji }`
+- Truyen `onChangePageIcon` xuong CanvasSidebar
+- Them `icon` vao pages map truyen xuong sidebar
 
-### Files thay đổi
+### Khong lam trong giai doan nay
+- Page cover image (giai doan 4)
+- Custom icon upload (chi dung emoji Unicode)
 
-| File | Thay đổi |
+### Files thay doi
+
+| File | Thay doi |
 |------|----------|
-| `src/components/canvas/CanvasSidebar.tsx` | Inline rename + drag-drop reorder |
-| `src/components/canvas/CanvasPageView.tsx` | Thêm rename & reorder handlers |
-| `package.json` | Thêm `@dnd-kit/*` nếu chưa có |
+| `src/components/canvas/EmojiPicker.tsx` | **Moi** — Popover chon emoji |
+| `src/components/canvas/CanvasSidebar.tsx` | Hien thi emoji, tich hop EmojiPicker |
+| `src/components/canvas/CanvasPageView.tsx` | Them handler + truyen icon data xuong |
 
