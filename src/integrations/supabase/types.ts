@@ -2125,6 +2125,56 @@ export type Database = {
           },
         ]
       }
+      project_templates: {
+        Row: {
+          category: string
+          content: Json
+          created_at: string
+          created_by: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_system: boolean
+          name: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          category?: string
+          content?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_system?: boolean
+          name: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          category?: string
+          content?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_system?: boolean
+          name?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_templates_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       resource_folders: {
         Row: {
           created_at: string

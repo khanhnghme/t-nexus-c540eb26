@@ -2,6 +2,7 @@ import { useState, Suspense, lazy, useRef, useCallback, useEffect } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { Json } from "@/integrations/supabase/types";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +29,7 @@ import { toast } from "sonner";
 import type { Block } from "@blocknote/core";
 
 const CanvasEditor = lazy(() => import("@/components/canvas/CanvasEditor"));
+import TemplatePicker from "@/components/canvas/TemplatePicker";
 
 export default function CreateCustomProject() {
   const navigate = useNavigate();
@@ -41,9 +43,12 @@ export default function CreateCustomProject() {
     workspaceFromUrl || activeWorkspace?.id || ""
   );
   const [isCreating, setIsCreating] = useState(false);
+  const [templateContent, setTemplateContent] = useState<Json | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const editorContentRef = useRef<Block[]>([]);
   const idempotencyKeyRef = useRef(crypto.randomUUID());
   const createLockRef = useRef(false);
+  const editorKey = useRef(0);
 
   // Auto-select workspace if only one available
   useEffect(() => {
@@ -209,6 +214,17 @@ export default function CreateCustomProject() {
               Cancel
             </Button>
           </div>
+
+          <TemplatePicker
+            workspaceId={selectedWorkspaceId}
+            onSelect={(content, templateId) => {
+              setTemplateContent(content);
+              setSelectedTemplateId(templateId);
+              editorContentRef.current = [];
+              editorKey.current += 1;
+            }}
+            selectedTemplateId={selectedTemplateId}
+          />
         </div>
 
         <div className="border rounded-lg min-h-[500px] bg-background overflow-hidden">
@@ -221,6 +237,8 @@ export default function CreateCustomProject() {
             }
           >
             <CanvasEditor
+              key={editorKey.current}
+              initialContent={templateContent ? (templateContent as any) : undefined}
               editable={!isCreating}
               onChange={(content) => {
                 editorContentRef.current = content;

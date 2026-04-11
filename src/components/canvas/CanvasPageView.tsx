@@ -1,15 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProjectPages, useCreatePage, useDeletePage, useUpdatePage } from "@/hooks/useProjectPages";
 import CanvasEditor from "./CanvasEditor";
 import CanvasSidebar from "./CanvasSidebar";
-import { Loader2, FileText, RefreshCw, Plus, PanelLeft, Pencil, Eye } from "lucide-react";
+import { Loader2, FileText, RefreshCw, Plus, PanelLeft, Pencil, Eye, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { PartialBlock } from "@blocknote/core";
 import { useIsMobile } from "@/hooks/use-mobile";
+import type { Json } from "@/integrations/supabase/types";
+
+const SaveAsTemplateDialog = lazy(() => import("./SaveAsTemplateDialog"));
 
 interface CanvasPageViewProps {
   groupId: string;
@@ -29,6 +32,7 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
   const [activePageId, setActivePageId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isEditMode, setIsEditMode] = useState(editable);
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
 
   // Default sidebar closed on mobile
   useEffect(() => {
@@ -263,6 +267,22 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
               </TooltipContent>
             </Tooltip>
           )}
+          {editable && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1.5 text-xs shrink-0"
+                  onClick={() => setSaveTemplateOpen(true)}
+                >
+                  <Save className="h-3 w-3" />
+                  Template
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Lưu trang này làm template</TooltipContent>
+            </Tooltip>
+          )}
         </div>
         <CanvasEditor
           key={activePage.id}
@@ -278,6 +298,16 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
           onChangeCover={(coverUrl) => handleChangeCover(activePage.id, coverUrl)}
         />
       </div>
+      {saveTemplateOpen && (
+        <Suspense fallback={null}>
+          <SaveAsTemplateDialog
+            open={saveTemplateOpen}
+            onOpenChange={setSaveTemplateOpen}
+            content={activePage.content as Json}
+            defaultName={activePage.title}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
