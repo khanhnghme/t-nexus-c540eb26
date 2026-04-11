@@ -6,7 +6,7 @@ type AnyBlock = any;
 
 // ─── Markdown Export ───
 
-function blockToMarkdown(block: Block, depth = 0): string {
+function blockToMarkdown(block: AnyBlock, depth = 0): string {
   const indent = "  ".repeat(depth);
   const type = block.type;
   let text = "";
@@ -82,14 +82,14 @@ function blockToMarkdown(block: Block, depth = 0): string {
   }
 
   // Process children
-  const childrenMd = (block.children as Block[])
+  const childrenMd = (block.children as AnyBlock[])
     ?.map((child) => blockToMarkdown(child, depth + 1))
     .join("\n") ?? "";
 
   return [text, childrenMd].filter(Boolean).join("\n");
 }
 
-export function blocksToMarkdown(blocks: Block[], title?: string): string {
+export function blocksToMarkdown(blocks: AnyAnyBlock[], title?: string): string {
   const lines: string[] = [];
   if (title) {
     lines.push(`# ${title}`, "");
@@ -101,7 +101,7 @@ export function blocksToMarkdown(blocks: Block[], title?: string): string {
   return lines.join("\n");
 }
 
-export function downloadMarkdown(blocks: Block[], title = "Untitled") {
+export function downloadMarkdown(blocks: AnyAnyBlock[], title = "Untitled") {
   const md = blocksToMarkdown(blocks, title);
   const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -114,7 +114,7 @@ export function downloadMarkdown(blocks: Block[], title = "Untitled") {
 
 // ─── PDF Export ───
 
-function getInlineText(block: Block): string {
+function getInlineText(block: AnyBlock): string {
   return (block.content as any[])
     ?.map((c: any) => {
       if (typeof c === "string") return c;
@@ -125,7 +125,7 @@ function getInlineText(block: Block): string {
     .join("") ?? "";
 }
 
-export function downloadPdf(blocks: Block[], title = "Untitled") {
+export function downloadPdf(blocks: AnyAnyBlock[], title = "Untitled") {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
@@ -160,7 +160,7 @@ export function downloadPdf(blocks: Block[], title = "Untitled") {
   doc.line(margin, y, pageWidth - margin, y);
   y += 8;
 
-  const renderBlock = (block: Block, depth = 0) => {
+  const renderBlock = (block: AnyBlock, depth = 0) => {
     const text = getInlineText(block);
     const indent = depth * 6;
     const contentWidth = maxWidth - indent;
@@ -277,7 +277,7 @@ export function downloadPdf(blocks: Block[], title = "Untitled") {
     }
 
     // Render children
-    (block.children as Block[])?.forEach((child) => renderBlock(child, depth + 1));
+    (block.children as AnyBlock[])?.forEach((child) => renderBlock(child, depth + 1));
   };
 
   blocks.forEach((block) => renderBlock(block));
