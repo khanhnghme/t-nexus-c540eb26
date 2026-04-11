@@ -58,17 +58,18 @@ interface ExtendedGroup extends Group {
 }
 
 export default function GroupDetail() {
-  const { groupId, projectId, projectSlug, taskSlug, taskId: routeTaskId, pageSlug } = useParams<{ 
+  const { groupId, projectId, projectSlug, workspaceSlug, taskSlug, taskId: routeTaskId, pageSlug } = useParams<{ 
     groupId?: string; 
     projectId?: string; 
     projectSlug?: string;
+    workspaceSlug?: string;
     taskSlug?: string;
     taskId?: string;
     pageSlug?: string;
   }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  // Support all URL formats: /p/:projectSlug, /p/:projectId, /groups/:groupId
+  // Support all URL formats: /p/:workspaceSlug/:projectSlug, /p/:projectSlug, /groups/:groupId
   const routeId = projectSlug || projectId || groupId;
   const { user, isAdmin, profile } = useAuth();
   const { toast } = useToast();
@@ -77,6 +78,11 @@ export default function GroupDetail() {
   const gd = t.groupDetail;
   const tc = t.common;
   const { currentTab, setCurrentTab, goBack, goNext, canGoBack, canGoNext, isFirstTab, isLastTab } = useNavigation();
+
+  const { setProjectInfo, setProjectNavProps } = useDashboardLayoutContext();
+  
+  // Resolved workspace slug for URL generation
+  const [resolvedWsSlug, setResolvedWsSlug] = useState<string | null>(workspaceSlug || null);
 
   const { setProjectInfo, setProjectNavProps } = useDashboardLayoutContext();
   
@@ -196,14 +202,51 @@ export default function GroupDetail() {
         groupData = data;
       } else {
         // Lookup by semantic slug (primary method)
-        const { data } = await supabase.from('groups').select('*').eq('slug', routeId).single();
+        // If workspaceSlug is provided, filter by workspace to handle duplicates
+        let query = supabase.from('groups').select('*, workspaces!groups_workspace_id_fkey(slug)').eq('slug', routeId);
+        
+        if (workspaceSlug) {
+          // Join with workspaces to filter by workspace slug
+          const { data: ws } = await supabase.from('workspaces').select('id').eq('slug', workspaceSlug).maybeSingle();
+          if (ws) {
+            query = supabase.from('groups').select('*, workspaces!groups_workspace_id_fkey(slug)').eq('slug', routeId).eq('workspace_id', ws.id);
+          }
+        }
+        
+        const { data } = await query.maybeSingle();
         groupData = data;
+        
+        // Extract workspace slug from joined data
+        if (groupData && (groupData as any).workspaces?.slug) {
+          setResolvedWsSlug((groupData as any).workspaces.slug);
+        }
       }
       
       if (!groupData) {
         toast({ title: tc.error, description: gd.notFound, variant: 'destructive' });
         navigate('/groups');
         return;
+      }
+      
+      // If we don't have workspace slug yet, fetch it
+      if (!resolvedWsSlug && groupData.workspace_id) {
+        const { data: ws } = await supabase.from('workspaces').select('slug').eq('id', groupData.workspace_id).maybeSingle();
+        if (ws?.slug) setResolvedWsSlug(ws.slug);
+      }
+      
+      // Redirect to canonical URL with workspace slug if missing
+      if (!workspaceSlug && groupData.slug && resolvedWsSlug) {
+        const canonicalPath = `/p/${resolvedWsSlug}/${groupData.slug}`;
+        const currentBase = location.pathname;
+        if (!currentBase.startsWith(canonicalPath)) {
+          // Build full path with page/task slugs
+          let newPath = canonicalPath;
+          if (pageSlug) newPath += `/page/${pageSlug}`;
+          else if (taskSlug) newPath += `/t/${taskSlug}`;
+          const search = window.location.search;
+          navigate(newPath + search, { replace: true });
+          return;
+        }
       }
       
       setGroup(groupData as ExtendedGroup);
