@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import TaskListView from '@/components/TaskListView';
+import { TaskTable } from '@/components/notion/task-table';
 import GroupDashboard from '@/components/GroupDashboard';
 import GroupInfoCard from '@/components/GroupInfoCard';
 import MemberManagementCard from '@/components/MemberManagementCard';
@@ -29,7 +30,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Users, Loader2, ArrowLeft, Layers, Trash2, Calendar, Clock } from 'lucide-react';
+import { Plus, Users, Loader2, ArrowLeft, Layers, Trash2, Calendar, Clock, List, Table2 } from 'lucide-react';
 
 import AccessDenied from '@/components/AccessDenied';
 
