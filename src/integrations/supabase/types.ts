@@ -2010,6 +2010,7 @@ export type Database = {
           created_by: string
           display_order: number
           group_id: string
+          icon: string | null
           id: string
           title: string
           updated_at: string
@@ -2020,6 +2021,7 @@ export type Database = {
           created_by: string
           display_order?: number
           group_id: string
+          icon?: string | null
           id?: string
           title?: string
           updated_at?: string
@@ -2030,6 +2032,7 @@ export type Database = {
           created_by?: string
           display_order?: number
           group_id?: string
+          icon?: string | null
           id?: string
           title?: string
           updated_at?: string
