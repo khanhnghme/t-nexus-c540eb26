@@ -1,60 +1,65 @@
 
 
-## Phase 5 — Giai doan 3/4: Kanban View trong Task Block
+## Phase 5 — Giai doan 4/4: Inline Edit & Polish Task Block
 
 ### Muc tieu
-Them che do xem Kanban (cot theo status) cho task list block, cho phep user chuyen doi giua List view va Kanban view.
+Cho phep inline edit title va deadline truc tiep tren task card (ca List view va Kanban view). Cap nhat plan.md ghi nhan Phase 5 hoan tat.
 
 ### Hien trang
-- Stage 1/4: Custom block infrastructure + read-only
-- Stage 2/4: CRUD (status change, add, delete) — hoan thanh
-- TaskBlock hien tai chi co list view
+- Stage 1-3 hoan thanh: custom block, CRUD, kanban view, drag-drop
+- Hien tai title va deadline chi hien thi read-only, chua edit duoc inline
+- Assignee giu nguyen read-only (quan ly assignee thuoc task detail page)
 
 ### Hanh dong cu the
 
-**1. Cap nhat `src/components/canvas/blocks/TaskBlock.tsx`**
-- Them state `viewMode: "list" | "kanban"` (mac dinh `"list"`)
-- Them toggle button (List/Kanban icon) trong header bar cua block
-- Tach render logic thanh 2 component con:
-  - `TaskListView` — giu nguyen logic list hien tai
-  - `TaskKanbanView` — render 4 cot: TODO | IN_PROGRESS | DONE | VERIFIED
-- Kanban view:
-  - Moi cot co header voi ten status + so luong task
-  - Task card hien thi: title, assignee, deadline
-  - Khi editable: drag-drop task giua cac cot de thay doi status (dung HTML5 drag API don gian)
-  - Khi editable: nut xoa tren moi card (hover)
-  - Khi editable: input "Them task" o cuoi cot TODO
-- Chia se chung `handleStatusChange`, `handleAddTask`, `handleDelete` giua 2 view
+**1. Cap nhat `src/components/canvas/blocks/taskBlockTypes.ts`**
+- Them `onUpdateTitle` va `onUpdateDeadline` vao `TaskHandlers` interface
+
+**2. Cap nhat `src/components/canvas/blocks/TaskBlock.tsx`**
+- Them `handleUpdateTitle(taskId, newTitle)` — update title trong DB + optimistic update state
+- Them `handleUpdateDeadline(taskId, newDeadline)` — update deadline trong DB + optimistic update state
+- Truyen them 2 handler moi vao `TaskHandlers`
+
+**3. Cap nhat `src/components/canvas/blocks/TaskListView.tsx`**
+- Title: khi editable, click vao title chuyen sang input inline (controlled state per row). Blur hoac Enter de save
+- Deadline: khi editable, click vao deadline hien date picker (Popover + Calendar component). Chon ngay de save
+
+**4. Cap nhat `src/components/canvas/blocks/TaskKanbanView.tsx`**
+- Title: tuong tu list view — click de edit inline tren card
+- Deadline: click de chon ngay qua date picker popover
+
+**5. Cap nhat `.lovable/plan.md`**
+- Ghi nhan Phase 5 hoan tat (4/4 stages done)
 
 ### Chi tiet ky thuat
 
 ```text
-TaskListRenderer:
-  ┌─ Header: [ListChecks icon] "Danh sach cong viec" [count] [List|Kanban toggle]
-  │
-  ├─ viewMode === "list" → <TaskListView tasks={...} ... />
-  └─ viewMode === "kanban" → <TaskKanbanView tasks={...} ... />
+Inline Edit Flow:
 
-TaskKanbanView:
-  ┌──────────┬──────────┬──────────┬──────────┐
-  │  Can lam │ Dang lam │Hoan thanh│ Da duyet │
-  │  (TODO)  │(PROGRESS)│  (DONE)  │(VERIFIED)│
-  ├──────────┼──────────┼──────────┼──────────┤
-  │ [card]   │ [card]   │ [card]   │ [card]   │
-  │ [card]   │          │          │          │
-  │ [+add]   │          │          │          │
-  └──────────┴──────────┴──────────┴──────────┘
+  [Title] click → <Input value={title} autoFocus />
+    → onBlur / Enter → handleUpdateTitle(taskId, newTitle)
+    → Escape → cancel edit
 
-  Drag card tu cot A sang cot B → handleStatusChange(taskId, newStatus)
+  [Deadline] click → <Popover><Calendar /></Popover>
+    → onSelect → handleUpdateDeadline(taskId, date.toISOString())
+
+  Handler:
+    supabase.from("tasks").update({ title }).eq("id", taskId)
+    supabase.from("tasks").update({ deadline }).eq("id", taskId)
+    + optimistic setTasks(prev => prev.map(...))
 ```
 
 ### Khong lam trong giai doan nay
-- Inline edit title, deadline, assignee (giai doan 4)
-- External drag-drop library (dung HTML5 native)
+- Inline assignee edit (quan ly o task detail page)
+- Realtime sync giua nhieu user
 
 ### Files thay doi
 
 | File | Thay doi |
 |------|----------|
-| `src/components/canvas/blocks/TaskBlock.tsx` | Them Kanban view, view toggle, drag-drop |
+| `src/components/canvas/blocks/taskBlockTypes.ts` | Them onUpdateTitle, onUpdateDeadline vao TaskHandlers |
+| `src/components/canvas/blocks/TaskBlock.tsx` | Them 2 handler update title/deadline |
+| `src/components/canvas/blocks/TaskListView.tsx` | Inline edit title + date picker deadline |
+| `src/components/canvas/blocks/TaskKanbanView.tsx` | Inline edit title + date picker deadline |
+| `.lovable/plan.md` | Phase 5 hoan tat |
 
