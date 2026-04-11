@@ -58,18 +58,20 @@ interface ExtendedGroup extends Group {
 }
 
 export default function GroupDetail() {
-  const { groupId, projectId, projectSlug, taskSlug, taskId: routeTaskId, pageSlug, wsShortId } = useParams<{ 
+  const { groupId, projectId, projectSlug, taskSlug, taskId: routeTaskId, pageSlug, wsParam } = useParams<{ 
     groupId?: string; 
     projectId?: string; 
     projectSlug?: string;
     taskSlug?: string;
     taskId?: string;
     pageSlug?: string;
-    wsShortId?: string;
+    wsParam?: string;
   }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  // Support all URL formats: /pr/ws-:wsShortId/:projectSlug, /groups/:groupId (legacy)
+  // Extract wsShortId from wsParam (e.g., "ws-abc12345" → "abc12345")
+  const wsShortId = wsParam?.startsWith('ws-') ? wsParam.slice(3) : wsParam;
+  // Support all URL formats: /pr/:wsParam/:projectSlug, /groups/:groupId (legacy)
   const routeId = projectSlug || projectId || groupId;
   const { user, isAdmin, profile } = useAuth();
   const { toast } = useToast();
