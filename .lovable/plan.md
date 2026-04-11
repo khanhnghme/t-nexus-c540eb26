@@ -1,43 +1,46 @@
 
 
-## Phase 4 — Giai doan 3/4: Page Icon/Emoji cho Sidebar
+## Phase 4 — Giai đoạn 4/4: Polish & Hoàn thiện Multi-page Canvas
 
-### Muc tieu
-Cho phep user chon emoji/icon cho moi page, hien thi trong sidebar thay vi icon FileText mac dinh. Giup phan biet nhanh cac trang.
+### Mục tiêu
+Hoàn thiện Phase 4 bằng cách xử lý edge cases, cải thiện UX tổng thể cho sidebar + editor, và cập nhật plan.md ghi nhận Phase 4 hoàn tất.
 
-### Hien trang
-- DB `project_pages` da co column `icon` (nullable string) — service layer da ho tro `icon` trong create va update
-- Sidebar hien tai dung `FileText` icon co dinh cho moi page
-- Chua co UI de chon/thay doi icon
+### Hiện trạng
+- ✅ Sidebar danh sách pages (1/4)
+- ✅ Inline rename + drag-drop reorder (2/4)
+- ✅ Page icon/emoji (3/4)
+- Chưa có: responsive/mobile handling, empty state polish, sidebar collapse
 
-### Hanh dong cu the
+### Hành động cụ thể
 
-**1. Tao Emoji Picker component (`src/components/canvas/EmojiPicker.tsx`)**
-- Popover chua grid cac emoji pho bien (20-30 emoji thong dung: documents, folders, stars, flags, colors...)
-- Nhan prop `onSelect(emoji: string)` va `currentEmoji?: string`
-- Co option "Remove" de xoa icon (set ve null)
-- Khong dung thu vien ngoai, chi dung emoji Unicode + Popover co san
+**1. Cập nhật `src/components/canvas/CanvasSidebar.tsx`** — Responsive & UX polish
+- Thêm nút collapse/expand sidebar (toggle ẩn/hiện sidebar trên mobile hoặc khi cần thêm không gian editor)
+- Thu gọn sidebar width trên màn hình nhỏ hoặc ẩn hoàn toàn với toggle button
+- Tooltip cho các nút action (tạo, xóa) để UX rõ ràng hơn
 
-**2. Cap nhat `src/components/canvas/CanvasSidebar.tsx`**
-- Thay `FileText` icon bang emoji tu `page.icon` neu co, giu `FileText` lam fallback
-- Khi editable: click vao icon/emoji mo EmojiPicker popover
-- Goi callback `onChangePageIcon(pageId, emoji | null)` khi chon
-- Them prop `onChangePageIcon` vao interface
+**2. Cập nhật `src/components/canvas/CanvasPageView.tsx`** — Sidebar toggle state
+- Quản lý state `sidebarOpen` (mặc định true trên desktop, false trên mobile)
+- Truyền toggle props xuống sidebar
+- Hiện nút mở sidebar khi sidebar đang ẩn
 
-**3. Cap nhat `src/components/canvas/CanvasPageView.tsx`**
-- Them handler `handleChangePageIcon`: goi `useUpdatePage` voi `{ icon: emoji }`
-- Truyen `onChangePageIcon` xuong CanvasSidebar
-- Them `icon` vao pages map truyen xuong sidebar
+**3. Cập nhật `src/components/canvas/CanvasEditor.tsx`** — Hiển thị page title
+- Hiển thị tên page hiện tại phía trên editor (dạng breadcrumb nhẹ hoặc title bar)
+- Giúp user biết đang edit page nào khi sidebar bị ẩn
 
-### Khong lam trong giai doan nay
-- Page cover image (giai doan 4)
-- Custom icon upload (chi dung emoji Unicode)
+**4. Cập nhật `.lovable/plan.md`**
+- Ghi nhận Phase 4 hoàn tất
+- Tóm tắt output: sidebar multi-page, rename, drag-drop, emoji icon, responsive
 
-### Files thay doi
+### Không làm trong giai đoạn này
+- Page cover image (nếu cần sẽ là Phase riêng)
+- Realtime collaboration
 
-| File | Thay doi |
+### Files thay đổi
+
+| File | Thay đổi |
 |------|----------|
-| `src/components/canvas/EmojiPicker.tsx` | **Moi** — Popover chon emoji |
-| `src/components/canvas/CanvasSidebar.tsx` | Hien thi emoji, tich hop EmojiPicker |
-| `src/components/canvas/CanvasPageView.tsx` | Them handler + truyen icon data xuong |
+| `src/components/canvas/CanvasSidebar.tsx` | Collapse toggle, responsive, tooltip |
+| `src/components/canvas/CanvasPageView.tsx` | Sidebar toggle state, mobile handling |
+| `src/components/canvas/CanvasEditor.tsx` | Hiển thị page title phía trên editor |
+| `.lovable/plan.md` | Phase 4 hoàn tất |
 
