@@ -1,8 +1,18 @@
 import { BlockNoteEditor, filterSuggestionItems } from '@blocknote/core';
 
+type SlashMenuItem = {
+  key: string;
+  title: string;
+  onItemClick: () => void;
+  subtext?: string;
+  aliases?: string[];
+  group?: string;
+  badge?: string;
+};
+
 export function getCustomSlashMenuItems(
   editor: BlockNoteEditor<any, any, any>
-): DefaultSuggestionItem[] {
+): SlashMenuItem[] {
   return [
     // === Basic ===
     {
@@ -169,8 +179,8 @@ export function getCustomSlashMenuItems(
 }
 
 export function filterSlashMenuItems(
-  items: DefaultSuggestionItem[],
+  items: SlashMenuItem[],
   query: string
-): DefaultSuggestionItem[] {
+): SlashMenuItem[] {
   return filterSuggestionItems(items, query);
 }
