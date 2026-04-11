@@ -104,12 +104,15 @@ export default function CanvasEditor({
           {saveStatus.text}
         </div>
       )}
-      <div className="p-2">
+      <div className={`p-2 ${!editable ? "view-mode" : ""}`}>
         <BlockNoteView
           editor={editor}
           editable={editable}
           onChange={handleChange}
           theme={resolvedTheme === "dark" ? "dark" : "light"}
+          sideMenu={editable}
+          formattingToolbar={editable}
+          slashMenu={editable}
         />
       </div>
     </>
