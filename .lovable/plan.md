@@ -1,48 +1,20 @@
 
 
-## Phase 8 — Giai đoạn 3/4: Icon Picker UI cho NoteBlock
+## Phase 8 — Hoàn tất ✅
 
-### Mục tiêu
-Thêm UI cho phép user đổi icon của callout block — hiện tại icon chỉ dùng default "💡", chưa có cách thay đổi.
+### Block `/note` — Callout Block với Rich Text
 
-### Hiện trạng
-- Stage 1/4 hoàn thành: NoteBlock render với icon + color
-- Stage 2/4 hoàn thành: Color picker toolbar khi hover
-- Icon prop `icon` đã có sẵn trong propSchema nhưng chưa có UI đổi
+**Trạng thái**: Hoàn tất 4/4 giai đoạn
 
-### Hành động
+| Giai đoạn | Nội dung | Trạng thái |
+|-----------|----------|------------|
+| 1/4 | Tạo NoteBlock cơ bản với icon + color | ✅ |
+| 2/4 | Color Picker UI (hover toolbar) | ✅ |
+| 3/4 | Icon Picker UI (click dropdown) | ✅ |
+| 4/4 | Multi-line support + styling | ✅ |
 
-**Cập nhật `src/components/canvas/blocks/NoteBlock.tsx`**
-- Click vào icon → hiện popover/dropdown với 6 icon preset: 💡 ⚠️ 📌 ✅ ❌ ℹ️
-- Click icon trong dropdown → gọi `props.editor.updateBlock(props.block, { props: { icon: selectedIcon } })`
-- Icon đang active có highlight
-- Dropdown đóng sau khi chọn
-- Dùng inline styles nhất quán với color picker đã có
-
-### Chi tiết kỹ thuật
-
-```text
-Click icon:
-┌─ [🔵][🟡][🟢][🔴][🟣][⚪] ──────┐
-│ 💡 ← click here                   │
-│  ┌──────────────┐                  │
-│  │ 💡 ⚠️ 📌     │ ← icon picker   │
-│  │ ✅ ❌ ℹ️     │                  │
-│  └──────────────┘                  │
-│     Nội dung ghi chú...            │
-└────────────────────────────────────┘
-
-onClick icon: setShowIconPicker(true)
-onSelect: updateBlock → setShowIconPicker(false)
-```
-
-### Không làm
-- Nested blocks (giai đoạn 4)
-- Custom icon input (chỉ dùng preset)
-
-### Files thay đổi
-
-| File | Thay đổi |
-|------|----------|
-| `src/components/canvas/blocks/NoteBlock.tsx` | Thêm icon picker dropdown |
-
+### Tính năng
+- 6 preset colors với color picker toolbar khi hover
+- 6 preset icons với icon picker dropdown khi click
+- Multi-line support (white-space: pre-wrap)
+- Inline rich text content
