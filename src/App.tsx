@@ -191,6 +191,10 @@ function AppRoutes() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/groups" element={<Groups />} />
+          <Route path="/p/:workspaceSlug/:projectSlug" element={<GroupDetail />} />
+          <Route path="/p/:workspaceSlug/:projectSlug/page/:pageSlug" element={<GroupDetail />} />
+          <Route path="/p/:workspaceSlug/:projectSlug/t/:taskSlug" element={<GroupDetail />} />
+          <Route path="/p/:workspaceSlug/:projectSlug/t/:taskSlug/f/:fileIndex" element={<ProtectedRoute><FilePreview /></ProtectedRoute>} />
           <Route path="/p/:projectSlug" element={<GroupDetail />} />
           <Route path="/p/:projectSlug/page/:pageSlug" element={<GroupDetail />} />
           <Route path="/p/:projectSlug/t/:taskSlug" element={<GroupDetail />} />

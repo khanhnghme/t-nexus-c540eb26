@@ -17,10 +17,11 @@ interface TaskCardProps {
   task: Task & { task_assignments?: (TaskAssignment & { profiles?: Profile })[]; extended_deadline?: string };
   groupId: string;
   groupSlug?: string;
+  workspaceSlug?: string;
   showLink?: boolean;
 }
 
-export function TaskCard({ task, groupId, groupSlug, showLink = true }: TaskCardProps) {
+export function TaskCard({ task, groupId, groupSlug, workspaceSlug, showLink = true }: TaskCardProps) {
   // Handle extended deadline
   const hasExtension = !!(task as any).extended_deadline;
   const effectiveDeadline = hasExtension ? (task as any).extended_deadline : task.deadline;
@@ -168,7 +169,7 @@ export function TaskCard({ task, groupId, groupSlug, showLink = true }: TaskCard
 
   if (showLink) {
     // Use semantic URL with slugs if available
-    const projectPath = groupSlug ? `/p/${groupSlug}` : `/groups/${groupId}`;
+    const projectPath = groupSlug ? `/p/${workspaceSlug ? workspaceSlug + '/' : ''}${groupSlug}` : `/groups/${groupId}`;
     const taskPath = task.slug ? `${projectPath}/t/${task.slug}` : `${projectPath}?tab=tasks&task=${task.id}`;
     
     return (
