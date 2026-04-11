@@ -3370,6 +3370,27 @@ export const en = {
     tryAgain: 'Try Again',
     contactSupport: 'Contact Support',
   },
+
+  taskTable: {
+    title: 'Title',
+    status: 'Status',
+    assignees: 'Assignees',
+    deadline: 'Deadline',
+    stage: 'Stage',
+    submission: 'Submission',
+    fileAndLink: 'File & Link',
+    fileOnly: 'File',
+    linkOnly: 'Link',
+    showing: 'Showing',
+    of: 'of',
+    filteredFrom: 'filtered from',
+    clear: 'Clear',
+    noTasks: 'No tasks found.',
+    loadError: 'Failed to load tasks.',
+    searchPlaceholder: 'Search tasks...',
+    listView: 'List view',
+    tableView: 'Table view',
+  },
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
