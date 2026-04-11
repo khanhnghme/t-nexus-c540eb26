@@ -134,6 +134,14 @@ export default function AccountSettings() {
   const { locale, setLocale } = useLanguage();
   const isVi = locale === 'vi';
 
+  useEffect(() => {
+    if (window.location.hash === '#integrations') {
+      setTimeout(() => {
+        document.getElementById('integrations')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    }
+  }, []);
+
   return (
     <div className="max-w-3xl mx-auto py-2 px-1 space-y-6">
       {/* Page header */}
