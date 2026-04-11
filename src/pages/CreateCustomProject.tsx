@@ -69,6 +69,13 @@ export default function CreateCustomProject() {
     setIsCreating(true);
 
     try {
+      // Find workspace short_id for URL
+      const { data: wsData } = await supabase
+        .from("workspaces")
+        .select("short_id")
+        .eq("id", selectedWorkspaceId)
+        .single();
+
       const { data: newGroup, error: groupError } = await supabase
         .from("groups")
         .insert({
@@ -111,7 +118,9 @@ export default function CreateCustomProject() {
       });
 
       toast.success("Tạo project thành công!");
-      navigate(`/projects/${newGroup.id}`);
+      const wsShortId = wsData?.short_id || selectedWorkspaceId.substring(0, 8);
+      const projectSlug = newGroup.slug || newGroup.id;
+      navigate(getProjectUrl(wsShortId, projectSlug));
     } catch (error: any) {
       console.error("Create project error:", error);
       toast.error(error.message || "Không thể tạo project");
