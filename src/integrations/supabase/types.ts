@@ -714,6 +714,7 @@ export type Database = {
           expires_at: string
           id: string
           refresh_token: string
+          sync_locked_at: string | null
           updated_at: string
           user_id: string
         }
@@ -725,6 +726,7 @@ export type Database = {
           expires_at: string
           id?: string
           refresh_token: string
+          sync_locked_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -736,6 +738,7 @@ export type Database = {
           expires_at?: string
           id?: string
           refresh_token?: string
+          sync_locked_at?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1584,6 +1587,7 @@ export type Database = {
           description: string | null
           end_time: string | null
           id: string
+          source: string
           start_time: string
           title: string
           updated_at: string | null
@@ -1595,6 +1599,7 @@ export type Database = {
           description?: string | null
           end_time?: string | null
           id?: string
+          source?: string
           start_time: string
           title: string
           updated_at?: string | null
@@ -1606,6 +1611,7 @@ export type Database = {
           description?: string | null
           end_time?: string | null
           id?: string
+          source?: string
           start_time?: string
           title?: string
           updated_at?: string | null
