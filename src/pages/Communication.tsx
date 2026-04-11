@@ -614,8 +614,7 @@ export default function Communication() {
 
   const handleNavigateToTask = (taskId: string) => {
     const projectSlug = (selectedProject as any)?.slug || (selectedProject as any)?.short_id || selectedProject?.id;
-    const wsSlug = (selectedProject as any)?.workspace_slug || '';
-    navigate(`/p/${wsSlug ? wsSlug + '/' : ''}${projectSlug}?tab=tasks&task=${taskId}`);
+    navigate(`/p/${projectSlug}?tab=tasks&task=${taskId}`);
   };
 
   const getInitials = (name: string) => {

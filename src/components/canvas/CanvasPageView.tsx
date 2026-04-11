@@ -31,11 +31,10 @@ interface CanvasPageViewProps {
   groupId: string;
   editable?: boolean;
   projectSlug?: string;
-  workspaceSlug?: string;
   initialPageSlug?: string;
 }
 
-export default function CanvasPageView({ groupId, editable = false, projectSlug, workspaceSlug, initialPageSlug }: CanvasPageViewProps) {
+export default function CanvasPageView({ groupId, editable = false, projectSlug, initialPageSlug }: CanvasPageViewProps) {
   const { data: pages, isLoading, error, refetch } = useProjectPages(groupId);
   const { user, profile } = useAuth();
   const navigate = useNavigate();
@@ -78,8 +77,7 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
       const firstPage = pages[0];
       setActivePageId(firstPage.id);
       if (projectSlug && firstPage.slug && !initialPageSlug) {
-        const base = workspaceSlug ? `/p/${workspaceSlug}/${projectSlug}` : `/p/${projectSlug}`;
-        navigate(`${base}/page/${firstPage.slug}`, { replace: true });
+        navigate(`/p/${projectSlug}/page/${firstPage.slug}`, { replace: true });
       }
     }
   }, [pages, initialPageSlug]);
@@ -87,8 +85,7 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
   const navigateToPage = (page: { id: string; slug?: string | null }) => {
     setActivePageId(page.id);
     if (projectSlug && page.slug) {
-      const base = workspaceSlug ? `/p/${workspaceSlug}/${projectSlug}` : `/p/${projectSlug}`;
-      navigate(`${base}/page/${page.slug}`);
+      navigate(`/p/${projectSlug}/page/${page.slug}`);
     }
     if (isMobile) setSidebarOpen(false);
   };
@@ -120,8 +117,7 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
         display_order: maxOrder,
       });
       if (projectSlug && newPage.slug) {
-        const base = workspaceSlug ? `/p/${workspaceSlug}/${projectSlug}` : `/p/${projectSlug}`;
-        navigate(`${base}/page/${newPage.slug}`);
+        navigate(`/p/${projectSlug}/page/${newPage.slug}`);
       }
       setActivePageId(newPage.id);
       doLog("page_created", `Tạo trang "${newPage.title}"`, { page_id: newPage.id });
@@ -169,8 +165,7 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
     try {
       const result = await updatePage.mutateAsync({ pageId, updates: { title: newTitle } });
       if (projectSlug && result.slug && pageId === activePageId) {
-        const base = workspaceSlug ? `/p/${workspaceSlug}/${projectSlug}` : `/p/${projectSlug}`;
-        navigate(`${base}/page/${result.slug}`, { replace: true });
+        navigate(`/p/${projectSlug}/page/${result.slug}`, { replace: true });
       }
       doLog("page_renamed", `Đổi tên trang thành "${newTitle}"`, { page_id: pageId });
       toast.success("Đã đổi tên trang.");

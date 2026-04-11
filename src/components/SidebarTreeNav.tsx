@@ -125,8 +125,7 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
   };
 
   const hasActiveChild = (paths: string[]) => paths.some(p => isPathActive(p));
-  const wsSlug = activeWorkspace?.slug;
-  const projectPaths = projects.map(p => `/p/${wsSlug ? wsSlug + '/' : ''}${p.slug || p.id}`);
+  const projectPaths = projects.map(p => `/p/${p.slug || p.id}`);
 
   /* ─── Collapsed mode ─── */
   if (collapsed) {
@@ -230,7 +229,7 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
               </Link>
 
               {projects.map(p => {
-                const href = `/p/${wsSlug ? wsSlug + '/' : ''}${p.slug || p.id}`;
+                const href = `/p/${p.slug || p.id}`;
                 const active = location.pathname.startsWith(href);
                 return (
                   <Link
