@@ -67,6 +67,8 @@ import AdminLayout from "./components/layout/AdminLayout";
 import AdminBilling from "./pages/AdminBilling";
 import AdminUserBilling from "./pages/AdminUserBilling";
 
+const CreateCustomProject = React.lazy(() => import("./pages/CreateCustomProject"));
+
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
