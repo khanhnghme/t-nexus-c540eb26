@@ -1,99 +1,97 @@
 
 
-## Fix Duplicate Event khi Sync 2 chiều — Chia 2 giai đoạn
+## Phân tích nguyên nhân chính xác lỗi 429 sync_in_progress
 
-### Phân tích vấn đề hiện tại
+### Nguyên nhân gốc (3 vấn đề)
 
-1. **PULL tạo duplicate**: Khi PULL từ Google, chỉ check `allKnownGoogleIds` (in-memory Set). Nếu sync chạy nhiều lần hoặc có race condition, event có thể bị tạo lại.
-2. **Không có `source` column**: `personal_events` không phân biệt event tạo từ nội bộ vs kéo từ Google → dễ tạo loop sync.
-3. **Không có lock/debounce**: Nhiều request sync đồng thời có thể gây race condition.
-4. **PULL không update event đã tồn tại**: Chỉ skip hoặc create, không update khi Google event thay đổi.
+**1. Lock bị kẹt vĩnh viễn khi edge function timeout/crash**
 
----
+Khi edge function bị timeout (mặc định ~60s) hoặc crash giữa chừng, `releaseLock()` trong `finally` block không kịp chạy → `sync_locked_at` vẫn giữ giá trị cũ. Mặc dù có timeout 30s trong `acquireLock`, vấn đề nằm ở cách filter `.or()` xây dựng timestamp.
 
-## Giai đoạn 1: Database + Logic (Edge Function)
+**2. Filter `.or()` trong `acquireLock` có thể parse sai**
 
-### 1.1 Migration — Thêm cột `source` vào `personal_events`
-
-```sql
-ALTER TABLE public.personal_events 
-  ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'internal'
-  CHECK (source IN ('internal', 'external'));
-```
-
-### 1.2 Migration — Thêm cột `sync_lock` vào `google_calendar_tokens`
-
-```sql
-ALTER TABLE public.google_calendar_tokens 
-  ADD COLUMN IF NOT EXISTS sync_locked_at TIMESTAMPTZ DEFAULT NULL;
-```
-
-Dùng để ngăn 2 sync request chạy đồng thời (optimistic lock — check `sync_locked_at < now() - 30s`).
-
-### 1.3 Sửa Edge Function `google-calendar-sync/index.ts`
-
-**Lock mechanism** — Trước khi sync:
 ```typescript
-// Acquire lock: chỉ cho phép sync nếu không có lock hoặc lock đã hết hạn (30s)
-const { data: lockResult } = await supabase
-  .from("google_calendar_tokens")
-  .update({ sync_locked_at: new Date().toISOString() })
-  .eq("user_id", userId)
-  .or(`sync_locked_at.is.null,sync_locked_at.lt.${new Date(Date.now() - 30000).toISOString()}`)
-  .select("id");
-
-if (!lockResult?.length) {
-  return Response("Sync đang chạy, vui lòng đợi", 429);
-}
-// Release lock khi hoàn thành (finally block)
+.or(`sync_locked_at.is.null,sync_locked_at.lt.${lockExpiry}`)
 ```
 
-**PULL phase — Idempotent upsert thay vì insert**:
-- Trước khi tạo personal_event mới, check `calendar_sync_map` bằng `google_event_id` (unique constraint đã có).
-- Nếu đã tồn tại → UPDATE `personal_events` (title, description, start_time, end_time).
-- Nếu chưa tồn tại → INSERT với `source: 'external'`.
+Biến `lockExpiry` là ISO string (vd: `2026-04-11T07:30:00.000Z`). Khi nối trực tiếp vào chuỗi `.or()`, dấu chấm `.` trong `.000Z` có thể bị PostgREST hiểu nhầm là delimiter, khiến filter không match → lock không bao giờ hết hạn → 429 mãi mãi.
 
-**PUSH phase — Skip external events**:
-- Khi push personal events, thêm filter `.eq('source', 'internal')` để không đẩy lại event kéo từ Google.
+**3. Không có guard `isSyncing` phía client**
 
-**Release lock** trong `finally` block.
+```typescript
+const sync = useCallback(async () => {
+  if (!user?.id || !isConnected) return; // ← thiếu check isSyncing
+  setIsSyncing(true);
+```
 
-### Kết quả giai đoạn 1
-- Sync nhiều lần = idempotent (không duplicate)
-- Lock ngăn race condition
-- `source` column ngăn loop sync (internal ↔ external)
-- PULL update event đã tồn tại thay vì skip
+User click nhanh 2 lần → 2 request đồng thời → request thứ 2 luôn bị 429.
 
 ---
 
-## Giai đoạn 2: Nâng cấp UI
+### Kế hoạch fix
 
-### 2.1 Hiển thị source trên event
+**1. Sửa `acquireLock` — dùng DB function thay vì `.or()` filter**
 
-**`CalendarEvent` type** — Thêm `source?: 'internal' | 'external'`.
+Tạo một database function `acquire_sync_lock(p_user_id, p_lock_timeout_seconds)` để xử lý lock an toàn bằng SQL thuần, tránh vấn đề PostgREST filter parsing:
 
-**Query `personalEvents`** — Select thêm `source` column, map vào `CalendarEvent`.
+```sql
+CREATE OR REPLACE FUNCTION public.acquire_sync_lock(p_user_id UUID, p_timeout_seconds INT DEFAULT 30)
+RETURNS BOOLEAN
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE updated_count INT;
+BEGIN
+  UPDATE google_calendar_tokens 
+  SET sync_locked_at = now()
+  WHERE user_id = p_user_id 
+    AND (sync_locked_at IS NULL OR sync_locked_at < now() - (p_timeout_seconds || ' seconds')::interval)
+  ;
+  GET DIAGNOSTICS updated_count = ROW_COUNT;
+  RETURN updated_count > 0;
+END; $$;
+```
 
-**`EventDetailDialog`** — Hiển thị badge:
-- `internal` → Badge "Sự kiện nội bộ" (icon Calendar)
-- `external` → Badge "Google Calendar" (icon Google logo) với màu xanh Google (#4285f4)
+**2. Sửa `releaseLock` — dùng DB function tương tự**
 
-**`CalendarMonthView` / `CalendarWeekView` / `CalendarDayView`** — Hiển thị small Google icon bên cạnh title cho event external.
+```sql
+CREATE OR REPLACE FUNCTION public.release_sync_lock(p_user_id UUID)
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  UPDATE google_calendar_tokens SET sync_locked_at = NULL WHERE user_id = p_user_id;
+END; $$;
+```
 
-### 2.2 Hiển thị sync ID
+**3. Sửa edge function `google-calendar-sync/index.ts`**
 
-**`EventDetailDialog`** — Thêm dòng hiển thị Google Event ID (nếu có) dưới dạng text nhỏ mờ, giúp debug và xác nhận mapping.
+- Thay `acquireLock()` bằng `supabase.rpc('acquire_sync_lock', { p_user_id: userId })`
+- Thay `releaseLock()` bằng `supabase.rpc('release_sync_lock', { p_user_id: userId })`
+- Đảm bảo `releaseLock` vẫn nằm trong `finally` block
+
+**4. Sửa `useGoogleCalendarSync.ts` — thêm guard**
+
+```typescript
+const sync = useCallback(async () => {
+  if (!user?.id || !isConnected || isSyncing) return; // thêm isSyncing
+  setIsSyncing(true);
+  // ...
+}, [user?.id, isConnected, isSyncing]); // thêm isSyncing vào deps
+```
+
+**5. Clear lock hiện tại — migration SQL**
+
+```sql
+UPDATE public.google_calendar_tokens SET sync_locked_at = NULL;
+```
 
 ### Files cần sửa
 
-| Giai đoạn | File | Thay đổi |
-|-----------|------|----------|
-| 1 | Migration SQL | Thêm `source` column + `sync_locked_at` column |
-| 1 | `supabase/functions/google-calendar-sync/index.ts` | Lock, idempotent PULL, skip external PUSH |
-| 2 | `src/types/calendar.ts` | Thêm `source` vào `CalendarEvent` |
-| 2 | `src/pages/Calendar.tsx` | Map `source` từ query |
-| 2 | `src/components/calendar/EventDetailDialog.tsx` | Badge source + Google Event ID |
-| 2 | `src/components/calendar/CalendarMonthView.tsx` | Google icon cho external event |
-| 2 | `src/components/calendar/CalendarWeekView.tsx` | Google icon cho external event |
-| 2 | `src/components/calendar/CalendarDayView.tsx` | Google icon cho external event |
+| File | Thay đổi |
+|------|----------|
+| Migration SQL | Tạo 2 DB functions + clear stale locks |
+| `supabase/functions/google-calendar-sync/index.ts` | Dùng RPC thay `.or()` filter |
+| `src/hooks/useGoogleCalendarSync.ts` | Thêm `isSyncing` guard |
+
+### Kết quả sau fix
+- Lock không bao giờ bị kẹt vĩnh viễn (DB function xử lý timestamp so sánh chính xác)
+- Client ngăn double-click gửi 2 request
+- Lock tự hết hạn sau 30s dù edge function crash
 
