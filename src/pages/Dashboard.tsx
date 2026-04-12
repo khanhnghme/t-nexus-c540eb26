@@ -973,7 +973,7 @@ export default function Dashboard() {
                   <Link to="/workspace/new">
                     <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md transition-all" size="sm">
                       <Plus className="w-4 h-4" />
-                      <span className="hidden md:inline">{isVi ? 'Tạo Workspace' : 'Create Workspace'}</span>
+                      <span className="hidden md:inline">{locale === 'vi' ? 'Tạo Workspace' : 'Create Workspace'}</span>
                       <ArrowRight className="w-4 h-4" />
                     </Button>
                   </Link>
@@ -1006,15 +1006,15 @@ export default function Dashboard() {
                 {!activeWorkspace ? (
                   <>
                     <p className="text-lg font-medium mb-1">
-                      {isVi ? 'Bạn chưa có Workspace nào' : 'You don\'t have a Workspace yet'}
+                      {locale === 'vi' ? 'Bạn chưa có Workspace nào' : 'You don\'t have a Workspace yet'}
                     </p>
                     <p className="text-sm mb-4">
-                      {isVi ? 'Tạo Workspace trước để bắt đầu quản lý dự án' : 'Create a Workspace first to start managing projects'}
+                      {locale === 'vi' ? 'Tạo Workspace trước để bắt đầu quản lý dự án' : 'Create a Workspace first to start managing projects'}
                     </p>
                     <Link to="/workspace/new">
                       <Button className="gap-2" size="sm">
                         <Plus className="w-4 h-4" />
-                        {isVi ? 'Tạo Workspace ngay' : 'Create Workspace now'}
+                        {locale === 'vi' ? 'Tạo Workspace ngay' : 'Create Workspace now'}
                       </Button>
                     </Link>
                   </>
