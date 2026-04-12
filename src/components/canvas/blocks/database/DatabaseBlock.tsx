@@ -50,12 +50,6 @@ const DatabaseRenderer = memo(function DatabaseRenderer({
     addView, updateView, deleteView, setActiveView,
   } = db;
 
-  if (!isInitialized) {
-    return (
-      <DatabaseTemplatePicker onSelect={handleTemplateSelect} />
-    );
-  }
-
   const visiblePropertyIds = activeView
     ? activeView.visibleProperties
     : properties.map((p) => p.id);
