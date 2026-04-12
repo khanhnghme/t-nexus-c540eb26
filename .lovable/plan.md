@@ -1,35 +1,29 @@
 
 
-## Áp dụng giới hạn file size theo gói cước cho mọi upload tại /pa
+## Thêm chức năng chọn file từ Google Drive vào trang /pa (Canvas) — Cập nhật
 
-### Vấn đề
-- **CoverPicker**: Hardcode giới hạn 5MB, không theo gói cước
-- **CanvasEditor** (upload file trong editor): Chỉ dựa vào server trả lỗi 413, không kiểm tra trước ở client → UX chậm
-
-### Giải pháp
-Thêm `maxFileSizeMb` prop vào CoverPicker và kiểm tra client-side trong CanvasEditor, lấy từ `useAccountLimitsCheck().maxFileSizeMb`.
+### Thay đổi so với plan trước
+- **KHÔNG** hiển thị nút kết nối/ngắt kết nối Google Drive trên trang /pa
+- Nếu chưa kết nối Drive → hiện thông báo và **điều hướng sang trang Cài đặt** (`/settings#integrations`)
+- Nếu đã kết nối → mở Google Picker bình thường
 
 ### Thay đổi
 
 | File | Nội dung |
 |------|----------|
-| **`src/components/canvas/CoverPicker.tsx`** | Nhận prop `maxFileSizeMb`, dùng thay cho hardcode 5MB |
-| **`src/components/canvas/CanvasEditor.tsx`** | Gọi `useAccountLimitsCheck()`, truyền `maxFileSizeMb` xuống CoverPicker và check trước khi upload file trong editor |
-| **`src/components/canvas/PageHeader.tsx`** | Truyền `maxFileSizeMb` xuống CoverPicker |
-| **`src/components/canvas/PageCoverImage.tsx`** | Truyền `maxFileSizeMb` xuống CoverPicker |
+| **`src/components/canvas/CanvasPageView.tsx`** | Thêm nút Drive vào toolbar (chỉ khi `isEditMode`). Dùng `useGoogleDriveConnect` để kiểm tra trạng thái. Nếu chưa kết nối → `toast` thông báo + `navigate('/settings#integrations')`. Nếu đã kết nối → mở Picker, chèn file vào editor |
+| **`src/components/canvas/CanvasEditor.tsx`** | Expose method `insertDriveFiles` qua ref để chèn link block từ bên ngoài |
 
 ### Chi tiết
 
-**CoverPicker.tsx:**
-- Thêm prop `maxFileSizeMb?: number` (default 5)
-- Thay `MAX_FILE_SIZE = 5 * 1024 * 1024` bằng tính từ prop
-- Thông báo lỗi hiển thị đúng giới hạn: "File ảnh không được vượt quá {X}MB"
+**CanvasPageView.tsx — Nút Drive trên toolbar:**
+- Import `useGoogleDriveConnect`, `useGoogleDrivePicker`
+- Khi click nút Drive:
+  - Nếu `!isConnected` → `toast("Vui lòng kết nối Google Drive trong Cài đặt")` + `navigate('/settings#integrations')` → return
+  - Nếu `isConnected` → gọi `openPicker()`, khi chọn file xong → `editorRef.current?.insertDriveFiles(files)`
+- Không có UI kết nối/ngắt kết nối tại đây
 
-**CanvasEditor.tsx:**
-- Import `useAccountLimitsCheck`
-- Trong `uploadFile`, thêm check `file.size > maxFileSizeMb * 1024 * 1024` trước khi gọi R2
-- Truyền `maxFileSizeMb` xuống PageHeader và PageCoverImage
-
-**PageHeader.tsx & PageCoverImage.tsx:**
-- Nhận và truyền `maxFileSizeMb` xuống CoverPicker
+**CanvasEditor.tsx — insertDriveFiles:**
+- Thêm method `insertDriveFiles(files)` vào `CanvasEditorHandle`
+- Mỗi file → chèn 1 paragraph block chứa link: `📎 {file.title}` → `file.url`
 
