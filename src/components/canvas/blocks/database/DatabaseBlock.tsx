@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useDatabaseData } from "./useDatabaseData";
+import { ViewSwitcher } from "./ViewSwitcher";
+import { ViewToolbar } from "./ViewToolbar";
 import type { PropertyDef } from "./types";
 
 /* ── Inline Cell Renderer ─────────────────────────────────────── */
@@ -129,7 +131,11 @@ const DatabaseRenderer = memo(function DatabaseRenderer({
   updateProps,
 }: DatabaseRendererProps) {
   const db = useDatabaseData({ blockProps, updateProps });
-  const { properties, filteredItems, activeView, addItem, updateItem, deleteItem, addProperty } = db;
+  const {
+    properties, filteredItems, activeView, views, activeViewId,
+    addItem, updateItem, deleteItem, addProperty,
+    addView, updateView, deleteView, setActiveView,
+  } = db;
 
   const visibleProps = activeView
     ? properties.filter((p) => activeView.visibleProperties.includes(p.id))
@@ -144,16 +150,41 @@ const DatabaseRenderer = memo(function DatabaseRenderer({
     setNewRowName("");
   }, [properties, newRowName, addItem]);
 
+  const handleRenameView = useCallback(
+    (viewId: string, name: string) => updateView(viewId, { name }),
+    [updateView]
+  );
+
   return (
     <div className="border border-border rounded-lg overflow-hidden bg-card">
-      {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/30">
-        <Database className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium">Database</span>
-        <span className="text-xs text-muted-foreground ml-auto">
+      {/* Header with ViewSwitcher */}
+      <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border bg-muted/30">
+        <Database className="h-4 w-4 text-muted-foreground shrink-0" />
+        <ViewSwitcher
+          views={views}
+          activeViewId={activeViewId}
+          editable={editable}
+          onSwitchView={setActiveView}
+          onAddView={addView}
+          onDeleteView={deleteView}
+          onRenameView={handleRenameView}
+        />
+        <span className="text-xs text-muted-foreground ml-auto shrink-0">
           {filteredItems.length} items
         </span>
       </div>
+
+      {/* ViewToolbar */}
+      {activeView && (
+        <div className="px-3 py-1 border-b border-border bg-muted/10">
+          <ViewToolbar
+            view={activeView}
+            properties={properties}
+            editable={editable}
+            onUpdateView={updateView}
+          />
+        </div>
+      )}
 
       {/* Table */}
       <div className="overflow-x-auto">
