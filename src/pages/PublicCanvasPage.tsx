@@ -58,7 +58,6 @@ export default function PublicCanvasPage() {
         groupId={groupId}
         editable={false}
         projectSlug={projectSlug ?? undefined}
-        initialPageSlug={pageSlug}
       />
     </div>
   );
