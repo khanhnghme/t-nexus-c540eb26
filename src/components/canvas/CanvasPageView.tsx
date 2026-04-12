@@ -52,6 +52,28 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
 
+  // Google Drive integration
+  const { isConnected: isDriveConnected, getPickerToken } = useGoogleDriveConnect();
+
+  const handleDriveFilesPicked = useCallback((files: DriveFile[]) => {
+    editorRef.current?.insertDriveFiles(files);
+    toast.success(`Đã chèn ${files.length} file từ Google Drive`);
+  }, []);
+
+  const { openPicker, isLoading: isPickerLoading } = useGoogleDrivePicker({
+    getPickerToken,
+    onFilesPicked: handleDriveFilesPicked,
+  });
+
+  const handleDriveClick = useCallback(() => {
+    if (!isDriveConnected) {
+      toast.info("Vui lòng kết nối Google Drive trong Cài đặt");
+      navigate('/settings#integrations');
+      return;
+    }
+    openPicker();
+  }, [isDriveConnected, openPicker, navigate]);
+
   // Last editor indicator
   const { data: lastEditor } = usePageLastEditor(activePageId);
 
