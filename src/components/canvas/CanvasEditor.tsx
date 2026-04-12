@@ -190,7 +190,7 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
 
   const editorContent = (
     <>
-      <PageCoverImage coverUrl={coverUrl} editable={editable} onChangeCover={onChangeCover} />
+      <PageCoverImage coverUrl={coverUrl} editable={editable} groupId={groupId} onChangeCover={onChangeCover} />
       <div className="max-w-[720px] mx-auto w-full relative">
         {/* Save status — floating top-right */}
         {saveStatus && (
@@ -206,6 +206,7 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
           icon={icon}
           coverUrl={coverUrl}
           editable={editable}
+          groupId={groupId}
           onChangeTitle={onChangeTitle}
           onChangeIcon={onChangeIcon}
           onChangeCover={onChangeCover}
