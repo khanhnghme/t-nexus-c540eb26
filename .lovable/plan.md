@@ -1,55 +1,45 @@
 
 
-## Fix: Sidebar hiển thị project đã xóa + trùng lặp
+## Fix: Sidebar crash khi không có workspace mặc định + xử lý xóa hết workspace
 
-### Nguyên nhân
+### Nguyên nhân gốc
 
-1. **Project đã xóa vẫn hiển thị**: `useWorkspaceProjects` chỉ fetch 1 lần khi mount hoặc khi `activeWorkspace` thay đổi. Không có cơ chế refresh khi project bị xóa → sidebar giữ dữ liệu cũ.
-
-2. **Trùng lặp project**: Nếu user vừa là member vừa là creator của project có visibility `workspace_public`, project có thể xuất hiện trong cả `joinedProjects` lẫn logic khác. Cần đảm bảo deduplicate.
+1. **Runtime error**: `useWorkspaceBilling()` trả về object nhưng khi `activeWorkspace` là `null`, các component (`SidebarTreeNav`, `WorkspaceSwitcherCell`, `UpgradeBox`) vẫn destructure `{ ownerPlan }` từ kết quả → crash khi billing data chưa sẵn sàng
+2. **Không có workspace**: Khi user xóa hết workspace hoặc chưa có workspace nào, sidebar mất toàn bộ navigation
+3. **Không có cơ chế phục hồi**: User bị kẹt, không có hướng dẫn tạo workspace mới
 
 ### Giải pháp
 
-**File: `src/hooks/useWorkspaceProjects.ts`**
-
-1. Thêm Realtime subscription lắng nghe thay đổi trên bảng `groups` (INSERT, UPDATE, DELETE) filtered theo `workspace_id` → tự động re-fetch khi có thay đổi
-2. Thêm `refreshProjects()` function để gọi thủ công từ bên ngoài
-3. Thêm deduplicate bằng `Map` theo `id` trước khi set state
-4. Cleanup subscription khi unmount
-
-```ts
-// Realtime subscription
-const channel = supabase
-  .channel('workspace-projects')
-  .on('postgres_changes', {
-    event: '*',
-    schema: 'public',
-    table: 'groups',
-    filter: `workspace_id=eq.${activeWorkspace.id}`
-  }, () => fetchProjects())
-  .subscribe();
-
-// Deduplicate
-const allProjects = [...joinedProjects, ...publicProjects];
-const uniqueMap = new Map(allProjects.map(p => [p.id, p]));
-setProjects(Array.from(uniqueMap.values()));
-```
+**File: `src/hooks/useWorkspaceBilling.ts`**
+- Thêm null-safe guard: khi `activeWorkspace` null, trả về default object thay vì để các query chạy với undefined values
+- Đảm bảo hook LUÔN trả về object hợp lệ, không bao giờ null
 
 **File: `src/components/SidebarTreeNav.tsx`**
+- Thêm safe destructuring: `const billing = useWorkspaceBilling(); const ownerPlan = billing?.ownerPlan;`
+- Khi `!isAvailable || !activeWorkspace`: hiển thị phần "Personal" navigation (Calendar, Tips, Feedback, Account) + nút "Tạo Workspace" nổi bật thay vì để trống
 
-- Cập nhật import để lấy `refreshProjects` (nếu cần gọi thủ công)
+**File: `src/components/layout/DashboardLayout.tsx`**
+- `WorkspaceSwitcherCell`: thêm safe access cho `useWorkspaceBilling()` (line 106)
+- `UpgradeBox`: thêm safe access cho `useWorkspaceBilling()` (line 223)
+- Khi `workspaces.length === 0 && isAvailable`: hiển thị CTA "Tạo Workspace đầu tiên" trong workspace switcher thay vì chỉ logo
 
-### Database
+**File: `src/contexts/WorkspaceContext.tsx`**
+- Khi fetch xong mà `allWorkspaces.length === 0`: set `activeWorkspace = null`, `isAvailable = true` (workspace feature available, just empty)
+- Đảm bảo `isLoading` kết thúc đúng
 
-Cần enable realtime cho bảng `groups`:
-```sql
-ALTER PUBLICATION supabase_realtime ADD TABLE public.groups;
+### Chi tiết kỹ thuật
+
+```text
+User có workspace    → Sidebar bình thường (như hiện tại)
+User 0 workspace     → Sidebar hiện Personal nav + CTA "Tạo Workspace"  
+useWorkspaceBilling  → Luôn trả object, không crash
 ```
 
 ### Files thay đổi
 
 | File | Thay đổi |
 |------|----------|
-| `src/hooks/useWorkspaceProjects.ts` | Thêm realtime subscription + deduplicate + refreshProjects |
-| Migration | Enable realtime cho bảng groups |
+| `src/hooks/useWorkspaceBilling.ts` | Null-safe khi activeWorkspace = null |
+| `src/components/SidebarTreeNav.tsx` | Safe destructuring + empty workspace UI |
+| `src/components/layout/DashboardLayout.tsx` | Safe destructuring + empty workspace CTA |
 
