@@ -1,72 +1,76 @@
 
 
-## Phần 1: Types & Data Layer — Triển khai chi tiết
+## Phần 2: DatabaseBlock — BlockNote Integration
 
 ### Mục tiêu
-Tạo nền tảng dữ liệu cho Database Block: định nghĩa types, helper functions, filter/sort logic, và custom hook quản lý CRUD + view state. Chưa có UI — chỉ data layer.
+Đăng ký database block vào editor, thêm slash command `/database`, render placeholder UI với table view cơ bản. Sau phần này, user gõ `/database` sẽ tạo được block hoạt động.
 
-### File 1: `src/components/canvas/blocks/database/types.ts`
+### Hiện trạng
+- Phần 1 hoàn thành: `types.ts` + `useDatabaseData.ts` đã có
+- Pattern đăng ký block: `createReactBlockSpec` + thêm vào `schema` blockSpecs (xem TaskBlock, CalendarBlock)
+- Slash menu: dùng `combineByGroup` + `filterSuggestionItems`
 
-**Types:**
-- `PropertyType`: `'text' | 'number' | 'select' | 'multi_select' | 'date' | 'checkbox' | 'url' | 'person'`
-- `SelectOption`: `{ id, label, color }`
-- `PropertyDef`: `{ id, name, type, options? }`
-- `DatabaseItem`: `{ id, properties: Record<string, any>, createdAt }`
-- `ViewType`: `'table' | 'board' | 'calendar' | 'list'`
-- `FilterOperator`: `'equals' | 'not_equals' | 'contains' | 'not_contains' | 'is_empty' | 'is_not_empty' | 'gt' | 'lt'`
-- `FilterRule`: `{ propertyId, operator, value }`
-- `SortRule`: `{ propertyId, direction: 'asc' | 'desc' }`
-- `ViewConfig`: `{ id, name, type, filters, sorts, groupBy?, dateProperty?, visibleProperties }`
-
-**Helper functions:**
-- `generateId()` — `crypto.randomUUID()` hoặc fallback nanoid-style
-- `createDefaultProperties()` — trả về `[{ id, name: "Name", type: "text" }, { id, name: "Status", type: "select", options: [Todo/In Progress/Done] }]`
-- `createDefaultView(name, type)` — trả về ViewConfig mặc định với visibleProperties = all
-- `createDefaultDatabase()` — trả về `{ properties, items: [], views: [defaultTableView], activeViewId }`
-
-**Pure functions:**
-- `applyFilters(items, filters, properties)` — match từng item với filter rules theo type
-- `applySorts(items, sorts, properties)` — sort theo direction, xử lý text/number/date so sánh
-- `applyFiltersAndSorts(items, view, properties)` — combine cả 2
+### Chia 4 bước triển khai
 
 ---
 
-### File 2: `src/components/canvas/blocks/database/useDatabaseData.ts`
+**Bước 1: Tạo `DatabaseBlock.tsx` — Block spec + Renderer shell**
 
-**Input:** `{ blockProps, updateProps }` — props từ `createReactBlockSpec` render function
+File mới: `src/components/canvas/blocks/database/DatabaseBlock.tsx`
 
-**State parsing:**
-- `useMemo` parse `blockProps.properties` / `blockProps.items` / `blockProps.views` từ JSON string → typed objects
-- Fallback `createDefaultDatabase()` nếu props rỗng/malformed
+- `createReactBlockSpec` với type `"databaseView"`, propSchema:
+  - `properties`: `{ default: "" }` (JSON string)
+  - `items`: `{ default: "" }` (JSON string)
+  - `views`: `{ default: "" }` (JSON string)
+  - `activeViewId`: `{ default: "" }` (string)
+- Content: `"none"`
+- Render function:
+  - Wrap trong `<div contentEditable={false}>` (pattern giống TaskBlock)
+  - Gọi `useDatabaseData({ blockProps: props, updateProps })` để lấy data
+  - Render header: icon Database + title "Database"
+  - Render placeholder Table view inline (simple HTML table với properties làm header, items làm rows)
+  - Nút "+ New" để `addItem()`
+  - Chưa cần ViewSwitcher/ViewToolbar phức tạp (phần 3)
 
-**CRUD operations (memoized callbacks):**
-- `addItem(initialValues?)` — tạo DatabaseItem mới, serialize lại items JSON
-- `updateItem(itemId, propertyId, value)` — update 1 field
-- `deleteItem(itemId)` — remove item
-- `addProperty(name, type)` — thêm PropertyDef, tự thêm vào visibleProperties của tất cả views
-- `updateProperty(propertyId, updates)` — rename, đổi type
-- `deleteProperty(propertyId)` — xóa property + cleanup items + views
+**Bước 2: Đăng ký block vào schema**
 
-**View management:**
-- `addView(name, type)` — thêm ViewConfig mới
-- `updateView(viewId, updates)` — update filters/sorts/groupBy/visible
-- `deleteView(viewId)` — xóa (giữ tối thiểu 1 view)
-- `setActiveView(viewId)` — update activeViewId
+File sửa: `src/components/canvas/CanvasEditor.tsx`
 
-**Computed:**
-- `filteredItems` = `useMemo(() => applyFiltersAndSorts(items, activeView, properties), [items, activeView, properties])`
-- `activeView` = `views.find(v => v.id === activeViewId)`
+- Import: `import { DatabaseViewBlock } from "./blocks/database/DatabaseBlock";`
+- Thêm vào blockSpecs: `databaseView: DatabaseViewBlock(),`
 
-**Serialize pattern:** Mỗi mutation function → clone state → modify → `JSON.stringify()` → gọi `updateProps({ items: newJson })`. Throttle serialize 100ms để tránh quá nhiều block update khi typing nhanh.
+**Bước 3: Thêm slash menu item**
+
+File sửa: `src/components/canvas/CanvasEditor.tsx`
+
+- Trong `getSlashMenuItems`, tạo custom item:
+  ```
+  { title: "Database", group: "Advanced", icon: Database,
+    onItemClick: () => editor.insertBlocks([{ type: "databaseView" }], ...) }
+  ```
+- Thêm vào `combineByGroup(defaultItems, mcItems, customItems)`
+
+**Bước 4: Inline table view cơ bản trong DatabaseBlock**
+
+Trong `DatabaseBlock.tsx`:
+- Render `<table>` với:
+  - Header row = `properties.filter(p => activeView.visibleProperties.includes(p.id))`
+  - Body rows = `filteredItems` → cells editable (input cho text/number, checkbox cho checkbox)
+- `updateItem(itemId, propertyId, value)` khi blur/change
+- Nút "+" ở header cuối để `addProperty("New Column", "text")`
+- Style: dùng Tailwind classes, border, hover highlight
 
 ---
-
-### Không thay đổi file nào khác
-Phần 1 chỉ tạo 2 file mới, không sửa CanvasEditor hay đăng ký block. Việc đó thuộc Phần 2.
 
 ### Files thay đổi
+
 | File | Action |
 |------|--------|
-| `src/components/canvas/blocks/database/types.ts` | Mới |
-| `src/components/canvas/blocks/database/useDatabaseData.ts` | Mới |
+| `src/components/canvas/blocks/database/DatabaseBlock.tsx` | Mới |
+| `src/components/canvas/CanvasEditor.tsx` | Sửa — import + blockSpecs + slash menu |
+
+### Lưu ý kỹ thuật
+- `updateProps` trong `createReactBlockSpec` render function: dùng `props.block.props` để đọc, `editor.updateBlock(props.block, { props: updates })` để ghi — cần verify pattern từ BlockNote API
+- Inline table ở bước 4 là temporary — sẽ được thay thế bằng `TableView` component chính thức ở phần 4
+- Không cần cài thêm thư viện
 
