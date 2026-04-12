@@ -283,6 +283,25 @@ export function downloadPdf(blocks: AnyBlock[], title = "Untitled") {
         doc.setFont("helvetica", "normal");
         break;
       }
+      case "columnList": {
+        // Render columns sequentially in PDF
+        const cols = (block.children as AnyBlock[]) ?? [];
+        cols.forEach((col, idx) => {
+          if (idx > 0) {
+            // Separator between columns
+            doc.setDrawColor(200, 200, 200);
+            checkPageBreak(6);
+            doc.line(margin + indent, y, margin + indent + contentWidth, y);
+            y += 4;
+          }
+          (col.children as AnyBlock[])?.forEach((child) => renderBlock(child, depth));
+        });
+        break;
+      }
+      case "column": {
+        (block.children as AnyBlock[])?.forEach((child) => renderBlock(child, depth));
+        break;
+      }
       default: {
         if (text) {
           doc.setFontSize(10);
