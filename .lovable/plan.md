@@ -1,79 +1,72 @@
 
 
-## Phần 3: ViewSwitcher & ViewToolbar — Triển khai chi tiết
+## Phần 4: Table View & List View — Triển khai chi tiết
 
 ### Mục tiêu
-Thêm UI chuyển đổi giữa các views (tab bar) và toolbar lọc/sắp xếp/ẩn hiện cột. Tích hợp vào DatabaseBlock hiện tại.
+Tách inline table hiện tại trong `DatabaseBlock.tsx` thành component `TableView` riêng biệt, tạo `ListView` mới, và cập nhật `DatabaseBlock` để render view theo `activeView.type`.
 
 ### Hiện trạng
-- Phần 1 (types + useDatabaseData) — hoàn thành
-- Phần 2 (DatabaseBlock + slash menu) — hoàn thành, render inline table cơ bản
-- `useDatabaseData` đã có: `addView`, `updateView`, `deleteView`, `setActiveView`, `views`, `activeView`
-- UI components có sẵn: Tabs, Button, Popover, Select, Input, Badge, Checkbox
+- Phần 1-3 hoàn thành: types, hook, block, ViewSwitcher, ViewToolbar
+- `DatabaseBlock.tsx` đang render inline table trực tiếp (dòng 189-249)
+- `InlineCell` component đã có sẵn trong DatabaseBlock.tsx — cần tái sử dụng
 
 ### Chia 4 bước
 
 ---
 
-**Bước 1: Tạo `ViewSwitcher.tsx`**
+**Bước 1: Tách `InlineCell` thành shared component**
 
-File mới: `src/components/canvas/blocks/database/ViewSwitcher.tsx`
+File mới: `src/components/canvas/blocks/database/views/InlineCell.tsx`
 
-- Props: `views`, `activeViewId`, `editable`, `onSwitchView`, `onAddView`, `onDeleteView`, `onRenameView`
-- Render tab bar ngang:
-  - Mỗi view = 1 tab button với icon theo type (Table/Kanban/Calendar/List)
-  - Tab active có highlight
-  - Double-click tab → inline rename (input thay text)
-- Nút "+" cuối tabs:
-  - Click → dropdown 4 options: Table, Board, Calendar, List
-  - Chọn → gọi `onAddView(name, type)`
-- Context menu (right-click) trên tab:
-  - Rename, Delete (disable nếu chỉ còn 1 view)
-- Chỉ hiện nút "+", rename, delete khi `editable === true`
+- Di chuyển `InlineCell` + `CellProps` interface từ `DatabaseBlock.tsx` ra file riêng
+- Export để cả TableView và ListView cùng dùng
 
 ---
 
-**Bước 2: Tạo `ViewToolbar.tsx`**
+**Bước 2: Tạo `TableView.tsx`**
 
-File mới: `src/components/canvas/blocks/database/ViewToolbar.tsx`
+File mới: `src/components/canvas/blocks/database/views/TableView.tsx`
 
-- Props: `view`, `properties`, `editable`, `onUpdateView`
-- 3 nút trên toolbar (chỉ hiện khi editable):
-
-**Filter button:**
-- Click → Popover hiện danh sách filter rules
-- Mỗi rule: dropdown chọn property → dropdown operator → input value
-- Nút "Add filter" thêm rule mới
-- Nút x xóa rule
-- Operators thay đổi theo property type (text: contains/equals, number: gt/lt, checkbox: equals)
-
-**Sort button:**
-- Click → Popover hiện danh sách sort rules
-- Mỗi rule: dropdown property → toggle asc/desc
-- Nút "Add sort"
-
-**Fields button (toggle visible columns):**
-- Click → Popover checklist tất cả properties
-- Check/uncheck → update `visibleProperties` trong view config
-- Badge hiện số fields đang ẩn
+- Props: `items`, `properties`, `visiblePropertyIds`, `editable`, `onUpdateItem`, `onDeleteItem`, `onAddItem`, `onAddProperty`
+- Di chuyển logic table hiện tại từ DatabaseBlock (thead/tbody/add row) vào đây
+- Dùng `InlineCell` cho mỗi cell
+- Header có nút "+" để thêm column
+- Footer có input "New item..." + nút Add
+- Nút xóa row ở cuối mỗi hàng (chỉ khi editable)
 
 ---
 
-**Bước 3: Tích hợp vào DatabaseBlock.tsx**
+**Bước 3: Tạo `ListView.tsx`**
+
+File mới: `src/components/canvas/blocks/database/views/ListView.tsx`
+
+- Props: tương tự TableView
+- Compact list — mỗi item 1 dòng:
+  - Cột trái: property đầu tiên (Name) hiển thị text lớn hơn
+  - Cột phải: badges cho select properties, text nhỏ cho các fields khác
+- Click vào item → expand inline (show tất cả editable fields bên dưới)
+- State local: `expandedItemId`
+- Khi expanded: render mỗi property = label + InlineCell
+- Nút "+" ở cuối danh sách để thêm item mới
+
+---
+
+**Bước 4: Cập nhật `DatabaseBlock.tsx` — View routing**
 
 Sửa `DatabaseBlock.tsx`:
-- Import ViewSwitcher + ViewToolbar
-- Thêm ViewSwitcher vào header (thay thế text "Database" tĩnh)
-- Thêm ViewToolbar giữa header và table
-- Wire callbacks: `setActiveView`, `addView`, `deleteView`, `updateView`
 
----
-
-**Bước 4: Styling & polish**
-
-- ViewSwitcher tabs nhỏ gọn, giống Notion (text + icon nhỏ, không quá cao)
-- Toolbar compact, nút ghost với icon, badge count cho active filters/sorts
-- Responsive: toolbar wrap trên mobile
+- Xóa inline table code (dòng 189-266)
+- Xóa `InlineCell` component (dòng 13-113)
+- Import `TableView` và `ListView`
+- Thêm view router theo `activeView.type`:
+  ```
+  switch (activeView.type) {
+    case "table": return <TableView ... />
+    case "list": return <ListView ... />
+    default: return <TableView ... />  // fallback cho board/calendar (phần 5,6)
+  }
+  ```
+- Truyền props: `filteredItems`, `properties`, `activeView.visibleProperties`, `editable`, callbacks
 
 ---
 
@@ -81,7 +74,8 @@ Sửa `DatabaseBlock.tsx`:
 
 | File | Action |
 |------|--------|
-| `src/components/canvas/blocks/database/ViewSwitcher.tsx` | Mới |
-| `src/components/canvas/blocks/database/ViewToolbar.tsx` | Mới |
-| `src/components/canvas/blocks/database/DatabaseBlock.tsx` | Sửa — thêm ViewSwitcher + ViewToolbar vào renderer |
+| `src/components/canvas/blocks/database/views/InlineCell.tsx` | Mới — shared cell renderer |
+| `src/components/canvas/blocks/database/views/TableView.tsx` | Mới — full table view |
+| `src/components/canvas/blocks/database/views/ListView.tsx` | Mới — compact list view |
+| `src/components/canvas/blocks/database/DatabaseBlock.tsx` | Sửa — xóa inline code, thêm view routing |
 
