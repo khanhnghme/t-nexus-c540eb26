@@ -1,57 +1,55 @@
 
 
-## Phần 5: Board View (Kanban) — Triển khai chi tiết
+## Phần 6: Calendar View — Triển khai chi tiết
 
 ### Mục tiêu
-Tạo `BoardView` — Kanban board nhóm items theo property `select`, hỗ trợ drag & drop giữa các cột. Tích hợp vào view router trong `DatabaseBlock`.
+Tạo `CalendarView` — hiển thị items trên lưới tháng dựa theo `dateProperty`, hỗ trợ click ngày để tạo item, click item để edit. Tích hợp vào view router trong `DatabaseBlock`.
 
 ### Hiện trạng
-- Phần 1–4 hoàn thành: types, hook, block, ViewSwitcher, ViewToolbar, TableView, ListView
-- `DatabaseBlock.tsx` dòng 59–62: board view đang fallback về TableView
-- `ViewConfig` có `groupBy?: string` để chọn property nhóm
-- Project dùng `@hello-pangea/dnd` (không phải `@dnd-kit`) — sẽ dùng thư viện này
-- `useDatabaseData` đã có `updateItem(itemId, propertyId, value)` để cập nhật khi drop
+- Phần 1–5 hoàn thành: types, hook, block, ViewSwitcher, ViewToolbar, TableView, ListView, BoardView
+- `DatabaseBlock.tsx` dòng 75–77: calendar view đang fallback về TableView
+- `ViewConfig` có `dateProperty?: string` để chọn property date
+- Project có sẵn `react-day-picker` và component `Calendar` (src/components/ui/calendar.tsx)
+- `InlineCell` hỗ trợ edit date (input type="date")
 
 ### Chia 4 bước
 
 ---
 
-**Bước 1: Tạo `BoardView.tsx` — Layout cơ bản (không drag)**
+**Bước 1: Tạo `CalendarView.tsx` — Layout lưới tháng**
 
-File mới: `src/components/canvas/blocks/database/views/BoardView.tsx`
+File mới: `src/components/canvas/blocks/database/views/CalendarView.tsx`
 
-- Props: `items`, `properties`, `visiblePropertyIds`, `editable`, `onUpdateItem`, `onDeleteItem`, `onAddItem`, `groupByPropertyId`
-- Tìm `groupBy` property trong `properties` (phải là type `select`)
-- Nếu chưa có `groupBy` hoặc property không phải select → hiện thông báo "Select a property to group by" + dropdown chọn
-- Mỗi option của select property = 1 column + thêm 1 column "No Status" cho items không có giá trị
-- Mỗi column: header (tên option + badge count) + danh sách cards
-- Card: hiển thị Name property + secondary badges (giống ListView compact)
+- Props: `items`, `properties`, `visiblePropertyIds`, `editable`, `onUpdateItem`, `onDeleteItem`, `onAddItem`, `datePropertyId?: string`, `onSetDateProperty?: (id: string) => void`
+- Nếu chưa có `datePropertyId` hoặc property không phải type `date` → hiện dropdown chọn (tương tự BoardView khi chưa có groupBy)
+- State: `currentMonth` (Date), điều hướng tháng trước/sau
+- Render lưới 7 cột (Mon–Sun) x 5–6 hàng, mỗi ô = 1 ngày
+- Items được nhóm theo ngày dựa trên `dateProperty` value
 
-**Bước 2: Thêm drag & drop với `@hello-pangea/dnd`**
+**Bước 2: Hiển thị items trên calendar + click tạo mới**
 
-Trong `BoardView.tsx`:
-- Wrap toàn bộ board trong `<DragDropContext onDragEnd={handleDragEnd}>`
-- Mỗi column = `<Droppable droppableId={optionId}>`
-- Mỗi card = `<Draggable draggableId={itemId}>`
-- `handleDragEnd`: lấy `destination.droppableId` (= option id mới) → gọi `onUpdateItem(itemId, groupByPropertyId, newOptionId)`
-- Chỉ enable drag khi `editable === true`
+- Mỗi ô ngày: hiện tối đa 2–3 item pills (tên ngắn gọn, badge màu)
+- Nếu nhiều hơn → hiện "+N more"
+- Click vào ô ngày trống (khi editable) → gọi `onAddItem({ [datePropertyId]: dateString })`
+- Items pill hiện tên từ property đầu tiên (Name)
 
-**Bước 3: Thêm inline add card trong mỗi column**
+**Bước 3: Click item → popup edit**
 
-- Cuối mỗi column: input "+" để tạo item mới
-- Khi submit → `onAddItem({ [namePropertyId]: value, [groupByPropertyId]: columnOptionId })`
-- Auto-gán giá trị select property = option của column đó
+- Click vào item pill → mở Popover/Dialog nhỏ
+- Trong popup: render tất cả properties dùng `InlineCell` (tái sử dụng từ shared)
+- Nút Delete item trong popup
+- Đóng popup khi click ngoài
 
 **Bước 4: Tích hợp vào DatabaseBlock.tsx**
 
 Sửa `DatabaseBlock.tsx`:
-- Import `BoardView`
-- Trong view router, thay fallback case `"board"`:
+- Import `CalendarView`
+- Trong view router, thay case `"calendar"`:
   ```
-  case "board":
-    return <BoardView {...commonProps} groupByPropertyId={activeView?.groupBy} onSetGroupBy={...} />
+  case "calendar":
+    return <CalendarView {...commonProps} datePropertyId={activeView?.dateProperty} onSetDateProperty={handleSetDateProperty} />
   ```
-- Thêm callback `onSetGroupBy` → gọi `updateView(viewId, { groupBy: propertyId })`
+- Thêm callback `handleSetDateProperty` → gọi `updateView(viewId, { dateProperty: propertyId })`
 
 ---
 
@@ -59,11 +57,11 @@ Sửa `DatabaseBlock.tsx`:
 
 | File | Action |
 |------|--------|
-| `src/components/canvas/blocks/database/views/BoardView.tsx` | Mới — Kanban board với drag & drop |
-| `src/components/canvas/blocks/database/DatabaseBlock.tsx` | Sửa — thêm BoardView vào view router |
+| `src/components/canvas/blocks/database/views/CalendarView.tsx` | Mới — Calendar month grid view |
+| `src/components/canvas/blocks/database/DatabaseBlock.tsx` | Sửa — thêm CalendarView vào view router |
 
 ### Lưu ý kỹ thuật
-- Dùng `@hello-pangea/dnd` đã có sẵn trong project (không cần cài thêm)
-- `groupBy` lưu trong `ViewConfig` — khi tạo Board view mới, mặc định `groupBy` = property select đầu tiên tìm được
-- Column "No Status" cho items có giá trị `null`/`undefined` ở groupBy property
+- Tự build month grid thuần (div grid 7 cột) thay vì dùng `react-day-picker` DayPicker component — vì cần custom render nội dung trong mỗi ô ngày (pills), DayPicker không hỗ trợ tốt
+- `dateProperty` lưu trong `ViewConfig` — khi tạo Calendar view mới, mặc định tìm property type `date` đầu tiên
+- Format date: ISO string `YYYY-MM-DD` để so sánh ngày
 
