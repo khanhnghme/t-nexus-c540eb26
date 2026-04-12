@@ -1,58 +1,55 @@
 
 
-## Fix: Cải thiện kiểm tra giới hạn upload trong Canvas Page
+## Fix: Sidebar hiển thị project đã xóa + trùng lặp
 
-### Hiện trạng
-- ✅ Server-side (edge function `r2-storage`): Đã kiểm tra `max_file_size_mb` theo plan → trả 413 nếu vượt
-- ❌ Client-side (`CanvasEditor.tsx`): Không parse lỗi 413, không hiển thị thông báo cụ thể
-- ❌ Không kiểm tra read-only guard trước khi upload
-- ❌ Không kiểm tra tổng storage quota trước upload
+### Nguyên nhân
 
-### Thay đổi
+1. **Project đã xóa vẫn hiển thị**: `useWorkspaceProjects` chỉ fetch 1 lần khi mount hoặc khi `activeWorkspace` thay đổi. Không có cơ chế refresh khi project bị xóa → sidebar giữ dữ liệu cũ.
 
-**File: `src/components/canvas/CanvasEditor.tsx`**
+2. **Trùng lặp project**: Nếu user vừa là member vừa là creator của project có visibility `workspace_public`, project có thể xuất hiện trong cả `joinedProjects` lẫn logic khác. Cần đảm bảo deduplicate.
 
-1. Import `useReadOnlyGuard` và `useAccountLimitsCheck`
-2. Trong `uploadFile`:
-   - Kiểm tra `isReadOnly` → chặn ngay + toast cảnh báo
-   - Gọi `r2Storage.from().upload()` như cũ
-   - Parse response error: nếu message chứa "File quá lớn" hoặc HTTP 413 → hiển thị toast chi tiết với thông tin giới hạn plan thay vì lỗi chung
-3. Cập nhật `r2Storage.ts` upload method để trả thêm HTTP status code trong error object, giúp client phân biệt 413 vs lỗi khác
+### Giải pháp
 
-**File: `src/lib/r2Storage.ts`**
+**File: `src/hooks/useWorkspaceProjects.ts`**
 
-Sửa hàm `upload()`:
+1. Thêm Realtime subscription lắng nghe thay đổi trên bảng `groups` (INSERT, UPDATE, DELETE) filtered theo `workspace_id` → tự động re-fetch khi có thay đổi
+2. Thêm `refreshProjects()` function để gọi thủ công từ bên ngoài
+3. Thêm deduplicate bằng `Map` theo `id` trước khi set state
+4. Cleanup subscription khi unmount
+
 ```ts
-if (!response.ok) {
-  return { 
-    data: null, 
-    error: { message: result.error || 'Upload failed', status: response.status } 
-  };
-}
+// Realtime subscription
+const channel = supabase
+  .channel('workspace-projects')
+  .on('postgres_changes', {
+    event: '*',
+    schema: 'public',
+    table: 'groups',
+    filter: `workspace_id=eq.${activeWorkspace.id}`
+  }, () => fetchProjects())
+  .subscribe();
+
+// Deduplicate
+const allProjects = [...joinedProjects, ...publicProjects];
+const uniqueMap = new Map(allProjects.map(p => [p.id, p]));
+setProjects(Array.from(uniqueMap.values()));
 ```
 
-**File: `src/components/canvas/CanvasEditor.tsx`**
+**File: `src/components/SidebarTreeNav.tsx`**
 
-Sửa hàm `uploadFile`:
-```ts
-// Check read-only before upload
-if (isReadOnly) {
-  toast.error(isVi ? 'Tài khoản chỉ đọc...' : 'Read-only account...');
-  throw new Error('Read-only');
-}
+- Cập nhật import để lấy `refreshProjects` (nếu cần gọi thủ công)
 
-const { data, error } = await r2Storage.from("project-resources").upload(r2Path, file, {...});
-if (error) {
-  // Show detailed plan limit message if available
-  toast.error(error.message);
-  throw new Error(error.message);
-}
+### Database
+
+Cần enable realtime cho bảng `groups`:
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE public.groups;
 ```
 
 ### Files thay đổi
 
 | File | Thay đổi |
 |------|----------|
-| `src/lib/r2Storage.ts` | Trả thêm `status` trong error object |
-| `src/components/canvas/CanvasEditor.tsx` | Thêm read-only guard + parse lỗi 413 chi tiết |
+| `src/hooks/useWorkspaceProjects.ts` | Thêm realtime subscription + deduplicate + refreshProjects |
+| Migration | Enable realtime cho bảng groups |
 
