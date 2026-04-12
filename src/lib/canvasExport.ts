@@ -58,6 +58,19 @@ function blockToMarkdown(block: AnyBlock, depth = 0): string {
       }
       break;
     }
+    // Column blocks
+    case "columnList": {
+      const cols = (block.children as AnyBlock[]) ?? [];
+      return cols.map((col) => {
+        const children = (col.children as AnyBlock[]) ?? [];
+        return children.map((child) => blockToMarkdown(child, depth)).join("\n");
+      }).join("\n\n---\n\n");
+    }
+    case "column": {
+      return (block.children as AnyBlock[])
+        ?.map((child) => blockToMarkdown(child, depth))
+        .join("\n") ?? "";
+    }
     // Custom blocks
     case "taskList":
       text = `> 📋 **Task Block** _(interactive block — not exportable to markdown)_`;
