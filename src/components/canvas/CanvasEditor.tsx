@@ -223,7 +223,42 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
     }
   }, [editor, pageId]);
 
-  useColumnControls(editorContainerRef, editable && !isReadOnly, handleAddColumn);
+  const handleRemoveColumn = useCallback((columnListEl: HTMLElement, columnIndex: number) => {
+    const blockOuter = columnListEl.closest("[data-node-type='blockOuter']") as HTMLElement | null;
+    if (!blockOuter) return;
+    const blockId = blockOuter.getAttribute("data-id");
+    if (!blockId) return;
+
+    try {
+      const block = editor.getBlock(blockId);
+      if (!block || block.type !== "columnList") return;
+      const columns = block.children ?? [];
+      if (columns.length <= 2 || columnIndex >= columns.length) return;
+
+      const colToRemove = columns[columnIndex];
+      if (!colToRemove) return;
+
+      editor.removeBlocks([colToRemove]);
+
+      // If only 1 column remains after removal, unwrap it
+      const updatedBlock = editor.getBlock(blockId);
+      if (updatedBlock && updatedBlock.children?.length === 1) {
+        const singleCol = updatedBlock.children[0];
+        const innerBlocks = singleCol.children ?? [];
+        if (innerBlocks.length > 0) {
+          editor.insertBlocks(innerBlocks as any, updatedBlock, "after");
+        }
+        editor.removeBlocks([updatedBlock]);
+      }
+
+      const doc = editor.document as any[];
+      if (pageId) setCurrentContent(JSON.stringify(doc));
+    } catch (e) {
+      console.warn("[CanvasEditor] Failed to remove column:", e);
+    }
+  }, [editor, pageId]);
+
+  useColumnControls(editorContainerRef, editable && !isReadOnly, handleAddColumn, handleRemoveColumn);
 
 
   const handleSave = useCallback(
