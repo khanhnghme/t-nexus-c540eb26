@@ -2,7 +2,8 @@ import "@blocknote/core/fonts/inter.css";
 import { useCreateBlockNote, SuggestionMenuController, getDefaultReactSlashMenuItems } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/shadcn";
 import { useTheme } from "next-themes";
-import { BlockNoteSchema, defaultBlockSpecs, filterSuggestionItems, combineByGroup, defaultBlockNoteLocales } from "@blocknote/core";
+import { BlockNoteSchema, defaultBlockSpecs, filterSuggestionItems, combineByGroup } from "@blocknote/core";
+import { en as bnEnLocale } from "@blocknote/core/locales";
 import type { Block, PartialBlock } from "@blocknote/core";
 import { withMultiColumn, multiColumnDropCursor, getMultiColumnSlashMenuItems, locales as multiColumnLocales } from "@blocknote/xl-multi-column";
 import { useCallback, useImperativeHandle, useMemo, useState, forwardRef } from "react";
@@ -168,7 +169,7 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
     initialContent: safeInitialContent as any,
     uploadFile,
     dropCursor: multiColumnDropCursor,
-    dictionary: { ...defaultBlockNoteLocales.en, multi_column: mcLocale } as any,
+    dictionary: { ...bnEnLocale, multi_column: mcLocale } as any,
   });
 
   const handleSave = useCallback(
