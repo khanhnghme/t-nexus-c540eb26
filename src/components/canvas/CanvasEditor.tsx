@@ -4,6 +4,7 @@ import { BlockNoteView } from "@blocknote/shadcn";
 import { useTheme } from "next-themes";
 import { BlockNoteSchema, defaultBlockSpecs } from "@blocknote/core";
 import type { Block, PartialBlock } from "@blocknote/core";
+import { withMultiColumn, multiColumnDropCursor } from "@blocknote/xl-multi-column";
 import { useCallback, useImperativeHandle, useMemo, useState, forwardRef } from "react";
 import { useAutosave } from "@/hooks/useAutosave";
 import type { DriveFile } from "@/hooks/useGoogleDrivePicker";
@@ -25,7 +26,7 @@ import { TaskBlockProvider } from "./blocks/TaskBlockContext";
 import PageCoverImage from "./PageCoverImage";
 import PageHeader from "./PageHeader";
 
-const schema = BlockNoteSchema.create({
+const schema = withMultiColumn(BlockNoteSchema.create({
   blockSpecs: {
     ...defaultBlockSpecs,
     taskList: TaskListBlock(),
@@ -34,7 +35,7 @@ const schema = BlockNoteSchema.create({
     noteCallout: NoteCalloutBlock(),
     toggleBlock: ToggleBlock(),
   },
-});
+}));
 
 export interface CanvasEditorHandle {
   forceSave: () => void;
@@ -153,6 +154,7 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
     schema,
     initialContent: safeInitialContent as any,
     uploadFile,
+    dropCursor: multiColumnDropCursor,
   });
 
   const handleSave = useCallback(

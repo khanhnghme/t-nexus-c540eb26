@@ -8,6 +8,7 @@
         "@blocknote/core": "^0.47.3",
         "@blocknote/react": "^0.47.3",
         "@blocknote/shadcn": "^0.47.3",
+        "@blocknote/xl-multi-column": "^0.47.3",
         "@hello-pangea/dnd": "^18.0.1",
         "@hookform/resolvers": "^3.10.0",
         "@lovable.dev/cloud-auth-js": "^1.1.1",
@@ -104,6 +105,8 @@
     "@blocknote/react": ["@blocknote/react@0.47.3", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@blocknote/react/-/react-0.47.3.tgz", { "dependencies": { "@blocknote/core": "0.47.3", "@emoji-mart/data": "^1.2.1", "@floating-ui/react": "^0.27.18", "@floating-ui/utils": "^0.2.10", "@tanstack/react-store": "0.7.7", "@tiptap/core": "^3.13.0", "@tiptap/pm": "^3.13.0", "@tiptap/react": "^3.13.0", "@types/use-sync-external-store": "1.5.0", "emoji-mart": "^5.6.0", "fast-deep-equal": "^3.1.3", "lodash.merge": "^4.6.2", "react-icons": "^5.5.0", "use-sync-external-store": "1.6.0" }, "peerDependencies": { "react": "^18.0 || ^19.0 || >= 19.0.0-rc", "react-dom": "^18.0 || ^19.0 || >= 19.0.0-rc" } }, "sha512-aWDgfnf/ufgqYfXtIy8QepfrgdVaC5DfU/BAWbazb/O5ucEFfCr6lK0SUVvswK1CkxL/KBpHpdAd+uT+rfgkmg=="],
 
     "@blocknote/shadcn": ["@blocknote/shadcn@0.47.3", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@blocknote/shadcn/-/shadcn-0.47.3.tgz", { "dependencies": { "@blocknote/core": "0.47.3", "@blocknote/react": "0.47.3", "@radix-ui/react-avatar": "^1.1.10", "@radix-ui/react-dropdown-menu": "^2.1.16", "@radix-ui/react-label": "^2.1.7", "@radix-ui/react-popover": "^1.1.15", "@radix-ui/react-select": "^2.2.6", "@radix-ui/react-slot": "^1.2.3", "@radix-ui/react-tabs": "^1.1.13", "@radix-ui/react-toggle": "^1.1.10", "@radix-ui/react-tooltip": "^1.2.8", "autoprefixer": "^10.4.21", "class-variance-authority": "^0.7.1", "clsx": "^2.1.1", "lucide-react": "^0.525.0", "react-hook-form": "^7.65.0", "tailwind-merge": "^2.6.0" }, "peerDependencies": { "react": "^18.0 || ^19.0 || >= 19.0.0-rc", "react-dom": "^18.0 || ^19.0 || >= 19.0.0-rc", "tailwindcss": "^4.1.12" } }, "sha512-UEJxaKVJwtd8NQVjpjjxAIcKcUxusRmh6OZ3ssZmXRkFusex/g+WO+PteSC/xHNLdT1C4gJpPi135vtwK7JFLw=="],
+
+    "@blocknote/xl-multi-column": ["@blocknote/xl-multi-column@0.47.3", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@blocknote/xl-multi-column/-/xl-multi-column-0.47.3.tgz", { "dependencies": { "@blocknote/core": "0.47.3", "@blocknote/react": "0.47.3", "@tiptap/core": "^3.13.0", "prosemirror-model": "^1.25.4", "prosemirror-state": "^1.4.4", "prosemirror-tables": "^1.8.3", "prosemirror-transform": "^1.10.5", "prosemirror-view": "^1.41.4", "react-icons": "^5.5.0" }, "peerDependencies": { "react": "^18.0 || ^19.0 || >= 19.0.0-rc", "react-dom": "^18.0 || ^19.0 || >= 19.0.0-rc" } }, "sha512-gK0dOXJFvwVQi3Esee0vNbk+DsSxDub0BKLDwdUBDyfk+OkS6I82MUSAmEyvCiJG0G9Vo+hSaCMduX0YdgzYAQ=="],
 
     "@emoji-mart/data": ["@emoji-mart/data@1.2.1", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@emoji-mart/data/-/data-1.2.1.tgz", {}, "sha512-no2pQMWiBy6gpBEiqGeU77/bFejDqUTRY7KX+0+iur13op3bqUsXdnwoZs6Xb1zbv0gAj5VvS1PWoUUckSr5Dw=="],
 
