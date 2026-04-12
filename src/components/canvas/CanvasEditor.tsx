@@ -37,6 +37,7 @@ const schema = withMultiColumn(BlockNoteSchema.create({
     calendarView: CalendarBlock(),
     noteCallout: NoteCalloutBlock(),
     toggleBlock: ToggleBlock(),
+    databaseView: DatabaseViewBlock(),
   },
 }));
 
