@@ -129,7 +129,6 @@ serve(async (req: Request) => {
         description: body.description || null,
         logo_url: body.logo_url || null,
         owner_id: callerId,
-        plan: "free",
         max_projects: limits?.max_projects_per_workspace ?? 5,
         max_members: limits?.max_members_per_workspace ?? 5,
         max_storage_mb: limits?.max_storage_mb ?? 500,
