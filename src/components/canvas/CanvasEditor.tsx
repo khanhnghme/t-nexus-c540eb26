@@ -224,6 +224,17 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
     }
   }, [editor, onChange, pageId]);
 
+  const getSlashMenuItems = useMemo(() => {
+    return async (query: string) =>
+      filterSuggestionItems(
+        combineByGroup(
+          getDefaultReactSlashMenuItems(editor),
+          getMultiColumnSlashMenuItems(editor)
+        ),
+        query
+      );
+  }, [editor]);
+
   const saveStatus = useMemo(() => {
     if (!pageId) return null;
     if (isSaving) return { icon: Loader2, text: "Đang lưu...", spin: true, className: "text-muted-foreground" };
