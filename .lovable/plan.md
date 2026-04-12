@@ -1,39 +1,45 @@
 
 
-## Fix: Custom project "not found" — Auth race condition
+## Fix: URL `/pa/` dùng project slug thay vì page slug
 
-### Nguyên nhân gốc
-
-`GroupDetail.tsx` line 181:
-```typescript
-useEffect(() => { if (routeId || pageSlug) fetchGroupData(); }, [routeId, pageSlug]);
-```
-
-`fetchGroupData` chạy ngay khi component mount mà KHÔNG đợi `user` sẵn sàng. Khi auth session chưa load xong, `auth.uid()` trong RLS là `null` → query `groups` trả empty → hiện toast "Project not found" → redirect về `/groups`.
-
-Lỗi này ảnh hưởng tất cả project private (cả basic lẫn custom), nhưng custom project dễ bị hơn vì thường mới tạo xong → navigate thẳng vào.
+### Vấn đề hiện tại
+URL trang canvas là `/pa/ws-{wsShortId}/{pageSlug}` — hiển thị tên trang thay vì tên dự án, gây nhầm lẫn.
 
 ### Giải pháp
+Đổi format thành `/pa/ws-{wsShortId}/{projectSlug}` — chỉ chứa tên dự án. Việc chọn trang nào sẽ do `CanvasPageView` xử lý nội bộ (mặc định trang đầu tiên).
 
-**File: `src/pages/GroupDetail.tsx`**
+### Thay đổi
 
-1. Thêm `user` vào dependency array của `useEffect` tại line 181
-2. Guard `fetchGroupData` — chỉ chạy khi `user` đã có giá trị
-3. Khi `user` là null (auth đang load), giữ trạng thái loading thay vì query ngay
+| File | Nội dung |
+|------|----------|
+| **`src/App.tsx`** | Đổi route `/pa/:wsParam/:pageSlug` → `/pa/:wsParam/:projectSlug` |
+| **`src/lib/urlUtils.ts`** | Cập nhật `getPageUrl(wsShortId, projectSlug)` → `/pa/ws-${wsShortId}/${projectSlug}` |
+| **`src/pages/GroupDetail.tsx`** | Khi route `/pa/`, dùng `projectSlug` param để resolve group (query `groups` by slug thay vì query `project_pages`). Bỏ truyền `initialPageSlug` |
+| **`src/components/canvas/CanvasPageView.tsx`** | Xóa tất cả navigate cập nhật URL khi chuyển trang — giữ URL cố định là `/pa/ws-{wsShortId}/{projectSlug}`. Bỏ prop `initialPageSlug` |
+| **`src/components/LegacyRedirects.tsx`** | `LegacyPageRedirect` redirect sang `/pa/ws-{wsShortId}/{projectSlug}` (dùng project slug thay vì page slug) |
 
-```typescript
-// Before
-useEffect(() => { if (routeId || pageSlug) fetchGroupData(); }, [routeId, pageSlug]);
+### Chi tiết kỹ thuật
 
-// After  
-useEffect(() => { 
-  if ((routeId || pageSlug) && user) fetchGroupData(); 
-}, [routeId, pageSlug, user]);
+**Route (App.tsx):**
+```
+/pa/:wsParam/:projectSlug    →  <GroupDetail />
 ```
 
-### Files thay đổi
+**URL helper (urlUtils.ts):**
+```typescript
+export function getPageUrl(wsShortId: string, projectSlug: string): string {
+  return `/pa/ws-${wsShortId}/${projectSlug}`;
+}
+```
 
-| File | Thay đổi |
-|------|----------|
-| `src/pages/GroupDetail.tsx` | Thêm guard `user` trong useEffect + dependency array |
+**GroupDetail — resolve group từ projectSlug khi route `/pa/`:**
+```typescript
+// Thay vì query project_pages by pageSlug, query groups by slug trực tiếp
+const { data } = await supabase.from('groups').select('*').eq('slug', projectSlug).single();
+```
+
+**CanvasPageView — bỏ navigate khi chuyển trang:**
+- Khi chọn trang khác trong sidebar: chỉ `setActivePageId`, không `navigate`
+- Khi tạo trang mới: chỉ `setActivePageId`, không `navigate`
+- Khi đổi tên trang: không `navigate`
 
