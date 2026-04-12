@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
-import { useWorkspaceProjects } from '@/hooks/useWorkspaceProjects';
+import { useWorkspaceProjects, WorkspaceProject } from '@/hooks/useWorkspaceProjects';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useWorkspaceBilling, formatPlanName } from '@/hooks/useWorkspaceBilling';
 import { cn } from '@/lib/utils';
@@ -126,7 +126,12 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
   };
 
   const hasActiveChild = (paths: string[]) => paths.some(p => isPathActive(p));
-  const projectPaths = projects.map(p => activeWorkspace?.short_id ? `/pr/ws-${activeWorkspace.short_id}/${p.slug || p.id}` : `/p/${p.slug || p.id}`);
+  const getProjectHref = (p: WorkspaceProject) => {
+    if (!activeWorkspace?.short_id) return `/p/${p.slug || p.id}`;
+    const prefix = p.project_mode === 'custom' ? '/pa' : '/pr';
+    return `${prefix}/ws-${activeWorkspace.short_id}/${p.slug || p.id}`;
+  };
+  const projectPaths = projects.map(p => getProjectHref(p));
 
   /* ─── Collapsed mode ─── */
   if (collapsed) {
@@ -230,7 +235,7 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
               </Link>
 
               {projects.map(p => {
-                const href = activeWorkspace?.short_id ? `/pr/ws-${activeWorkspace.short_id}/${p.slug || p.id}` : `/p/${p.slug || p.id}`;
+                const href = getProjectHref(p);
                 const active = location.pathname.startsWith(href);
                 return (
                   <Link
