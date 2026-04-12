@@ -344,6 +344,24 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
             </span>
           )}
 
+          {/* Google Drive — only in edit mode */}
+          {isEditMode && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  onClick={handleDriveClick}
+                  disabled={isPickerLoading}
+                >
+                  {isPickerLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <HardDrive className="h-3.5 w-3.5" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Chọn file từ Google Drive</TooltipContent>
+            </Tooltip>
+          )}
+
           {/* Edit/View toggle — icon only */}
           {editable && (
             <Tooltip>
