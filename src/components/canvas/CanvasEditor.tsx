@@ -38,6 +38,7 @@ const schema = BlockNoteSchema.create({
 
 export interface CanvasEditorHandle {
   forceSave: () => void;
+  insertDriveFiles: (files: DriveFile[]) => void;
 }
 
 interface CanvasEditorProps {
