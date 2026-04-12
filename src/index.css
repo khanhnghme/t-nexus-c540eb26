@@ -2255,6 +2255,31 @@ html.no-animations [data-state="active"][role="tabpanel"] {
   }
 }
 
+/* Tablet breakpoint — tighter gap, smaller min-width */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .bn-column-list {
+    gap: 10px;
+  }
+  .bn-column {
+    min-width: 100px;
+  }
+}
+
+/* High contrast mode support */
+@media (forced-colors: active) {
+  .bn-column {
+    border-left-color: CanvasText;
+  }
+  .bn-column-list {
+    outline-color: CanvasText;
+  }
+}
+
+/* Screen reader hint for column groups */
+.bn-column-list[role="group"] {
+  position: relative;
+}
+
 /* View-mode: no hover effects */
 .view-mode .bn-column-list:hover {
   outline-color: transparent;

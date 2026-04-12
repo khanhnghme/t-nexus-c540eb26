@@ -293,38 +293,78 @@ export function downloadPdf(blocks: AnyBlock[], title = "Untitled") {
         break;
       }
       case "columnList": {
-        // Render columns sequentially in PDF
+        // Render columns side-by-side in PDF
         const cols = ((block.children as AnyBlock[]) ?? []).filter(
           (col) => (col.children as AnyBlock[])?.length > 0
         );
         if (cols.length <= 1) {
-          // Single or empty — render as normal blocks
           (cols[0]?.children as AnyBlock[])?.forEach((child) => renderBlock(child, depth));
           return;
         }
+
+        const colCount = cols.length;
+        const colGap = 6;
+        const totalGap = colGap * (colCount - 1);
+        const colWidth = (contentWidth - totalGap) / colCount;
+
+        // Save starting Y, render each column, track max Y
+        const startY = y;
+        let maxY = y;
+
         cols.forEach((col, idx) => {
-          // Column label
-          doc.setFontSize(9);
-          doc.setFont("helvetica", "bold");
-          doc.setTextColor(128, 128, 128);
-          checkPageBreak(8);
-          doc.text(`Cột ${idx + 1}:`, margin + indent, y);
-          y += 5;
-          doc.setTextColor(0, 0, 0);
-          doc.setFont("helvetica", "normal");
+          y = startY;
+          const colX = margin + indent + idx * (colWidth + colGap);
 
-          (col.children as AnyBlock[])?.forEach((child) => renderBlock(child, depth));
-
-          if (idx < cols.length - 1) {
-            // Dashed separator between columns
+          // Draw separator line between columns
+          if (idx > 0) {
+            const sepX = colX - colGap / 2;
             doc.setDrawColor(200, 200, 200);
-            checkPageBreak(6);
-            doc.setLineDashPattern([3, 2], 0);
-            doc.line(margin + indent, y, margin + indent + contentWidth, y);
-            doc.setLineDashPattern([], 0);
-            y += 4;
+            doc.line(sepX, startY - 2, sepX, startY + 60);
           }
+
+          // Render children with constrained width via temporary override
+          const origRenderBlock = (child: AnyBlock) => {
+            const childText = getInlineText(child);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+
+            switch (child.type) {
+              case "heading": {
+                const level = (child.props as any)?.level ?? 1;
+                const sizes = [14, 12, 11];
+                const size = sizes[Math.min(level - 1, 2)];
+                doc.setFontSize(size);
+                doc.setFont("helvetica", "bold");
+                const lines = doc.splitTextToSize(childText, colWidth - 4);
+                checkPageBreak(lines.length * (size * 0.5) + 4);
+                doc.text(lines, colX + 2, y);
+                y += lines.length * (size * 0.5) + 3;
+                doc.setFont("helvetica", "normal");
+                break;
+              }
+              case "bulletListItem": {
+                const lines = doc.splitTextToSize(`• ${childText}`, colWidth - 4);
+                checkPageBreak(lines.length * 4.5 + 1);
+                doc.text(lines, colX + 2, y);
+                y += lines.length * 4.5 + 1;
+                break;
+              }
+              default: {
+                if (childText) {
+                  const lines = doc.splitTextToSize(childText, colWidth - 4);
+                  checkPageBreak(lines.length * 4.5 + 2);
+                  doc.text(lines, colX + 2, y);
+                  y += lines.length * 4.5 + 2;
+                }
+              }
+            }
+          };
+
+          (col.children as AnyBlock[])?.forEach(origRenderBlock);
+          if (y > maxY) maxY = y;
         });
+
+        y = maxY + 4;
         return;
       }
       case "column": {
