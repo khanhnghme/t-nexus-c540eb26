@@ -195,7 +195,37 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
     dictionary: { ...bnEnLocale, multi_column: mcLocale } as any,
   });
 
-  const handleSave = useCallback(
+  const handleAddColumn = useCallback((columnListEl: HTMLElement) => {
+    const blockOuter = columnListEl.closest("[data-node-type='blockOuter']") as HTMLElement | null;
+    if (!blockOuter) return;
+    const blockId = blockOuter.getAttribute("data-id");
+    if (!blockId) return;
+
+    try {
+      const block = editor.getBlock(blockId);
+      if (!block || block.type !== "columnList") return;
+      const colCount = block.children?.length ?? 0;
+      if (colCount >= 4) return;
+
+      const lastChild = block.children?.[colCount - 1];
+      if (!lastChild) return;
+
+      editor.insertBlocks(
+        [{ type: "column" as any, children: [{ type: "paragraph" as any }] }],
+        lastChild,
+        "after"
+      );
+
+      const doc = editor.document as any[];
+      if (pageId) setCurrentContent(JSON.stringify(doc));
+    } catch (e) {
+      console.warn("[CanvasEditor] Failed to add column:", e);
+    }
+  }, [editor, pageId]);
+
+  useColumnControls(editorContainerRef, editable && !isReadOnly, handleAddColumn);
+
+
     async (data: string) => {
       if (!pageId) return;
       const content = JSON.parse(data);
