@@ -1,39 +1,52 @@
 
 
-## Phase 3: Kiểm thử tương thích & Public View
+## Phase 4: Nâng cao UX & Polish Multi-Column
 
 ### Bối cảnh
-Phase 2 đã hoàn thành cả styling responsive lẫn export (Markdown + PDF) cho columns. Phase 3 tập trung vào kiểm thử backward compatibility và đảm bảo public view hoạt động đúng.
+Phase 1-3 đã hoàn thành: cài đặt, styling responsive, export, và fix bug double-render. Phase 4 tập trung vào cải thiện trải nghiệm người dùng khi làm việc với columns.
 
 ### Bước thực hiện
 
-**Bước 1: Fix bug double-render children trong PDF export**
+**Bước 1: Tùy chỉnh Slash Menu — thêm label tiếng Việt cho Columns**
+
+File: `src/components/canvas/CanvasEditor.tsx`
+
+- Import `getMultiColumnSlashMenuItems` từ `@blocknote/xl-multi-column`
+- Tạo custom slash menu items: merge default items + multi-column items
+- Override label "Columns" thành "Chia cột" khi `locale === 'vi'`
+- Truyền vào `useCreateBlockNote` hoặc custom `slashMenu` component
+
+**Bước 2: CSS polish — hover state & visual cue cho columns**
+
+File: `src/index.css`
+
+- Thêm subtle hover border cho `.bn-column-list` khi editable (giúp user nhận biết đang hover vào vùng columns)
+- Thêm transition cho border/background khi hover
+- Đảm bảo view-mode (read-only) không hiện hover effect
+- Tối ưu spacing giữa columns trong dark mode
+
+**Bước 3: Cải thiện print/export layout cho columns**
 
 File: `src/lib/canvasExport.ts`
 
-Hiện tại có lỗi logic: case `columnList` đã render children (các `column`) bên trong switch, nhưng cuối hàm `renderBlock` (dòng 317) lại render `block.children` lần nữa → nội dung columns bị lặp đôi trong PDF.
+- Thêm label "Cột 1", "Cột 2",... trước mỗi column trong PDF export để người đọc dễ phân biệt
+- Cải thiện separator style (dùng dashed line thay vì solid)
+- Markdown export: thêm header `**Cột 1:**`, `**Cột 2:**` trước nội dung mỗi cột
 
-- Thêm `return` hoặc guard để `columnList` và `column` không bị render children 2 lần
-- Tương tự trong `blockToMarkdown`: case `columnList` và `column` dùng `return` (đã đúng), nhưng cần verify không bị xung đột với logic children ở dòng 100-102
+**Bước 4: Xử lý edge case — empty columns & single column**
 
-**Bước 2: Verify Public Canvas Page**
+File: `src/lib/canvasExport.ts`
 
-File: `src/pages/PublicCanvasPage.tsx`
-
-- Kiểm tra component đã import đúng schema có `withMultiColumn` (thông qua `CanvasEditor` hoặc `CanvasPageView`)
-- Đảm bảo read-only mode render columns chính xác — không cần sửa code nếu đã dùng chung editor component
-
-**Bước 3: Test backward compatibility**
-
-- Verify pages cũ (không có `columnList` blocks) vẫn load bình thường
-- Verify `filterBlocks` cho phép `columnList`/`column` types đi qua
-- Verify autosave không bị lỗi khi lưu content có columns
+- Skip render column rỗng (không có children) trong cả Markdown và PDF
+- Nếu `columnList` chỉ có 1 column → render như block bình thường (không cần separator)
 
 ### Files thay đổi
-1. `src/lib/canvasExport.ts` — fix double-render bug cho `columnList`/`column` trong PDF export
+1. `src/components/canvas/CanvasEditor.tsx` — custom slash menu items cho multi-column
+2. `src/index.css` — ~15 dòng CSS hover effects
+3. `src/lib/canvasExport.ts` — cải thiện label & xử lý edge cases
 
 ### Không thay đổi
 - Database
-- CanvasEditor (đã hoàn thành ở Phase 1-2)
-- PublicCanvasPage (chỉ verify, không sửa)
+- PublicCanvasPage
+- Custom block components
 
