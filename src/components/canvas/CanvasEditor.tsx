@@ -161,11 +161,14 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
     return filtered.length ? filtered : undefined;
   }, [initialContent]);
 
+  const mcLocale = isVi ? (multiColumnLocales.vi ?? multiColumnLocales.en) : multiColumnLocales.en;
+
   const editor = useCreateBlockNote({
     schema,
     initialContent: safeInitialContent as any,
     uploadFile,
     dropCursor: multiColumnDropCursor,
+    dictionary: { multi_column: mcLocale },
   });
 
   const handleSave = useCallback(
