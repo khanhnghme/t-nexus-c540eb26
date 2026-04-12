@@ -83,7 +83,9 @@ export const ViewToolbar = memo(function ViewToolbar({
     [view, onUpdateView]
   );
 
-  return (
+  if (!editable) return null;
+
+
     <div className="flex items-center gap-1 flex-wrap">
       {/* Filter */}
       <Popover>
