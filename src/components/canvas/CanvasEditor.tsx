@@ -328,8 +328,24 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
       } catch (e) {
         console.warn("[CanvasEditor] Multi-column slash menu items failed to load:", e);
       }
+      const customItems = [
+        {
+          title: "Database",
+          subtext: "Inline database with table, board, calendar views",
+          group: "Advanced",
+          icon: <Database className="h-4 w-4" />,
+          onItemClick: () => {
+            const currentBlock = editor.getTextCursorPosition().block;
+            editor.insertBlocks(
+              [{ type: "databaseView" as any }],
+              currentBlock,
+              "after"
+            );
+          },
+        },
+      ];
       return filterSuggestionItems(
-        combineByGroup(defaultItems, mcItems),
+        combineByGroup(defaultItems, mcItems, customItems as any),
         query
       );
     };
