@@ -102,7 +102,10 @@ serve(async (req: Request) => {
         .eq("owner_id", callerId);
 
       if ((currentWsCount ?? 0) >= maxWs) {
-        return err(`Bạn đã đạt giới hạn ${maxWs} workspace cho gói ${callerPlan.replace("plan_", "").toUpperCase()}`);
+        return json({
+          error: `Bạn đã đạt giới hạn ${maxWs} workspace cho gói ${callerPlan.replace("plan_", "").toUpperCase()}. Vui lòng nâng cấp gói để tạo thêm.`,
+          limit_reached: true,
+        });
       }
 
       // Idempotency check
