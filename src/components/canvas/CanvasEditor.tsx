@@ -140,23 +140,42 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
   const safeInitialContent = useMemo(() => {
     if (!initialContent?.length) return undefined;
     const validTypes = new Set(Object.keys(schema.blockSpecs));
-    const filterBlocks = (blocks: PartialBlock[]): PartialBlock[] =>
+    const filterBlocks = (blocks: PartialBlock[], parentType?: string): PartialBlock[] =>
       blocks
         .filter((b) => !b.type || validTypes.has(b.type))
         .flatMap((b) => {
           const blockType = (b as any).type as string | undefined;
-          // Guard: if columnList/column has invalid children, unwrap safely
-          if ((blockType === "columnList" || blockType === "column") && b.children && !Array.isArray(b.children)) {
-            console.warn(`[CanvasEditor] Malformed ${blockType} block detected, unwrapping`);
+
+          // Guard: ensure children is always an array
+          if (b.children !== undefined && b.children !== null && !Array.isArray(b.children)) {
+            console.warn(`[CanvasEditor] Malformed ${blockType} block: children is not array, unwrapping`);
             return [];
           }
-          const children = b.children?.length ? filterBlocks(b.children as PartialBlock[]) : b.children;
-          // If columnList has 0 valid children after filtering, skip it
-          if (blockType === "columnList" && (!children || (Array.isArray(children) && children.length === 0))) {
+
+          const safeChildren = Array.isArray(b.children) ? b.children : [];
+          const children = safeChildren.length ? filterBlocks(safeChildren as PartialBlock[], blockType) : [];
+
+          // Orphan column not inside columnList → unwrap its children
+          if (blockType === "column" && parentType !== "columnList") {
+            console.warn("[CanvasEditor] Orphan column block unwrapped");
+            return children;
+          }
+
+          // columnList with 0 valid columns → skip
+          if (blockType === "columnList" && children.length === 0) {
             console.warn("[CanvasEditor] Empty columnList removed");
             return [];
           }
-          return [{ ...b, children }];
+
+          // columnList with only 1 column → unwrap that column's children
+          if (blockType === "columnList" && children.length === 1) {
+            const singleCol = children[0];
+            const innerChildren = Array.isArray(singleCol.children) ? singleCol.children : [];
+            console.warn("[CanvasEditor] Single-column columnList unwrapped");
+            return innerChildren;
+          }
+
+          return [{ ...b, children: children.length ? children : b.children }];
         });
     const filtered = filterBlocks(initialContent);
     return filtered.length ? filtered : undefined;
@@ -229,14 +248,19 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
   }, [editor, onChange, pageId]);
 
   const getSlashMenuItems = useMemo(() => {
-    return async (query: string) =>
-      filterSuggestionItems(
-        combineByGroup(
-          getDefaultReactSlashMenuItems(editor),
-          getMultiColumnSlashMenuItems(editor)
-        ),
+    return async (query: string) => {
+      const defaultItems = getDefaultReactSlashMenuItems(editor);
+      let mcItems: ReturnType<typeof getMultiColumnSlashMenuItems> = [];
+      try {
+        mcItems = getMultiColumnSlashMenuItems(editor);
+      } catch (e) {
+        console.warn("[CanvasEditor] Multi-column slash menu items failed to load:", e);
+      }
+      return filterSuggestionItems(
+        combineByGroup(defaultItems, mcItems),
         query
       );
+    };
   }, [editor]);
 
   const saveStatus = useMemo(() => {
