@@ -2362,10 +2362,11 @@ html.no-animations [data-state="active"][role="tabpanel"] {
   background: hsl(var(--muted) / 0.5);
 }
 
-/* Hide resize & add on mobile */
+/* Hide resize, add & remove on mobile */
 @media (max-width: 768px) {
   .column-resize-wrapper,
-  .add-column-btn-wrapper {
+  .add-column-btn-wrapper,
+  .remove-column-btn-wrapper {
     display: none !important;
   }
 }
