@@ -356,7 +356,7 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
                   onClick={handleDriveClick}
                   disabled={isPickerLoading}
                 >
-                  {isPickerLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <HardDrive className="h-3.5 w-3.5" />}
+                  {isPickerLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <img src={googleDriveLogo} alt="Google Drive" className="h-4 w-4" />}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Chọn file từ Google Drive</TooltipContent>
