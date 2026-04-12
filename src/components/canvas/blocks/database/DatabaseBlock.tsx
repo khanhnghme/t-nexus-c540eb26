@@ -6,6 +6,7 @@ import { ViewSwitcher } from "./ViewSwitcher";
 import { ViewToolbar } from "./ViewToolbar";
 import { TableView } from "./views/TableView";
 import { ListView } from "./views/ListView";
+import { BoardView } from "./views/BoardView";
 
 /* ── Database Renderer ────────────────────────────────────────── */
 
@@ -41,6 +42,13 @@ const DatabaseRenderer = memo(function DatabaseRenderer({
     [updateView]
   );
 
+  const handleSetGroupBy = useCallback(
+    (propertyId: string) => {
+      if (activeView) updateView(activeView.id, { groupBy: propertyId });
+    },
+    [activeView, updateView]
+  );
+
   /* ── View Router ──────────────────────────────────────── */
   const renderActiveView = () => {
     const commonProps = {
@@ -57,8 +65,15 @@ const DatabaseRenderer = memo(function DatabaseRenderer({
       case "list":
         return <ListView {...commonProps} />;
       case "board":
+        return (
+          <BoardView
+            {...commonProps}
+            groupByPropertyId={activeView?.groupBy}
+            onSetGroupBy={handleSetGroupBy}
+          />
+        );
       case "calendar":
-        // fallback to table until Part 5 & 6
+        // fallback to table until Part 6
         return <TableView {...commonProps} onAddProperty={addProperty} />;
       case "table":
       default:
