@@ -68,6 +68,9 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
   const { resolvedTheme } = useTheme();
   const { user } = useAuth();
   const updatePageContent = useUpdatePageContent();
+  const { isReadOnly } = useReadOnlyGuard();
+  const { locale } = useLanguage();
+  const isVi = locale === 'vi';
   const [serializedContent] = useState("");
   const [currentContent, setCurrentContent] = useState(serializedContent);
 
