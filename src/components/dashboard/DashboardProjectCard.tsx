@@ -76,7 +76,11 @@ export default function DashboardProjectCard({ group, isHidden, isPending, onTog
   const Wrapper = isPending ? 'div' : Link;
   const wrapperProps = isPending
     ? {}
-    : { to: activeWorkspace?.short_id ? `/pr/ws-${activeWorkspace.short_id}/${group.slug}` : `/p/${group.slug}` };
+    : { to: activeWorkspace?.short_id
+        ? (group.project_mode === 'custom'
+            ? `/pa/ws-${activeWorkspace.short_id}/${group.slug}`
+            : `/pr/ws-${activeWorkspace.short_id}/${group.slug}`)
+        : `/p/${group.slug}` };
 
   return (
     <Wrapper
