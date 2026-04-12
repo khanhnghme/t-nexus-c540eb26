@@ -154,6 +154,7 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
     schema,
     initialContent: safeInitialContent as any,
     uploadFile,
+    dropCursor: multiColumnDropCursor,
   });
 
   const handleSave = useCallback(
