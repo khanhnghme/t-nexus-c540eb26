@@ -75,6 +75,13 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
   const [currentContent, setCurrentContent] = useState(serializedContent);
 
   const uploadFile = useCallback(async (file: File): Promise<string> => {
+    if (isReadOnly) {
+      const msg = isVi
+        ? 'Tài khoản chỉ đọc. Vui lòng nâng cấp hoặc xóa bớt dữ liệu để tiếp tục.'
+        : 'Read-only account. Please upgrade or delete data to continue.';
+      toast.error(msg);
+      throw new Error(msg);
+    }
     if (!user || !groupId || !pageId) {
       throw new Error("Không thể upload: thiếu thông tin.");
     }
@@ -86,7 +93,13 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
       contentType: file.type,
       upsert: false,
     });
-    if (error) throw new Error(error.message);
+    if (error) {
+      const errorMsg = (error as any).status === 413
+        ? (isVi ? `File vượt giới hạn gói cước: ${error.message}` : `File exceeds plan limit: ${error.message}`)
+        : error.message;
+      toast.error(errorMsg);
+      throw new Error(errorMsg);
+    }
 
     const { data: urlData } = r2Storage.from("project-resources").getPublicUrl(r2Path);
     const publicUrl = urlData.publicUrl;
