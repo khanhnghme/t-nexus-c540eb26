@@ -1,72 +1,57 @@
 
 
-## Phần 4: Table View & List View — Triển khai chi tiết
+## Phần 5: Board View (Kanban) — Triển khai chi tiết
 
 ### Mục tiêu
-Tách inline table hiện tại trong `DatabaseBlock.tsx` thành component `TableView` riêng biệt, tạo `ListView` mới, và cập nhật `DatabaseBlock` để render view theo `activeView.type`.
+Tạo `BoardView` — Kanban board nhóm items theo property `select`, hỗ trợ drag & drop giữa các cột. Tích hợp vào view router trong `DatabaseBlock`.
 
 ### Hiện trạng
-- Phần 1-3 hoàn thành: types, hook, block, ViewSwitcher, ViewToolbar
-- `DatabaseBlock.tsx` đang render inline table trực tiếp (dòng 189-249)
-- `InlineCell` component đã có sẵn trong DatabaseBlock.tsx — cần tái sử dụng
+- Phần 1–4 hoàn thành: types, hook, block, ViewSwitcher, ViewToolbar, TableView, ListView
+- `DatabaseBlock.tsx` dòng 59–62: board view đang fallback về TableView
+- `ViewConfig` có `groupBy?: string` để chọn property nhóm
+- Project dùng `@hello-pangea/dnd` (không phải `@dnd-kit`) — sẽ dùng thư viện này
+- `useDatabaseData` đã có `updateItem(itemId, propertyId, value)` để cập nhật khi drop
 
 ### Chia 4 bước
 
 ---
 
-**Bước 1: Tách `InlineCell` thành shared component**
+**Bước 1: Tạo `BoardView.tsx` — Layout cơ bản (không drag)**
 
-File mới: `src/components/canvas/blocks/database/views/InlineCell.tsx`
+File mới: `src/components/canvas/blocks/database/views/BoardView.tsx`
 
-- Di chuyển `InlineCell` + `CellProps` interface từ `DatabaseBlock.tsx` ra file riêng
-- Export để cả TableView và ListView cùng dùng
+- Props: `items`, `properties`, `visiblePropertyIds`, `editable`, `onUpdateItem`, `onDeleteItem`, `onAddItem`, `groupByPropertyId`
+- Tìm `groupBy` property trong `properties` (phải là type `select`)
+- Nếu chưa có `groupBy` hoặc property không phải select → hiện thông báo "Select a property to group by" + dropdown chọn
+- Mỗi option của select property = 1 column + thêm 1 column "No Status" cho items không có giá trị
+- Mỗi column: header (tên option + badge count) + danh sách cards
+- Card: hiển thị Name property + secondary badges (giống ListView compact)
 
----
+**Bước 2: Thêm drag & drop với `@hello-pangea/dnd`**
 
-**Bước 2: Tạo `TableView.tsx`**
+Trong `BoardView.tsx`:
+- Wrap toàn bộ board trong `<DragDropContext onDragEnd={handleDragEnd}>`
+- Mỗi column = `<Droppable droppableId={optionId}>`
+- Mỗi card = `<Draggable draggableId={itemId}>`
+- `handleDragEnd`: lấy `destination.droppableId` (= option id mới) → gọi `onUpdateItem(itemId, groupByPropertyId, newOptionId)`
+- Chỉ enable drag khi `editable === true`
 
-File mới: `src/components/canvas/blocks/database/views/TableView.tsx`
+**Bước 3: Thêm inline add card trong mỗi column**
 
-- Props: `items`, `properties`, `visiblePropertyIds`, `editable`, `onUpdateItem`, `onDeleteItem`, `onAddItem`, `onAddProperty`
-- Di chuyển logic table hiện tại từ DatabaseBlock (thead/tbody/add row) vào đây
-- Dùng `InlineCell` cho mỗi cell
-- Header có nút "+" để thêm column
-- Footer có input "New item..." + nút Add
-- Nút xóa row ở cuối mỗi hàng (chỉ khi editable)
+- Cuối mỗi column: input "+" để tạo item mới
+- Khi submit → `onAddItem({ [namePropertyId]: value, [groupByPropertyId]: columnOptionId })`
+- Auto-gán giá trị select property = option của column đó
 
----
-
-**Bước 3: Tạo `ListView.tsx`**
-
-File mới: `src/components/canvas/blocks/database/views/ListView.tsx`
-
-- Props: tương tự TableView
-- Compact list — mỗi item 1 dòng:
-  - Cột trái: property đầu tiên (Name) hiển thị text lớn hơn
-  - Cột phải: badges cho select properties, text nhỏ cho các fields khác
-- Click vào item → expand inline (show tất cả editable fields bên dưới)
-- State local: `expandedItemId`
-- Khi expanded: render mỗi property = label + InlineCell
-- Nút "+" ở cuối danh sách để thêm item mới
-
----
-
-**Bước 4: Cập nhật `DatabaseBlock.tsx` — View routing**
+**Bước 4: Tích hợp vào DatabaseBlock.tsx**
 
 Sửa `DatabaseBlock.tsx`:
-
-- Xóa inline table code (dòng 189-266)
-- Xóa `InlineCell` component (dòng 13-113)
-- Import `TableView` và `ListView`
-- Thêm view router theo `activeView.type`:
+- Import `BoardView`
+- Trong view router, thay fallback case `"board"`:
   ```
-  switch (activeView.type) {
-    case "table": return <TableView ... />
-    case "list": return <ListView ... />
-    default: return <TableView ... />  // fallback cho board/calendar (phần 5,6)
-  }
+  case "board":
+    return <BoardView {...commonProps} groupByPropertyId={activeView?.groupBy} onSetGroupBy={...} />
   ```
-- Truyền props: `filteredItems`, `properties`, `activeView.visibleProperties`, `editable`, callbacks
+- Thêm callback `onSetGroupBy` → gọi `updateView(viewId, { groupBy: propertyId })`
 
 ---
 
@@ -74,8 +59,11 @@ Sửa `DatabaseBlock.tsx`:
 
 | File | Action |
 |------|--------|
-| `src/components/canvas/blocks/database/views/InlineCell.tsx` | Mới — shared cell renderer |
-| `src/components/canvas/blocks/database/views/TableView.tsx` | Mới — full table view |
-| `src/components/canvas/blocks/database/views/ListView.tsx` | Mới — compact list view |
-| `src/components/canvas/blocks/database/DatabaseBlock.tsx` | Sửa — xóa inline code, thêm view routing |
+| `src/components/canvas/blocks/database/views/BoardView.tsx` | Mới — Kanban board với drag & drop |
+| `src/components/canvas/blocks/database/DatabaseBlock.tsx` | Sửa — thêm BoardView vào view router |
+
+### Lưu ý kỹ thuật
+- Dùng `@hello-pangea/dnd` đã có sẵn trong project (không cần cài thêm)
+- `groupBy` lưu trong `ViewConfig` — khi tạo Board view mới, mặc định `groupBy` = property select đầu tiên tìm được
+- Column "No Status" cho items có giá trị `null`/`undefined` ở groupBy property
 
