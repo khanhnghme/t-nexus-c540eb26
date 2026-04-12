@@ -1,25 +1,36 @@
 
 
-## Fix nút "+" (Add block) trong BlockNote editor không mở menu chọn loại block
+## Phase 1: Cài đặt & Tích hợp Multi-Column vào BlockNote Editor
 
-### Vấn đề
-Nút "+" trong side menu của BlockNote editor (xuất hiện bên trái mỗi block khi hover) khi bấm chỉ tạo thêm 1 paragraph trống thay vì mở menu chọn loại block (heading, list, task list, v.v.). 
-
-Nguyên nhân: Console log cho thấy lỗi `Function components cannot be given refs` trong BlockNote shadcn theme → dropdown menu của nút "+" không render được do xung đột ref giữa BlockNote shadcn 0.47.x và phiên bản Radix hiện tại.
-
-### Giải pháp
-Nâng cấp BlockNote packages lên phiên bản mới nhất (0.33+ → latest stable) để fix lỗi ref forwarding compatibility. Nếu upgrade gây breaking changes, fallback sẽ là tạo custom SideMenu component thay thế default.
-
-### Thay đổi
-
-| File | Nội dung |
-|------|----------|
-| **`package.json`** | Upgrade `@blocknote/core`, `@blocknote/react`, `@blocknote/shadcn` lên phiên bản mới nhất stable |
-| **`src/components/canvas/CanvasEditor.tsx`** | Điều chỉnh import/API nếu có breaking changes sau upgrade |
+### Mục tiêu
+Cho phép người dùng tạo layout chia cột (2-3 cột) bằng cách gõ `/` → chọn "Columns", kéo thả block giữa các cột.
 
 ### Bước thực hiện
-1. Kiểm tra phiên bản mới nhất của BlockNote và changelog
-2. Upgrade cả 3 packages đồng bộ
-3. Fix bất kỳ breaking changes nào trong CanvasEditor và custom blocks
-4. Verify nút "+" mở đúng menu chọn block type
+
+**Bước 1: Cài package**
+- Thêm `@blocknote/xl-multi-column@^0.47.3` vào `package.json`
+
+**Bước 2: Cập nhật `src/components/canvas/CanvasEditor.tsx`**
+
+| Thay đổi | Chi tiết |
+|----------|----------|
+| Import | Thêm `withMultiColumn`, `multiColumnDropCursor` từ `@blocknote/xl-multi-column` |
+| Schema | Wrap schema hiện tại: `withMultiColumn(BlockNoteSchema.create({ blockSpecs: { ...defaultBlockSpecs, taskList, memberList, ... } }))` |
+| Editor config | Thêm `dropCursor: multiColumnDropCursor` vào `useCreateBlockNote()` |
+| filterBlocks | `validTypes` đã tự động lấy từ `schema.blockSpecs` nên `columnList` và `column` sẽ được cho phép tự động — không cần sửa logic |
+
+**Bước 3: Verify**
+- Gõ `/` → menu hiện mục "Columns"
+- Chọn → tạo layout 2 cột
+- Kéo block vào/ra giữa các cột hoạt động
+- Pages cũ (không có columns) vẫn load bình thường
+
+### Files thay đổi
+1. `package.json` — thêm 1 dependency
+2. `src/components/canvas/CanvasEditor.tsx` — 3 dòng import + wrap schema + thêm dropCursor config
+
+### Không thay đổi
+- Database — không cần migration
+- Các custom block hiện có — không bị ảnh hưởng
+- Logic autosave/export — giữ nguyên (Phase 3 mới xử lý export)
 
