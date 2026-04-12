@@ -25,16 +25,15 @@ const PRESET_COLORS = [
   "#bbf7d0", "#bae6fd", "#c7d2fe", "#e9d5ff",
 ];
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-
 interface CoverPickerProps {
   currentCover?: string | null;
   onSelect?: (cover: string | null) => void;
   groupId?: string;
+  maxFileSizeMb?: number;
   children: ReactNode;
 }
 
-export default function CoverPicker({ currentCover, onSelect, groupId, children }: CoverPickerProps) {
+export default function CoverPicker({ currentCover, onSelect, groupId, maxFileSizeMb = 5, children }: CoverPickerProps) {
   const [open, setOpen] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -63,8 +62,9 @@ export default function CoverPicker({ currentCover, onSelect, groupId, children 
       return;
     }
 
-    if (file.size > MAX_FILE_SIZE) {
-      toast.error("File ảnh không được vượt quá 5MB");
+    const maxBytes = maxFileSizeMb * 1024 * 1024;
+    if (file.size > maxBytes) {
+      toast.error(`File ảnh không được vượt quá ${maxFileSizeMb}MB (giới hạn gói cước)`);
       return;
     }
 
@@ -152,7 +152,7 @@ export default function CoverPicker({ currentCover, onSelect, groupId, children 
               {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
               {uploading ? "Đang tải..." : "Chọn ảnh từ máy"}
             </Button>
-            <p className="text-[10px] text-muted-foreground mt-1.5 text-center">Tối đa 5MB • JPG, PNG, WebP</p>
+            <p className="text-[10px] text-muted-foreground mt-1.5 text-center">Tối đa {maxFileSizeMb}MB • JPG, PNG, WebP</p>
           </TabsContent>
 
           <TabsContent value="url" className="mt-2 space-y-2">

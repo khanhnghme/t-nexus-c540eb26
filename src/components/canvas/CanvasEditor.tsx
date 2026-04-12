@@ -17,6 +17,7 @@ import { CalendarBlock } from "./blocks/CalendarBlock";
 import { r2Storage } from "@/lib/r2Storage";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAccountLimitsCheck } from "@/hooks/useAccountLimitsCheck";
 import { NoteCalloutBlock } from "./blocks/NoteBlock";
 import { ToggleBlock } from "./blocks/ToggleBlock";
 import { TaskBlockProvider } from "./blocks/TaskBlockContext";
@@ -70,6 +71,7 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
   const updatePageContent = useUpdatePageContent();
   const { isReadOnly } = useReadOnlyGuard();
   const { locale } = useLanguage();
+  const { maxFileSizeMb } = useAccountLimitsCheck();
   const isVi = locale === 'vi';
   const [serializedContent] = useState("");
   const [currentContent, setCurrentContent] = useState(serializedContent);
@@ -84,6 +86,17 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
     }
     if (!user || !groupId || !pageId) {
       throw new Error("Không thể upload: thiếu thông tin.");
+    }
+    // Client-side file size check based on plan limits
+    if (maxFileSizeMb !== null) {
+      const maxBytes = maxFileSizeMb * 1024 * 1024;
+      if (file.size > maxBytes) {
+        const msg = isVi
+          ? `File vượt giới hạn ${maxFileSizeMb}MB của gói cước hiện tại`
+          : `File exceeds ${maxFileSizeMb}MB plan limit`;
+        toast.error(msg);
+        throw new Error(msg);
+      }
     }
     const timestamp = Date.now();
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -190,7 +203,7 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
 
   const editorContent = (
     <>
-      <PageCoverImage coverUrl={coverUrl} editable={editable} groupId={groupId} onChangeCover={onChangeCover} />
+      <PageCoverImage coverUrl={coverUrl} editable={editable} groupId={groupId} maxFileSizeMb={maxFileSizeMb ?? undefined} onChangeCover={onChangeCover} />
       <div className="max-w-[720px] mx-auto w-full relative">
         {/* Save status — floating top-right */}
         {saveStatus && (
@@ -207,6 +220,7 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
           coverUrl={coverUrl}
           editable={editable}
           groupId={groupId}
+          maxFileSizeMb={maxFileSizeMb ?? undefined}
           onChangeTitle={onChangeTitle}
           onChangeIcon={onChangeIcon}
           onChangeCover={onChangeCover}

@@ -10,6 +10,7 @@ interface PageHeaderProps {
   coverUrl?: string | null;
   editable?: boolean;
   groupId?: string;
+  maxFileSizeMb?: number;
   onChangeTitle?: (title: string) => void;
   onChangeIcon?: (icon: string | null) => void;
   onChangeCover?: (coverUrl: string | null) => void;
@@ -21,6 +22,7 @@ export default function PageHeader({
   coverUrl,
   editable,
   groupId,
+  maxFileSizeMb,
   onChangeTitle,
   onChangeIcon,
   onChangeCover,
@@ -88,7 +90,7 @@ export default function PageHeader({
             </EmojiPicker>
           )}
           {!coverUrl && (
-            <CoverPicker currentCover={null} onSelect={onChangeCover} groupId={groupId}>
+            <CoverPicker currentCover={null} onSelect={onChangeCover} groupId={groupId} maxFileSizeMb={maxFileSizeMb}>
               <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5 text-muted-foreground">
                 <ImageIcon className="h-3.5 w-3.5" />
                 Thêm cover
