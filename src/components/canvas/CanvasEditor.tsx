@@ -182,7 +182,24 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
     forceSave: () => {
       if (forceSave) forceSave();
     },
-  }), [forceSave]);
+    insertDriveFiles: (files: DriveFile[]) => {
+      const lastBlock = editor.document[editor.document.length - 1];
+      const blocks = files.map((file) => ({
+        type: "paragraph" as const,
+        content: [
+          {
+            type: "link" as const,
+            href: file.url,
+            content: [{ type: "text" as const, text: `📎 ${file.title}` }],
+          },
+        ],
+      }));
+      editor.insertBlocks(blocks as any, lastBlock, "after");
+      // Trigger change to autosave
+      const doc = editor.document as Block[];
+      if (pageId) setCurrentContent(JSON.stringify(doc));
+    },
+  }), [forceSave, editor, pageId]);
 
   const handleChange = useCallback(() => {
     const doc = editor.document as Block[];
