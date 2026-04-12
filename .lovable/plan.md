@@ -1,36 +1,44 @@
 
 
-## Fix: Dự án custom phải dùng URL `/pa/` thay vì `/pr/`
+## Fix: Sidebar navigation dùng `/pa/` cho custom project
 
 ### Vấn đề
-Tất cả dự án (cả basic lẫn custom) đều dùng prefix `/pr/`, nhưng đúng ra custom project phải dùng `/pa/` vì nó là trang canvas.
+`SidebarTreeNav.tsx` luôn tạo link `/pr/ws-...` cho mọi project, kể cả custom project (cần `/pa/ws-...`).
+
+### Nguyên nhân
+- `useWorkspaceProjects` không fetch `project_mode` từ bảng `groups`
+- `SidebarTreeNav` không kiểm tra `project_mode` khi tạo URL
 
 ### Thay đổi
 
 | File | Nội dung |
 |------|----------|
-| **`src/components/dashboard/DashboardProjectCard.tsx`** (line 79) | Kiểm tra `group.project_mode === 'custom'` → dùng `/pa/ws-...` thay vì `/pr/ws-...` |
-| **`src/pages/CreateCustomProject.tsx`** (line 124) | Đổi `getProjectUrl` → `getPageUrl` để navigate đúng sau khi tạo custom project |
+| **`src/hooks/useWorkspaceProjects.ts`** | Thêm `project_mode` vào interface `WorkspaceProject` và vào `.select()` query (2 chỗ: line 41 và line 53) |
+| **`src/components/SidebarTreeNav.tsx`** | Kiểm tra `p.project_mode === 'custom'` → dùng `/pa/ws-...` thay vì `/pr/ws-...` (line 129 và line 233) |
 
 ### Chi tiết
 
-**DashboardProjectCard.tsx** — line 79:
+**useWorkspaceProjects.ts:**
 ```typescript
-// Before
-{ to: `/pr/ws-${activeWorkspace.short_id}/${group.slug}` }
+export interface WorkspaceProject {
+  id: string;
+  name: string;
+  slug: string | null;
+  visibility: string;
+  project_mode: string | null;  // thêm
+  isMember: boolean;
+}
 
-// After
-{ to: group.project_mode === 'custom'
-    ? `/pa/ws-${activeWorkspace.short_id}/${group.slug}`
-    : `/pr/ws-${activeWorkspace.short_id}/${group.slug}` }
+// 2 chỗ select:
+.select('id, name, slug, visibility, project_mode')
 ```
 
-**CreateCustomProject.tsx** — line 124:
+**SidebarTreeNav.tsx — line 129 và 233:**
 ```typescript
-// Before
-navigate(getProjectUrl(wsShortId, projectSlug));
-
-// After
-navigate(getPageUrl(wsShortId, projectSlug));
+const getProjectHref = (p: WorkspaceProject) => {
+  if (!activeWorkspace?.short_id) return `/p/${p.slug || p.id}`;
+  const prefix = p.project_mode === 'custom' ? '/pa' : '/pr';
+  return `${prefix}/ws-${activeWorkspace.short_id}/${p.slug || p.id}`;
+};
 ```
 
