@@ -331,7 +331,7 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
           onChangeIcon={onChangeIcon}
           onChangeCover={onChangeCover}
         />
-        <div className={`px-6 pb-8 ${!editable ? "view-mode" : ""}`}>
+        <div ref={editorContainerRef} className={`px-6 pb-8 ${!editable ? "view-mode" : ""}`}>
           <BlockNoteView
             editor={editor}
             editable={editable}
