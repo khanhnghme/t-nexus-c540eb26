@@ -24,6 +24,9 @@ import { logActivity } from "@/lib/activityLogger";
 import ShortcutHelpDialog from "./ShortcutHelpDialog";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
+import { useGoogleDriveConnect } from "@/hooks/useGoogleDriveConnect";
+import { useGoogleDrivePicker } from "@/hooks/useGoogleDrivePicker";
+import type { DriveFile } from "@/hooks/useGoogleDrivePicker";
 
 const SaveAsTemplateDialog = lazy(() => import("./SaveAsTemplateDialog"));
 
