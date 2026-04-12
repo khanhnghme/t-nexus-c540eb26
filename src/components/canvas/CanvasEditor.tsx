@@ -168,7 +168,7 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
     initialContent: safeInitialContent as any,
     uploadFile,
     dropCursor: multiColumnDropCursor,
-    dictionary: { multi_column: mcLocale },
+    dictionary: { multi_column: mcLocale } as any,
   });
 
   const handleSave = useCallback(
