@@ -6,7 +6,8 @@ import { BlockNoteSchema, defaultBlockSpecs, filterSuggestionItems, combineByGro
 import { en as bnEnLocale } from "@blocknote/core/locales";
 import type { Block, PartialBlock } from "@blocknote/core";
 import { withMultiColumn, multiColumnDropCursor, getMultiColumnSlashMenuItems, locales as multiColumnLocales } from "@blocknote/xl-multi-column";
-import { useCallback, useImperativeHandle, useMemo, useState, forwardRef } from "react";
+import { useCallback, useImperativeHandle, useMemo, useState, useRef, forwardRef } from "react";
+import { useColumnControls } from "./useColumnControls";
 import { useAutosave } from "@/hooks/useAutosave";
 import type { DriveFile } from "@/hooks/useGoogleDrivePicker";
 import { useUpdatePageContent } from "@/hooks/useProjectPages";
