@@ -142,10 +142,20 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
     const filterBlocks = (blocks: PartialBlock[]): PartialBlock[] =>
       blocks
         .filter((b) => !b.type || validTypes.has(b.type))
-        .map((b) => ({
-          ...b,
-          children: b.children?.length ? filterBlocks(b.children as PartialBlock[]) : b.children,
-        }));
+        .flatMap((b) => {
+          // Guard: if columnList/column has invalid children, unwrap safely
+          if ((b.type === "columnList" || b.type === "column") && b.children && !Array.isArray(b.children)) {
+            console.warn(`[CanvasEditor] Malformed ${b.type} block detected, unwrapping`);
+            return [];
+          }
+          const children = b.children?.length ? filterBlocks(b.children as PartialBlock[]) : b.children;
+          // If columnList has 0 valid children after filtering, skip it
+          if (b.type === "columnList" && (!children || (Array.isArray(children) && children.length === 0))) {
+            console.warn("[CanvasEditor] Empty columnList removed");
+            return [];
+          }
+          return [{ ...b, children }];
+        });
     const filtered = filterBlocks(initialContent);
     return filtered.length ? filtered : undefined;
   }, [initialContent]);
