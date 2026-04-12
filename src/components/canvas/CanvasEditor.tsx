@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAccountLimitsCheck } from "@/hooks/useAccountLimitsCheck";
 import { NoteCalloutBlock } from "./blocks/NoteBlock";
 import { ToggleBlock } from "./blocks/ToggleBlock";
+import { DatabaseViewBlock } from "./blocks/database/DatabaseBlock";
 import { TaskBlockProvider } from "./blocks/TaskBlockContext";
 import PageCoverImage from "./PageCoverImage";
 import PageHeader from "./PageHeader";
