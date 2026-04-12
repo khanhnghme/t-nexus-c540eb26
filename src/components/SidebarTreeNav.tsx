@@ -126,7 +126,12 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
   };
 
   const hasActiveChild = (paths: string[]) => paths.some(p => isPathActive(p));
-  const projectPaths = projects.map(p => activeWorkspace?.short_id ? `/pr/ws-${activeWorkspace.short_id}/${p.slug || p.id}` : `/p/${p.slug || p.id}`);
+  const getProjectHref = (p: WorkspaceProject) => {
+    if (!activeWorkspace?.short_id) return `/p/${p.slug || p.id}`;
+    const prefix = p.project_mode === 'custom' ? '/pa' : '/pr';
+    return `${prefix}/ws-${activeWorkspace.short_id}/${p.slug || p.id}`;
+  };
+  const projectPaths = projects.map(p => getProjectHref(p));
 
   /* ─── Collapsed mode ─── */
   if (collapsed) {
@@ -230,7 +235,7 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
               </Link>
 
               {projects.map(p => {
-                const href = activeWorkspace?.short_id ? `/pr/ws-${activeWorkspace.short_id}/${p.slug || p.id}` : `/p/${p.slug || p.id}`;
+                const href = getProjectHref(p);
                 const active = location.pathname.startsWith(href);
                 return (
                   <Link

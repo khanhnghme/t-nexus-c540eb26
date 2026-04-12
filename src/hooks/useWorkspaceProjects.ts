@@ -8,6 +8,7 @@ export interface WorkspaceProject {
   name: string;
   slug: string | null;
   visibility: string;
+  project_mode: string;
   isMember: boolean;
 }
 
@@ -38,7 +39,7 @@ export function useWorkspaceProjects() {
     if (joinedIds.size > 0) {
       const { data } = await supabase
         .from('groups')
-        .select('id, name, slug, visibility')
+        .select('id, name, slug, visibility, project_mode')
         .in('id', Array.from(joinedIds))
         .eq('workspace_id', activeWorkspace.id)
         .order('name');
@@ -50,7 +51,7 @@ export function useWorkspaceProjects() {
     if (workspaceRole) {
       const { data } = await supabase
         .from('groups')
-        .select('id, name, slug, visibility')
+        .select('id, name, slug, visibility, project_mode')
         .eq('workspace_id', activeWorkspace.id)
         .in('visibility', ['workspace_public', 'public_link'])
         .order('name');
