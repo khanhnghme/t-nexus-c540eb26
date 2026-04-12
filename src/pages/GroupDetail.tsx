@@ -178,7 +178,7 @@ export default function GroupDetail() {
   const [editingStage, setEditingStage] = useState<Stage | null>(null);
   const [stageToDelete, setStageToDelete] = useState<Stage | null>(null);
 
-  useEffect(() => { if (routeId || pageSlug) fetchGroupData(); }, [routeId, pageSlug]);
+  useEffect(() => { if ((routeId || pageSlug) && user) fetchGroupData(); }, [routeId, pageSlug, user]);
 
   const fetchGroupData = async () => {
     if (!routeId && !pageSlug) return;
