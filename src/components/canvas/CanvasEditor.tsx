@@ -1,10 +1,10 @@
 import "@blocknote/core/fonts/inter.css";
-import { useCreateBlockNote } from "@blocknote/react";
+import { useCreateBlockNote, SuggestionMenuController, getDefaultReactSlashMenuItems } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/shadcn";
 import { useTheme } from "next-themes";
-import { BlockNoteSchema, defaultBlockSpecs } from "@blocknote/core";
+import { BlockNoteSchema, defaultBlockSpecs, filterSuggestionItems, combineByGroup } from "@blocknote/core";
 import type { Block, PartialBlock } from "@blocknote/core";
-import { withMultiColumn, multiColumnDropCursor } from "@blocknote/xl-multi-column";
+import { withMultiColumn, multiColumnDropCursor, getMultiColumnSlashMenuItems } from "@blocknote/xl-multi-column";
 import { useCallback, useImperativeHandle, useMemo, useState, forwardRef } from "react";
 import { useAutosave } from "@/hooks/useAutosave";
 import type { DriveFile } from "@/hooks/useGoogleDrivePicker";
@@ -265,8 +265,15 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
             theme={resolvedTheme === "dark" ? "dark" : "light"}
             sideMenu={editable}
             formattingToolbar={editable}
-            slashMenu={editable}
-          />
+            slashMenu={false}
+          >
+            {editable && (
+              <SuggestionMenuController
+                triggerCharacter="/"
+                getItems={getSlashMenuItems}
+              />
+            )}
+          </BlockNoteView>
         </div>
       </div>
     </>
