@@ -7,6 +7,7 @@ import { ViewToolbar } from "./ViewToolbar";
 import { TableView } from "./views/TableView";
 import { ListView } from "./views/ListView";
 import { BoardView } from "./views/BoardView";
+import { CalendarView } from "./views/CalendarView";
 
 /* ── Database Renderer ────────────────────────────────────────── */
 
@@ -49,6 +50,13 @@ const DatabaseRenderer = memo(function DatabaseRenderer({
     [activeView, updateView]
   );
 
+  const handleSetDateProperty = useCallback(
+    (propertyId: string) => {
+      if (activeView) updateView(activeView.id, { dateProperty: propertyId });
+    },
+    [activeView, updateView]
+  );
+
   /* ── View Router ──────────────────────────────────────── */
   const renderActiveView = () => {
     const commonProps = {
@@ -73,8 +81,13 @@ const DatabaseRenderer = memo(function DatabaseRenderer({
           />
         );
       case "calendar":
-        // fallback to table until Part 6
-        return <TableView {...commonProps} onAddProperty={addProperty} />;
+        return (
+          <CalendarView
+            {...commonProps}
+            datePropertyId={activeView?.dateProperty}
+            onSetDateProperty={handleSetDateProperty}
+          />
+        );
       case "table":
       default:
         return <TableView {...commonProps} onAddProperty={addProperty} />;
