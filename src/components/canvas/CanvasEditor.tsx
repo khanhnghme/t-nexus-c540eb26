@@ -6,7 +6,8 @@ import { BlockNoteSchema, defaultBlockSpecs, filterSuggestionItems, combineByGro
 import { en as bnEnLocale } from "@blocknote/core/locales";
 import type { Block, PartialBlock } from "@blocknote/core";
 import { withMultiColumn, multiColumnDropCursor, getMultiColumnSlashMenuItems, locales as multiColumnLocales } from "@blocknote/xl-multi-column";
-import { useCallback, useImperativeHandle, useMemo, useState, forwardRef } from "react";
+import { useCallback, useImperativeHandle, useMemo, useState, useRef, forwardRef } from "react";
+import { useColumnControls } from "./useColumnControls";
 import { useAutosave } from "@/hooks/useAutosave";
 import type { DriveFile } from "@/hooks/useGoogleDrivePicker";
 import { useUpdatePageContent } from "@/hooks/useProjectPages";
@@ -79,6 +80,9 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
   const isVi = locale === 'vi';
   const [serializedContent] = useState("");
   const [currentContent, setCurrentContent] = useState(serializedContent);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
+
+
 
   const uploadFile = useCallback(async (file: File): Promise<string> => {
     if (isReadOnly) {
@@ -191,6 +195,37 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
     dictionary: { ...bnEnLocale, multi_column: mcLocale } as any,
   });
 
+  const handleAddColumn = useCallback((columnListEl: HTMLElement) => {
+    const blockOuter = columnListEl.closest("[data-node-type='blockOuter']") as HTMLElement | null;
+    if (!blockOuter) return;
+    const blockId = blockOuter.getAttribute("data-id");
+    if (!blockId) return;
+
+    try {
+      const block = editor.getBlock(blockId);
+      if (!block || block.type !== "columnList") return;
+      const colCount = block.children?.length ?? 0;
+      if (colCount >= 4) return;
+
+      const lastChild = block.children?.[colCount - 1];
+      if (!lastChild) return;
+
+      editor.insertBlocks(
+        [{ type: "column" as any, children: [{ type: "paragraph" as any }] }],
+        lastChild,
+        "after"
+      );
+
+      const doc = editor.document as any[];
+      if (pageId) setCurrentContent(JSON.stringify(doc));
+    } catch (e) {
+      console.warn("[CanvasEditor] Failed to add column:", e);
+    }
+  }, [editor, pageId]);
+
+  useColumnControls(editorContainerRef, editable && !isReadOnly, handleAddColumn);
+
+
   const handleSave = useCallback(
     async (data: string) => {
       if (!pageId) return;
@@ -296,7 +331,7 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
           onChangeIcon={onChangeIcon}
           onChangeCover={onChangeCover}
         />
-        <div className={`px-6 pb-8 ${!editable ? "view-mode" : ""}`}>
+        <div ref={editorContainerRef} className={`px-6 pb-8 ${!editable ? "view-mode" : ""}`}>
           <BlockNoteView
             editor={editor}
             editable={editable}

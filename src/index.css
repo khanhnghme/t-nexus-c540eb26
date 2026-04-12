@@ -2280,6 +2280,103 @@ html.no-animations [data-state="active"][role="tabpanel"] {
   position: relative;
 }
 
+/* ─── Column Resize Handle ─── */
+.column-resize-wrapper {
+  display: flex;
+  align-items: stretch;
+  width: 0;
+  position: relative;
+  z-index: 5;
+}
+
+.column-resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 12px;
+  left: -6px;
+  cursor: col-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 10;
+}
+
+.bn-column-list:hover .column-resize-handle {
+  opacity: 1;
+}
+
+.column-resize-handle:hover,
+.column-resize-handle:active {
+  opacity: 1;
+}
+
+.column-resize-handle-line {
+  width: 3px;
+  height: 100%;
+  max-height: 60px;
+  border-radius: 2px;
+  background-color: hsl(var(--primary));
+  opacity: 0.4;
+  transition: opacity 0.15s ease, height 0.15s ease;
+}
+
+.column-resize-handle:hover .column-resize-handle-line,
+.column-resize-handle:active .column-resize-handle-line {
+  opacity: 0.8;
+  max-height: 100%;
+}
+
+/* ─── Add Column Button ─── */
+.add-column-btn-wrapper {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.add-column-button {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px dashed hsl(var(--border));
+  background: hsl(var(--background));
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.bn-column-list:hover .add-column-button {
+  opacity: 1;
+}
+
+.add-column-button:hover {
+  opacity: 1;
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary));
+  background: hsl(var(--muted) / 0.5);
+}
+
+/* Hide resize & add on mobile */
+@media (max-width: 768px) {
+  .column-resize-wrapper,
+  .add-column-btn-wrapper {
+    display: none !important;
+  }
+}
+
+/* Hide on tablet if tight */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .column-resize-handle-line {
+    max-height: 40px;
+  }
+}
+
 /* View-mode: no hover effects */
 .view-mode .bn-column-list:hover {
   outline-color: transparent;
