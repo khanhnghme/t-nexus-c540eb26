@@ -58,6 +58,19 @@ function blockToMarkdown(block: AnyBlock, depth = 0): string {
       }
       break;
     }
+    // Column blocks
+    case "columnList": {
+      const cols = (block.children as AnyBlock[]) ?? [];
+      return cols.map((col) => {
+        const children = (col.children as AnyBlock[]) ?? [];
+        return children.map((child) => blockToMarkdown(child, depth)).join("\n");
+      }).join("\n\n---\n\n");
+    }
+    case "column": {
+      return (block.children as AnyBlock[])
+        ?.map((child) => blockToMarkdown(child, depth))
+        .join("\n") ?? "";
+    }
     // Custom blocks
     case "taskList":
       text = `> 📋 **Task Block** _(interactive block — not exportable to markdown)_`;
@@ -268,6 +281,25 @@ export function downloadPdf(blocks: AnyBlock[], title = "Untitled") {
         y += 6;
         doc.setTextColor(0, 0, 0);
         doc.setFont("helvetica", "normal");
+        break;
+      }
+      case "columnList": {
+        // Render columns sequentially in PDF
+        const cols = (block.children as AnyBlock[]) ?? [];
+        cols.forEach((col, idx) => {
+          if (idx > 0) {
+            // Separator between columns
+            doc.setDrawColor(200, 200, 200);
+            checkPageBreak(6);
+            doc.line(margin + indent, y, margin + indent + contentWidth, y);
+            y += 4;
+          }
+          (col.children as AnyBlock[])?.forEach((child) => renderBlock(child, depth));
+        });
+        break;
+      }
+      case "column": {
+        (block.children as AnyBlock[])?.forEach((child) => renderBlock(child, depth));
         break;
       }
       default: {

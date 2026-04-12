@@ -2203,3 +2203,44 @@ html.no-animations [data-state="active"][role="tabpanel"] {
 .view-mode .bn-block-group > .bn-block-outer {
   margin-left: 0;
 }
+
+/* ─── Multi-Column Layout ─── */
+.bn-block-outer[data-block-type="columnList"] {
+  width: 100%;
+}
+
+.bn-column-list {
+  display: flex;
+  gap: 16px;
+}
+
+.bn-column {
+  flex: 1 1 0%;
+  min-width: 120px;
+  border-left: 1px solid hsl(var(--border));
+  padding-left: 12px;
+}
+
+.bn-column:first-child {
+  border-left: none;
+  padding-left: 0;
+}
+
+@media (max-width: 768px) {
+  .bn-column-list {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .bn-column {
+    border-left: none;
+    padding-left: 0;
+    border-top: 1px solid hsl(var(--border));
+    padding-top: 8px;
+  }
+
+  .bn-column:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+}

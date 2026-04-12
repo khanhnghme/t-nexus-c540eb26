@@ -225,7 +225,7 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
   const editorContent = (
     <>
       <PageCoverImage coverUrl={coverUrl} editable={editable} groupId={groupId} maxFileSizeMb={maxFileSizeMb ?? undefined} onChangeCover={onChangeCover} />
-      <div className="max-w-[720px] mx-auto w-full relative">
+      <div className="max-w-[900px] mx-auto w-full relative">
         {/* Save status — floating top-right */}
         {saveStatus && (
           <div className={`absolute top-2 right-2 flex items-center gap-1 text-[10px] ${saveStatus.className} z-10`}>
