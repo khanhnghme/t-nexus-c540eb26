@@ -82,39 +82,7 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
   const [currentContent, setCurrentContent] = useState(serializedContent);
   const editorContainerRef = useRef<HTMLDivElement>(null);
 
-  const handleAddColumn = useCallback((columnListEl: HTMLElement) => {
-    // Find the BlockNote block corresponding to this DOM element
-    // We traverse up to find the block wrapper then use editor API
-    const blockOuter = columnListEl.closest("[data-node-type='blockOuter']") as HTMLElement | null;
-    if (!blockOuter) return;
-    const blockId = blockOuter.getAttribute("data-id");
-    if (!blockId) return;
 
-    try {
-      const block = editor.getBlock(blockId);
-      if (!block || block.type !== "columnList") return;
-      const colCount = block.children?.length ?? 0;
-      if (colCount >= 4) return;
-
-      // Insert a new empty column as the last child
-      const lastChild = block.children?.[colCount - 1];
-      if (!lastChild) return;
-
-      editor.insertBlocks(
-        [{ type: "column" as any, children: [{ type: "paragraph" as any }] }],
-        lastChild,
-        "after"
-      );
-
-      // Trigger autosave
-      const doc = editor.document as any[];
-      if (pageId) setCurrentContent(JSON.stringify(doc));
-    } catch (e) {
-      console.warn("[CanvasEditor] Failed to add column:", e);
-    }
-  }, [editor, pageId]);
-
-  useColumnControls(editorContainerRef, editable && !isReadOnly, handleAddColumn);
 
   const uploadFile = useCallback(async (file: File): Promise<string> => {
     if (isReadOnly) {
