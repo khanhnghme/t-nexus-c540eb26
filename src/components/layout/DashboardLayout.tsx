@@ -125,12 +125,32 @@ function WorkspaceSwitcherCell({ collapsed }: { collapsed: boolean }) {
   };
 
   if (!isAvailable || !activeWorkspace) {
+    if (collapsed) {
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => navigate('/workspace/new')}
+              className="ws-switcher-compact ws-switcher-collapsed"
+            >
+              <Plus className="w-4 h-4" style={{ color: 'var(--_sb-fg)' }} />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={12}>
+            <p className="font-medium">{locale === 'vi' ? 'Tạo Workspace' : 'Create Workspace'}</p>
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
     return (
-      <Link to="/dashboard" className="flex items-center gap-2 min-w-0">
-        <span className="sidebar-logo-text whitespace-nowrap overflow-hidden">
-          <img src={tNexusTextWhite} alt="T-Nexus" className="h-[15px] w-auto max-w-full" />
-        </span>
-      </Link>
+      <button
+        onClick={() => navigate('/workspace/new')}
+        className="ws-switcher-compact"
+        style={{ gap: '8px' }}
+      >
+        <div className="ws-avatar-compact">+</div>
+        <span className="ws-name-compact">{locale === 'vi' ? 'Tạo Workspace' : 'Create Workspace'}</span>
+      </button>
     );
   }
 
