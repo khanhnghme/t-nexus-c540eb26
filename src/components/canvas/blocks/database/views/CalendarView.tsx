@@ -108,6 +108,43 @@ export const CalendarView = memo(function CalendarView({
   );
   const dateProps = properties.filter((p) => p.type === "date");
 
+  /* Group items by date key */
+  const itemsByDate = useMemo(() => {
+    if (!dateProp) return new Map<string, DatabaseItem[]>();
+    const map = new Map<string, DatabaseItem[]>();
+    for (const item of items) {
+      const raw = item.properties[dateProp.id];
+      if (!raw) continue;
+      const key = String(raw).slice(0, 10);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(item);
+    }
+    return map;
+  }, [items, dateProp]);
+
+  const cells = useMemo(() => buildGrid(currentMonth), [currentMonth]);
+
+  const nameProperty = properties.find((p) => p.type === "text");
+
+  const prevMonth = useCallback(
+    () =>
+      setCurrentMonth(
+        (m) => new Date(m.getFullYear(), m.getMonth() - 1, 1)
+      ),
+    []
+  );
+  const nextMonth = useCallback(
+    () =>
+      setCurrentMonth(
+        (m) => new Date(m.getFullYear(), m.getMonth() + 1, 1)
+      ),
+    []
+  );
+  const goToday = useCallback(() => {
+    const now = new Date();
+    setCurrentMonth(new Date(now.getFullYear(), now.getMonth(), 1));
+  }, []);
+
   /* No date property selected */
   if (!dateProp) {
     return (
@@ -136,42 +173,6 @@ export const CalendarView = memo(function CalendarView({
       </div>
     );
   }
-
-  /* Group items by date key */
-  const itemsByDate = useMemo(() => {
-    const map = new Map<string, DatabaseItem[]>();
-    for (const item of items) {
-      const raw = item.properties[dateProp.id];
-      if (!raw) continue;
-      const key = String(raw).slice(0, 10); // YYYY-MM-DD
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(item);
-    }
-    return map;
-  }, [items, dateProp.id]);
-
-  const cells = useMemo(() => buildGrid(currentMonth), [currentMonth]);
-
-  const nameProperty = properties.find((p) => p.type === "text");
-
-  const prevMonth = useCallback(
-    () =>
-      setCurrentMonth(
-        (m) => new Date(m.getFullYear(), m.getMonth() - 1, 1)
-      ),
-    []
-  );
-  const nextMonth = useCallback(
-    () =>
-      setCurrentMonth(
-        (m) => new Date(m.getFullYear(), m.getMonth() + 1, 1)
-      ),
-    []
-  );
-  const goToday = useCallback(() => {
-    const now = new Date();
-    setCurrentMonth(new Date(now.getFullYear(), now.getMonth(), 1));
-  }, []);
 
   const todayKey = toKey(new Date());
   const MAX_PILLS = 2;
