@@ -73,6 +73,10 @@ const DatabaseRenderer = memo(function DatabaseRenderer({
     [activeView, updateView]
   );
 
+  if (!isInitialized) {
+    return <DatabaseTemplatePicker onSelect={handleTemplateSelect} />;
+  }
+
   /* ── View Router ──────────────────────────────────────── */
   const renderActiveView = () => {
     const commonProps = {
