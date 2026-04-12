@@ -4,7 +4,8 @@ import { useProjectPages, useCreatePage, useDeletePage, useUpdatePage } from "@/
 import CanvasEditor from "./CanvasEditor";
 import type { CanvasEditorHandle } from "./CanvasEditor";
 import CanvasSidebar from "./CanvasSidebar";
-import { Loader2, FileText, RefreshCw, Plus, PanelLeft, Pencil, Eye, Save, Menu, Download, Link2, HelpCircle, MoreHorizontal, HardDrive } from "lucide-react";
+import { Loader2, FileText, RefreshCw, Plus, PanelLeft, Pencil, Eye, Save, Menu, Download, Link2, HelpCircle, MoreHorizontal } from "lucide-react";
+import googleDriveLogo from "@/assets/google-drive-logo.png";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -355,7 +356,7 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
                   onClick={handleDriveClick}
                   disabled={isPickerLoading}
                 >
-                  {isPickerLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <HardDrive className="h-3.5 w-3.5" />}
+                  {isPickerLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <img src={googleDriveLogo} alt="Google Drive" className="h-4 w-4" />}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Chọn file từ Google Drive</TooltipContent>
