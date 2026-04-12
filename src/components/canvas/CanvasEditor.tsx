@@ -6,6 +6,7 @@ import { BlockNoteSchema, defaultBlockSpecs } from "@blocknote/core";
 import type { Block, PartialBlock } from "@blocknote/core";
 import { useCallback, useImperativeHandle, useMemo, useState, forwardRef } from "react";
 import { useAutosave } from "@/hooks/useAutosave";
+import type { DriveFile } from "@/hooks/useGoogleDrivePicker";
 import { useUpdatePageContent } from "@/hooks/useProjectPages";
 import { Check, Cloud, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
