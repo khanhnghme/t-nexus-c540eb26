@@ -42,6 +42,12 @@ export default function CreateWorkspace() {
       });
 
       if (error) throw error;
+      if (data?.limit_reached) {
+        toast.error(data.error);
+        setIsSubmitting(false);
+        createLockRef.current = false;
+        return;
+      }
       if (data?.error) throw new Error(data.error);
 
       toast.success(cw.successToast);
