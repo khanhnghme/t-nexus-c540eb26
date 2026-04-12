@@ -9,6 +9,8 @@ import { useAutosave } from "@/hooks/useAutosave";
 import { useUpdatePageContent } from "@/hooks/useProjectPages";
 import { Check, Cloud, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { useReadOnlyGuard } from "@/components/ReadOnlyGuard";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { TaskListBlock } from "./blocks/TaskBlock";
 import { MemberListBlock } from "./blocks/MemberBlock";
 import { CalendarBlock } from "./blocks/CalendarBlock";
