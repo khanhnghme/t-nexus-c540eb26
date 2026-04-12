@@ -1,64 +1,79 @@
 
 
-## Phần 2: DatabaseBlock — BlockNote Integration
+## Phần 3: ViewSwitcher & ViewToolbar — Triển khai chi tiết
 
 ### Mục tiêu
-Đăng ký database block vào editor, thêm slash command `/database`, render placeholder UI với table view cơ bản. Sau phần này, user gõ `/database` sẽ tạo được block hoạt động.
+Thêm UI chuyển đổi giữa các views (tab bar) và toolbar lọc/sắp xếp/ẩn hiện cột. Tích hợp vào DatabaseBlock hiện tại.
 
 ### Hiện trạng
-- Phần 1 hoàn thành: `types.ts` + `useDatabaseData.ts` đã có
-- Pattern đăng ký block: `createReactBlockSpec` + thêm vào `schema` blockSpecs (xem TaskBlock, CalendarBlock)
-- Slash menu: dùng `combineByGroup` + `filterSuggestionItems`
+- Phần 1 (types + useDatabaseData) — hoàn thành
+- Phần 2 (DatabaseBlock + slash menu) — hoàn thành, render inline table cơ bản
+- `useDatabaseData` đã có: `addView`, `updateView`, `deleteView`, `setActiveView`, `views`, `activeView`
+- UI components có sẵn: Tabs, Button, Popover, Select, Input, Badge, Checkbox
 
-### Chia 4 bước triển khai
+### Chia 4 bước
 
 ---
 
-**Bước 1: Tạo `DatabaseBlock.tsx` — Block spec + Renderer shell**
+**Bước 1: Tạo `ViewSwitcher.tsx`**
 
-File mới: `src/components/canvas/blocks/database/DatabaseBlock.tsx`
+File mới: `src/components/canvas/blocks/database/ViewSwitcher.tsx`
 
-- `createReactBlockSpec` với type `"databaseView"`, propSchema:
-  - `properties`: `{ default: "" }` (JSON string)
-  - `items`: `{ default: "" }` (JSON string)
-  - `views`: `{ default: "" }` (JSON string)
-  - `activeViewId`: `{ default: "" }` (string)
-- Content: `"none"`
-- Render function:
-  - Wrap trong `<div contentEditable={false}>` (pattern giống TaskBlock)
-  - Gọi `useDatabaseData({ blockProps: props, updateProps })` để lấy data
-  - Render header: icon Database + title "Database"
-  - Render placeholder Table view inline (simple HTML table với properties làm header, items làm rows)
-  - Nút "+ New" để `addItem()`
-  - Chưa cần ViewSwitcher/ViewToolbar phức tạp (phần 3)
+- Props: `views`, `activeViewId`, `editable`, `onSwitchView`, `onAddView`, `onDeleteView`, `onRenameView`
+- Render tab bar ngang:
+  - Mỗi view = 1 tab button với icon theo type (Table/Kanban/Calendar/List)
+  - Tab active có highlight
+  - Double-click tab → inline rename (input thay text)
+- Nút "+" cuối tabs:
+  - Click → dropdown 4 options: Table, Board, Calendar, List
+  - Chọn → gọi `onAddView(name, type)`
+- Context menu (right-click) trên tab:
+  - Rename, Delete (disable nếu chỉ còn 1 view)
+- Chỉ hiện nút "+", rename, delete khi `editable === true`
 
-**Bước 2: Đăng ký block vào schema**
+---
 
-File sửa: `src/components/canvas/CanvasEditor.tsx`
+**Bước 2: Tạo `ViewToolbar.tsx`**
 
-- Import: `import { DatabaseViewBlock } from "./blocks/database/DatabaseBlock";`
-- Thêm vào blockSpecs: `databaseView: DatabaseViewBlock(),`
+File mới: `src/components/canvas/blocks/database/ViewToolbar.tsx`
 
-**Bước 3: Thêm slash menu item**
+- Props: `view`, `properties`, `editable`, `onUpdateView`
+- 3 nút trên toolbar (chỉ hiện khi editable):
 
-File sửa: `src/components/canvas/CanvasEditor.tsx`
+**Filter button:**
+- Click → Popover hiện danh sách filter rules
+- Mỗi rule: dropdown chọn property → dropdown operator → input value
+- Nút "Add filter" thêm rule mới
+- Nút x xóa rule
+- Operators thay đổi theo property type (text: contains/equals, number: gt/lt, checkbox: equals)
 
-- Trong `getSlashMenuItems`, tạo custom item:
-  ```
-  { title: "Database", group: "Advanced", icon: Database,
-    onItemClick: () => editor.insertBlocks([{ type: "databaseView" }], ...) }
-  ```
-- Thêm vào `combineByGroup(defaultItems, mcItems, customItems)`
+**Sort button:**
+- Click → Popover hiện danh sách sort rules
+- Mỗi rule: dropdown property → toggle asc/desc
+- Nút "Add sort"
 
-**Bước 4: Inline table view cơ bản trong DatabaseBlock**
+**Fields button (toggle visible columns):**
+- Click → Popover checklist tất cả properties
+- Check/uncheck → update `visibleProperties` trong view config
+- Badge hiện số fields đang ẩn
 
-Trong `DatabaseBlock.tsx`:
-- Render `<table>` với:
-  - Header row = `properties.filter(p => activeView.visibleProperties.includes(p.id))`
-  - Body rows = `filteredItems` → cells editable (input cho text/number, checkbox cho checkbox)
-- `updateItem(itemId, propertyId, value)` khi blur/change
-- Nút "+" ở header cuối để `addProperty("New Column", "text")`
-- Style: dùng Tailwind classes, border, hover highlight
+---
+
+**Bước 3: Tích hợp vào DatabaseBlock.tsx**
+
+Sửa `DatabaseBlock.tsx`:
+- Import ViewSwitcher + ViewToolbar
+- Thêm ViewSwitcher vào header (thay thế text "Database" tĩnh)
+- Thêm ViewToolbar giữa header và table
+- Wire callbacks: `setActiveView`, `addView`, `deleteView`, `updateView`
+
+---
+
+**Bước 4: Styling & polish**
+
+- ViewSwitcher tabs nhỏ gọn, giống Notion (text + icon nhỏ, không quá cao)
+- Toolbar compact, nút ghost với icon, badge count cho active filters/sorts
+- Responsive: toolbar wrap trên mobile
 
 ---
 
@@ -66,11 +81,7 @@ Trong `DatabaseBlock.tsx`:
 
 | File | Action |
 |------|--------|
-| `src/components/canvas/blocks/database/DatabaseBlock.tsx` | Mới |
-| `src/components/canvas/CanvasEditor.tsx` | Sửa — import + blockSpecs + slash menu |
-
-### Lưu ý kỹ thuật
-- `updateProps` trong `createReactBlockSpec` render function: dùng `props.block.props` để đọc, `editor.updateBlock(props.block, { props: updates })` để ghi — cần verify pattern từ BlockNote API
-- Inline table ở bước 4 là temporary — sẽ được thay thế bằng `TableView` component chính thức ở phần 4
-- Không cần cài thêm thư viện
+| `src/components/canvas/blocks/database/ViewSwitcher.tsx` | Mới |
+| `src/components/canvas/blocks/database/ViewToolbar.tsx` | Mới |
+| `src/components/canvas/blocks/database/DatabaseBlock.tsx` | Sửa — thêm ViewSwitcher + ViewToolbar vào renderer |
 
