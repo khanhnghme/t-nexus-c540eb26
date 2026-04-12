@@ -26,7 +26,7 @@ import { TaskBlockProvider } from "./blocks/TaskBlockContext";
 import PageCoverImage from "./PageCoverImage";
 import PageHeader from "./PageHeader";
 
-const schema = BlockNoteSchema.create({
+const schema = withMultiColumn(BlockNoteSchema.create({
   blockSpecs: {
     ...defaultBlockSpecs,
     taskList: TaskListBlock(),
@@ -35,7 +35,7 @@ const schema = BlockNoteSchema.create({
     noteCallout: NoteCalloutBlock(),
     toggleBlock: ToggleBlock(),
   },
-});
+}));
 
 export interface CanvasEditorHandle {
   forceSave: () => void;
