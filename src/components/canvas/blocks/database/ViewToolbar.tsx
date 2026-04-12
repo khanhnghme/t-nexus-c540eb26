@@ -61,8 +61,6 @@ export const ViewToolbar = memo(function ViewToolbar({
   editable,
   onUpdateView,
 }: ViewToolbarProps) {
-  if (!editable) return null;
-
   const hiddenCount = properties.length - view.visibleProperties.length;
 
   const updateFilters = useCallback(
