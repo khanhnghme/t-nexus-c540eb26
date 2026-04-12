@@ -54,7 +54,8 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
   const { activeWorkspace, workspaces, switchWorkspace, isAvailable, workspaceRole } = useWorkspace();
   const { projects, isGuest } = useWorkspaceProjects();
   const { translations } = useLanguage();
-  const { ownerPlan } = useWorkspaceBilling();
+  const billing = useWorkspaceBilling();
+  const ownerPlan = billing?.ownerPlan;
   const t = translations.app?.sidebar;
 
   const hiddenNav = Array.isArray(profile?.nav_hidden_pages)
@@ -176,7 +177,7 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
       )}
 
       {/* ══ Workspace Navigation ══ */}
-      {isAvailable && activeWorkspace && (
+      {isAvailable && activeWorkspace ? (
         <div className="ws-nav-section">
           {/* Dashboard */}
           <Link to="/dashboard" className={cn('sidebar-nav-item', isPathActive('/dashboard') && 'active')}>
@@ -246,6 +247,30 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
               })}
             </div>
           )}
+        </div>
+      ) : (
+        <div className="ws-nav-section">
+          <Link to="/dashboard" className={cn('sidebar-nav-item', isPathActive('/dashboard') && 'active')}>
+            <Home className="nav-icon" strokeWidth={1.8} />
+            <span className="nav-label">{t?.home || 'Home'}</span>
+          </Link>
+          <Link to="/notifications" className={cn('sidebar-nav-item', isPathActive('/notifications') && 'active')}>
+            <Bell className="nav-icon" strokeWidth={1.8} />
+            <span className="nav-label">{t?.notifications || 'Notifications'}</span>
+          </Link>
+          <div className="mx-2 my-3 p-3 rounded-xl border border-dashed border-muted-foreground/30 text-center">
+            <Building2 className="w-6 h-6 mx-auto mb-2 text-muted-foreground/50" />
+            <p className="text-xs text-muted-foreground mb-2">
+              {translations.app?.sidebar?.noWorkspace || 'You don\'t have a workspace yet'}
+            </p>
+            <button
+              onClick={() => navigate('/workspace/new')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              {translations.app?.sidebar?.createWorkspace || 'Create Workspace'}
+            </button>
+          </div>
         </div>
       )}
 
