@@ -2212,6 +2212,16 @@ html.no-animations [data-state="active"][role="tabpanel"] {
 .bn-column-list {
   display: flex;
   gap: 16px;
+  border-radius: 6px;
+  transition: outline 0.15s ease, background-color 0.15s ease;
+  outline: 1.5px dashed transparent;
+  padding: 4px;
+}
+
+/* Hover cue only in editable mode */
+.bn-editor:not([contenteditable="false"]) .bn-column-list:hover {
+  outline-color: hsl(var(--border));
+  background-color: hsl(var(--muted) / 0.3);
 }
 
 .bn-column {
@@ -2243,4 +2253,10 @@ html.no-animations [data-state="active"][role="tabpanel"] {
     border-top: none;
     padding-top: 0;
   }
+}
+
+/* View-mode: no hover effects */
+.view-mode .bn-column-list:hover {
+  outline-color: transparent;
+  background-color: transparent;
 }

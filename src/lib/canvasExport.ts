@@ -60,10 +60,19 @@ function blockToMarkdown(block: AnyBlock, depth = 0): string {
     }
     // Column blocks
     case "columnList": {
-      const cols = (block.children as AnyBlock[]) ?? [];
-      return cols.map((col) => {
+      const cols = ((block.children as AnyBlock[]) ?? []).filter(
+        (col) => (col.children as AnyBlock[])?.length > 0
+      );
+      if (cols.length <= 1) {
+        // Single or empty column — render children as normal blocks
+        const children = cols[0]?.children ?? [];
+        return (children as AnyBlock[]).map((child) => blockToMarkdown(child, depth)).join("\n");
+      }
+      return cols.map((col, idx) => {
+        const label = `**Cột ${idx + 1}:**`;
         const children = (col.children as AnyBlock[]) ?? [];
-        return children.map((child) => blockToMarkdown(child, depth)).join("\n");
+        const content = children.map((child) => blockToMarkdown(child, depth)).join("\n");
+        return `${label}\n${content}`;
       }).join("\n\n---\n\n");
     }
     case "column": {
@@ -285,22 +294,42 @@ export function downloadPdf(blocks: AnyBlock[], title = "Untitled") {
       }
       case "columnList": {
         // Render columns sequentially in PDF
-        const cols = (block.children as AnyBlock[]) ?? [];
+        const cols = ((block.children as AnyBlock[]) ?? []).filter(
+          (col) => (col.children as AnyBlock[])?.length > 0
+        );
+        if (cols.length <= 1) {
+          // Single or empty — render as normal blocks
+          (cols[0]?.children as AnyBlock[])?.forEach((child) => renderBlock(child, depth));
+          return;
+        }
         cols.forEach((col, idx) => {
-          if (idx > 0) {
-            // Separator between columns
+          // Column label
+          doc.setFontSize(9);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(128, 128, 128);
+          checkPageBreak(8);
+          doc.text(`Cột ${idx + 1}:`, margin + indent, y);
+          y += 5;
+          doc.setTextColor(0, 0, 0);
+          doc.setFont("helvetica", "normal");
+
+          (col.children as AnyBlock[])?.forEach((child) => renderBlock(child, depth));
+
+          if (idx < cols.length - 1) {
+            // Dashed separator between columns
             doc.setDrawColor(200, 200, 200);
             checkPageBreak(6);
+            doc.setLineDashPattern([3, 2], 0);
             doc.line(margin + indent, y, margin + indent + contentWidth, y);
+            doc.setLineDashPattern([], 0);
             y += 4;
           }
-          (col.children as AnyBlock[])?.forEach((child) => renderBlock(child, depth));
         });
-        return; // avoid double-render from children loop below
+        return;
       }
       case "column": {
         (block.children as AnyBlock[])?.forEach((child) => renderBlock(child, depth));
-        return; // avoid double-render from children loop below
+        return;
       }
       default: {
         if (text) {
