@@ -1,45 +1,52 @@
 
 
-## Thêm UI phân biệt dự án Custom trên trang /groups
+## Thêm chức năng tải ảnh lên làm Cover trong CoverPicker
 
 ### Vấn đề
-Trang `/groups` không phân biệt trực quan giữa dự án basic và custom. Ngoài ra, link cũng hardcode `/pr/` cho tất cả project.
+CoverPicker hiện chỉ hỗ trợ gradient, màu đơn, và URL ảnh. Không có tab upload file ảnh trực tiếp.
 
-### Thay đổi — `src/pages/Groups.tsx`
+### Giải pháp
+Thêm tab "Tải ảnh" vào CoverPicker, cho phép chọn file ảnh → upload lên R2 bucket `project-resources` → trả về URL public làm cover.
 
-**1. Badge "Custom" trên ảnh bìa (giống DashboardProjectCard)**
-Thêm badge với icon `Palette` ở góc dưới trái ảnh bìa khi `group.project_mode === 'custom'`:
+### Thay đổi
+
+| File | Nội dung |
+|------|----------|
+| **`src/components/canvas/CoverPicker.tsx`** | Thêm tab "Tải ảnh" với input file, upload lên R2, trả URL về `onSelect` |
+
+### Chi tiết — `CoverPicker.tsx`
+
+1. **Import thêm**: `r2Storage`, `getR2FilePublicUrl` từ `@/lib/r2Storage`, `Upload` icon, `useAuth`, `toast`, `Loader2`
+2. **Nhận thêm prop `groupId`** để tạo path lưu trữ: `covers/{groupId}/{timestamp}-{filename}`
+3. **Thêm tab thứ 4** `"upload"` — label "Tải ảnh":
+   - Input file ẩn, accept `image/*`
+   - Nút "Chọn ảnh từ máy" trigger input
+   - Khi chọn file → upload lên R2 → gọi `onSelect(publicUrl)` → đóng popover
+   - Hiển thị loading spinner khi đang upload
+4. **Giới hạn**: chỉ nhận file ảnh, tối đa 5MB
+
+### Cập nhật nơi sử dụng
+
+| File | Nội dung |
+|------|----------|
+| **`src/components/canvas/PageHeader.tsx`** | Truyền `groupId` vào `CoverPicker` |
+| **`src/components/canvas/PageCoverImage.tsx`** | Truyền `groupId` vào `CoverPicker` |
+| **`src/components/canvas/CanvasPageView.tsx`** | Truyền `groupId` xuống `PageHeader` và `PageCoverImage` |
+
+### Code mẫu — Tab upload trong CoverPicker
+
 ```tsx
-{group.project_mode === 'custom' && (
-  <div className="absolute bottom-3 right-3 drop-shadow-md">
-    <Badge className="bg-violet-500/90 text-white shadow-lg text-[10px] px-2 py-0.5 gap-1">
-      <Palette className="w-3 h-3" />
-      Custom
-    </Badge>
-  </div>
-)}
+<TabsTrigger value="upload" className="text-xs">Tải ảnh</TabsTrigger>
+
+<TabsContent value="upload" className="mt-2">
+  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+  <Button variant="outline" size="sm" className="w-full h-9 text-xs gap-1.5"
+    onClick={() => fileRef.current?.click()} disabled={uploading}>
+    {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+    {uploading ? "Đang tải..." : "Chọn ảnh từ máy"}
+  </Button>
+</TabsContent>
 ```
 
-**2. Gradient accent bar khác màu cho custom project**
-Dùng gradient tím/violet riêng cho custom project thay vì dùng chung palette:
-```tsx
-const gradient = group.project_mode === 'custom'
-  ? 'from-violet-500 via-purple-500 to-fuchsia-500'
-  : gradients[index % gradients.length];
-```
-
-**3. Fix URL — custom project dùng `/pa/` thay vì `/pr/`**
-Line 832:
-```tsx
-// Before
-to={activeWorkspace?.short_id ? `/pr/ws-${activeWorkspace.short_id}/${group.slug}` : `/p/${group.slug}`}
-
-// After
-to={activeWorkspace?.short_id
-  ? `${group.project_mode === 'custom' ? '/pa' : '/pr'}/ws-${activeWorkspace.short_id}/${group.slug}`
-  : `/p/${group.slug}`}
-```
-
-**4. Import `Palette`**
-Thêm `Palette` vào danh sách import từ `lucide-react`.
+Upload logic: dùng `r2Storage.from('project-resources').upload(path, file)` → `getR2FilePublicUrl('project-resources', path)`.
 
