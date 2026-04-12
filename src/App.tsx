@@ -196,8 +196,8 @@ function AppRoutes() {
           <Route path="/pr/:wsParam/:projectSlug" element={<GroupDetail />} />
           <Route path="/pr/:wsParam/:projectSlug/t/:taskSlug" element={<GroupDetail />} />
           <Route path="/pr/:wsParam/:projectSlug/t/:taskSlug/f/:fileIndex" element={<ProtectedRoute><FilePreview /></ProtectedRoute>} />
-          {/* New page format: /pa/ws-{wsShortId}/{pageSlug} */}
-          <Route path="/pa/:wsParam/:pageSlug" element={<GroupDetail />} />
+          {/* Page format: /pa/ws-{wsShortId}/{projectSlug} */}
+          <Route path="/pa/:wsParam/:projectSlug" element={<GroupDetail />} />
           {/* Legacy redirects */}
           <Route path="/p/:projectSlug" element={<LegacyProjectRedirect />} />
           <Route path="/p/:projectSlug/page/:pageSlug" element={<LegacyPageRedirect />} />

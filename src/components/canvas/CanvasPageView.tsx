@@ -32,10 +32,9 @@ interface CanvasPageViewProps {
   editable?: boolean;
   projectSlug?: string;
   wsShortId?: string;
-  initialPageSlug?: string;
 }
 
-export default function CanvasPageView({ groupId, editable = false, projectSlug, wsShortId, initialPageSlug }: CanvasPageViewProps) {
+export default function CanvasPageView({ groupId, editable = false, projectSlug, wsShortId }: CanvasPageViewProps) {
   const { data: pages, isLoading, error, refetch } = useProjectPages(groupId);
   const { user, profile } = useAuth();
   const navigate = useNavigate();
@@ -58,7 +57,7 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
     setSidebarOpen(!isMobile);
   }, [isMobile]);
 
-  // Resolve initialPageSlug to activePageId, or auto-select first page
+  // Auto-select first page
   useEffect(() => {
     if (!pages?.length) {
       setActivePageId(null);
@@ -66,32 +65,14 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
     }
     const ids = pages.map((p) => p.id);
 
-    if (initialPageSlug) {
-      const matchedPage = pages.find((p) => p.slug === initialPageSlug);
-      if (matchedPage) {
-        setActivePageId(matchedPage.id);
-        return;
-      }
-    }
-
     if (!activePageId || !ids.includes(activePageId)) {
       const firstPage = pages[0];
       setActivePageId(firstPage.id);
-      if (wsShortId && firstPage.slug && !initialPageSlug) {
-        navigate(`/pa/ws-${wsShortId}/${firstPage.slug}`, { replace: true });
-      } else if (projectSlug && firstPage.slug && !initialPageSlug) {
-        navigate(`/p/${projectSlug}/page/${firstPage.slug}`, { replace: true });
-      }
     }
-  }, [pages, initialPageSlug]);
+  }, [pages]);
 
   const navigateToPage = (page: { id: string; slug?: string | null }) => {
     setActivePageId(page.id);
-    if (wsShortId && page.slug) {
-      navigate(`/pa/ws-${wsShortId}/${page.slug}`);
-    } else if (projectSlug && page.slug) {
-      navigate(`/p/${projectSlug}/page/${page.slug}`);
-    }
     if (isMobile) setSidebarOpen(false);
   };
 
@@ -121,11 +102,6 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
         created_by: user.id,
         display_order: maxOrder,
       });
-      if (wsShortId && newPage.slug) {
-        navigate(`/pa/ws-${wsShortId}/${newPage.slug}`);
-      } else if (projectSlug && newPage.slug) {
-        navigate(`/p/${projectSlug}/page/${newPage.slug}`);
-      }
       setActivePageId(newPage.id);
       doLog("page_created", `Tạo trang "${newPage.title}"`, { page_id: newPage.id });
       toast.success("Đã tạo trang mới!");
@@ -171,11 +147,6 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
   const handleRenamePage = async (pageId: string, newTitle: string) => {
     try {
       const result = await updatePage.mutateAsync({ pageId, updates: { title: newTitle } });
-      if (wsShortId && result.slug && pageId === activePageId) {
-        navigate(`/pa/ws-${wsShortId}/${result.slug}`, { replace: true });
-      } else if (projectSlug && result.slug && pageId === activePageId) {
-        navigate(`/p/${projectSlug}/page/${result.slug}`, { replace: true });
-      }
       doLog("page_renamed", `Đổi tên trang thành "${newTitle}"`, { page_id: pageId });
       toast.success("Đã đổi tên trang.");
     } catch (err: any) {

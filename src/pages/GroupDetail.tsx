@@ -58,13 +58,12 @@ interface ExtendedGroup extends Group {
 }
 
 export default function GroupDetail() {
-  const { groupId, projectId, projectSlug, taskSlug, taskId: routeTaskId, pageSlug, wsParam } = useParams<{ 
+  const { groupId, projectId, projectSlug, taskSlug, taskId: routeTaskId, wsParam } = useParams<{ 
     groupId?: string; 
     projectId?: string; 
     projectSlug?: string;
     taskSlug?: string;
     taskId?: string;
-    pageSlug?: string;
     wsParam?: string;
   }>();
   const [searchParams] = useSearchParams();
@@ -178,26 +177,15 @@ export default function GroupDetail() {
   const [editingStage, setEditingStage] = useState<Stage | null>(null);
   const [stageToDelete, setStageToDelete] = useState<Stage | null>(null);
 
-  useEffect(() => { if ((routeId || pageSlug) && user) fetchGroupData(); }, [routeId, pageSlug, user]);
+  useEffect(() => { if (routeId && user) fetchGroupData(); }, [routeId, user]);
 
   const fetchGroupData = async () => {
-    if (!routeId && !pageSlug) return;
+    if (!routeId) return;
     
     try {
       let groupData;
 
-      if (!routeId && pageSlug) {
-        // Route /pa/:wsParam/:pageSlug — resolve group_id from page slug
-        const { data: pageData } = await supabase
-          .from('project_pages')
-          .select('group_id')
-          .eq('slug', pageSlug)
-          .single();
-        if (pageData) {
-          const { data } = await supabase.from('groups').select('*').eq('id', pageData.group_id).single();
-          groupData = data;
-        }
-      } else if (routeId) {
+      if (routeId) {
         // Support UUID, short_id, and semantic slug lookup
         const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         const shortIdPattern = /^[a-z0-9]{8}$/i;
@@ -487,7 +475,7 @@ export default function GroupDetail() {
 
       {group.project_mode === 'custom' ? (
         <div className="animate-fade-in h-[calc(100vh-48px)]">
-          <CanvasPageView groupId={group.id} editable={isLeaderInGroup} projectSlug={projectSlug} initialPageSlug={pageSlug} />
+          <CanvasPageView groupId={group.id} editable={isLeaderInGroup} projectSlug={projectSlug} wsShortId={wsShortId} />
         </div>
       ) : (
       <div>
