@@ -6,6 +6,7 @@ import { ViewSwitcher } from "./ViewSwitcher";
 import { ViewToolbar } from "./ViewToolbar";
 import { TableView } from "./views/TableView";
 import { ListView } from "./views/ListView";
+import { BoardView } from "./views/BoardView";
 
 /* ── Database Renderer ────────────────────────────────────────── */
 
