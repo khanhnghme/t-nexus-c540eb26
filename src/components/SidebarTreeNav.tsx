@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
-import { useWorkspaceProjects } from '@/hooks/useWorkspaceProjects';
+import { useWorkspaceProjects, WorkspaceProject } from '@/hooks/useWorkspaceProjects';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useWorkspaceBilling, formatPlanName } from '@/hooks/useWorkspaceBilling';
 import { cn } from '@/lib/utils';
