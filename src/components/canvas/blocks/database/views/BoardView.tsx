@@ -53,6 +53,37 @@ export const BoardView = memo(function BoardView({
 
   const nameProperty = useMemo(() => properties[0], [properties]);
 
+  const options = groupProp?.options ?? [];
+
+  // Group items into columns
+  const columns = useMemo(() => {
+    if (!groupProp) return {};
+    const map: Record<string, DatabaseItem[]> = {};
+    map[NO_STATUS_KEY] = [];
+    for (const opt of options) map[opt.id] = [];
+
+    for (const item of items) {
+      const val = item.properties[groupProp.id];
+      if (val && map[val]) {
+        map[val].push(item);
+      } else {
+        map[NO_STATUS_KEY].push(item);
+      }
+    }
+    return map;
+  }, [items, options, groupProp]);
+
+  const handleDragEnd = useCallback(
+    (result: DropResult) => {
+      if (!groupProp || !result.destination || !editable) return;
+      const itemId = result.draggableId;
+      const destCol = result.destination.droppableId;
+      const newValue = destCol === NO_STATUS_KEY ? null : destCol;
+      onUpdateItem(itemId, groupProp.id, newValue);
+    },
+    [editable, onUpdateItem, groupProp]
+  );
+
   // If no valid groupBy, show picker
   if (!groupProp) {
     return (
@@ -77,36 +108,6 @@ export const BoardView = memo(function BoardView({
       </div>
     );
   }
-
-  const options = groupProp.options ?? [];
-
-  // Group items into columns
-  const columns = useMemo(() => {
-    const map: Record<string, DatabaseItem[]> = {};
-    map[NO_STATUS_KEY] = [];
-    for (const opt of options) map[opt.id] = [];
-
-    for (const item of items) {
-      const val = item.properties[groupProp.id];
-      if (val && map[val]) {
-        map[val].push(item);
-      } else {
-        map[NO_STATUS_KEY].push(item);
-      }
-    }
-    return map;
-  }, [items, options, groupProp.id]);
-
-  const handleDragEnd = useCallback(
-    (result: DropResult) => {
-      if (!result.destination || !editable) return;
-      const itemId = result.draggableId;
-      const destCol = result.destination.droppableId;
-      const newValue = destCol === NO_STATUS_KEY ? null : destCol;
-      onUpdateItem(itemId, groupProp.id, newValue);
-    },
-    [editable, onUpdateItem, groupProp.id]
-  );
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
