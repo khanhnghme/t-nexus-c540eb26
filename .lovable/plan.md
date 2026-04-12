@@ -1,52 +1,50 @@
 
 
-## Phase 4: Nâng cao UX & Polish Multi-Column
+## Phase 5: Final QA & Print Optimization
 
 ### Bối cảnh
-Phase 1-3 đã hoàn thành: cài đặt, styling responsive, export, và fix bug double-render. Phase 4 tập trung vào cải thiện trải nghiệm người dùng khi làm việc với columns.
+Phase 1-4 đã hoàn thành toàn bộ multi-column: cài đặt, responsive CSS, export Markdown/PDF, fix double-render, hover UX, edge cases. Phase 5 là phase cuối — tập trung vào print stylesheet, keyboard accessibility, và QA tổng thể.
 
 ### Bước thực hiện
 
-**Bước 1: Tùy chỉnh Slash Menu — thêm label tiếng Việt cho Columns**
-
-File: `src/components/canvas/CanvasEditor.tsx`
-
-- Import `getMultiColumnSlashMenuItems` từ `@blocknote/xl-multi-column`
-- Tạo custom slash menu items: merge default items + multi-column items
-- Override label "Columns" thành "Chia cột" khi `locale === 'vi'`
-- Truyền vào `useCreateBlockNote` hoặc custom `slashMenu` component
-
-**Bước 2: CSS polish — hover state & visual cue cho columns**
+**Bước 1: Print stylesheet cho columns**
 
 File: `src/index.css`
 
-- Thêm subtle hover border cho `.bn-column-list` khi editable (giúp user nhận biết đang hover vào vùng columns)
-- Thêm transition cho border/background khi hover
-- Đảm bảo view-mode (read-only) không hiện hover effect
-- Tối ưu spacing giữa columns trong dark mode
+- Thêm `@media print` rules cho `.bn-column-list` và `.bn-column`:
+  - Columns hiển thị ngang (giữ flex layout) khi in từ trình duyệt
+  - Ẩn hover outline/background trong print
+  - Thêm `break-inside: avoid` để tránh column bị cắt giữa trang khi in
+  - Border giữa columns dùng màu nhạt phù hợp in đen trắng
 
-**Bước 3: Cải thiện print/export layout cho columns**
+**Bước 2: Keyboard & accessibility cho columns**
 
-File: `src/lib/canvasExport.ts`
+File: `src/index.css`
 
-- Thêm label "Cột 1", "Cột 2",... trước mỗi column trong PDF export để người đọc dễ phân biệt
-- Cải thiện separator style (dùng dashed line thay vì solid)
-- Markdown export: thêm header `**Cột 1:**`, `**Cột 2:**` trước nội dung mỗi cột
+- Thêm focus-visible style cho `.bn-column` khi user navigate bằng keyboard (outline rõ ràng hơn hover)
+- Đảm bảo contrast ratio đủ cho border/divider trong cả light và dark mode
 
-**Bước 4: Xử lý edge case — empty columns & single column**
+**Bước 3: Guard trong CanvasEditor — prevent crash khi data lỗi**
 
-File: `src/lib/canvasExport.ts`
+File: `src/components/canvas/CanvasEditor.tsx`
 
-- Skip render column rỗng (không có children) trong cả Markdown và PDF
-- Nếu `columnList` chỉ có 1 column → render như block bình thường (không cần separator)
+- Trong `filterBlocks`, thêm safe check: nếu `columnList` block có `children` không phải array hoặc chứa block type không hợp lệ → tự động unwrap thành blocks bình thường thay vì crash editor
+- Log warning khi phát hiện malformed column data
+
+**Bước 4: Cập nhật plan.md — đánh dấu hoàn thành**
+
+File: `.lovable/plan.md`
+
+- Ghi nhận Phase 5 hoàn tất
+- Tóm tắt toàn bộ 5 phases đã triển khai
 
 ### Files thay đổi
-1. `src/components/canvas/CanvasEditor.tsx` — custom slash menu items cho multi-column
-2. `src/index.css` — ~15 dòng CSS hover effects
-3. `src/lib/canvasExport.ts` — cải thiện label & xử lý edge cases
+1. `src/index.css` — ~15 dòng print stylesheet + focus styles
+2. `src/components/canvas/CanvasEditor.tsx` — safe guard trong filterBlocks
+3. `.lovable/plan.md` — cập nhật trạng thái
 
 ### Không thay đổi
 - Database
+- canvasExport.ts (đã hoàn thiện ở Phase 3-4)
 - PublicCanvasPage
-- Custom block components
 
