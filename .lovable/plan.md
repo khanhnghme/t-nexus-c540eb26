@@ -1,70 +1,67 @@
 
 
-## Giai đoạn B — CSS, Print & Accessibility cho Multi-Column
+## Giai đoạn C — Nâng cao UX: Column Resize & Add Column
 
-### Đánh giá hiện trạng
+### Mục tiêu
+Bổ sung 2 tính năng nâng cao cho multi-column: (1) resize tỷ lệ cột tùy ý (30/70, 40/60...) và (2) nút "Add Column" khi hover vào column layout.
 
-Phần lớn CSS cơ bản đã được triển khai trong Phase A:
-- ✅ Responsive mobile (stack dọc dưới 768px)
-- ✅ Print stylesheet (break-inside, flex row)
-- ✅ Focus styles (`:focus-visible` trên `.bn-column`)
-- ✅ View-mode (tắt hover effects)
-- ✅ Empty column min-height
-- ✅ PDF/Markdown export đã xử lý `columnList`/`column`
-
-### Công việc còn lại — 3 phần
+### Chia 4 phần triển khai
 
 ---
 
-**Phần 1: Cải thiện tablet breakpoint (768–1024px)**
+**Phần 1: Column Resize Handle — CSS & Component**
+
+File mới: `src/components/canvas/ColumnResizeHandle.tsx`
+
+- Tạo component `ColumnResizeHandle` — một thanh dọc mỏng giữa 2 cột, hiện khi hover
+- Dùng `onMouseDown` / `onMouseMove` / `onMouseUp` native (không cần thư viện) để tính tỷ lệ mới
+- Khi kéo: cập nhật CSS `flex-basis` trên 2 cột liền kề
+- Khi thả: lưu tỷ lệ vào props của `columnList` block (ví dụ `props.widths: ["30%", "70%"]`)
+- Giới hạn min 20% mỗi cột để tránh cột bị quá nhỏ
+- Cursor `col-resize` khi hover/drag
 
 File: `src/index.css`
-
-Hiện tại chỉ có 2 breakpoint: desktop (giữ nguyên) và mobile (<768px, stack dọc). Tablet cần xử lý riêng:
-
-```css
-@media (min-width: 769px) and (max-width: 1024px) {
-  .bn-column-list {
-    gap: 10px;
-  }
-  .bn-column {
-    min-width: 100px;
-  }
-}
-```
+- Thêm CSS cho `.column-resize-handle` (vị trí absolute, hover effect, cursor)
 
 ---
 
-**Phần 2: Cải thiện PDF export — render columns song song**
+**Phần 2: Tích hợp Resize vào Editor**
 
-File: `src/lib/canvasExport.ts`
+File: `src/components/canvas/CanvasEditor.tsx`
 
-Hiện tại `columnList` trong PDF render tuần tự (Cột 1 rồi Cột 2). Cải thiện bằng cách dùng jsPDF table layout để đặt columns cạnh nhau:
-
-- Chia `contentWidth` cho số columns
-- Render mỗi column vào vùng x tương ứng
-- Fallback về sequential nếu nội dung quá dài
+- Sau khi editor render, dùng `useEffect` + MutationObserver để detect `[data-content-type="columnList"]` elements trong DOM
+- Inject `ColumnResizeHandle` giữa các column elements
+- Khi resize xong, gọi `editor.updateBlock()` để lưu tỷ lệ vào block props
+- Chỉ hiển thị resize handle khi `editable === true`
 
 ---
 
-**Phần 3: Accessibility — ARIA attributes & keyboard nav**
+**Phần 3: Nút "Add Column" khi hover**
 
-File: `src/index.css` + `src/components/canvas/CanvasEditor.tsx`
+File: `src/components/canvas/AddColumnButton.tsx`
 
-- Thêm CSS cho `[role="group"]` trên columnList (BlockNote tự thêm role)
-- Đảm bảo Tab key di chuyển giữa các columns đúng thứ tự
-- Thêm `aria-label` cho column containers qua CSS `::before` content (screen reader)
-- High contrast mode support cho column borders
+- Component nút `+` nhỏ, hiện ở cạnh phải của `columnList` khi hover
+- Click → gọi `editor.insertBlocks()` để thêm 1 `column` mới vào `columnList`
+- Giới hạn tối đa 4 cột (sau đó ẩn nút)
+- Chỉ hiện khi `editable === true`
 
-```css
-@media (forced-colors: active) {
-  .bn-column {
-    border-left-color: CanvasText;
-  }
-}
-```
+File: `src/index.css`
+- CSS cho `.add-column-button` (position absolute, right edge, opacity transition)
+
+---
+
+**Phần 4: Responsive & Edge Cases**
+
+File: `src/index.css` + `src/components/canvas/ColumnResizeHandle.tsx`
+
+- Ẩn resize handle và add-column button trên mobile (< 768px) vì columns stack dọc
+- Ẩn trên tablet (< 1024px) nếu cột quá nhỏ
+- Reset `flex-basis` về đều nhau khi xóa cột
+- Xử lý edge case: resize khi đang có content dài trong cột
 
 ### Files thay đổi
-1. `src/index.css` — tablet breakpoint, high contrast, ARIA styles
-2. `src/lib/canvasExport.ts` — PDF column side-by-side layout
+1. `src/components/canvas/ColumnResizeHandle.tsx` — component mới
+2. `src/components/canvas/AddColumnButton.tsx` — component mới
+3. `src/components/canvas/CanvasEditor.tsx` — tích hợp resize + add column
+4. `src/index.css` — CSS cho resize handle, add button, responsive
 
