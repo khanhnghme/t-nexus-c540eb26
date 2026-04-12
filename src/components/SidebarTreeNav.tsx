@@ -54,7 +54,8 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
   const { activeWorkspace, workspaces, switchWorkspace, isAvailable, workspaceRole } = useWorkspace();
   const { projects, isGuest } = useWorkspaceProjects();
   const { translations } = useLanguage();
-  const { ownerPlan } = useWorkspaceBilling();
+  const billing = useWorkspaceBilling();
+  const ownerPlan = billing?.ownerPlan;
   const t = translations.app?.sidebar;
 
   const hiddenNav = Array.isArray(profile?.nav_hidden_pages)

@@ -103,7 +103,8 @@ function WorkspaceSwitcherCell({ collapsed }: { collapsed: boolean }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { activeWorkspace, workspaces, switchWorkspace, isAvailable, workspaceRole } = useWorkspace();
-  const { ownerPlan } = useWorkspaceBilling();
+  const billing = useWorkspaceBilling();
+  const ownerPlan = billing?.ownerPlan;
   const { locale } = useLanguage();
 
   const getRoleBadge = (role?: string | null) => {
@@ -220,7 +221,9 @@ function WorkspaceSwitcherCell({ collapsed }: { collapsed: boolean }) {
 function UpgradeBox({ collapsed }: { collapsed: boolean }) {
   const { user } = useAuth();
   const { activeWorkspace, workspaceRole, isAvailable } = useWorkspace();
-  const { ownerPlan, ownerId } = useWorkspaceBilling();
+  const billing = useWorkspaceBilling();
+  const ownerPlan = billing?.ownerPlan;
+  const ownerId = billing?.ownerId;
   const { locale } = useLanguage();
 
   const isOwner = user?.id === ownerId;
