@@ -296,11 +296,11 @@ export function downloadPdf(blocks: AnyBlock[], title = "Untitled") {
           }
           (col.children as AnyBlock[])?.forEach((child) => renderBlock(child, depth));
         });
-        break;
+        return; // avoid double-render from children loop below
       }
       case "column": {
         (block.children as AnyBlock[])?.forEach((child) => renderBlock(child, depth));
-        break;
+        return; // avoid double-render from children loop below
       }
       default: {
         if (text) {
