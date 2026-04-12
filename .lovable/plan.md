@@ -1,44 +1,43 @@
 
 
-## Fix: Sidebar navigation dùng `/pa/` cho custom project
+## Fix: Sidebar project switching — stale state & multiple active highlights
 
 ### Vấn đề
-`SidebarTreeNav.tsx` luôn tạo link `/pr/ws-...` cho mọi project, kể cả custom project (cần `/pa/ws-...`).
 
-### Nguyên nhân
-- `useWorkspaceProjects` không fetch `project_mode` từ bảng `groups`
-- `SidebarTreeNav` không kiểm tra `project_mode` khi tạo URL
+1. **Dữ liệu cũ không reset**: Khi chuyển giữa các project trên sidebar, `GroupDetail` không bị remount (cùng route pattern), nên state cũ (group, members, tasks) vẫn hiển thị trong khi data mới đang load → "hiển thị 2 project 1 lúc"
+2. **Active highlight sai**: `location.pathname.startsWith(href)` có thể match nhiều project nếu slug là prefix của nhau (vd: `/pa/ws-xxx/abc` match cả `/pa/ws-xxx/abc-def`)
+3. **Load chậm/không load**: `fetchGroupData` không reset `isLoading = true` khi routeId thay đổi, nên không hiện loading spinner
 
 ### Thay đổi
 
 | File | Nội dung |
 |------|----------|
-| **`src/hooks/useWorkspaceProjects.ts`** | Thêm `project_mode` vào interface `WorkspaceProject` và vào `.select()` query (2 chỗ: line 41 và line 53) |
-| **`src/components/SidebarTreeNav.tsx`** | Kiểm tra `p.project_mode === 'custom'` → dùng `/pa/ws-...` thay vì `/pr/ws-...` (line 129 và line 233) |
+| **`src/pages/GroupDetail.tsx`** | Reset toàn bộ state khi `routeId` thay đổi: set `isLoading=true`, clear `group`, `members`, `tasks`, `stages`, `isAccessDenied` |
+| **`src/components/SidebarTreeNav.tsx`** | Fix active detection: so sánh exact path thay vì `startsWith` |
 
 ### Chi tiết
 
-**useWorkspaceProjects.ts:**
+**GroupDetail.tsx** — thêm useEffect reset state trước line 180:
 ```typescript
-export interface WorkspaceProject {
-  id: string;
-  name: string;
-  slug: string | null;
-  visibility: string;
-  project_mode: string | null;  // thêm
-  isMember: boolean;
-}
-
-// 2 chỗ select:
-.select('id, name, slug, visibility, project_mode')
+// Reset state when switching projects
+useEffect(() => {
+  setGroup(null);
+  setMembers([]);
+  setTasks([]);
+  setStages([]);
+  setIsLoading(true);
+  setIsAccessDenied(false);
+  setIsLeaderInGroup(false);
+  setIsGroupCreator(false);
+}, [routeId]);
 ```
 
-**SidebarTreeNav.tsx — line 129 và 233:**
+**SidebarTreeNav.tsx** — line 239, fix active detection:
 ```typescript
-const getProjectHref = (p: WorkspaceProject) => {
-  if (!activeWorkspace?.short_id) return `/p/${p.slug || p.id}`;
-  const prefix = p.project_mode === 'custom' ? '/pa' : '/pr';
-  return `${prefix}/ws-${activeWorkspace.short_id}/${p.slug || p.id}`;
-};
+// Before: const active = location.pathname.startsWith(href);
+// After:
+const active = location.pathname === href || location.pathname.startsWith(href + '/');
 ```
+
+Thêm `/` sau href để tránh match nhầm khi slug là prefix của slug khác.
 
