@@ -177,6 +177,18 @@ export default function GroupDetail() {
   const [editingStage, setEditingStage] = useState<Stage | null>(null);
   const [stageToDelete, setStageToDelete] = useState<Stage | null>(null);
 
+  // Reset state when switching projects to avoid stale data
+  useEffect(() => {
+    setGroup(null);
+    setMembers([]);
+    setTasks([]);
+    setStages([]);
+    setIsLoading(true);
+    setIsAccessDenied(false);
+    setIsLeaderInGroup(false);
+    setIsGroupCreator(false);
+  }, [routeId]);
+
   useEffect(() => { if (routeId && user) fetchGroupData(); }, [routeId, user]);
 
   const fetchGroupData = async () => {

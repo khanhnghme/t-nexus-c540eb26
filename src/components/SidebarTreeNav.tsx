@@ -236,7 +236,7 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
 
               {projects.map(p => {
                 const href = getProjectHref(p);
-                const active = location.pathname.startsWith(href);
+                const active = location.pathname === href || location.pathname.startsWith(href + '/');
                 return (
                   <Link
                     key={p.id}
