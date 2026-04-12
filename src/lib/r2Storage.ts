@@ -66,7 +66,7 @@ export const r2Storage = {
 
           const result = await response.json();
           if (!response.ok) {
-            return { data: null, error: { message: result.error || 'Upload failed' } };
+            return { data: null, error: { message: result.error || 'Upload failed', status: response.status } };
           }
 
           return { data: result.data, error: null };
