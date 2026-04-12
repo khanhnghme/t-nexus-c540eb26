@@ -6,6 +6,7 @@ import { BlockNoteSchema, defaultBlockSpecs } from "@blocknote/core";
 import type { Block, PartialBlock } from "@blocknote/core";
 import { useCallback, useImperativeHandle, useMemo, useState, forwardRef } from "react";
 import { useAutosave } from "@/hooks/useAutosave";
+import type { DriveFile } from "@/hooks/useGoogleDrivePicker";
 import { useUpdatePageContent } from "@/hooks/useProjectPages";
 import { Check, Cloud, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -37,6 +38,7 @@ const schema = BlockNoteSchema.create({
 
 export interface CanvasEditorHandle {
   forceSave: () => void;
+  insertDriveFiles: (files: DriveFile[]) => void;
 }
 
 interface CanvasEditorProps {
@@ -180,7 +182,24 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
     forceSave: () => {
       if (forceSave) forceSave();
     },
-  }), [forceSave]);
+    insertDriveFiles: (files: DriveFile[]) => {
+      const lastBlock = editor.document[editor.document.length - 1];
+      const blocks = files.map((file) => ({
+        type: "paragraph" as const,
+        content: [
+          {
+            type: "link" as const,
+            href: file.url,
+            content: [{ type: "text" as const, text: `📎 ${file.title}` }],
+          },
+        ],
+      }));
+      editor.insertBlocks(blocks as any, lastBlock, "after");
+      // Trigger change to autosave
+      const doc = editor.document as Block[];
+      if (pageId) setCurrentContent(JSON.stringify(doc));
+    },
+  }), [forceSave, editor, pageId]);
 
   const handleChange = useCallback(() => {
     const doc = editor.document as Block[];

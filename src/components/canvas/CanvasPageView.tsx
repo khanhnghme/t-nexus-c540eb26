@@ -4,7 +4,7 @@ import { useProjectPages, useCreatePage, useDeletePage, useUpdatePage } from "@/
 import CanvasEditor from "./CanvasEditor";
 import type { CanvasEditorHandle } from "./CanvasEditor";
 import CanvasSidebar from "./CanvasSidebar";
-import { Loader2, FileText, RefreshCw, Plus, PanelLeft, Pencil, Eye, Save, Menu, Download, Link2, HelpCircle, MoreHorizontal } from "lucide-react";
+import { Loader2, FileText, RefreshCw, Plus, PanelLeft, Pencil, Eye, Save, Menu, Download, Link2, HelpCircle, MoreHorizontal, HardDrive } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,6 +24,9 @@ import { logActivity } from "@/lib/activityLogger";
 import ShortcutHelpDialog from "./ShortcutHelpDialog";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
+import { useGoogleDriveConnect } from "@/hooks/useGoogleDriveConnect";
+import { useGoogleDrivePicker } from "@/hooks/useGoogleDrivePicker";
+import type { DriveFile } from "@/hooks/useGoogleDrivePicker";
 
 const SaveAsTemplateDialog = lazy(() => import("./SaveAsTemplateDialog"));
 
@@ -48,6 +51,28 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
   const [isEditMode, setIsEditMode] = useState(editable);
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
+
+  // Google Drive integration
+  const { isConnected: isDriveConnected, getPickerToken } = useGoogleDriveConnect();
+
+  const handleDriveFilesPicked = useCallback((files: DriveFile[]) => {
+    editorRef.current?.insertDriveFiles(files);
+    toast.success(`Đã chèn ${files.length} file từ Google Drive`);
+  }, []);
+
+  const { openPicker, isLoading: isPickerLoading } = useGoogleDrivePicker({
+    getPickerToken,
+    onFilesPicked: handleDriveFilesPicked,
+  });
+
+  const handleDriveClick = useCallback(() => {
+    if (!isDriveConnected) {
+      toast.info("Vui lòng kết nối Google Drive trong Cài đặt");
+      navigate('/settings#integrations');
+      return;
+    }
+    openPicker();
+  }, [isDriveConnected, openPicker, navigate]);
 
   // Last editor indicator
   const { data: lastEditor } = usePageLastEditor(activePageId);
@@ -317,6 +342,24 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
             <span className="text-[10px] text-muted-foreground/60 hidden sm:inline truncate max-w-[160px]">
               {lastEditor.editorName} · {formatDistanceToNow(new Date(lastEditor.editedAt), { addSuffix: true, locale: vi })}
             </span>
+          )}
+
+          {/* Google Drive — only in edit mode */}
+          {isEditMode && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  onClick={handleDriveClick}
+                  disabled={isPickerLoading}
+                >
+                  {isPickerLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <HardDrive className="h-3.5 w-3.5" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Chọn file từ Google Drive</TooltipContent>
+            </Tooltip>
           )}
 
           {/* Edit/View toggle — icon only */}
