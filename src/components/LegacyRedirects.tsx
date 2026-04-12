@@ -92,12 +92,12 @@ export function LegacyPageRedirect() {
   }, [projectSlug, pageSlug]);
 
   const resolve = async () => {
-    const { data: group } = await supabase.from('groups').select('workspace_id').eq('slug', projectSlug!).maybeSingle();
+    const { data: group } = await supabase.from('groups').select('slug, workspace_id').eq('slug', projectSlug!).maybeSingle();
     if (!group?.workspace_id) { setTarget('/groups'); return; }
     
     const { data: ws } = await (supabase as any).from('workspaces').select('short_id').eq('id', group.workspace_id).maybeSingle();
-    if (ws?.short_id && pageSlug) {
-      setTarget(`/pa/ws-${ws.short_id}/${pageSlug}`);
+    if (ws?.short_id) {
+      setTarget(`/pa/ws-${ws.short_id}/${group.slug || projectSlug}`);
     } else {
       setTarget('/groups');
     }

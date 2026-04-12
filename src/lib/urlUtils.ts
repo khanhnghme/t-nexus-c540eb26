@@ -52,10 +52,10 @@ export function getTaskUrl(wsShortId: string, projectSlug: string, taskSlug: str
 
 /**
  * Generate page URL
- * Format: /pa/ws-{wsShortId}/{page-slug}
+ * Format: /pa/ws-{wsShortId}/{project-slug}
  */
-export function getPageUrl(wsShortId: string, pageSlug: string): string {
-  return `/pa/ws-${wsShortId}/${pageSlug}`;
+export function getPageUrl(wsShortId: string, projectSlug: string): string {
+  return `/pa/ws-${wsShortId}/${projectSlug}`;
 }
 
 /**
