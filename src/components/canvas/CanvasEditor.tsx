@@ -11,7 +11,7 @@ import { useColumnControls } from "./useColumnControls";
 import { useAutosave } from "@/hooks/useAutosave";
 import type { DriveFile } from "@/hooks/useGoogleDrivePicker";
 import { useUpdatePageContent } from "@/hooks/useProjectPages";
-import { Check, Cloud, Loader2, AlertCircle } from "lucide-react";
+import { Check, Cloud, Loader2, AlertCircle, Database } from "lucide-react";
 import { toast } from "sonner";
 import { useReadOnlyGuard } from "@/components/ReadOnlyGuard";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAccountLimitsCheck } from "@/hooks/useAccountLimitsCheck";
 import { NoteCalloutBlock } from "./blocks/NoteBlock";
 import { ToggleBlock } from "./blocks/ToggleBlock";
+import { DatabaseViewBlock } from "./blocks/database/DatabaseBlock";
 import { TaskBlockProvider } from "./blocks/TaskBlockContext";
 import PageCoverImage from "./PageCoverImage";
 import PageHeader from "./PageHeader";
@@ -36,6 +37,7 @@ const schema = withMultiColumn(BlockNoteSchema.create({
     calendarView: CalendarBlock(),
     noteCallout: NoteCalloutBlock(),
     toggleBlock: ToggleBlock(),
+    databaseView: DatabaseViewBlock(),
   },
 }));
 
@@ -326,8 +328,24 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
       } catch (e) {
         console.warn("[CanvasEditor] Multi-column slash menu items failed to load:", e);
       }
+      const customItems = [
+        {
+          title: "Database",
+          subtext: "Inline database with table, board, calendar views",
+          group: "Advanced",
+          icon: <Database className="h-4 w-4" />,
+          onItemClick: () => {
+            const currentBlock = editor.getTextCursorPosition().block;
+            editor.insertBlocks(
+              [{ type: "databaseView" as any }],
+              currentBlock,
+              "after"
+            );
+          },
+        },
+      ];
       return filterSuggestionItems(
-        combineByGroup(defaultItems, mcItems),
+        combineByGroup(defaultItems, mcItems, customItems as any),
         query
       );
     };
