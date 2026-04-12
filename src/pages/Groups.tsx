@@ -43,6 +43,7 @@ import {
   GraduationCap,
   MessageSquare,
   ImagePlus,
+  Palette,
 } from 'lucide-react';
 import type { Group, GroupMember } from '@/types/database';
 import UserAvatar from '@/components/UserAvatar';
@@ -826,10 +827,14 @@ export default function Groups() {
                 'from-[hsl(18,88%,58%)] via-[hsl(183,70%,30%)] to-[hsl(183,100%,21%)]',
                 'from-[hsl(200,70%,40%)] via-[hsl(220,60%,50%)] to-[hsl(250,50%,55%)]',
               ];
-              const gradient = gradients[index % gradients.length];
+              const gradient = group.project_mode === 'custom'
+                ? 'from-violet-500 via-purple-500 to-fuchsia-500'
+                : gradients[index % gradients.length];
 
               return (
-                <Link key={group.id} to={activeWorkspace?.short_id ? `/pr/ws-${activeWorkspace.short_id}/${group.slug}` : `/p/${group.slug}`}>
+                <Link key={group.id} to={activeWorkspace?.short_id
+                  ? `${group.project_mode === 'custom' ? '/pa' : '/pr'}/ws-${activeWorkspace.short_id}/${group.slug}`
+                  : `/p/${group.slug}`}>
                   <div className="group relative h-full rounded-2xl overflow-hidden transition-all duration-500 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-primary/20 bg-card border border-border shadow-md shadow-black/5 hover:border-primary/40">
                     {/* Decorative top accent bar */}
                     <div className={`h-1 bg-gradient-to-r ${gradient}`} />
@@ -854,6 +859,15 @@ export default function Groups() {
                           <div className="absolute inset-0 flex items-center justify-center">
                             <FolderKanban className="w-14 h-14 text-white/30" />
                           </div>
+                        </div>
+                      )}
+                      {/* Custom project badge */}
+                      {group.project_mode === 'custom' && (
+                        <div className="absolute bottom-3 right-3 z-10 drop-shadow-md">
+                          <Badge className="bg-violet-500/90 text-white shadow-lg text-[10px] px-2 py-0.5 gap-1">
+                            <Palette className="w-3 h-3" />
+                            Custom
+                          </Badge>
                         </div>
                       )}
                       {/* Strong gradient overlay for text readability */}
