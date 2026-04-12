@@ -8,6 +8,8 @@ import { TableView } from "./views/TableView";
 import { ListView } from "./views/ListView";
 import { BoardView } from "./views/BoardView";
 import { CalendarView } from "./views/CalendarView";
+import { DatabaseTemplatePicker } from "./DatabaseTemplatePicker";
+import type { DatabaseBlockData } from "./types";
 
 /* ── Database Renderer ────────────────────────────────────────── */
 
@@ -27,6 +29,20 @@ const DatabaseRenderer = memo(function DatabaseRenderer({
   editable,
   updateProps,
 }: DatabaseRendererProps) {
+  const isInitialized = blockProps.properties && blockProps.properties !== "";
+
+  const handleTemplateSelect = useCallback(
+    (data: DatabaseBlockData) => {
+      updateProps({
+        properties: JSON.stringify(data.properties),
+        items: JSON.stringify(data.items),
+        views: JSON.stringify(data.views),
+        activeViewId: data.activeViewId,
+      });
+    },
+    [updateProps]
+  );
+
   const db = useDatabaseData({ blockProps, updateProps });
   const {
     properties, filteredItems, activeView, views, activeViewId,
@@ -56,6 +72,10 @@ const DatabaseRenderer = memo(function DatabaseRenderer({
     },
     [activeView, updateView]
   );
+
+  if (!isInitialized) {
+    return <DatabaseTemplatePicker onSelect={handleTemplateSelect} />;
+  }
 
   /* ── View Router ──────────────────────────────────────── */
   const renderActiveView = () => {
