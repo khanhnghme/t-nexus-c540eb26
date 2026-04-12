@@ -1,47 +1,39 @@
 
 
-## Phase 2: Styling & Responsive cho Column Layout
+## Phase 3: Kiểm thử tương thích & Public View
 
-### Mục tiêu
-Đảm bảo multi-column layout hiển thị đẹp trên mọi thiết bị, đồng thời cập nhật export để hỗ trợ columns.
+### Bối cảnh
+Phase 2 đã hoàn thành cả styling responsive lẫn export (Markdown + PDF) cho columns. Phase 3 tập trung vào kiểm thử backward compatibility và đảm bảo public view hoạt động đúng.
 
 ### Bước thực hiện
 
-**Bước 1: Thêm CSS cho multi-column**
-
-File: `src/index.css`
-
-- Thêm CSS rules cho `.bn-column-list` và `.bn-column`:
-  - Desktop: columns hiển thị ngang, gap 16px, min-width mỗi cột 120px
-  - Mobile (dưới 768px): columns tự động stack dọc (flex-direction: column)
-  - Padding/margin hợp lý để nội dung không bị chật
-  - Dark mode: border/divider giữa các cột phù hợp theme
-
-**Bước 2: Mở rộng max-width editor khi có columns**
-
-File: `src/components/canvas/CanvasEditor.tsx`
-
-- Thay `max-w-[720px]` thành `max-w-[900px]` để columns có đủ không gian hiển thị
-- Giữ nguyên padding `px-6` hiện tại
-
-**Bước 3: Cập nhật export hỗ trợ columns**
+**Bước 1: Fix bug double-render children trong PDF export**
 
 File: `src/lib/canvasExport.ts`
 
-- Thêm case `columnList` trong `blockToMarkdown()` — render các cột thành sections phân cách bằng `|`
-- Thêm case `column` — render nội dung children bên trong
-- Tương tự cho PDF export — render columns tuần tự (side-by-side trong PDF phức tạp, sequential đủ dùng)
+Hiện tại có lỗi logic: case `columnList` đã render children (các `column`) bên trong switch, nhưng cuối hàm `renderBlock` (dòng 317) lại render `block.children` lần nữa → nội dung columns bị lặp đôi trong PDF.
 
-**Bước 4: Verify public view**
+- Thêm `return` hoặc guard để `columnList` và `column` không bị render children 2 lần
+- Tương tự trong `blockToMarkdown`: case `columnList` và `column` dùng `return` (đã đúng), nhưng cần verify không bị xung đột với logic children ở dòng 100-102
 
-File: `src/pages/PublicCanvasPage.tsx` — không cần sửa code vì đã dùng chung `CanvasPageView` → `CanvasEditor` với `editable={false}`. Chỉ cần verify CSS responsive áp dụng đúng.
+**Bước 2: Verify Public Canvas Page**
+
+File: `src/pages/PublicCanvasPage.tsx`
+
+- Kiểm tra component đã import đúng schema có `withMultiColumn` (thông qua `CanvasEditor` hoặc `CanvasPageView`)
+- Đảm bảo read-only mode render columns chính xác — không cần sửa code nếu đã dùng chung editor component
+
+**Bước 3: Test backward compatibility**
+
+- Verify pages cũ (không có `columnList` blocks) vẫn load bình thường
+- Verify `filterBlocks` cho phép `columnList`/`column` types đi qua
+- Verify autosave không bị lỗi khi lưu content có columns
 
 ### Files thay đổi
-1. `src/index.css` — thêm ~20 dòng CSS cho column responsive
-2. `src/components/canvas/CanvasEditor.tsx` — đổi max-width
-3. `src/lib/canvasExport.ts` — thêm 2 case xử lý columnList/column
+1. `src/lib/canvasExport.ts` — fix double-render bug cho `columnList`/`column` trong PDF export
 
 ### Không thay đổi
-- Database — không cần migration
-- PublicCanvasPage — tự động hưởng lợi từ CSS mới
+- Database
+- CanvasEditor (đã hoàn thành ở Phase 1-2)
+- PublicCanvasPage (chỉ verify, không sửa)
 
