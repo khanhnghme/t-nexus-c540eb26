@@ -8,6 +8,8 @@ import { TableView } from "./views/TableView";
 import { ListView } from "./views/ListView";
 import { BoardView } from "./views/BoardView";
 import { CalendarView } from "./views/CalendarView";
+import { DatabaseTemplatePicker } from "./DatabaseTemplatePicker";
+import type { DatabaseBlockData } from "./types";
 
 /* ── Database Renderer ────────────────────────────────────────── */
 
