@@ -1,32 +1,37 @@
 
 
-## Sửa lỗi Slash Menu không hoạt động
+## Fix lỗi Slash Menu — truyền multi-column dictionary
 
 ### Nguyên nhân
-Khi sử dụng `withMultiColumn`, BlockNote yêu cầu phải tắt slash menu mặc định (`slashMenu={false}`) và thay bằng `SuggestionMenuController` tùy chỉnh. Hiện tại code đang dùng `slashMenu={editable}` (slash menu mặc định) — không tương thích với schema đã bọc `withMultiColumn`, nên menu không hiện khi gõ `/`.
+Package `@blocknote/xl-multi-column` yêu cầu editor phải có `dictionary.multi_column`. Hiện tại `useCreateBlockNote` không nhận dictionary này → `getMultiColumnSlashMenuItems(editor)` crash → toàn bộ slash menu không hiện.
 
 ### Cách sửa
 
 **File: `src/components/canvas/CanvasEditor.tsx`**
 
-1. Import thêm từ `@blocknote/react`:
-   - `SuggestionMenuController`, `getDefaultReactSlashMenuItems`
-   - `filterSuggestionItems` từ `@blocknote/core`
-   - `combineByGroup` từ `@blocknote/core`
-   - `getMultiColumnSlashMenuItems` từ `@blocknote/xl-multi-column`
+1. Import `locales` từ `@blocknote/xl-multi-column`
+2. Truyền `dictionary` vào `useCreateBlockNote`:
 
-2. Tạo `getSlashMenuItems` function bằng `useMemo`:
-   - Merge `getDefaultReactSlashMenuItems(editor)` + `getMultiColumnSlashMenuItems(editor)` qua `combineByGroup`
-   - Filter bằng `filterSuggestionItems`
+```ts
+import { locales as multiColumnLocales } from "@blocknote/xl-multi-column";
 
-3. Đổi `BlockNoteView`:
-   - Set `slashMenu={false}`
-   - Thêm `<SuggestionMenuController triggerCharacter="/" getItems={getSlashMenuItems} />` bên trong `BlockNoteView`
+// Chọn locale phù hợp
+const mcLocale = isVi ? (multiColumnLocales.vi ?? multiColumnLocales.en) : multiColumnLocales.en;
+
+const editor = useCreateBlockNote({
+  schema,
+  initialContent: safeInitialContent as any,
+  uploadFile,
+  dropCursor: multiColumnDropCursor,
+  dictionary: { multi_column: mcLocale },
+});
+```
 
 ### Kết quả
-- Gõ `/` sẽ hiện đầy đủ menu bao gồm cả mục "Two Columns" / "Three Columns"
-- Các block type tùy chỉnh (taskList, memberList, calendarView, noteCallout, toggleBlock) vẫn xuất hiện trong menu
+- Gõ `/` hiện đầy đủ menu: tất cả block types + "Two Columns" / "Three Columns"
+- Không còn lỗi "Multi-column dictionary not found"
+- Giữ nguyên kiến trúc slash menu chuẩn — không cần tách toolbar riêng
 
 ### Files thay đổi
-1. `src/components/canvas/CanvasEditor.tsx` — sửa slash menu
+1. `src/components/canvas/CanvasEditor.tsx` — thêm 3 dòng (import + dictionary config)
 
