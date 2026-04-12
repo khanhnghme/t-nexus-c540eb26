@@ -9,6 +9,7 @@ interface PageHeaderProps {
   icon?: string | null;
   coverUrl?: string | null;
   editable?: boolean;
+  groupId?: string;
   onChangeTitle?: (title: string) => void;
   onChangeIcon?: (icon: string | null) => void;
   onChangeCover?: (coverUrl: string | null) => void;
@@ -19,6 +20,7 @@ export default function PageHeader({
   icon,
   coverUrl,
   editable,
+  groupId,
   onChangeTitle,
   onChangeIcon,
   onChangeCover,
@@ -75,7 +77,6 @@ export default function PageHeader({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Quick actions row — visible on hover when items are missing */}
       {editable && hovered && (!icon || !coverUrl) && (
         <div className="flex items-center gap-1.5 mb-3">
           {!icon && (
@@ -87,7 +88,7 @@ export default function PageHeader({
             </EmojiPicker>
           )}
           {!coverUrl && (
-            <CoverPicker currentCover={null} onSelect={onChangeCover}>
+            <CoverPicker currentCover={null} onSelect={onChangeCover} groupId={groupId}>
               <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5 text-muted-foreground">
                 <ImageIcon className="h-3.5 w-3.5" />
                 Thêm cover
@@ -97,7 +98,6 @@ export default function PageHeader({
         </div>
       )}
 
-      {/* Icon */}
       {icon && (
         <div className="mb-3">
           {editable ? (
@@ -112,7 +112,6 @@ export default function PageHeader({
         </div>
       )}
 
-      {/* Title — larger like AFFiNE */}
       {editable && editingTitle ? (
         <input
           ref={inputRef}
