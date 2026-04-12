@@ -68,7 +68,7 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
   const handleDriveClick = useCallback(() => {
     if (!isDriveConnected) {
       toast.info("Vui lòng kết nối Google Drive trong Cài đặt");
-      navigate('/settings#integrations');
+      navigate('/account-settings#integrations');
       return;
     }
     openPicker();
