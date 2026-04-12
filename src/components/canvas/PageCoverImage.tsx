@@ -6,6 +6,7 @@ import CoverPicker from "./CoverPicker";
 interface PageCoverImageProps {
   coverUrl?: string | null;
   editable?: boolean;
+  groupId?: string;
   onChangeCover?: (coverUrl: string | null) => void;
 }
 
@@ -13,13 +14,12 @@ function isGradientOrColor(url: string) {
   return url.startsWith("linear-gradient") || url.startsWith("radial-gradient") || url.startsWith("#") || url.startsWith("rgb") || url.startsWith("hsl");
 }
 
-export default function PageCoverImage({ coverUrl, editable, onChangeCover }: PageCoverImageProps) {
+export default function PageCoverImage({ coverUrl, editable, groupId, onChangeCover }: PageCoverImageProps) {
   const [hovered, setHovered] = useState(false);
 
   if (!coverUrl && !editable) return null;
 
   if (!coverUrl) {
-    // No cover yet — show nothing (the "Add cover" button is in PageHeader)
     return null;
   }
 
@@ -37,7 +37,7 @@ export default function PageCoverImage({ coverUrl, editable, onChangeCover }: Pa
       <div className="absolute inset-0 rounded-t-lg" style={style} />
       {editable && hovered && (
         <div className="absolute bottom-3 right-3 flex items-center gap-1.5 z-10">
-          <CoverPicker currentCover={coverUrl} onSelect={onChangeCover}>
+          <CoverPicker currentCover={coverUrl} onSelect={onChangeCover} groupId={groupId}>
             <Button variant="secondary" size="sm" className="h-7 text-xs gap-1.5 shadow-sm">
               <ImageIcon className="h-3 w-3" />
               Đổi cover
