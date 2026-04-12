@@ -1,78 +1,72 @@
 
 
-## Giai đoạn D — Drag-to-Create Columns & Hoàn thiện tương tác
+## Phần 1: Types & Data Layer — Triển khai chi tiết
 
-### Đánh giá hiện trạng
+### Mục tiêu
+Tạo nền tảng dữ liệu cho Database Block: định nghĩa types, helper functions, filter/sort logic, và custom hook quản lý CRUD + view state. Chưa có UI — chỉ data layer.
 
-- ✅ `multiColumnDropCursor` đã được tích hợp — kéo block vào cạnh block khác để tạo column layout **đã hoạt động sẵn** nhờ `@blocknote/xl-multi-column`
-- ✅ Resize handle giữa các cột
-- ✅ Nút Add Column
-- ❌ Chưa có visual feedback rõ ràng khi drag (drop zone highlight)
-- ❌ Chưa có nút xóa column
-- ❌ Resize widths chưa persist vào block data (chỉ cập nhật CSS runtime, mất khi reload)
-- ❌ `useColumnControls` gọi `inject()` quá nhiều lần do MutationObserver → performance issue
+### File 1: `src/components/canvas/blocks/database/types.ts`
 
-### Chia 4 phần triển khai
+**Types:**
+- `PropertyType`: `'text' | 'number' | 'select' | 'multi_select' | 'date' | 'checkbox' | 'url' | 'person'`
+- `SelectOption`: `{ id, label, color }`
+- `PropertyDef`: `{ id, name, type, options? }`
+- `DatabaseItem`: `{ id, properties: Record<string, any>, createdAt }`
+- `ViewType`: `'table' | 'board' | 'calendar' | 'list'`
+- `FilterOperator`: `'equals' | 'not_equals' | 'contains' | 'not_contains' | 'is_empty' | 'is_not_empty' | 'gt' | 'lt'`
+- `FilterRule`: `{ propertyId, operator, value }`
+- `SortRule`: `{ propertyId, direction: 'asc' | 'desc' }`
+- `ViewConfig`: `{ id, name, type, filters, sorts, groupBy?, dateProperty?, visibleProperties }`
 
----
+**Helper functions:**
+- `generateId()` — `crypto.randomUUID()` hoặc fallback nanoid-style
+- `createDefaultProperties()` — trả về `[{ id, name: "Name", type: "text" }, { id, name: "Status", type: "select", options: [Todo/In Progress/Done] }]`
+- `createDefaultView(name, type)` — trả về ViewConfig mặc định với visibleProperties = all
+- `createDefaultDatabase()` — trả về `{ properties, items: [], views: [defaultTableView], activeViewId }`
 
-**Phần 1: Visual feedback cho drag-to-create**
-
-File: `src/index.css`
-
-- Style cho drop cursor indicator của `multiColumnDropCursor` — highlight vùng sẽ tạo column mới
-- Thêm animation nhẹ (fade-in border hoặc dashed outline) khi user đang drag block gần cạnh block khác
-- Style cho `.bn-drop-cursor-multi-column` (class do thư viện tạo)
-
----
-
-**Phần 2: Nút xóa column (Remove Column)**
-
-File mới: `src/components/canvas/RemoveColumnButton.tsx`
-
-- Nút `×` nhỏ hiện ở góc trên-phải mỗi column khi hover vào columnList
-- Click → tìm block ID của column → gọi `editor.removeBlocks([columnId])`
-- Nếu columnList chỉ còn 1 column sau khi xóa → unwrap column đó thành block thường (dùng logic tương tự `safeInitialContent`)
-- Không hiện nếu columnList chỉ có 2 columns (giữ tối thiểu 2)
-
-File: `src/components/canvas/useColumnControls.tsx`
-
-- Inject `RemoveColumnButton` vào mỗi column element
-- Truyền callback `onRemoveColumn` từ `CanvasEditor`
-
-File: `src/components/canvas/CanvasEditor.tsx`
-
-- Thêm `handleRemoveColumn(columnListEl, columnIndex)` callback
-- Dùng `editor.removeBlocks()` để xóa column, trigger autosave
+**Pure functions:**
+- `applyFilters(items, filters, properties)` — match từng item với filter rules theo type
+- `applySorts(items, sorts, properties)` — sort theo direction, xử lý text/number/date so sánh
+- `applyFiltersAndSorts(items, view, properties)` — combine cả 2
 
 ---
 
-**Phần 3: Persist resize widths**
+### File 2: `src/components/canvas/blocks/database/useDatabaseData.ts`
 
-File: `src/components/canvas/useColumnControls.tsx`
+**Input:** `{ blockProps, updateProps }` — props từ `createReactBlockSpec` render function
 
-- Khi `onResizeEnd` được gọi, lưu tỷ lệ width vào `data-width` attribute trên column DOM elements
-- Khi re-inject, đọc `data-width` để restore `flex` style
+**State parsing:**
+- `useMemo` parse `blockProps.properties` / `blockProps.items` / `blockProps.views` từ JSON string → typed objects
+- Fallback `createDefaultDatabase()` nếu props rỗng/malformed
 
-File: `src/components/canvas/CanvasEditor.tsx`
+**CRUD operations (memoized callbacks):**
+- `addItem(initialValues?)` — tạo DatabaseItem mới, serialize lại items JSON
+- `updateItem(itemId, propertyId, value)` — update 1 field
+- `deleteItem(itemId)` — remove item
+- `addProperty(name, type)` — thêm PropertyDef, tự thêm vào visibleProperties của tất cả views
+- `updateProperty(propertyId, updates)` — rename, đổi type
+- `deleteProperty(propertyId)` — xóa property + cleanup items + views
 
-- Sau resize, serialize custom widths vào document JSON (thêm field `props.widths` vào columnList block nếu BlockNote schema cho phép, hoặc lưu vào metadata riêng)
-- Khi load `safeInitialContent`, apply widths từ props lên DOM sau khi editor mount
+**View management:**
+- `addView(name, type)` — thêm ViewConfig mới
+- `updateView(viewId, updates)` — update filters/sorts/groupBy/visible
+- `deleteView(viewId)` — xóa (giữ tối thiểu 1 view)
+- `setActiveView(viewId)` — update activeViewId
+
+**Computed:**
+- `filteredItems` = `useMemo(() => applyFiltersAndSorts(items, activeView, properties), [items, activeView, properties])`
+- `activeView` = `views.find(v => v.id === activeViewId)`
+
+**Serialize pattern:** Mỗi mutation function → clone state → modify → `JSON.stringify()` → gọi `updateProps({ items: newJson })`. Throttle serialize 100ms để tránh quá nhiều block update khi typing nhanh.
 
 ---
 
-**Phần 4: Performance — throttle MutationObserver**
-
-File: `src/components/canvas/useColumnControls.tsx`
-
-- Thêm debounce/throttle cho `inject()` trong MutationObserver callback (hiện gọi mỗi mutation → render loop)
-- Dùng `requestIdleCallback` hoặc `setTimeout 100ms` thay vì `requestAnimationFrame` trực tiếp
-- Skip re-inject nếu DOM structure không thực sự thay đổi (so sánh column count)
-- Cleanup: chỉ unmount/remount roots thay đổi, không cleanup toàn bộ mỗi lần
+### Không thay đổi file nào khác
+Phần 1 chỉ tạo 2 file mới, không sửa CanvasEditor hay đăng ký block. Việc đó thuộc Phần 2.
 
 ### Files thay đổi
-1. `src/index.css` — drop cursor visual feedback
-2. `src/components/canvas/RemoveColumnButton.tsx` — component mới
-3. `src/components/canvas/useColumnControls.tsx` — inject remove button, persist widths, throttle observer
-4. `src/components/canvas/CanvasEditor.tsx` — handleRemoveColumn callback, width persistence logic
+| File | Action |
+|------|--------|
+| `src/components/canvas/blocks/database/types.ts` | Mới |
+| `src/components/canvas/blocks/database/useDatabaseData.ts` | Mới |
 
