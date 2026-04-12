@@ -961,13 +961,23 @@ export default function Dashboard() {
                     <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 min-w-[16px] justify-center bg-muted-foreground/15 text-foreground">{groups.length}</Badge>
                   </ToggleGroupItem>
                 </ToggleGroup>
-                <Link to="/groups">
-                  <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md transition-all" size="sm">
-                    <FolderKanban className="w-4 h-4" />
-                    <span className="hidden md:inline">{t?.viewAndCreate || 'View & Create Project'}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </Link>
+                {activeWorkspace ? (
+                  <Link to="/groups">
+                    <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md transition-all" size="sm">
+                      <FolderKanban className="w-4 h-4" />
+                      <span className="hidden md:inline">{t?.viewAndCreate || 'View & Create Project'}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link to="/workspace/new">
+                    <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md transition-all" size="sm">
+                      <Plus className="w-4 h-4" />
+                      <span className="hidden md:inline">{isVi ? 'Tạo Workspace' : 'Create Workspace'}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
           </CardHeader>
@@ -993,12 +1003,31 @@ export default function Dashboard() {
             ) : filteredGroups.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <FolderKanban className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                <p className="text-lg font-medium mb-1">
-                  {filter === 'hidden' ? (t?.noHiddenProjects || 'No hidden projects') : filter === 'all' ? (t?.notJoinedYet || "You haven't joined any projects yet") : (t?.noActiveProjects || 'No active projects')}
-                </p>
-                <p className="text-sm">
-                  {filter === 'hidden' ? (t?.hoverToHide || 'Hover over a project and click the eye icon to hide') : (t?.contactLeader || 'Contact Leader to be added to a project')}
-                </p>
+                {!activeWorkspace ? (
+                  <>
+                    <p className="text-lg font-medium mb-1">
+                      {isVi ? 'Bạn chưa có Workspace nào' : 'You don\'t have a Workspace yet'}
+                    </p>
+                    <p className="text-sm mb-4">
+                      {isVi ? 'Tạo Workspace trước để bắt đầu quản lý dự án' : 'Create a Workspace first to start managing projects'}
+                    </p>
+                    <Link to="/workspace/new">
+                      <Button className="gap-2" size="sm">
+                        <Plus className="w-4 h-4" />
+                        {isVi ? 'Tạo Workspace ngay' : 'Create Workspace now'}
+                      </Button>
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-lg font-medium mb-1">
+                      {filter === 'hidden' ? (t?.noHiddenProjects || 'No hidden projects') : filter === 'all' ? (t?.notJoinedYet || "You haven't joined any projects yet") : (t?.noActiveProjects || 'No active projects')}
+                    </p>
+                    <p className="text-sm">
+                      {filter === 'hidden' ? (t?.hoverToHide || 'Hover over a project and click the eye icon to hide') : (t?.contactLeader || 'Contact Leader to be added to a project')}
+                    </p>
+                  </>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
