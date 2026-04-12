@@ -7,6 +7,7 @@ interface PageCoverImageProps {
   coverUrl?: string | null;
   editable?: boolean;
   groupId?: string;
+  maxFileSizeMb?: number;
   onChangeCover?: (coverUrl: string | null) => void;
 }
 
@@ -14,7 +15,7 @@ function isGradientOrColor(url: string) {
   return url.startsWith("linear-gradient") || url.startsWith("radial-gradient") || url.startsWith("#") || url.startsWith("rgb") || url.startsWith("hsl");
 }
 
-export default function PageCoverImage({ coverUrl, editable, groupId, onChangeCover }: PageCoverImageProps) {
+export default function PageCoverImage({ coverUrl, editable, groupId, maxFileSizeMb, onChangeCover }: PageCoverImageProps) {
   const [hovered, setHovered] = useState(false);
 
   if (!coverUrl && !editable) return null;
@@ -37,7 +38,7 @@ export default function PageCoverImage({ coverUrl, editable, groupId, onChangeCo
       <div className="absolute inset-0 rounded-t-lg" style={style} />
       {editable && hovered && (
         <div className="absolute bottom-3 right-3 flex items-center gap-1.5 z-10">
-          <CoverPicker currentCover={coverUrl} onSelect={onChangeCover} groupId={groupId}>
+          <CoverPicker currentCover={coverUrl} onSelect={onChangeCover} groupId={groupId} maxFileSizeMb={maxFileSizeMb}>
             <Button variant="secondary" size="sm" className="h-7 text-xs gap-1.5 shadow-sm">
               <ImageIcon className="h-3 w-3" />
               Đổi cover
