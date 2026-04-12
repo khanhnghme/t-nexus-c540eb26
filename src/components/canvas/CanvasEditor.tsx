@@ -11,7 +11,7 @@ import { useColumnControls } from "./useColumnControls";
 import { useAutosave } from "@/hooks/useAutosave";
 import type { DriveFile } from "@/hooks/useGoogleDrivePicker";
 import { useUpdatePageContent } from "@/hooks/useProjectPages";
-import { Check, Cloud, Loader2, AlertCircle } from "lucide-react";
+import { Check, Cloud, Loader2, AlertCircle, Database } from "lucide-react";
 import { toast } from "sonner";
 import { useReadOnlyGuard } from "@/components/ReadOnlyGuard";
 import { useLanguage } from "@/contexts/LanguageContext";
