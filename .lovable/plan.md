@@ -1,24 +1,44 @@
 
 
-## Fix: Dashboard UI khi chưa có workspace
+## Fix: Hiển thị thông báo rõ ràng khi đạt giới hạn workspace
 
 ### Vấn đề
-Nút "View & Create Project" (line 964-970) luôn dẫn đến `/groups` bất kể user có workspace hay chưa. Khi chưa có workspace, user không thể tạo project → gây nhầm lẫn.
+Edge function trả HTTP 400 → `supabase.functions.invoke` throw error generic, client không đọc được body JSON chứa message tiếng Việt → user thấy lỗi "non 2x" không rõ ràng.
 
 ### Giải pháp
 
-**File: `src/pages/Dashboard.tsx`**
+**1. Edge function (`supabase/functions/workspace-management/index.ts`)**
+- Khi đạt giới hạn workspace, trả HTTP 200 với `{ error: "...", limit_reached: true }` thay vì HTTP 400
+- Client sẽ đọc được `data.error` bình thường
 
-1. **Nút "View & Create Project"**: Khi `!activeWorkspace`, đổi thành nút "Create Workspace" dẫn đến `/workspace/new` thay vì `/groups`
-2. **Empty state khi chưa có project + chưa có workspace**: Hiển thị thông báo "Bạn cần tạo Workspace trước khi có thể tạo project" + nút CTA tạo workspace, thay vì "Contact Leader"
-3. **Giữ nguyên logic** khi đã có workspace → hoạt động như cũ
+Thay đổi tại line 104-106:
+```typescript
+if ((currentWsCount ?? 0) >= maxWs) {
+  return json({ 
+    error: `Bạn đã đạt giới hạn ${maxWs} workspace cho gói ${callerPlan.replace("plan_", "").toUpperCase()}`,
+    limit_reached: true 
+  });
+}
+```
 
-**Thay đổi cụ thể:**
+**2. Client (`src/pages/CreateWorkspace.tsx`)**
+- Khi `data.limit_reached === true`, hiển thị toast cảnh báo rõ ràng kèm gợi ý nâng cấp hoặc chuyển về workspace hiện có
+- Thêm nút "Quay về Workspace" bên cạnh nút Cancel
 
-- Line 964-970: Wrap trong điều kiện `activeWorkspace` — nếu có thì giữ nguyên link `/groups`, nếu không thì hiện nút "Create Workspace" → `/workspace/new`
-- Line 993-1002 (empty state): Thêm case khi `!activeWorkspace` hiển thị CTA tạo workspace thay vì "Contact Leader"
+Thay đổi tại line 44-45:
+```typescript
+if (error) throw error;
+if (data?.limit_reached) {
+  toast.error(data.error);
+  return;
+}
+if (data?.error) throw new Error(data.error);
+```
+
+### Files thay đổi
 
 | File | Thay đổi |
 |------|----------|
-| `src/pages/Dashboard.tsx` | Cập nhật nút CTA + empty state theo trạng thái workspace |
+| `supabase/functions/workspace-management/index.ts` | Trả 200 thay vì 400 khi limit reached |
+| `src/pages/CreateWorkspace.tsx` | Xử lý `limit_reached` hiển thị toast rõ ràng |
 
