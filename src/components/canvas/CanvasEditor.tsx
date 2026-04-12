@@ -4,6 +4,7 @@ import { BlockNoteView } from "@blocknote/shadcn";
 import { useTheme } from "next-themes";
 import { BlockNoteSchema, defaultBlockSpecs } from "@blocknote/core";
 import type { Block, PartialBlock } from "@blocknote/core";
+import { withMultiColumn, multiColumnDropCursor } from "@blocknote/xl-multi-column";
 import { useCallback, useImperativeHandle, useMemo, useState, forwardRef } from "react";
 import { useAutosave } from "@/hooks/useAutosave";
 import type { DriveFile } from "@/hooks/useGoogleDrivePicker";
