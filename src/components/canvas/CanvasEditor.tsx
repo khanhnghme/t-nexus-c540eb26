@@ -226,6 +226,7 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
   useColumnControls(editorContainerRef, editable && !isReadOnly, handleAddColumn);
 
 
+  const handleSave = useCallback(
     async (data: string) => {
       if (!pageId) return;
       const content = JSON.parse(data);
