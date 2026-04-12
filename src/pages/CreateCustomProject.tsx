@@ -25,7 +25,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { createPage } from "@/services/projectPages";
 import { ArrowLeft, Loader2, Plus } from "lucide-react";
-import { getProjectUrl } from "@/lib/urlUtils";
+import { getPageUrl } from "@/lib/urlUtils";
 import { toast } from "sonner";
 import type { Block } from "@blocknote/core";
 
@@ -121,7 +121,7 @@ export default function CreateCustomProject() {
       toast.success("Tạo project thành công!");
       const wsShortId = wsData?.short_id || selectedWorkspaceId.substring(0, 8);
       const projectSlug = newGroup.slug || newGroup.id;
-      navigate(getProjectUrl(wsShortId, projectSlug));
+      navigate(getPageUrl(wsShortId, projectSlug));
     } catch (error: any) {
       console.error("Create project error:", error);
       toast.error(error.message || "Không thể tạo project");
