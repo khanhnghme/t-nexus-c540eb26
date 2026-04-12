@@ -2362,10 +2362,11 @@ html.no-animations [data-state="active"][role="tabpanel"] {
   background: hsl(var(--muted) / 0.5);
 }
 
-/* Hide resize & add on mobile */
+/* Hide resize, add & remove on mobile */
 @media (max-width: 768px) {
   .column-resize-wrapper,
-  .add-column-btn-wrapper {
+  .add-column-btn-wrapper,
+  .remove-column-btn-wrapper {
     display: none !important;
   }
 }
@@ -2377,10 +2378,66 @@ html.no-animations [data-state="active"][role="tabpanel"] {
   }
 }
 
+/* ─── Remove Column Button ─── */
+.remove-column-btn-wrapper {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  z-index: 15;
+}
+
+.remove-column-button {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.bn-column-list:hover .remove-column-button {
+  opacity: 0.6;
+}
+
+.remove-column-button:hover {
+  opacity: 1;
+  color: hsl(var(--destructive));
+  border-color: hsl(var(--destructive));
+  background: hsl(var(--destructive) / 0.1);
+}
+
+/* ─── Multi-Column Drop Cursor Visual Feedback ─── */
+.bn-multi-column-drop-cursor,
+[class*="bn-drop-cursor-multi-column"],
+.bn-drop-cursor[data-drop-cursor-type="multi-column"] {
+  border: 2px dashed hsl(var(--primary) / 0.6);
+  background: hsl(var(--primary) / 0.08);
+  border-radius: 6px;
+  animation: column-drop-pulse 1s ease-in-out infinite;
+  min-height: 40px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+@keyframes column-drop-pulse {
+  0%, 100% { background: hsl(var(--primary) / 0.05); }
+  50% { background: hsl(var(--primary) / 0.12); }
+}
+
 /* View-mode: no hover effects */
 .view-mode .bn-column-list:hover {
   outline-color: transparent;
   background-color: transparent;
+}
+
+.view-mode .remove-column-button,
+.view-mode .remove-column-btn-wrapper {
+  display: none !important;
 }
 
 /* Keyboard focus style for columns */
