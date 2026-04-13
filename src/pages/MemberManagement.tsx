@@ -132,7 +132,7 @@ export default function MemberManagement() {
 
   const isMemberAdmin = (memberId: string): boolean => {
     const roles = memberRoles[memberId] || [];
-    return roles.includes('system_owner') || roles.includes('system_admin');
+    return roles.includes('system:owner') || roles.includes('system:admin');
   };
 
   const canManageMember = (memberId: string): boolean => {
@@ -170,9 +170,9 @@ export default function MemberManagement() {
     return currentList.filter(m => {
       const roles = memberRoles[m.id] || [];
       switch (roleFilter) {
-        case 'project_member': return !roles.includes('system_owner') && !roles.includes('system_admin');
-        case 'project_admin': return roles.includes('system_admin') && !roles.includes('system_owner');
-        case 'admin': return roles.includes('system_owner');
+        case 'project_member': return !roles.includes('system:owner') && !roles.includes('system:admin');
+        case 'project_admin': return roles.includes('system:admin') && !roles.includes('system:owner');
+        case 'admin': return roles.includes('system:owner');
         default: return true;
       }
     });
@@ -290,7 +290,7 @@ export default function MemberManagement() {
   const handleApprovePending = async (member: Profile) => {
     const { error } = await supabase.from('profiles').update({ is_approved: true }).eq('id', member.id);
     if (error) { toast({ title: 'Lỗi', description: error.message, variant: 'destructive' }); return; }
-    await supabase.from('user_roles').upsert({ user_id: member.id, role: 'system_admin' } as any, { onConflict: 'user_id,role' } as any);
+    await supabase.from('user_roles').upsert({ user_id: member.id, role: 'system:admin' } as any, { onConflict: 'user_id,role' } as any);
     await logActivity({
       userId: user!.id, userName: currentProfile?.full_name || user?.email || 'Unknown',
       action: 'APPROVE_MEMBER_REGISTRATION', actionType: 'project_member',
@@ -568,10 +568,10 @@ export default function MemberManagement() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-semibold truncate">{member.full_name}</p>
-            {roles.includes('system_owner') && (
+            {roles.includes('system:owner') && (
               <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs gap-1"><Crown className="w-3 h-3" />Owner</Badge>
             )}
-            {!roles.includes('system_owner') && roles.includes('system_admin') && (
+            {!roles.includes('system:owner') && roles.includes('system:admin') && (
               <Badge className="bg-destructive/10 text-destructive text-xs gap-1"><Shield className="w-3 h-3" />Admin</Badge>
             )}
             {member.id === user?.id && <Badge variant="outline" className="text-xs">Bạn</Badge>}
@@ -851,7 +851,7 @@ export default function MemberManagement() {
                     fullName: m.full_name,
                     studentId: m.student_id,
                     email: m.email,
-                    role: (memberRoles[m.id] || []).includes('system_owner') ? 'Owner' : (memberRoles[m.id] || []).includes('system_admin') ? 'Admin' : 'Thành viên'
+                    role: (memberRoles[m.id] || []).includes('system:owner') ? 'Owner' : (memberRoles[m.id] || []).includes('system:admin') ? 'Admin' : 'Thành viên'
                   }));
                   exportMembersToExcel(exportData, 'danh-sach-thanh-vien-he-thong');
                 }}

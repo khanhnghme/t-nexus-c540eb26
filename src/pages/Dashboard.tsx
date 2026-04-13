@@ -427,7 +427,7 @@ export default function Dashboard() {
 
   // Permission: workspace_owner, workspace_admin, or system_admin can create projects
   const wsRole = (activeWorkspace as any)?.my_role;
-  const canCreateProject = isSystemAdmin || wsRole === 'workspace_owner' || wsRole === 'workspace_admin';
+  const canCreateProject = isSystemAdmin || wsRole === 'workspace:owner' || wsRole === 'workspace:admin';
   // projectLimit removed — use plan_limits table dynamically instead
 
   const filteredGroups = useMemo(() => {
@@ -903,7 +903,7 @@ export default function Dashboard() {
                                 <div className="flex items-center gap-1 shrink-0">
                                   <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">Workspace</Badge>
                                   <Badge variant="secondary" className="text-[10px]">
-                                    {inv.role_granted === 'workspace_admin' ? 'Admin' : (t?.member || 'Member')}
+                                    {inv.role_granted === 'workspace:admin' ? 'Admin' : (t?.member || 'Member')}
                                   </Badge>
                                 </div>
                               </div>

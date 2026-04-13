@@ -84,7 +84,7 @@ export default function Groups() {
   const tc = t.common;
 
   // Permission: workspace_owner, workspace_admin, or system_admin can create projects
-  const canCreateProject = isSystemAdmin || workspaceRole === 'workspace_owner' || workspaceRole === 'workspace_admin';
+  const canCreateProject = isSystemAdmin || workspaceRole === 'workspace:owner' || workspaceRole === 'workspace:admin';
   const { toast } = useToast();
   const { guardAction: guardReadOnly } = useReadOnlyGuard();
   const [groups, setGroups] = useState<GroupWithMembers[]>([]);
@@ -957,7 +957,7 @@ export default function Groups() {
                           <Badge className="bg-muted text-muted-foreground shadow-lg font-medium text-[10px]">
                             {g.notJoined}
                           </Badge>
-                        ) : group.myRole === 'workspace_admin' ? (
+                        ) : group.myRole === 'workspace:admin' ? (
                           <Badge className="bg-destructive text-destructive-foreground shadow-lg font-semibold">
                             <Crown className="w-3 h-3 mr-1" />
                             Admin
