@@ -76,14 +76,6 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
       {/* Header with Logo */}
       <div className="flex justify-between items-start mb-8 border-b-2 border-gray-300 pb-6">
         <div>
-          <img src="/src/assets/t-nexus-text.png" alt="T-Nexus" style={{ width: 140, height: 'auto' }} className="mb-2" />
-          <p className="text-sm text-gray-500">
-            {isVi ? 'Dịch vụ quản lý dự án số' : 'Digital Project Management Service'}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">https://t-nexus.io.vn</p>
-          <p className="text-xs text-gray-400">Email: support@t-nexus.io.vn</p>
-        </div>
-        <div className="text-right">
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
             {isVi ? 'HÓA ĐƠN' : 'INVOICE'}
           </h1>
@@ -92,10 +84,18 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
           </p>
           <p className="text-sm font-mono font-semibold text-gray-700 mt-2">{invoiceNumber}</p>
         </div>
+        <div className="text-right">
+          <img src="/src/assets/t-nexus-text.png" alt="T-Nexus" style={{ width: 140, height: 'auto' }} className="ml-auto mb-2" />
+          <p className="text-sm text-gray-500">
+            {isVi ? 'Dịch vụ quản lý dự án số' : 'Digital Project Management Service'}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">https://t-nexus.io.vn</p>
+          <p className="text-xs text-gray-400">Email: support@t-nexus.io.vn</p>
+        </div>
       </div>
 
       {/* Invoice Info + Customer */}
-      <div className="grid grid-cols-2 gap-8 mb-8">
+      <div className="grid grid-cols-2 gap-8 mb-8 items-start">
         <div>
           <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
             {isVi ? 'Thông tin hóa đơn' : 'Invoice Details'}
