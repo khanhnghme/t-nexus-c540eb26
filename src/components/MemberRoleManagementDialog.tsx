@@ -140,7 +140,7 @@ export default function MemberRoleManagementDialog({
         userId: user!.id,
         userName: currentProfile?.full_name || 'OwnerSystem',
         action: 'PROMOTE_MEMBER',
-        actionType: 'project_basic:member',
+        actionType: 'project_member',
         description: `Nâng quyền ${member.full_name} từ Thành viên → Leader`,
         metadata: { target_user_id: member.id, from_role: 'project_basic:member', to_role: 'project_basic:admin' },
       });
@@ -188,7 +188,7 @@ export default function MemberRoleManagementDialog({
         userId: user!.id,
         userName: currentProfile?.full_name || 'OwnerSystem',
         action: 'DEMOTE_MEMBER',
-        actionType: 'project_basic:member',
+        actionType: 'project_member',
         description: `Hạ quyền ${member.full_name} từ Leader → Thành viên`,
         metadata: { target_user_id: member.id, from_role: 'project_basic:admin', to_role: 'project_basic:member' },
       });
@@ -218,7 +218,7 @@ export default function MemberRoleManagementDialog({
         userId: user!.id,
         userName: currentProfile?.full_name || 'OwnerSystem',
         action: 'UPDATE_MEMBER_LIMITS',
-        actionType: 'project_basic:member',
+        actionType: 'project_member',
         description: `Cập nhật giới hạn cho ${member.full_name}: ${projectLimit} projects`,
         metadata: { target_user_id: member.id, project_limit: projectLimit },
       });

@@ -272,7 +272,7 @@ export default function MemberManagementCard({
           userId: user.id,
           userName: profile.full_name,
           action: 'APPROVE_JOIN_REQUEST',
-          actionType: 'project_basic:member',
+          actionType: 'project_member',
           description: `Duyệt yêu cầu tham gia của ${request.profiles?.full_name || 'người dùng'}`,
           groupId,
         });
@@ -557,7 +557,7 @@ export default function MemberManagementCard({
         userId: user!.id,
         userName: profile?.full_name || user?.email || 'Unknown',
         action: 'INVITE_MEMBER_TO_PROJECT',
-        actionType: 'project_basic:member',
+        actionType: 'project_member',
         description: `Gửi lời mời tham gia project cho ${selectedUserIds.size} người: ${addedNames.join(', ')}`,
         groupId: groupId,
         metadata: { 
@@ -597,7 +597,7 @@ export default function MemberManagementCard({
         userId: user!.id,
         userName: profile?.full_name || user?.email || 'Unknown',
         action: 'CHANGE_MEMBER_ROLE',
-        actionType: 'project_basic:member',
+        actionType: 'project_member',
         description: `Đổi vai trò của ${memberToChangeRole.profiles?.full_name} thành ${newRole === 'project_basic:admin' ? 'Phó nhóm' : 'Thành viên'}`,
         groupId: groupId,
         metadata: { 
@@ -641,7 +641,7 @@ export default function MemberManagementCard({
           userId: user!.id,
           userName: profile?.full_name || user?.email || 'Unknown',
           action: 'REMOVE_MEMBER_FROM_PROJECT',
-          actionType: 'project_basic:member',
+          actionType: 'project_member',
           description: `Xóa ${memberRef.profiles?.full_name} khỏi project`,
           groupId: groupId,
           metadata: { removed_user_id: memberRef.user_id, removed_user_name: memberRef.profiles?.full_name }
@@ -754,7 +754,7 @@ export default function MemberManagementCard({
         userId: user!.id,
         userName: profile?.full_name || user?.email || 'Unknown',
         action: 'LEAVE_PROJECT',
-        actionType: 'project_basic:member',
+        actionType: 'project_member',
         description: `${profile?.full_name || 'Thành viên'} đã rời khỏi project`,
         groupId,
         metadata: { left_user_id: currentUserId }
@@ -1860,7 +1860,7 @@ export default function MemberManagementCard({
               userId: user!.id,
               userName: profile?.full_name || user?.email || 'Unknown',
               action: action === 'add' ? 'BULK_INVITE_PROJECT_MEMBERS' : 'BULK_REMOVE_PROJECT_MEMBERS',
-              actionType: 'project_basic:member',
+              actionType: 'project_member',
               description: `${action === 'add' ? 'Gửi lời mời' : 'Xóa'} hàng loạt ${success} thành viên ${action === 'add' ? 'vào' : 'khỏi'} project từ Excel`,
               groupId: groupId,
             });
