@@ -20,7 +20,7 @@ const RESEND_COOLDOWN = 60;
 
 export function OtpVerifyScreen({ email, userId, fullName, studentId, onVerified, onBack }: OtpVerifyScreenProps) {
   const { toast } = useToast();
-  const { translations: t } = useLanguage();
+  const { translations: t, locale } = useLanguage();
   const a = t.auth;
   const [otpValue, setOtpValue] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -74,7 +74,7 @@ export function OtpVerifyScreen({ email, userId, fullName, studentId, onVerified
 
     try {
       const { data, error } = await supabase.functions.invoke('signup-email-otp', {
-        body: { action: 'resend_code', email, user_id: userId, locale: t.app?.locale || undefined },
+        body: { action: 'resend_code', email, user_id: userId, locale },
       });
 
       if (error || !data?.success) {
