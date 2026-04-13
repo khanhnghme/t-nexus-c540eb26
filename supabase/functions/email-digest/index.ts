@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { buildBrandedDigestEmail } from "../_shared/email-html-builder.ts";
+import { getEmailTexts, type EmailLocale } from "../_shared/email-i18n.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -144,7 +145,7 @@ Deno.serve(async (req) => {
     // 6. Get profiles
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id, full_name, email, email_notifications")
+      .select("id, full_name, email, email_notifications, preferred_locale")
       .in("id", userIds);
 
     // 7. Check already sent today
