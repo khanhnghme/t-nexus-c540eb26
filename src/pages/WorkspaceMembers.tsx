@@ -46,9 +46,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 type ConfirmAction = 
   | { type: 'remove'; userId: string; name: string }
-  | { type: 'change_role'; userId: string; name: string; newRole: 'workspace_admin' | 'workspace_member' }
+  | { type: 'change_role'; userId: string; name: string; newRole: 'workspace:admin' | 'workspace:member' }
   | { type: 'bulk_remove'; userIds: string[]; count: number }
-  | { type: 'bulk_role'; userIds: string[]; count: number; newRole: 'workspace_admin' | 'workspace_member' };
+  | { type: 'bulk_role'; userIds: string[]; count: number; newRole: 'workspace:admin' | 'workspace:member' };
 
 export default function WorkspaceMembers() {
   const { activeWorkspace, workspaceRole, isAvailable } = useWorkspace();
@@ -59,7 +59,7 @@ export default function WorkspaceMembers() {
   const tc = t.common;
 
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'workspace_admin' | 'workspace_member'>('workspace_member');
+  const [inviteRole, setInviteRole] = useState<'workspace:admin' | 'workspace:member'>('workspace:member');
   const [isInviting, setIsInviting] = useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
@@ -71,8 +71,8 @@ export default function WorkspaceMembers() {
   const [multiSelectMode, setMultiSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const isOwner = workspaceRole === 'workspace_owner';
-  const canManage = isOwner || workspaceRole === 'workspace_admin';
+  const isOwner = workspaceRole === 'workspace:owner';
+  const canManage = isOwner || workspaceRole === 'workspace:admin';
 
   // Reset selection when toggling multi-select off or switching tabs
   const toggleMultiSelect = () => {
@@ -89,7 +89,7 @@ export default function WorkspaceMembers() {
     });
   };
 
-  const selectableMembers = members.filter(m => m.role !== 'workspace_owner');
+  const selectableMembers = members.filter(m => m.role !== 'workspace:owner');
   const selectAll = () => {
     if (selectedIds.size === selectableMembers.length) {
       setSelectedIds(new Set());
@@ -140,7 +140,7 @@ export default function WorkspaceMembers() {
         }
       } else if (confirmAction.type === 'change_role') {
         const result = await changeRole(confirmAction.userId, confirmAction.newRole);
-        const roleLabel = confirmAction.newRole === 'workspace_admin' ? 'Admin' : 'Member';
+        const roleLabel = confirmAction.newRole === 'workspace:admin' ? 'Admin' : 'Member';
         if (result.success) {
           toast({ title: tw.roleUpdated, description: tw.roleUpdatedDesc.replace('{name}', confirmAction.name).replace('{role}', roleLabel) });
         } else {
@@ -161,7 +161,7 @@ export default function WorkspaceMembers() {
           const result = await changeRole(uid, confirmAction.newRole);
           if (result.success) successCount++;
         }
-        const roleLabel = confirmAction.newRole === 'workspace_admin' ? 'Admin' : 'Member';
+        const roleLabel = confirmAction.newRole === 'workspace:admin' ? 'Admin' : 'Member';
         toast({ title: tw.bulkDone, description: tw.bulkRoleDesc2.replace('{n}', String(successCount)).replace('{total}', String(confirmAction.count)).replace('{role}', roleLabel) });
         setSelectedIds(new Set());
         setMultiSelectMode(false);
@@ -188,13 +188,13 @@ export default function WorkspaceMembers() {
       case 'remove':
         return tw.removeDesc.replace('{name}', confirmAction.name);
       case 'change_role': {
-        const roleLabel = confirmAction.newRole === 'workspace_admin' ? 'Admin' : 'Member';
+        const roleLabel = confirmAction.newRole === 'workspace:admin' ? 'Admin' : 'Member';
         return tw.changeRoleDesc.replace('{name}', confirmAction.name).replace('{role}', roleLabel);
       }
       case 'bulk_remove':
         return tw.bulkRemoveDesc.replace('{n}', String(confirmAction.count));
       case 'bulk_role': {
-        const roleLabel = confirmAction.newRole === 'workspace_admin' ? 'Admin' : 'Member';
+        const roleLabel = confirmAction.newRole === 'workspace:admin' ? 'Admin' : 'Member';
         return tw.bulkRoleDesc.replace('{n}', String(confirmAction.count)).replace('{role}', roleLabel);
       }
     }
@@ -202,17 +202,17 @@ export default function WorkspaceMembers() {
 
   const getRoleIcon = (role: string) => {
     switch (role) {
-      case 'workspace_owner': return <Crown className="w-3.5 h-3.5 text-amber-500" />;
-      case 'workspace_admin': return <Shield className="w-3.5 h-3.5 text-blue-500" />;
+      case 'workspace:owner': return <Crown className="w-3.5 h-3.5 text-amber-500" />;
+      case 'workspace:admin': return <Shield className="w-3.5 h-3.5 text-blue-500" />;
       default: return <User className="w-3.5 h-3.5 text-muted-foreground" />;
     }
   };
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case 'workspace_owner': return tw.owner;
-      case 'workspace_admin': return tw.admin;
-      case 'workspace_member': return tw.member;
+      case 'workspace:owner': return tw.owner;
+      case 'workspace:admin': return tw.admin;
+      case 'workspace:member': return tw.member;
       default: return role;
     }
   };
@@ -275,18 +275,18 @@ export default function WorkspaceMembers() {
                   </div>
                   <div className="space-y-2">
                     <Label>{tw.role}</Label>
-                    <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as 'workspace_admin' | 'workspace_member')}>
+                    <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as 'workspace:admin' | 'workspace:member')}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="workspace_member">
+                        <SelectItem value="workspace:member">
                           <div className="flex items-center gap-2">
                             <User className="w-3.5 h-3.5" />
                             <span>Member</span>
                           </div>
                         </SelectItem>
-                        <SelectItem value="workspace_admin">
+                        <SelectItem value="workspace:admin">
                           <div className="flex items-center gap-2">
                             <Shield className="w-3.5 h-3.5" />
                             <span>Admin</span>
@@ -330,7 +330,7 @@ export default function WorkspaceMembers() {
                   type: 'bulk_role',
                   userIds: [...selectedIds],
                   count: selectedIds.size,
-                  newRole: 'workspace_admin',
+                  newRole: 'workspace:admin',
                 })}
               >
                 <Shield className="w-3.5 h-3.5 mr-1.5" />
@@ -343,7 +343,7 @@ export default function WorkspaceMembers() {
                   type: 'bulk_role',
                   userIds: [...selectedIds],
                   count: selectedIds.size,
-                  newRole: 'workspace_member',
+                  newRole: 'workspace:member',
                 })}
               >
                 <User className="w-3.5 h-3.5 mr-1.5" />
@@ -392,7 +392,7 @@ export default function WorkspaceMembers() {
               </div>
             ) : (
               members.map((member) => {
-                const isSelectable = member.role !== 'workspace_owner';
+                const isSelectable = member.role !== 'workspace:owner';
                 const isSelected = selectedIds.has(member.id);
 
                 return (
@@ -428,7 +428,7 @@ export default function WorkspaceMembers() {
                       {getRoleLabel(member.role)}
                     </div>
 
-                    {canManage && !multiSelectMode && member.role !== 'workspace_owner' && (
+                    {canManage && !multiSelectMode && member.role !== 'workspace:owner' && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -442,10 +442,10 @@ export default function WorkspaceMembers() {
                                 type: 'change_role',
                                 userId: member.id,
                                 name: member.full_name,
-                                newRole: member.role === 'workspace_admin' ? 'workspace_member' : 'workspace_admin',
+                                newRole: member.role === 'workspace:admin' ? 'workspace:member' : 'workspace:admin',
                               })}>
                                 <ArrowUpDown className="w-3.5 h-3.5 mr-2" />
-                                {member.role === 'workspace_admin' ? tw.demoteToMember : tw.promoteToAdmin}
+                                {member.role === 'workspace:admin' ? tw.demoteToMember : tw.promoteToAdmin}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                             </>
