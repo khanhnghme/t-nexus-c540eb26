@@ -169,12 +169,15 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
 
   const infoLines: [string, string][] = [
     [t.pdfOrderCode, order.order_code || "—"],
-    [t.pdfCreatedAt, formatDate(order.created_at)],
   ];
+  if (order.paypal_order_id) {
+    infoLines.push(["Transaction ID:", order.paypal_order_id]);
+  }
+  infoLines.push([t.pdfCreatedAt, formatDate(order.created_at)]);
   if (isCompleted && order.completed_at) {
     infoLines.push([t.pdfPaidAt, formatDate(order.completed_at)]);
   }
-  infoLines.push([t.pdfPaymentMethod, (order.payment_method || "PayPal").toUpperCase()]);
+  infoLines.push([t.pdfPaymentMethod, (order.payment_method || "PayPal").charAt(0).toUpperCase() + (order.payment_method || "PayPal").slice(1)]);
   infoLines.push([t.pdfStatus, isCompleted ? t.pdfStatusPaid : t.pdfStatusFailed]);
 
   const infoStartY = y;
