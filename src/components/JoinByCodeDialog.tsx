@@ -151,6 +151,43 @@ export default function JoinByCodeDialog({ open, onOpenChange, onJoined }: JoinB
     }
   }, []);
 
+  const handleScanFromImage = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Reset input so same file can be re-selected
+    e.target.value = '';
+
+    try {
+      const { Html5Qrcode } = await import('html5-qrcode');
+      const scanner = new Html5Qrcode('qr-file-scanner-temp');
+      const decodedText = await scanner.scanFile(file, true);
+      scanner.clear();
+
+      const codeMatch = decodedText.match(/[?&]code=([A-Za-z0-9]{6})/);
+      if (codeMatch) {
+        const scannedCode = codeMatch[1].toUpperCase();
+        setDigits(scannedCode.split(''));
+        stopScanner();
+        setMode('code');
+        setTimeout(() => handleLookupWithCode(scannedCode), 300);
+        return;
+      }
+
+      const plain = decodedText.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+      if (plain.length === 6) {
+        setDigits(plain.split(''));
+        stopScanner();
+        setMode('code');
+        setTimeout(() => handleLookupWithCode(plain), 300);
+        return;
+      }
+
+      toast({ title: 'Không nhận diện được mã', description: 'Ảnh không chứa mã QR hợp lệ. Vui lòng thử ảnh khác.', variant: 'destructive' });
+    } catch {
+      toast({ title: 'Không nhận diện được mã', description: 'Không tìm thấy mã QR trong ảnh. Vui lòng thử ảnh rõ hơn.', variant: 'destructive' });
+    }
+  }, [toast, stopScanner]);
+
   useEffect(() => {
     if (mode === 'scan' && open && !groupPreview) {
       startScanner();
