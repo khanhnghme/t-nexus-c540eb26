@@ -897,8 +897,8 @@ export default function MemberManagementCard({
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-popover">
-                              <SelectItem value="project_member">Thành viên</SelectItem>
-                              <SelectItem value="project_admin">Phó nhóm</SelectItem>
+                              <SelectItem value="project_basic:member">Thành viên</SelectItem>
+                              <SelectItem value="project_basic:admin">Phó nhóm</SelectItem>
                             </SelectContent>
                           </Select>
                           <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setBulkMemberAction('role')} disabled={isBulkProcessing}>
@@ -1544,7 +1544,7 @@ export default function MemberManagementCard({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="project_member">
+                        <SelectItem value="project_basic:member">
                           <div className="flex items-center gap-2">
                             <UserCheck className="w-4 h-4" />
                             Thành viên
@@ -1631,13 +1631,13 @@ export default function MemberManagementCard({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="project_member">
+                  <SelectItem value="project_basic:member">
                     <div className="flex items-center gap-2">
                       <UserCheck className="w-4 h-4" />
                       Thành viên
                     </div>
                   </SelectItem>
-                  <SelectItem value="project_admin">
+                  <SelectItem value="project_basic:admin">
                     <div className="flex items-center gap-2">
                       <Crown className="w-4 h-4 text-warning" />
                       Phó nhóm
