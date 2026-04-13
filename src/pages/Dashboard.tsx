@@ -129,6 +129,7 @@ export default function Dashboard() {
   const [joinedProjectCount, setJoinedProjectCount] = useState(0);
   const [hiddenProjectIds, setHiddenProjectIds] = useState<Set<string>>(new Set());
   const [pendingApprovalGroups, setPendingApprovalGroups] = useState<Group[]>([]);
+  const [modeFilter, setModeFilter] = useState<ProjectModeFilter>('all');
   
   const [filter, setFilter] = useState<DashboardFilter>(() => {
     if (typeof window !== 'undefined' && user?.id) {
@@ -431,16 +432,23 @@ export default function Dashboard() {
 
   const filteredGroups = useMemo(() => {
     if (filter === 'pending') return []; // pending uses separate list
+    let result: Group[];
     switch (filter) {
       case 'hidden':
-        return groups.filter(g => hiddenProjectIds.has(g.id));
+        result = groups.filter(g => hiddenProjectIds.has(g.id));
+        break;
       case 'active':
-        return groups.filter(g => !hiddenProjectIds.has(g.id));
+        result = groups.filter(g => !hiddenProjectIds.has(g.id));
+        break;
       case 'all':
       default:
-        return groups;
+        result = groups;
     }
-  }, [groups, hiddenProjectIds, filter]);
+    if (modeFilter !== 'all') {
+      result = result.filter(g => g.project_mode === modeFilter);
+    }
+    return result;
+  }, [groups, hiddenProjectIds, filter, modeFilter]);
 
   const activeCount = groups.filter(g => !hiddenProjectIds.has(g.id)).length;
   const hiddenCount = groups.filter(g => hiddenProjectIds.has(g.id)).length;
