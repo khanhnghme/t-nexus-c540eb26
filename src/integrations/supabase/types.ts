@@ -1366,6 +1366,7 @@ export type Database = {
           id: string
           order_code: string | null
           order_type: string
+          payment_email_sent: boolean | null
           payment_method: string
           paypal_order_id: string | null
           paypal_subscription_id: string | null
@@ -1390,6 +1391,7 @@ export type Database = {
           id?: string
           order_code?: string | null
           order_type?: string
+          payment_email_sent?: boolean | null
           payment_method?: string
           paypal_order_id?: string | null
           paypal_subscription_id?: string | null
@@ -1414,6 +1416,7 @@ export type Database = {
           id?: string
           order_code?: string | null
           order_type?: string
+          payment_email_sent?: boolean | null
           payment_method?: string
           paypal_order_id?: string | null
           paypal_subscription_id?: string | null
