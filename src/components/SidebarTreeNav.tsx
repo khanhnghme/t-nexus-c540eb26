@@ -5,6 +5,7 @@ import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useWorkspaceProjects, WorkspaceProject } from '@/hooks/useWorkspaceProjects';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useWorkspaceBilling, formatPlanName } from '@/hooks/useWorkspaceBilling';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import {
   Home,
@@ -53,6 +54,7 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
   const { profile, isAdmin } = useAuth();
   const { activeWorkspace, workspaces, switchWorkspace, isAvailable, workspaceRole } = useWorkspace();
   const { projects, isGuest } = useWorkspaceProjects();
+  const { user } = useAuth();
   const { translations } = useLanguage();
   const billing = useWorkspaceBilling();
   const ownerPlan = billing?.ownerPlan;
@@ -64,6 +66,25 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
 
   // Expanded state — accordion: only one submenu open at a time
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
+
+  // Fetch hidden project ids
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('hidden_projects')
+      .select('group_id')
+      .eq('user_id', user.id)
+      .then(({ data }) => {
+        setHiddenIds(new Set((data || []).map(d => d.group_id)));
+      });
+  }, [user]);
+
+  // If >9 projects, filter out hidden ones from sidebar
+  const MAX_SIDEBAR_PROJECTS = 9;
+  const visibleProjects = projects.length > MAX_SIDEBAR_PROJECTS
+    ? projects.filter(p => !hiddenIds.has(p.id))
+    : projects;
 
   const toggle = useCallback((key: string) => {
     setExpanded(prev => (prev === key ? null : key));
@@ -131,7 +152,7 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
     const prefix = p.project_mode === 'custom' ? '/pa' : '/pr';
     return `${prefix}/ws-${activeWorkspace.short_id}/${p.slug || p.id}`;
   };
-  const projectPaths = projects.map(p => getProjectHref(p));
+  const projectPaths = visibleProjects.map(p => getProjectHref(p));
 
   /* ─── Collapsed mode ─── */
   if (collapsed) {
@@ -221,7 +242,7 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
             <ChevronRight className={cn('nav-chevron', isProjectsExpanded && 'expanded')} />
             <FolderKanban className="nav-icon" strokeWidth={1.8} />
             <span className="nav-label">{t?.projects || 'Projects'}</span>
-            <span className="text-[10px] opacity-40 tabular-nums">{projects.length}</span>
+            <span className="text-[10px] opacity-40 tabular-nums">{visibleProjects.length}</span>
           </button>
 
           {isProjectsExpanded && (
@@ -234,7 +255,7 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
                 <span className="nav-label text-muted-foreground">{t?.viewAll || 'View all'}</span>
               </Link>
 
-              {projects.map(p => {
+              {visibleProjects.map(p => {
                 const href = getProjectHref(p);
                 const active = location.pathname === href || location.pathname.startsWith(href + '/');
                 return (
