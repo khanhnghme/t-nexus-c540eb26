@@ -667,7 +667,7 @@ export default function GroupDetail() {
                                         </div>
                                         {m.user_id === group?.created_by ? (
                                           <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-warning/10 text-warning border-warning/30 shrink-0">TN</Badge>
-                                        ) : m.role === 'project_admin' ? (
+                                        ) : m.role === 'project_basic:admin' ? (
                                           <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-primary/10 text-primary border-primary/30 shrink-0">PN</Badge>
                                         ) : null}
                                       </div>
