@@ -199,45 +199,6 @@ export default function AddonCheckoutPayment() {
 
   if (!order) return null;
 
-  if (paymentStatus === 'processing') {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh] px-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-8 pb-8 flex flex-col items-center gap-5 text-center">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <div className="space-y-1.5">
-              <h2 className="text-lg font-semibold">
-                {isVi ? 'Đang xác nhận thanh toán với PayPal' : 'Confirming payment with PayPal'}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {isVi ? 'Hệ thống đang xác minh giao dịch của bạn...' : 'The system is verifying your transaction...'}
-              </p>
-            </div>
-            <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-300">
-              <AlertTriangle className="h-4 w-4 shrink-0" />
-              <span>{isVi ? 'Vui lòng không thoát hoặc tải lại trang' : 'Please do not leave or reload this page'}</span>
-            </div>
-            <div className="w-full space-y-2">
-              <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
-                <div className="h-full w-1/2 rounded-full bg-primary animate-pulse" style={{ animation: 'pulse 1.5s ease-in-out infinite, slideRight 2s ease-in-out infinite' }} />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {isVi ? 'Mã đơn hàng:' : 'Order ID:'}{' '}
-                <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{order?.order_code || orderCode}</code>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <style>{`
-          @keyframes slideRight {
-            0%, 100% { transform: translateX(-60%); }
-            50% { transform: translateX(120%); }
-          }
-        `}</style>
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-5xl mx-auto py-6 px-4 space-y-5">
       {/* Back button — hide when minimal layout already has one */}
