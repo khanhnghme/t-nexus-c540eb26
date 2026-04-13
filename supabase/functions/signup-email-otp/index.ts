@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (existingProfile) {
-        return jsonResponse({ error: "MSSV đã tồn tại trong hệ thống." }, 409);
+        return jsonResponse({ success: false, error: "MSSV đã tồn tại trong hệ thống." });
       }
 
       const { data: existingEmailProfile } = await supabase
@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (existingEmailProfile) {
-        return jsonResponse({ error: "Email đã được sử dụng." }, 409);
+        return jsonResponse({ success: false, error: "Email đã được sử dụng." });
       }
 
       const { data: userData, error: createError } = await supabase.auth.admin.createUser({
@@ -80,9 +80,9 @@ Deno.serve(async (req) => {
         console.error("Create user error:", createError);
         const msg = createError.message?.toLowerCase() || "";
         if (msg.includes("already") || msg.includes("exists") || msg.includes("registered")) {
-          return jsonResponse({ error: "Email đã được sử dụng." }, 409);
+          return jsonResponse({ success: false, error: "Email đã được sử dụng." });
         }
-        return jsonResponse({ error: "Không thể tạo tài khoản. Vui lòng thử lại." }, 500);
+        return jsonResponse({ success: false, error: "Không thể tạo tài khoản. Vui lòng thử lại." });
       }
 
       const newUserId = userData.user.id;
