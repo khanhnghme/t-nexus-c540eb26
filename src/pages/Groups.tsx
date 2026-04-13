@@ -453,6 +453,7 @@ export default function Groups() {
     return result;
   }, [groups, searchQuery, modeFilter, visibilityFilter]);
 
+  if (isLoading) {
     return (
       <>
         <div className="flex items-center justify-center min-h-[60vh]">
