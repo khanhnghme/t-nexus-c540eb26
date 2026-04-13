@@ -553,8 +553,6 @@ export const vi: Translations = {
     toastIdNotExistDesc: 'Email này chưa được đăng ký trong hệ thống.',
     toastPendingApproval: 'Tài khoản chờ duyệt',
     toastPendingApprovalDesc: 'Tài khoản của bạn đã được tạo nhưng đang chờ Admin xét duyệt. Vui lòng thử lại sau.',
-    toastEmailNotExist: 'Email không tồn tại',
-    toastEmailNotExistDesc: 'Email này chưa được đăng ký trong hệ thống. Bạn có thể chuyển sang tab "Tạo tài khoản" để đăng ký.',
     toastLoginFailed: 'Đăng nhập thất bại',
     toastInvalidCredentials: 'Email hoặc mật khẩu không đúng',
     toastLoginSuccess: 'Đăng nhập thành công',

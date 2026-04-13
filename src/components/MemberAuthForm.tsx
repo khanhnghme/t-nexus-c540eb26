@@ -288,30 +288,6 @@ export function MemberAuthForm() {
 
       let loginEmail = input;
 
-      // Check approval
-      const { data: rawProfile } = await supabase
-        .rpc('check_profile_login', { p_email: loginEmail });
-      const profileData = rawProfile as { is_approved: boolean; full_name: string } | null;
-
-      if (profileData && !profileData.is_approved) {
-        setIsLoading(false);
-        toast({
-          title: ta.toastPendingApproval,
-          description: ta.toastPendingApprovalDesc,
-        });
-        return;
-      }
-
-      if (!profileData) {
-        setIsLoading(false);
-        toast({
-          title: ta.toastEmailNotExist,
-          description: ta.toastEmailNotExistDesc,
-          variant: 'destructive',
-        });
-        return;
-      }
-
       // Set ref BEFORE signIn to prevent race condition with useEffect navigation
       pendingLoginRef.current = true;
       // Set session flag to prevent Auth.tsx from showing RememberLoginScreen mid-flow
@@ -355,7 +331,7 @@ export function MemberAuthForm() {
         setIsLoading(false);
         toast({
           title: ta.toastLoginFailed,
-          description: error.message === 'Invalid login credentials' ? ta.toastInvalidCredentials : error.message,
+          description: ta.toastInvalidCredentials,
           variant: 'destructive',
         });
       } else {
@@ -371,12 +347,25 @@ export function MemberAuthForm() {
             .eq('user_id', currentUser.id);
           const isUserAdmin = userRoles?.some(r => r.role === 'system:owner') ?? false;
 
-          // Fetch fresh suspension status
+          // Fetch fresh profile status (is_approved, suspended)
           const { data: freshProfile } = await supabase
             .from('profiles')
-            .select('suspended_until, suspension_reason')
+            .select('is_approved, suspended_until, suspension_reason')
             .eq('id', currentUser.id)
             .maybeSingle();
+
+          // Block: Account not approved
+          if (freshProfile && !freshProfile.is_approved) {
+            pendingLoginRef.current = false;
+            sessionStorage.removeItem('t-nexus_login_in_progress');
+            setIsLoading(false);
+            toast({
+              title: ta.toastPendingApproval,
+              description: ta.toastPendingApprovalDesc,
+            });
+            await signOut();
+            return;
+          }
 
           const isSuspended = freshProfile?.suspended_until
             ? new Date(freshProfile.suspended_until).getTime() > Date.now()

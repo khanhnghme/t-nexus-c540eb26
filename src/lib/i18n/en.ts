@@ -558,8 +558,6 @@ export const en = {
     toastIdNotExistDesc: 'This email is not registered in the system.',
     toastPendingApproval: 'Account pending approval',
     toastPendingApprovalDesc: 'Your account has been created but is pending admin approval. Please try again later.',
-    toastEmailNotExist: 'Email not found',
-    toastEmailNotExistDesc: 'This email is not registered. You can switch to the "Create account" tab to register.',
     toastLoginFailed: 'Login failed',
     toastInvalidCredentials: 'Email or password is incorrect',
     toastLoginSuccess: 'Login successful',
