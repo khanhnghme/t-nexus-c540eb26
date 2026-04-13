@@ -1,53 +1,63 @@
 
 
-## Plan: Fix PDF invoice & Redesign email thanh toán
+## Plan: Email & PDF Invoice song ngữ (EN/VI) theo setting người dùng
 
-### Vấn đề hiện tại
-1. **PDF invoice** thiếu logo T-Nexus text (logo fetch có thể fail hoặc vị trí sai so với trang Summary)
-2. **Email thanh toán** quá phức tạp — cần đơn giản hóa, responsive tốt hơn trên mobile/laptop
+### Tổng quan
+Tất cả email hệ thống (OTP đăng ký, OTP quên mật khẩu, xác nhận thanh toán, digest) và PDF invoice sẽ hiển thị nội dung **tiếng Anh hoặc tiếng Việt** tùy theo `profiles.preferred_locale` của người dùng.
 
 ### Các thay đổi
 
-**1. Fix PDF Invoice (`supabase/functions/_shared/invoice-pdf-builder.ts`)**
-- Đồng bộ layout PDF với trang CheckoutSummary: header có logo T-Nexus text bên phải, "HÓA ĐƠN" bên trái
-- Fix vị trí logo: đảm bảo logo hiển thị đúng vị trí (hiện tại `y + 4` có thể bị lệch so với header text)
-- Thêm fallback robust hơn: nếu logo PNG fetch fail, thử embed base64 trực tiếp thay vì chỉ vẽ text
+**1. Tạo file i18n cho email (`supabase/functions/_shared/email-i18n.ts`)**
+- Map tất cả text string theo locale `vi` / `en`
+- Bao gồm: OTP email (title, subtitle, expiry, warning, ignore), payment email (labels, subject), digest email, PDF invoice (labels, notes, footer)
+- Export hàm `getEmailTexts(locale: 'vi' | 'en')` trả về object chứa tất cả text
 
-**2. Redesign Email thanh toán (`supabase/functions/_shared/email-html-builder.ts`)**
-- Viết lại `buildPaymentConfirmationEmail()` đơn giản hơn:
-  - Bỏ icon success tròn (✓ circle) — thay bằng text đơn giản
-  - Bảng thông tin đơn giản hóa: mỗi dòng 1 cặp label-value, không chia 2 cột (responsive tốt hơn trên mobile)
-  - Tổng thanh toán nổi bật nhưng clean
-  - Giữ note đính kèm PDF
-  - Responsive: trên mobile padding giảm, font size phù hợp
-- Đảm bảo `max-width: 540px` và mobile media query hoạt động tốt
+**2. Cập nhật `email-html-builder.ts`**
+- Các hàm `buildBrandedOtpEmail`, `buildPaymentConfirmationEmail`, `buildBrandedDigestEmail` nhận thêm param `locale?: 'vi' | 'en'` (default `'vi'`)
+- Dùng `getEmailTexts(locale)` để lấy text thay vì hardcode tiếng Việt
+- `emailDoctype()` cập nhật `lang` attribute theo locale
+- `emailFooter()`, `emailSubFooter()` cũng theo locale
 
-**3. Deploy lại edge functions**
-- Deploy: `payment-confirmation-email`
-- Test bằng curl với order thật để verify email + PDF
+**3. Cập nhật `invoice-pdf-builder.ts`**
+- `buildInvoicePdf` nhận thêm param `locale?: 'vi' | 'en'` (default `'vi'`)
+- Tất cả label trong PDF (HÓA ĐƠN → INVOICE, Mã đơn hàng → Order code, Tổng cộng → TOTAL, v.v.) dùng text từ i18n
 
-### Chi tiết kỹ thuật
+**4. Cập nhật `payment-confirmation-email/index.ts`**
+- Thêm `preferred_locale` vào query profile: `.select("..., preferred_locale")`
+- Pass `locale` vào `buildPaymentConfirmationEmail()` và `buildInvoicePdf()`
+- Subject email cũng theo locale
 
-**PDF fix**: Điều chỉnh tọa độ logo — đặt logo ở `y` cùng hàng với "HÓA ĐƠN", tính `logoDisplayH` chính xác từ aspect ratio
+**5. Cập nhật `signup-email-otp/index.ts`**
+- Khi gửi OTP: query `preferred_locale` từ profiles (nếu user đã có profile)
+- Cho user mới đăng ký (chưa có profile): nhận `locale` từ request body (frontend gửi kèm)
+- Pass locale vào `buildBrandedOtpEmail()`
+- Subject email theo locale
 
-**Email redesign**: Layout mới dạng single-column stacked rows:
-```
-[Logo]                    [Subtitle]
-─────────────────────────────────
-Thanh toán thành công!
-Xin chào [name], giao dịch đã xác nhận.
+**6. Cập nhật `password-reset-otp/index.ts`**
+- Query `preferred_locale` từ profiles theo email
+- Pass locale vào `buildBrandedOtpEmail()`
+- Subject email theo locale
 
-Gói dịch vụ:    Plus Plan
-Chu kỳ:         Năm
-Mã đơn hàng:    ORD-...
-Thời gian:      13/04/2026
-─────────────────────────────────
-Tổng:           $XX.XX USD
-─────────────────────────────────
-📎 File PDF đính kèm
-─────────────────────────────────
-[Footer]
-```
+**7. Cập nhật `email-digest/index.ts`**
+- Query `preferred_locale` từ profile
+- Pass locale vào `buildBrandedDigestEmail()`
 
-Mỗi row là `<tr>` riêng biệt — không dùng 2-column layout → responsive tự nhiên trên mọi thiết bị.
+**8. Cập nhật frontend gửi locale kèm request**
+- `RegisterForm.tsx`: gửi `locale` (từ `useLanguage()`) khi gọi `signup-email-otp`
+- `OtpVerifyScreen.tsx`: gửi `locale` khi resend
+- `LoginForm.tsx`: gửi `locale` khi resume verification
+
+**9. Deploy lại edge functions**
+- Deploy: `signup-email-otp`, `password-reset-otp`, `payment-confirmation-email`, `email-digest`
+
+### Ví dụ text i18n
+
+| Key | VI | EN |
+|-----|----|----|
+| OTP title (signup) | Xác minh tài khoản | Verify your account |
+| OTP title (reset) | Đặt lại mật khẩu | Reset your password |
+| Payment success | ✓ Thanh toán thành công | ✓ Payment successful |
+| PDF header | HÓA ĐƠN | INVOICE |
+| PDF total | TỔNG CỘNG | TOTAL |
+| Billing cycle yearly | Năm | Yearly |
 
