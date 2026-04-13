@@ -31,7 +31,7 @@ import {
   GraduationCap, BookOpen, Phone, Sparkles, Shield,
   Rocket, Eye, EyeOff, Mail, ListChecks, Users, FolderKanban,
   Award, MessageSquare, ChevronLeft, Globe, Crown, Zap,
-  Tag, Plus, Minus, Package, BarChart3, Sparkles,
+  Tag, Plus, Minus, Package, BarChart3,
   ArrowRight, ArrowLeft, ChevronUp, ChevronDown, Building2, ChevronsUpDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
