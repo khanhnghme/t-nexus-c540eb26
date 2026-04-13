@@ -1388,16 +1388,6 @@ export default function MemberManagementCard({
                 <p className="text-sm text-muted-foreground mt-0.5">
                   Chọn nhiều thành viên từ hệ thống để thêm cùng lúc
                 </p>
-                <button
-                  type="button"
-                  className="text-[11px] text-primary hover:underline mt-1 text-left"
-                  onClick={() => {
-                    setIsAddDialogOpen(false);
-                    navSetCurrentTab('settings');
-                  }}
-                >
-                  💡 Thành viên cũng có thể tự tham gia bằng QR hoặc nhập mã — xem tại Cài đặt
-                </button>
               </div>
               <Button variant="ghost" size="icon" onClick={() => setIsAddDialogOpen(false)}>
                 <X className="w-5 h-5" />
@@ -1418,6 +1408,19 @@ export default function MemberManagementCard({
                       className="h-11 pl-10 border-2 border-primary/30 focus-visible:border-primary focus-visible:ring-primary/20 bg-primary/5 placeholder:text-muted-foreground/70 font-medium"
                     />
                   </div>
+                  <button
+                    type="button"
+                    className="w-full flex items-center gap-2 p-2.5 rounded-lg border border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors text-left"
+                    onClick={() => {
+                      setIsAddDialogOpen(false);
+                      navSetCurrentTab('settings');
+                    }}
+                  >
+                    <span className="text-base">💡</span>
+                    <span className="text-xs text-foreground">
+                      Thành viên có thể tự tham gia bằng <span className="font-semibold">QR</span> hoặc <span className="font-semibold">nhập mã</span> — <span className="text-primary font-medium underline underline-offset-2">xem tại Cài đặt</span>
+                    </span>
+                  </button>
                   <div className="mt-2">
                     {previewUser && !isAlreadyInProject && (
                       <div
