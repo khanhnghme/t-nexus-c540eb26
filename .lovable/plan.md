@@ -1,35 +1,34 @@
 
 
-## Plan: Thêm tab Thành viên, Resources, Cài đặt cho trang Custom Project (/pa)
+## Plan: Breadcrumb editable để đổi tên Project custom (/pa)
 
-### Tóm tắt
-Hiện tại `/pa` (custom mode) chỉ hiển thị `CanvasPageView` toàn màn hình, không có tab members/resources/settings. Cần mở rộng để custom mode cũng có navigation tabs như basic mode, với canvas là tab mặc định ("pages"), và thêm 3 tab: members, resources, settings.
+### Cách hoạt động
+Thêm tên project dưới dạng breadcrumb editable trên TopBar cho custom mode. Khi ở trang `/pa`, hiển thị: **Dự án / Tên Project ✏️**. Click vào tên → chuyển thành input → Enter để lưu, Escape để hủy. Chỉ leader/admin mới được sửa, thành viên thường chỉ thấy text.
 
 ### Changes
 
-**File 1: `src/pages/GroupDetail.tsx`**
-- Thay thế block `group.project_mode === 'custom'` (lines 506-509) — thay vì chỉ render `CanvasPageView`, bọc nó trong cùng hệ thống `Tabs` có điều kiện:
-  - Tab `pages` (mặc định): render `CanvasPageView` như hiện tại
-  - Tab `members`: render `MemberManagementCard` (giống basic mode, line 740)
-  - Tab `resources`: render `ProjectResources` (giống basic mode, line 744)
-  - Tab `settings` (chỉ leader/creator): render `ShareSettingsCard` + danger zone (giống basic mode, lines 773-809)
-- Cập nhật `availableTabs` cho custom mode để bao gồm `pages, members, resources, settings`
+**File 1: `src/contexts/DashboardLayoutContext.tsx`**
+- Thêm `onRenameProject?: (newName: string) => void` vào `ProjectNavProps`
+- Cho phép TopBar gọi callback rename mà không cần biết logic Supabase
 
-**File 2: `src/components/layout/TopBar.tsx`**
-- Cập nhật block `isCustomMode` (lines 91-116): thay vì chỉ hiển thị back button + tên project, hiển thị navigation tabs tương tự basic mode nhưng với tab set khác:
-  - `pages` (icon FileText) — canvas editor
-  - `members` (icon Users)
-  - `resources` (icon FolderOpen)  
-  - `settings` (icon Settings, chỉ leader/creator)
-- Giữ lại back button ở bên trái
+**File 2: `src/pages/GroupDetail.tsx`**
+- Tạo hàm `handleRenameProject(newName)`: update `groups.name` qua Supabase, gọi `fetchGroupData()`, log activity
+- Truyền `onRenameProject` vào `setProjectNavProps`
 
-**File 3: `src/components/ProjectNavigation.tsx`** (nếu cần)
-- Thêm tab `pages` vào danh sách tabs cho custom mode
-- Hoặc tạo một set tabs riêng cho custom mode
+**File 3: `src/components/layout/TopBar.tsx`**
+- Khi `isCustomMode && isProjectMode`: thay vì chỉ hiển thị tabs, thêm breadcrumb bên trái (trước back button hoặc sau):
+  ```
+  Dự án / [Tên Project ✏️]  |  📄 Trang  👥 Thành viên  📁 Tài nguyên  ⚙️ Cài đặt
+  ```
+- Click vào tên → state `editingName=true` → render `<input>` inline
+- Enter → gọi `projectNavProps.onRenameProject(newName)`, reset state
+- Escape → hủy, quay lại text
+- Chỉ cho phép edit khi `projectNavProps.isLeaderInGroup === true`
+- Text style: `font-medium text-foreground`, hover hiện underline dashed + cursor-text
 
 ### Technical Details
-- Tab mặc định cho custom mode là `pages` thay vì `overview`
-- `CanvasPageView` giữ nguyên `h-[calc(100vh-48px)]` khi ở tab `pages`
-- Members, resources, settings tabs render trong container có padding giống basic mode
-- `availableTabs` trong GroupDetail sẽ phân biệt theo `project_mode` để include đúng set tabs
+- Rename update: `supabase.from('groups').update({ name }).eq('id', groupId)`
+- Debounce không cần (chỉ commit khi Enter/blur)
+- Breadcrumb "Dự án" là Link to `/groups`
+- Trên mobile (viewport nhỏ): ẩn breadcrumb prefix "Dự án /", chỉ hiện tên project
 
