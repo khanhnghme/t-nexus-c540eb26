@@ -14,12 +14,8 @@ interface AuthContextType {
   isSystemOwner: boolean;
   /** Has system_owner or system_admin role */
   isSystemAdmin: boolean;
-  /** @deprecated Use isSystemOwner */
-  isOwnerSystem: boolean;
-  /** @deprecated Use isSystemAdmin */
+  /** Alias for isSystemAdmin — kept for widespread usage */
   isAdmin: boolean;
-  /** @deprecated Use workspace/project role checks instead */
-  isLeader: boolean;
   isApproved: boolean;
   mustChangePassword: boolean;
   maintenanceMode: boolean;
@@ -227,17 +223,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const isSystemOwner = roles.includes('system:owner');
   const isSystemAdmin = isSystemOwner || roles.includes('system:admin');
-  // Backward-compat aliases
-  const isOwnerSystem = isSystemOwner;
   const isAdmin = isSystemAdmin;
-  const isLeader = isSystemAdmin; // deprecated
   const isApproved = profile?.is_approved ?? false;
   const mustChangePassword = profile?.must_change_password ?? false;
 
   const contextValue = {
     user, session, profile, roles, isLoading,
-    isSystemOwner, isSystemAdmin,
-    isOwnerSystem, isAdmin, isLeader,
+    isSystemOwner, isSystemAdmin, isAdmin,
     isApproved, mustChangePassword,
     maintenanceMode,
     signIn, signUp, signOut, refreshProfile,

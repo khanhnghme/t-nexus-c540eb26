@@ -86,18 +86,18 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
 
   const getRoleBadge = (role?: string | null) => {
     switch (role) {
-      case 'workspace_owner': return '👑';
-      case 'workspace_admin': return '🛡️';
-      case 'workspace_member': return '🎫';
+      case 'workspace:owner': return '👑';
+      case 'workspace:admin': return '🛡️';
+      case 'workspace:member': return '🎫';
       default: return '🎫';
     }
   };
 
   const getRoleLabel = (role?: string | null) => {
     switch (role) {
-      case 'workspace_owner': return 'Owner';
-      case 'workspace_admin': return 'Admin';
-      case 'workspace_member': return 'Member';
+      case 'workspace:owner': return 'Owner';
+      case 'workspace:admin': return 'Admin';
+      case 'workspace:member': return 'Member';
       default: return '';
     }
   };

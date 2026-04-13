@@ -823,7 +823,7 @@ export default function Dashboard() {
                                 <div className="flex items-center gap-1 shrink-0">
                                   <Badge variant="outline" className="text-[10px]">Project</Badge>
                                   <Badge variant="secondary" className="text-[10px]">
-                                    {inv.role === 'project_admin' ? (t?.viceLeader || 'Vice leader') : (t?.member || 'Member')}
+                                    {inv.role === 'project_basic:admin' ? (t?.viceLeader || 'Vice leader') : (t?.member || 'Member')}
                                   </Badge>
                                 </div>
                               </div>

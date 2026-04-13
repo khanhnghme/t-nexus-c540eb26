@@ -247,7 +247,7 @@ function UpgradeBox({ collapsed }: { collapsed: boolean }) {
   const { locale } = useLanguage();
 
   const isOwner = user?.id === ownerId;
-  if (!isAvailable || !activeWorkspace || workspaceRole !== 'workspace_owner') return null;
+  if (!isAvailable || !activeWorkspace || workspaceRole !== 'workspace:owner') return null;
 
   const planLabel = formatPlanName(ownerPlan);
 
@@ -322,7 +322,7 @@ export default function DashboardLayout({
 }: DashboardLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, profile, isAdmin, isLeader, signOut, refreshProfile } = useAuth();
+  const { user, profile, isAdmin, isSystemAdmin, signOut, refreshProfile } = useAuth();
   const { theme, setTheme } = useTheme();
   const { locale } = useLanguage();
   const isDark = theme === 'dark';
@@ -364,7 +364,6 @@ export default function DashboardLayout({
 
   const getRoleText = () => {
     if (isAdmin) return 'OwnerSystem';
-    if (isLeader) return locale === 'vi' ? 'Thành viên NC' : 'Advanced Member';
     return locale === 'vi' ? 'Thành viên' : 'Member';
   };
 

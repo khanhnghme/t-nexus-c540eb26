@@ -194,7 +194,7 @@ export default function Groups() {
         const groupsWithMembers: GroupWithMembers[] = allGroups.map((g) => ({
           ...g,
           memberCount: memberMap.get(g.id)?.count || 0,
-          myRole: roleMap.get(g.id) || (joinedSet.has(g.id) ? 'project_member' : ''),
+          myRole: roleMap.get(g.id) || (joinedSet.has(g.id) ? 'project_basic:member' : ''),
           memberAvatars: memberMap.get(g.id)?.avatars || [],
         }));
 
@@ -375,7 +375,7 @@ export default function Groups() {
       const { error: memberError } = await supabase.from('group_members').insert({
         group_id: newGroup.id,
         user_id: user!.id,
-        role: 'project_admin',
+        role: 'project_basic:admin',
       });
       if (memberError) throw memberError;
 
@@ -385,7 +385,7 @@ export default function Groups() {
           group_id: newGroup.id,
           invited_user_id: m.id,
           invited_by: user!.id,
-          role: 'project_member' as const,
+          role: 'project_basic:member' as const,
           status: 'pending',
         }));
         await supabase.from('project_invitations').insert(invitations as any);
@@ -427,11 +427,11 @@ export default function Groups() {
 
   const getRoleBadge = (role: string) => {
     switch (role) {
-      case 'project_owner':
+      case 'project_basic:owner':
         return <Badge className="bg-destructive/10 text-destructive">Owner</Badge>;
-      case 'project_admin':
+      case 'project_basic:admin':
         return <Badge className="bg-warning/10 text-warning">Admin</Badge>;
-      case 'project_member':
+      case 'project_basic:member':
         return <Badge variant="secondary">Member</Badge>;
       default:
         return <Badge variant="outline">Guest</Badge>;
@@ -967,7 +967,7 @@ export default function Groups() {
                             <Crown className="w-3 h-3 mr-1" />
                             {g.projectLeader}
                           </Badge>
-                        ) : group.myRole === 'project_admin' ? (
+                        ) : group.myRole === 'project_basic:admin' ? (
                           <Badge className="bg-warning text-warning-foreground shadow-lg font-semibold">
                             <Crown className="w-3 h-3 mr-1" />
                             {g.viceLeader}

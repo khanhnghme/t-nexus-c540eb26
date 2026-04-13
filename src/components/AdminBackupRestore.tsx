@@ -1601,7 +1601,7 @@ export default function AdminBackupRestore() {
           await supabase.from('group_members').upsert({
             group_id: raw.group.id,
             user_id: user!.id,
-            role: 'project_admin'
+            role: 'project_basic:admin'
           }, { onConflict: 'id' } as any);
         }
 
@@ -1694,7 +1694,7 @@ export default function AdminBackupRestore() {
       await supabase.from('group_members').insert({
         group_id: newGroupId,
         user_id: user!.id,
-        role: 'project_admin'
+        role: 'project_basic:admin'
       });
 
       addImportStep('Đang xử lý thành viên...', 15);

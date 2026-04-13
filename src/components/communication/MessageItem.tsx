@@ -183,7 +183,7 @@ export default function MessageItem({ message, isOwn, showAvatar = true, showNam
       .single();
 
     const role = memberData?.role;
-    const isLeader = role === 'project_admin' || role === 'project_owner' || isAdmin;
+    const isLeader = role === 'project_basic:admin' || role === 'project_basic:owner' || isAdmin;
 
     setTaskToView(task);
     setIsTaskAssignee(!!assignmentData);

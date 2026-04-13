@@ -106,7 +106,7 @@ export default function CreateCustomProject() {
         .insert({
           group_id: newGroup.id,
           user_id: user.id,
-          role: "project_admin" as any,
+          role: "project_basic:admin",
         });
       if (memberError) throw memberError;
 

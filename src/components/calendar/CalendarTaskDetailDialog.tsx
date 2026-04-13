@@ -128,7 +128,7 @@ export default function CalendarTaskDetailDialog({ open, onOpenChange, event, on
       }
       if (event.projectId) {
         const { data: membership } = await supabase.from('group_members').select('role').eq('group_id', event.projectId).eq('user_id', user.id).single();
-        setIsLeaderInGroup(membership?.role === 'project_admin' || membership?.role === 'project_owner');
+        setIsLeaderInGroup(membership?.role === 'project_basic:admin' || membership?.role === 'project_basic:owner');
       }
     } catch (err) {
       console.error('Error fetching task data:', err);
