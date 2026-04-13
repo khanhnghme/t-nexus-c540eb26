@@ -1,82 +1,126 @@
 
 
-## Bước 14: Tạo Workspace Quota & Feature Engine — `src/lib/workspaceQuota.ts`
+## Bước 15: Phân biệt Quota (Hạn mức) và Feature (Tính năng) trong UI
 
 ### Mục tiêu
-Tạo file engine trung tâm định nghĩa tất cả **Quota keys** (`resource:limit`) và **Feature keys** (`resource:feature`) theo format mới, đồng thời tạo hook `useWorkspaceQuota()` hợp nhất logic kiểm tra hạn mức/tính năng từ gói cước của Owner.
+Tách danh sách tính năng hiện tại (flat list) thành 2 nhóm rõ ràng trên các màn hình Pricing, Upgrade và Onboarding: **Quota** (giới hạn số lượng) và **Feature** (chức năng được mở khóa).
 
-### Bối cảnh hiện tại
-- `usePlanLimits` — truy vấn giới hạn theo workspace's owner plan (7 consumers)
-- `useAccountLimitsCheck` — truy vấn giới hạn account-wide cho owner (6 consumers)
-- `useWorkspaceBilling` — truy vấn owner plan + project count (ít consumer)
-- Feature check: chỉ có `canExportData` (ad-hoc, nằm trong `usePlanLimits`)
-- **Vấn đề**: Không có kiến trúc thống nhất, feature flags nằm rải rác, không follow naming convention `resource:*`
+### Phân tích hiện trạng
+- `pricing.plans.*.features` trong i18n (`en.ts`, `vi.ts`) là mảng string phẳng, trộn lẫn quota và feature
+- `PlanColumn` component (dùng chung cho Pricing + Upgrade) render tất cả bằng `<Check>` icon như nhau
+- Onboarding `getPlanFeatures()` cũng lấy từ cùng mảng phẳng
+- Comparison table (`comparisonCategories`) đã có cấu trúc tốt hơn (chia category) nhưng chưa label rõ Quota vs Feature
 
-### Phạm vi thay đổi — 2 files (tạo mới + refactor)
+### Phạm vi thay đổi — 5 files
 
-#### 1. TẠO MỚI: `src/lib/workspaceQuota.ts`
+#### 1. `src/lib/i18n/en.ts` — Tái cấu trúc dữ liệu plan
 
-Định nghĩa bộ khung trung tâm:
+Thay `features: string[]` bằng cấu trúc mới cho mỗi plan:
 
 ```typescript
-// ─── Quota Keys (resource:limit) ───────────────────────
-export type QuotaKey =
-  | 'workspace:limit_count'        // max workspaces
-  | 'workspace:limit_projects'     // max projects (total)
-  | 'workspace:limit_members'      // max unique members
-  | 'workspace:limit_storage_mb'   // max storage
-  | 'workspace:limit_file_size_mb' // max file size
-  | 'workspace:limit_meeting_min'  // max meeting duration
-  | 'workspace:limit_log_days';    // max activity log days
-
-// ─── Feature Keys (resource:feature) ───────────────────
-export type FeatureKey =
-  | 'workspace:feature_export'     // can export data
-  | 'workspace:feature_ai';       // AI assistant (future)
-
-// ─── Mapping: plan_limits columns → keys ────────────────
-const QUOTA_COLUMN_MAP: Record<QuotaKey, string> = {
-  'workspace:limit_count': 'max_workspaces',
-  'workspace:limit_projects': 'max_projects_per_workspace',
-  'workspace:limit_members': 'max_members_per_workspace',
-  'workspace:limit_storage_mb': 'max_storage_mb',
-  'workspace:limit_file_size_mb': 'max_file_size_mb',
-  'workspace:limit_meeting_min': 'max_meeting_duration_minutes',
-  'workspace:limit_log_days': 'max_activity_log_days',
-};
-
-const FEATURE_COLUMN_MAP: Record<FeatureKey, string> = {
-  'workspace:feature_export': 'can_export_data',
-  'workspace:feature_ai': 'can_use_ai', // future column
-};
-
-// ─── Helper functions ───────────────────────────────────
-export function getQuotaLimit(planData: any, key: QuotaKey): number | null;
-export function hasFeature(planData: any, key: FeatureKey): boolean;
-export function isQuotaExceeded(current: number, limit: number | null): boolean;
+plans: {
+  free: {
+    name: 'Plan Free',
+    description: '...',
+    cta: 'Sign up',
+    quotas: [
+      '1 Workspace',
+      '5 total projects',
+      '5 unique seats',
+      '500 MB storage',
+      '5 MB max upload / file',
+      'Meetings up to 15 min',
+    ],
+    features: [
+      'Basic task management',
+      'Group chat',
+      'Standard Email Support',
+    ],
+  },
+  // plus, pro, business, enterprise tương tự...
+}
 ```
 
-#### 2. REFACTOR: `src/hooks/usePlanLimits.ts`
+Giữ lại `features` cũ (rename thành `_legacyFeatures` hoặc xóa) để không ảnh hưởng `comparisonCategories`.
 
-- Import `QuotaKey`, `FeatureKey`, helpers từ `workspaceQuota.ts`
-- Interface `PlanLimits` giữ nguyên fields (backward compatible) nhưng thêm:
-  - `getQuota(key: QuotaKey): number | null`
-  - `hasFeature(key: FeatureKey): boolean`
-- Bên trong `fetchLimits`, dùng `getQuotaLimit()` và `hasFeature()` thay vì hardcode column names
-- **KHÔNG đổi tên hook** — giữ `usePlanLimits()` để backward compatible
-- Consumers hiện tại (`canExportData`, `maxMeetingDurationMinutes`, v.v.) vẫn hoạt động
+#### 2. `src/lib/i18n/vi.ts` — Tương tự en.ts cho tiếng Việt
+
+Cùng cấu trúc `quotas` + `features` cho mỗi plan.
+
+#### 3. `src/pages/Pricing.tsx` — Cập nhật `PlanColumn` component
+
+Thay vì render `plan.features` flat, render 2 section:
+
+```
+📊 Hạn mức (Quotas)
+  ✓ 1 Workspace
+  ✓ 5 total projects
+  ...
+
+⚡ Tính năng (Features)  
+  ✓ Basic task management
+  ✓ Group chat
+  ...
+```
+
+- Thêm section label với icon phân biệt (ví dụ: `BarChart3` cho Quota, `Sparkles` cho Feature)
+- Quota items dùng `Check` icon màu blue, Feature items dùng `Check` icon màu emerald/green
+- Cập nhật `Plan` type: `features: string[]` → `quotas: string[]; features: string[]`
+
+#### 4. `src/pages/Upgrade.tsx` — Cập nhật `PlanColumn` component
+
+Logic tương tự Pricing nhưng dùng Tailwind classes (dark mode compatible). Cập nhật `Plan` type và `PlanColumn` rendering.
+
+#### 5. `src/components/FirstTimeOnboarding.tsx` — Cập nhật plan step
+
+- Sửa `getPlanFeatures()` → trả về `{ quotas, features }` thay vì flat array
+- Render 2 nhóm trong plan card:
+  - Nhóm Quota: icon `BarChart3`, label "Limits" / "Hạn mức"
+  - Nhóm Feature: icon `Sparkles`, label "Features" / "Tính năng"
+- Giữ compact vì card nhỏ: chỉ dùng label + màu icon khác nhau
+
+### Thiết kế UI
+
+```text
+┌─────────────────────────┐
+│  Plan Pro       $12/mo  │
+│  ─────────────────────  │
+│                         │
+│  📊 Quotas              │
+│  ✓ 20 Workspaces        │
+│  ✓ 50 total projects    │
+│  ✓ 50 unique seats      │
+│  ✓ 50 GB storage        │
+│  ✓ 5 GB max upload      │
+│  ✓ Unlimited meetings   │
+│                         │
+│  ⚡ Features             │
+│  ✓ All Plus features    │
+│  ✓ Stage management     │
+│  ✓ Advanced scoring     │
+│  ✓ Full data export     │
+│  ✓ Priority Support     │
+│  ✓ Add-ons, 10% off     │
+│                         │
+│  🔗 Connected Tools     │
+│  ✓ Gmail · Drive · Cal  │
+└─────────────────────────┘
+```
+
+- Quota section label: font-semibold, icon `BarChart3`, text `#37352f`
+- Feature section label: font-semibold, icon `Sparkles`, text `#37352f`  
+- Quota check icon: `text-blue-500`
+- Feature check icon: `text-emerald-500`
+- Section spacing: `mt-3` giữa 2 nhóm
 
 ### Không thay đổi
-- `useAccountLimitsCheck` — giữ nguyên (bước sau sẽ refactor)
-- `useWorkspaceBilling` — giữ nguyên
-- `useAccountReadOnly`, `ReadOnlyGuard` — giữ nguyên
-- Không sửa database, edge functions, hay migration
-- Không sửa consumers (components dùng `usePlanLimits`) — backward compatible hoàn toàn
-- `plan_limits` table structure — giữ nguyên, chỉ map columns sang keys mới
+- Comparison table (`comparisonCategories`) — đã có cấu trúc category riêng, giữ nguyên
+- `servicePlanFeatures`, `servicePlanFullFeatures`, `servicePlanFeatureGroups` — dùng ở ServicePlan page, giữ nguyên
+- `ServicePlanSection.tsx` — dùng `servicePlanFeatures`, không ảnh hưởng
+- Database, edge functions, hooks — không liên quan
+- `workspaceQuota.ts`, `planConfig.ts` — không thay đổi
 
-### Kết quả
-Sau bước này, hệ thống có **3 engine trung tâm** theo cùng naming convention:
-1. `src/lib/permissions.ts` — RBAC (`resource:role`) ✅ đã có
-2. `src/lib/workspaceQuota.ts` — Quota + Feature (`resource:limit`, `resource:feature`) 🆕
-3. `src/lib/planConfig.ts` — Plan metadata (prices, labels) ✅ đã có
+### Rủi ro
+- i18n structure change: cần đảm bảo TypeScript types vẫn compile
+- Pricing và Upgrade dùng PlanColumn riêng (không share component) nên phải sửa cả 2
 
