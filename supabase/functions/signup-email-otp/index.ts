@@ -45,18 +45,8 @@ Deno.serve(async (req) => {
     // ===== REGISTER (create user without session) =====
     if (action === "register") {
       const { student_id, full_name, password, institution } = body;
-      if (!email || !student_id || !full_name || !password) {
+      if (!email || !full_name || !password) {
         return jsonResponse({ error: "Missing required fields" }, 400);
-      }
-
-      const { data: existingProfile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("student_id", student_id)
-        .maybeSingle();
-
-      if (existingProfile) {
-        return jsonResponse({ success: false, error: "MSSV đã tồn tại trong hệ thống." });
       }
 
       const { data: existingEmailProfile } = await supabase
