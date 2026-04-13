@@ -340,13 +340,22 @@ export function buildBrandedDigestEmail(options: DigestEmailOptions): string {
         <tr>
           <td class="email-padding" style="padding:32px 40px 24px;">
 
-            <!-- Greeting -->
-            <h1 style="margin:0 0 6px;color:${C.text};font-size:18px;font-weight:700;line-height:1.3;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
-              ${t.digestGreeting(recipientName)}
-            </h1>
-            <p style="margin:0 0 24px;color:${C.muted};font-size:14px;line-height:1.5;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
-              ${t.digestSummary}
-            </p>
+            <!-- Greeting with avatar -->
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:24px;">
+              <tr>
+                <td style="width:56px;vertical-align:top;padding-right:14px;">
+                  ${avatarHtml(avatarUrl, recipientName, 48)}
+                </td>
+                <td style="vertical-align:middle;">
+                  <h1 style="margin:0 0 4px;color:${C.text};font-size:18px;font-weight:700;line-height:1.3;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
+                    ${t.digestGreeting(recipientName)}
+                  </h1>
+                  <p style="margin:0;color:${C.muted};font-size:14px;line-height:1.5;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
+                    ${t.digestSummary}
+                  </p>
+                </td>
+              </tr>
+            </table>
 
             <!-- Divider -->
             <div style="height:1px;background-color:${C.border};margin-bottom:24px;"></div>
