@@ -456,8 +456,19 @@ export default function ShareSettingsCard({
             <>
               {/* Compact inline: QR + Code + Actions */}
               <div className="flex gap-3 items-center">
-                <div className="shrink-0 rounded-lg border bg-background p-1.5">
-                  <QRCodeSVG value={`https://t-nexus.io.vn/join?code=${localJoinCode}`} size={56} level="M" />
+                <div className="shrink-0 rounded-xl border-2 border-primary/20 bg-background p-2 shadow-sm">
+                  <QRCodeSVG
+                    value={`https://t-nexus.io.vn/join?code=${localJoinCode}`}
+                    size={60}
+                    level="H"
+                    fgColor="hsl(var(--primary))"
+                    imageSettings={{
+                      src: tNexusLogo,
+                      height: 16,
+                      width: 16,
+                      excavate: true,
+                    }}
+                  />
                 </div>
                 <div className="flex-1 bg-muted/50 border rounded-lg px-3 py-2.5 text-center text-2xl font-bold tracking-[0.4em] font-mono select-all">
                   {localJoinCode}
@@ -509,9 +520,19 @@ export default function ShareSettingsCard({
                 </div>
               </div>
 
-              {/* Hidden QR canvas for download */}
+              {/* Hidden QR canvas for download (with logo) */}
               <div id="hidden-qr-canvas" className="hidden">
-                <QRCodeCanvas value={`https://t-nexus.io.vn/join?code=${localJoinCode}`} size={200} level="H" />
+                <QRCodeCanvas
+                  value={`https://t-nexus.io.vn/join?code=${localJoinCode}`}
+                  size={200}
+                  level="H"
+                  imageSettings={{
+                    src: tNexusLogo,
+                    height: 40,
+                    width: 40,
+                    excavate: true,
+                  }}
+                />
               </div>
 
               {/* Brief instruction */}
