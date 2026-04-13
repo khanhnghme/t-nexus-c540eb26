@@ -30,7 +30,7 @@ export default function ProjectGuestInviteDialog({ groupId, groupName, trigger }
 
   const [open, setOpen] = useState(false);
   const [guestEmail, setGuestEmail] = useState('');
-  const [guestRole, setGuestRole] = useState('project_member');
+  const [guestRole, setGuestRole] = useState('project_basic:member');
   const [isInviting, setIsInviting] = useState(false);
 
   const { guardAction: guardReadOnly } = useReadOnlyGuard();

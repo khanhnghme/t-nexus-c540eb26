@@ -61,7 +61,7 @@ export default function TaskEditDialog({
   groupCreatorId,
 }: TaskEditDialogProps) {
   const { toast } = useToast();
-  const { user, isLeader, isAdmin, profile } = useAuth();
+  const { user, isSystemAdmin: isLeader, isAdmin, profile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   
   const [title, setTitle] = useState('');

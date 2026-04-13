@@ -34,7 +34,7 @@ export function getHiddenNav(profile: any): string[] {
 }
 
 export default function PersonalInfo() {
-  const { user, profile, isAdmin, isLeader, refreshProfile, roles } = useAuth();
+  const { user, profile, isAdmin, isSystemAdmin: isLeader, refreshProfile, roles } = useAuth();
   const { locale, translations: { app: { personal: t } } } = useLanguage();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);

@@ -66,7 +66,7 @@ interface PendingApprovalRow {
 
 
 export default function AdminUsers() {
-  const { user, isAdmin, isLeader } = useAuth();
+  const { user, isAdmin, isSystemAdmin: isLeader } = useAuth();
   const { translations: { app: { admin: t } } } = useLanguage();
   const { toast } = useToast();
 
@@ -315,7 +315,7 @@ export default function AdminUsers() {
     const { error: gmError } = await supabase.from('group_members').insert({
       group_id: approval.groupId,
       user_id: approval.userId,
-      role: 'project_member',
+      role: 'project_basic:member',
     });
 
     if (gmError) {
@@ -473,9 +473,9 @@ export default function AdminUsers() {
                                   {m.fullName || t.unknownName}
                                 </p>
                                 <Badge variant="outline" className="text-[11px]">
-                                  {m.role === 'project_owner'
+                                   {m.role === 'project_basic:owner'
                                     ? 'OwnerSystem'
-                                    : m.role === 'project_admin'
+                                    : m.role === 'project_basic:admin'
                                       ? 'Leader'
                                       : 'Member'}
                                 </Badge>
@@ -808,7 +808,7 @@ export default function AdminUsers() {
         open={profileDialogOpen}
         onOpenChange={setProfileDialogOpen}
         profile={selectedProfile}
-        role={selectedProfile ? (profiles.find(p => p.id === selectedProfile.id) ? 'project_member' : 'project_member') : 'project_member'}
+        role={selectedProfile ? (profiles.find(p => p.id === selectedProfile.id) ? 'project_basic:member' : 'project_basic:member') : 'project_basic:member'}
       />
 
       {/* Password View Dialog */}

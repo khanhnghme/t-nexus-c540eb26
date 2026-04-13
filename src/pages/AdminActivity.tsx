@@ -87,7 +87,7 @@ const getActionTypeIcon = (type: string) => {
 };
 
 export default function AdminActivity() {
-  const { isAdmin, isLeader, profile } = useAuth();
+  const { isAdmin, isSystemAdmin: isLeader, profile } = useAuth();
   const { locale, translations: { app: { admin: t } } } = useLanguage();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);

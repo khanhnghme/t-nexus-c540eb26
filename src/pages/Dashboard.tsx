@@ -108,7 +108,7 @@ interface PendingWorkspaceInvite {
 }
 
 export default function Dashboard() {
-  const { user, profile, mustChangePassword, refreshProfile, isLeader, isAdmin, isSystemAdmin } = useAuth();
+  const { user, profile, mustChangePassword, refreshProfile, isSystemAdmin: isLeader, isAdmin, isSystemAdmin } = useAuth();
   const { activeWorkspace, isAvailable: wsAvailable, refreshWorkspaces } = useWorkspace();
   const { translations, locale } = useLanguage();
   const t = translations.app?.dashboard;
@@ -302,7 +302,7 @@ export default function Dashboard() {
         .from('group_members')
         .select('user_id')
         .eq('group_id', invitation.group_id)
-        .in('role', ['project_admin', 'project_owner']);
+        .in('role', ['project_basic:admin', 'project_basic:owner']);
 
       if (leaders && leaders.length > 0) {
         await notifyInvitationResponse({
@@ -823,7 +823,7 @@ export default function Dashboard() {
                                 <div className="flex items-center gap-1 shrink-0">
                                   <Badge variant="outline" className="text-[10px]">Project</Badge>
                                   <Badge variant="secondary" className="text-[10px]">
-                                    {inv.role === 'project_admin' ? (t?.viceLeader || 'Vice leader') : (t?.member || 'Member')}
+                                    {inv.role === 'project_basic:admin' ? (t?.viceLeader || 'Vice leader') : (t?.member || 'Member')}
                                   </Badge>
                                 </div>
                               </div>

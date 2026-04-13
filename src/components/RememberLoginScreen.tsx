@@ -18,9 +18,9 @@ interface RememberLoginScreenProps {
 
 function getRoleBadgeStyle(role: SystemRole) {
   switch (role) {
-    case 'system_owner':
+    case 'system:owner':
       return 'bg-red-600 text-white shadow-sm shadow-red-600/30';
-    case 'system_admin':
+    case 'system:admin':
       return 'bg-primary text-primary-foreground shadow-sm shadow-primary/30';
     default:
       return 'bg-muted text-muted-foreground';
@@ -30,7 +30,7 @@ function getRoleBadgeStyle(role: SystemRole) {
 export default function RememberLoginScreen({ profile, roles, onLogout }: RememberLoginScreenProps) {
   const navigate = useNavigate();
   const { locale } = useLanguage();
-  const isAdvancedMember = roles.includes('system_admin') || roles.includes('system_owner');
+  const isAdvancedMember = roles.includes('system:admin') || roles.includes('system:owner');
   const [countdown, setCountdown] = useState(10);
 
   const initials = profile.full_name
