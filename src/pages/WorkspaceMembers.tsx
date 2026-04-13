@@ -4,7 +4,7 @@ import { useWorkspaceMembers, type WorkspaceMemberInfo } from '@/hooks/useWorksp
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, Users, UserPlus, Crown, Shield, User, MoreHorizontal, Trash2, ArrowUpDown, Mail, Loader2, Ghost, CheckSquare, Square, AlertTriangle } from 'lucide-react';
+import { Building2, Users, UserPlus, Crown, Shield, User, MoreHorizontal, Trash2, ArrowUpDown, Mail, Loader2, CheckSquare, Square, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,15 +45,6 @@ import {
 import UserAvatar from '@/components/UserAvatar';
 import { Checkbox } from '@/components/ui/checkbox';
 
-interface GuestInfo {
-  user_id: string;
-  full_name: string;
-  email: string;
-  avatar_url: string | null;
-  group_name: string;
-  group_id: string;
-  role: string;
-}
 
 type ConfirmAction = 
   | { type: 'remove'; userId: string; name: string }
@@ -73,8 +64,6 @@ export default function WorkspaceMembers() {
   const [inviteRole, setInviteRole] = useState<'workspace_admin' | 'workspace_member'>('workspace_member');
   const [isInviting, setIsInviting] = useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
-  const [guests, setGuests] = useState<GuestInfo[]>([]);
-  const [guestsLoading, setGuestsLoading] = useState(false);
 
   // Confirm modal
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
@@ -111,68 +100,6 @@ export default function WorkspaceMembers() {
     }
   };
 
-  const fetchGuests = useCallback(async () => {
-    if (!activeWorkspace) return;
-    setGuestsLoading(true);
-    try {
-      const { data: wsGroups } = await supabase
-        .from('groups')
-        .select('id, name')
-        .eq('workspace_id', activeWorkspace.id);
-
-      if (!wsGroups?.length) {
-        setGuests([]);
-        setGuestsLoading(false);
-        return;
-      }
-
-      const groupIds = wsGroups.map(g => g.id);
-      const groupNameMap = new Map(wsGroups.map(g => [g.id, g.name]));
-
-      const { data: guestMembers } = await supabase
-        .from('group_members')
-        .select('user_id, group_id, role')
-        .in('group_id', groupIds)
-        .eq('is_guest', true);
-
-      if (!guestMembers?.length) {
-        setGuests([]);
-        setGuestsLoading(false);
-        return;
-      }
-
-      const userIds = [...new Set(guestMembers.map(g => g.user_id))];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name, email, avatar_url')
-        .in('id', userIds);
-
-      const profileMap = new Map((profiles || []).map(p => [p.id, p]));
-
-      const guestList: GuestInfo[] = guestMembers.map(gm => {
-        const profile = profileMap.get(gm.user_id);
-        return {
-          user_id: gm.user_id,
-          full_name: profile?.full_name || 'Unknown',
-          email: profile?.email || '',
-          avatar_url: profile?.avatar_url || null,
-          group_name: groupNameMap.get(gm.group_id) || '',
-          group_id: gm.group_id,
-          role: gm.role,
-        };
-      });
-
-      setGuests(guestList);
-    } catch (err) {
-      console.warn('Error fetching guests:', err);
-    } finally {
-      setGuestsLoading(false);
-    }
-  }, [activeWorkspace]);
-
-  useEffect(() => {
-    if (isAvailable && activeWorkspace) fetchGuests();
-  }, [isAvailable, activeWorkspace, fetchGuests]);
 
   if (!isAvailable || !activeWorkspace) {
     return (
@@ -441,21 +368,8 @@ export default function WorkspaceMembers() {
         </div>
       )}
 
-      {/* Tabs: Members / Guests */}
-      <Tabs defaultValue="members" onValueChange={() => { setSelectedIds(new Set()); }}>
-        <TabsList>
-          <TabsTrigger value="members">
-            <Users className="w-3.5 h-3.5 mr-1.5" />
-            {tw.membersTab.replace('{n}', String(members.length))}
-          </TabsTrigger>
-          <TabsTrigger value="guests">
-            <Ghost className="w-3.5 h-3.5 mr-1.5" />
-            {tw.guestsTab.replace('{n}', String(guests.length))}
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Members tab */}
-        <TabsContent value="members">
+      {/* Members list */}
+      <div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
             <Users className="w-4 h-4" />
             <span>{tw.memberCount.replace('{n}', String(members.length))}</span>
@@ -557,56 +471,7 @@ export default function WorkspaceMembers() {
               })
             )}
           </div>
-        </TabsContent>
-
-        {/* Guests tab */}
-        <TabsContent value="guests">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-            <Ghost className="w-4 h-4" />
-            <span>{tw.guestCount.replace('{n}', String(guests.length))}</span>
-          </div>
-
-          <div className="rounded-xl border bg-card divide-y">
-            {guestsLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-              </div>
-            ) : guests.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Ghost className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                <p>{tw.noGuests}</p>
-                <p className="text-xs mt-1">{tw.guestDesc}</p>
-              </div>
-            ) : (
-              guests.map((guest, idx) => (
-                <div
-                  key={`${guest.user_id}-${guest.group_id}-${idx}`}
-                  className="flex items-center gap-4 px-5 py-3.5 hover:bg-muted/30 transition-colors"
-                >
-                  <UserAvatar
-                    src={guest.avatar_url}
-                    name={guest.full_name}
-                    size="sm"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm truncate">{guest.full_name}</div>
-                    <div className="text-xs text-muted-foreground truncate">{guest.email}</div>
-                  </div>
-
-                  <div className="text-xs text-muted-foreground px-2 py-1 rounded-full bg-muted/50 truncate max-w-[150px]">
-                    📁 {guest.group_name}
-                  </div>
-
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-muted/50">
-                    <Ghost className="w-3.5 h-3.5 text-muted-foreground" />
-                    Guest
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
+      </div>
 
       {/* Confirm dialog */}
       <AlertDialog open={!!confirmAction} onOpenChange={(open) => { if (!open) setConfirmAction(null); }}>

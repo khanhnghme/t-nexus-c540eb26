@@ -277,6 +277,22 @@ export default function Dashboard() {
           role: invitation.role as any,
         });
         if (memberError) throw memberError;
+
+        // Auto-add to workspace as member
+        const { data: groupData } = await supabase
+          .from('groups')
+          .select('workspace_id')
+          .eq('id', invitation.group_id)
+          .single();
+
+        if (groupData?.workspace_id) {
+          await supabase.functions.invoke('workspace-management', {
+            body: {
+              action: 'ensure_workspace_member',
+              workspace_id: groupData.workspace_id,
+            },
+          });
+        }
       }
 
       // Notify leader(s)
