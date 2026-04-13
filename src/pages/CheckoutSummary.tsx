@@ -55,6 +55,198 @@ const ADDON_TYPES = [
 
 const ADDON_PRICE_MONTHLY = 2.49;
 
+const formatDateInvoice = (d: string | null) => {
+  if (!d) return '—';
+  const date = new Date(d);
+  return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+};
+
+function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; isVi: boolean }) {
+  const addons: Array<{ type: string; quantity: number }> = Array.isArray(order.addons) ? order.addons : [];
+  const cycle = order.billing_cycle;
+  const isCompleted = order.status === 'completed';
+
+  // Calculate billing period from profile
+  const planStarted = profile?.plan_started_at;
+  const planExpires = profile?.plan_expires_at;
+
+  return (
+    <div className="hidden print:block bg-white text-black p-10 max-w-[800px] mx-auto" id="invoice-print-area">
+      {/* Header */}
+      <div className="flex justify-between items-start mb-8 border-b-2 border-gray-300 pb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+            {isVi ? 'HÓA ĐƠN' : 'INVOICE'}
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {isVi ? 'Biên nhận thanh toán điện tử' : 'Electronic Payment Receipt'}
+          </p>
+        </div>
+        <div className="text-right text-sm text-gray-600">
+          <p className="font-bold text-lg text-gray-900">T-Nexus</p>
+          <p>{isVi ? 'Dịch vụ số' : 'Digital Service'}</p>
+          <p className="text-xs text-gray-400 mt-1">t-nexus.io.vn</p>
+        </div>
+      </div>
+
+      {/* Invoice Info + Customer */}
+      <div className="grid grid-cols-2 gap-8 mb-8">
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
+            {isVi ? 'Thông tin hóa đơn' : 'Invoice Details'}
+          </h3>
+          <div className="space-y-1.5 text-sm">
+            <p><span className="text-gray-500">{isVi ? 'Mã đơn hàng:' : 'Order #:'}</span> <span className="font-mono font-medium">{order.order_code}</span></p>
+            {order.paypal_order_id && (
+              <p><span className="text-gray-500">Transaction ID:</span> <span className="font-mono text-xs">{order.paypal_order_id}</span></p>
+            )}
+            <p><span className="text-gray-500">{isVi ? 'Ngày tạo:' : 'Created:'}</span> {formatDateInvoice(order.created_at)}</p>
+            {isCompleted && order.completed_at && (
+              <p><span className="text-gray-500">{isVi ? 'Thanh toán:' : 'Paid:'}</span> {formatDateInvoice(order.completed_at)}</p>
+            )}
+            <p><span className="text-gray-500">{isVi ? 'Phương thức:' : 'Method:'}</span> <span className="capitalize">{order.payment_method || 'PayPal'}</span></p>
+            <p>
+              <span className="text-gray-500">{isVi ? 'Trạng thái:' : 'Status:'}</span>{' '}
+              <span className={`font-semibold ${isCompleted ? 'text-green-700' : 'text-red-600'}`}>
+                {isCompleted ? (isVi ? '✓ Hoàn tất' : '✓ Paid') : (isVi ? '✗ Thất bại' : '✗ Failed')}
+              </span>
+            </p>
+          </div>
+        </div>
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
+            {isVi ? 'Thông tin khách hàng' : 'Bill To'}
+          </h3>
+          <div className="space-y-1.5 text-sm">
+            <p className="font-semibold text-gray-900">{profile?.full_name || '—'}</p>
+            <p className="text-gray-600">{profile?.email || '—'}</p>
+            {profile?.student_id && <p className="text-gray-600">{isVi ? 'MSSV:' : 'Student ID:'} {profile.student_id}</p>}
+            {profile?.institution && <p className="text-gray-600">{profile.institution}</p>}
+          </div>
+        </div>
+      </div>
+
+      {/* Billing Period (only for completed orders with plan info) */}
+      {isCompleted && order.plan && (planStarted || planExpires) && (
+        <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
+            {isVi ? 'Chu kỳ thanh toán' : 'Billing Period'}
+          </h3>
+          <div className="flex gap-8 text-sm">
+            {planStarted && (
+              <p><span className="text-gray-500">{isVi ? 'Ngày kích hoạt:' : 'Active from:'}</span> <span className="font-medium">{formatDateInvoice(planStarted)}</span></p>
+            )}
+            {planExpires && (
+              <p><span className="text-gray-500">{isVi ? 'Ngày hết hạn:' : 'Expires:'}</span> <span className="font-medium">{formatDateInvoice(planExpires)}</span></p>
+            )}
+            <p><span className="text-gray-500">{isVi ? 'Chu kỳ:' : 'Cycle:'}</span> <span className="font-medium capitalize">{cycle === 'yearly' ? (isVi ? 'Theo năm' : 'Yearly') : (isVi ? 'Theo tháng' : 'Monthly')}</span></p>
+          </div>
+        </div>
+      )}
+
+      {/* Line Items Table */}
+      <table className="w-full mb-6 text-sm border-collapse">
+        <thead>
+          <tr className="border-b-2 border-gray-300">
+            <th className="text-left py-3 font-semibold text-gray-700">#</th>
+            <th className="text-left py-3 font-semibold text-gray-700">{isVi ? 'Mô tả' : 'Description'}</th>
+            <th className="text-right py-3 font-semibold text-gray-700">{isVi ? 'Đơn giá' : 'Unit Price'}</th>
+            <th className="text-center py-3 font-semibold text-gray-700">{isVi ? 'SL' : 'Qty'}</th>
+            <th className="text-right py-3 font-semibold text-gray-700">{isVi ? 'Thành tiền' : 'Amount'}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {/* Plan row */}
+          {order.plan && (
+            <tr className="border-b border-gray-100">
+              <td className="py-3 text-gray-500">1</td>
+              <td className="py-3">
+                <p className="font-medium">{getPlanLabel(order.plan)} Plan</p>
+                <p className="text-xs text-gray-500">
+                  {cycle === 'yearly' ? (isVi ? 'Gói năm' : 'Annual subscription') : (isVi ? 'Gói tháng' : 'Monthly subscription')}
+                </p>
+              </td>
+              <td className="py-3 text-right tabular-nums">${(order.base_amount || 0).toFixed(2)}</td>
+              <td className="py-3 text-center">1</td>
+              <td className="py-3 text-right tabular-nums font-medium">${(order.base_amount || 0).toFixed(2)}</td>
+            </tr>
+          )}
+
+          {/* Addon rows */}
+          {addons.map((addon, idx) => {
+            const meta = ADDON_TYPES.find(a => a.type === addon.type);
+            if (!meta || addon.quantity <= 0) return null;
+            const unitPrice = cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
+            const lineTotal = unitPrice * addon.quantity;
+            return (
+              <tr key={idx} className="border-b border-gray-100">
+                <td className="py-3 text-gray-500">{(order.plan ? 2 : 1) + idx}</td>
+                <td className="py-3">
+                  <p className="font-medium">{meta.emoji} {isVi ? meta.unitLabelVi : meta.unitLabel}</p>
+                  <p className="text-xs text-gray-500">{isVi ? 'Gói bổ sung' : 'Add-on package'}</p>
+                </td>
+                <td className="py-3 text-right tabular-nums">${unitPrice.toFixed(2)}</td>
+                <td className="py-3 text-center">{addon.quantity}</td>
+                <td className="py-3 text-right tabular-nums font-medium">${lineTotal.toFixed(2)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+
+        {/* Subtotals & Total */}
+        <tfoot>
+          {/* Subtotal */}
+          <tr className="border-t border-gray-200">
+            <td colSpan={4} className="py-2 text-right text-gray-500">{isVi ? 'Tạm tính' : 'Subtotal'}</td>
+            <td className="py-2 text-right tabular-nums">${((order.base_amount || 0) + (order.addon_amount || 0)).toFixed(2)}</td>
+          </tr>
+
+          {/* Discount */}
+          {(order.discount_amount || 0) > 0 && (
+            <tr className="text-green-700">
+              <td colSpan={4} className="py-1 text-right">
+                {isVi ? 'Giảm giá' : 'Discount'}
+                {order.coupon_code ? ` (${order.coupon_code})` : ''}
+              </td>
+              <td className="py-1 text-right tabular-nums">-${order.discount_amount.toFixed(2)}</td>
+            </tr>
+          )}
+
+          {/* Welcome discount */}
+          {(order.welcome_discount || 0) > 0 && (
+            <tr className="text-green-700">
+              <td colSpan={4} className="py-1 text-right">{isVi ? 'Ưu đãi chào mừng' : 'Welcome Discount'}</td>
+              <td className="py-1 text-right tabular-nums">-${order.welcome_discount.toFixed(2)}</td>
+            </tr>
+          )}
+
+          {/* Total */}
+          <tr className="border-t-2 border-gray-400">
+            <td colSpan={4} className="py-3 text-right font-bold text-base">{isVi ? 'TỔNG CỘNG' : 'TOTAL'}</td>
+            <td className="py-3 text-right font-bold text-lg tabular-nums">${(order.total_amount || 0).toFixed(2)} USD</td>
+          </tr>
+        </tfoot>
+      </table>
+
+      {/* Footer Notes */}
+      <div className="border-t border-gray-200 pt-4 space-y-2">
+        <p className="text-xs text-gray-500">
+          {isVi
+            ? '• Đây là hóa đơn điện tử được tạo tự động bởi hệ thống T-Nexus.'
+            : '• This is a computer-generated electronic invoice by T-Nexus.'}
+        </p>
+        <p className="text-xs text-gray-500">
+          {isVi
+            ? '• Hóa đơn có giá trị thanh toán mà không cần chữ ký.'
+            : '• This invoice is valid without a signature.'}
+        </p>
+        <p className="text-xs text-gray-400 mt-3 text-center">
+          {isVi ? 'Ngày xuất hóa đơn:' : 'Invoice generated on:'} {new Date().toLocaleString(isVi ? 'vi-VN' : 'en-US')}
+        </p>
+      </div>
+    </div>
+  );
+}
 const STATUS_CONFIG = {
   completed: {
     icon: CheckCircle2,
