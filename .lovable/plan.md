@@ -1,25 +1,54 @@
 
 
-## Cập nhật điều hướng sau thanh toán tại trang Summary
+## Bước 1: Tạo `src/lib/permissions.ts` — Permission Engine trung tâm
 
-### Vấn đề
-Hiện tại, khi thanh toán thành công, nút CTA mặc định luôn dẫn về `/dashboard`. Cần điều hướng thông minh hơn dựa vào loại đơn hàng (`order_type`).
+### Mục tiêu
+Tạo file mới duy nhất `src/lib/permissions.ts` chứa toàn bộ logic phân quyền theo mô hình `resource:role`. Chưa sửa bất kỳ file nào khác.
 
-### Thay đổi — `src/pages/CheckoutSummary.tsx`
+### Nội dung file mới
 
-Cập nhật logic nút CTA khi `status === 'completed'` (dòng 381–402):
+**Types:**
+```typescript
+export type RoleLevel = 'owner' | 'admin' | 'member';
+export type ResourceType = 'system' | 'workspace' | 'project_basic' | 'project_page';
+export type RoleString = `${ResourceType}:${RoleLevel}`;
+```
 
-| Trường hợp | Hiện tại | Sau khi sửa |
-|---|---|---|
-| `checkout_from === 'onboarding'` | → `/onboarding` | Giữ nguyên |
-| `checkout_from === 'billing'` | → `/billing-history` | Giữ nguyên |
-| `order_type === 'addon'` | → `/dashboard` ❌ | → `/service-plan?tab=addon` (trang quản lý add-on) |
-| `order_type === 'plan'` (mua/nâng cấp gói) | → `/dashboard` | → `/service-plan` (trang gói dịch vụ) |
-| Mặc định fallback | → `/dashboard` | → `/service-plan` |
+**Core functions:**
 
-Cụ thể thay đổi block default (khi không có `checkout_from`):
-- Nếu `order.order_type === 'addon'` → navigate `/service-plan?tab=addon`, label: "Xem gói bổ sung" / "View Add-ons"
-- Ngược lại → navigate `/service-plan`, label: "Xem gói dịch vụ" / "View Service Plan"
+| Function | Mô tả |
+|----------|--------|
+| `parseRole(str)` | Tách `"project_basic:admin"` → `{ resource: 'project_basic', role: 'admin' }` |
+| `isAtLeast(userRole, minRole)` | So sánh hierarchy: `owner(3) > admin(2) > member(1)` |
+| `can(userRole, action, targetResource)` | Kiểm tra quyền dựa trên role + action + resource, có xử lý inheritance |
+| `canManageRole(actorRole, targetRole)` | Actor có thể quản lý target không (admin không tác động owner) |
+| `canDeleteContent(userRole, authorId, currentUserId)` | Member chỉ xóa nội dung mình tạo |
 
-Tương tự cập nhật nút `failed` cho addon: nút retry dẫn về `/addon-checkout/payment/${orderCode}` thay vì `/checkout/payment/${orderCode}` (kiểm tra `order.order_type`).
+**Actions:**
+```typescript
+export type Action = 'read' | 'create' | 'edit' | 'delete' | 'delete_resource' | 'manage_members' | 'billing';
+```
+
+**Permission matrix (hardcode trong file):**
+
+| Action | owner | admin | member |
+|--------|-------|-------|--------|
+| read | Yes | Yes | Yes |
+| create | Yes | Yes | Yes |
+| edit | Yes | Yes | Yes |
+| delete (sub-content) | Yes | Yes | Own only* |
+| delete_resource | Yes | Sub-level only | No |
+| manage_members | Yes | Yes (trừ owner) | No |
+| billing | Yes | No | No |
+
+*member delete cần `canDeleteContent()` kiểm tra `authorId === currentUserId`
+
+**Inheritance logic:**
+- `system:admin` → tự động có quyền tại mọi workspace
+- `workspace:admin` → tự động có quyền tại mọi `project_basic` + `project_page` trong workspace đó
+- `project_basic:admin` ≠ `project_page:admin` (độc lập, không kế thừa lẫn nhau)
+
+### Phạm vi thay đổi
+- **Tạo mới**: `src/lib/permissions.ts` (1 file)
+- **Không sửa**: Không file nào khác bị thay đổi
 
