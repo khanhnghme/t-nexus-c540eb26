@@ -340,6 +340,11 @@ export default function Groups() {
     setIsCreating(true);
 
     try {
+      // Auto-generate join code
+      const joinChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let autoJoinCode = '';
+      for (let i = 0; i < 6; i++) autoJoinCode += joinChars.charAt(Math.floor(Math.random() * joinChars.length));
+
       const insertData: any = {
           name: newGroupName.trim(),
           description: newGroupDescription.trim() || null,
@@ -352,6 +357,8 @@ export default function Groups() {
           slug: '',
           idempotency_key: idempotencyKeyRef.current,
           project_mode: 'basic',
+          allow_join_by_code: true,
+          join_code: autoJoinCode,
         };
 
       // Auto-assign workspace_id if workspace is active
