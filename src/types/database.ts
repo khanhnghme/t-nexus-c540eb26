@@ -1,25 +1,23 @@
 // ═══════════════════════════════════════════════════════
-// System-level Roles (user_roles table)
+// AUTO-RBAC Role Types (resource:role format)
 // ═══════════════════════════════════════════════════════
-export type SystemRole = 'system_owner' | 'system_admin';
 
-// ═══════════════════════════════════════════════════════
-// Workspace-level Roles
-// ═══════════════════════════════════════════════════════
-export type WorkspaceRole = 'workspace_owner' | 'workspace_admin' | 'workspace_member';
+// ── System-level Roles (user_roles table) ──
+export type SystemRole = 'system:owner' | 'system:admin';
 
-// ═══════════════════════════════════════════════════════
-// Project-level Roles (group_members table)
-// ═══════════════════════════════════════════════════════
-export type ProjectRole = 'project_owner' | 'project_admin' | 'project_member' | 'project_guest';
+// ── Workspace-level Roles ──
+export type WorkspaceRole = 'workspace:owner' | 'workspace:admin' | 'workspace:member';
 
-// ═══════════════════════════════════════════════════════
-// User Plan
-// ═══════════════════════════════════════════════════════
-export type UserPlan = 'plan_free' | 'plan_plus' | 'plan_pro' | 'plan_business' | 'plan_custom';
+// ── Project-level Roles (group_members table) ──
+export type ProjectRole = 'project_basic:owner' | 'project_basic:admin' | 'project_basic:member';
 
-/** @deprecated Use SystemRole instead */
-export type AppRole = SystemRole;
+// ── Page-level Roles (horizontal with project_basic) ──
+export type PageRole = 'project_page:owner' | 'project_page:admin' | 'project_page:member';
+
+// ── Legacy compat unions (will be removed after full migration) ──
+export type SystemRoleLegacy = SystemRole | 'system_owner' | 'system_admin' | 'owner_system';
+export type WorkspaceRoleLegacy = WorkspaceRole | 'workspace_owner' | 'workspace_admin' | 'workspace_member' | 'owner' | 'admin' | 'member';
+export type ProjectRoleLegacy = ProjectRole | 'project_owner' | 'project_admin' | 'project_member' | 'project_guest' | 'leader' | 'member';
 
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE' | 'VERIFIED';
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
