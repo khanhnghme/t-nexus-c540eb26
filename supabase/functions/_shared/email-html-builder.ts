@@ -226,10 +226,11 @@ interface DigestEmailOptions {
   deadlineTasks: DigestTask[];
   newTasks: DigestTask[];
   locale?: EmailLocale;
+  avatarUrl?: string;
 }
 
 export function buildBrandedDigestEmail(options: DigestEmailOptions): string {
-  const { recipientName, deadlineTasks, newTasks, locale = 'vi' } = options;
+  const { recipientName, deadlineTasks, newTasks, locale = 'vi', avatarUrl } = options;
   const year = new Date().getFullYear();
   const t = getEmailTexts(locale);
 
@@ -390,10 +391,11 @@ interface PaymentConfirmationOptions {
   paidAt: string;
   billingCycle: string;
   locale?: EmailLocale;
+  avatarUrl?: string;
 }
 
 export function buildPaymentConfirmationEmail(options: PaymentConfirmationOptions): string {
-  const { recipientName, planName, amount, orderCode, paidAt, billingCycle, locale = 'vi' } = options;
+  const { recipientName, planName, amount, orderCode, paidAt, billingCycle, locale = 'vi', avatarUrl } = options;
   const year = new Date().getFullYear();
   const t = getEmailTexts(locale);
   const cycleLabel = billingCycle === "yearly" ? t.cycleYearly : t.cycleMonthly;
