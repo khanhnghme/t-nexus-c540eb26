@@ -522,12 +522,6 @@ export default function ShareSettingsCard({
                     size={60}
                     level="H"
                     fgColor="hsl(var(--primary))"
-                    imageSettings={{
-                      src: tNexusLogo,
-                      height: 16,
-                      width: 16,
-                      excavate: true,
-                    }}
                   />
                 </div>
                 <div className="flex-1 bg-muted/50 border rounded-lg px-3 py-2.5 text-center text-2xl font-bold tracking-[0.4em] font-mono select-all">
@@ -580,18 +574,12 @@ export default function ShareSettingsCard({
                 </div>
               </div>
 
-              {/* Hidden QR canvas for download (with logo) */}
+              {/* Hidden QR canvas for download — high resolution, no center logo */}
               <div id="hidden-qr-canvas" className="hidden">
                 <QRCodeCanvas
                   value={`https://t-nexus.io.vn/join?code=${localJoinCode}`}
-                  size={200}
+                  size={400}
                   level="H"
-                  imageSettings={{
-                    src: tNexusLogo,
-                    height: 40,
-                    width: 40,
-                    excavate: true,
-                  }}
                 />
               </div>
 
