@@ -3,6 +3,8 @@ import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useWorkspaceMembers, type WorkspaceMemberInfo } from '@/hooks/useWorkspaceMembers';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
+import { useEmailLookup } from '@/hooks/useEmailLookup';
+import EmailUserPreview from '@/components/EmailUserPreview';
 import { Users, UserPlus, Crown, Shield, User, MoreHorizontal, Trash2, ArrowUpDown, Mail, Loader2, CheckSquare, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -62,6 +64,7 @@ export default function WorkspaceMembers() {
   const [inviteRole, setInviteRole] = useState<'workspace:admin' | 'workspace:member'>('workspace:member');
   const [isInviting, setIsInviting] = useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const { previewUser, isLooking, notFound } = useEmailLookup(inviteEmail);
 
   // Confirm modal
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
@@ -272,6 +275,7 @@ export default function WorkspaceMembers() {
                         onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
                       />
                     </div>
+                    <EmailUserPreview previewUser={previewUser} isLooking={isLooking} notFound={notFound} />
                   </div>
                   <div className="space-y-2">
                     <Label>{tw.role}</Label>

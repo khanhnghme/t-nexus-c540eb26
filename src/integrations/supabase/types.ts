@@ -3388,6 +3388,7 @@ export type Database = {
         Args: { _workspace_id: string }
         Returns: boolean
       }
+      lookup_user_by_email: { Args: { p_email: string }; Returns: Json }
       move_to_dlq: {
         Args: {
           dlq_name: string

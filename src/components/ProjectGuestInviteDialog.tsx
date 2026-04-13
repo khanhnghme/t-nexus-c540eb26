@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useWorkspaceMembers } from '@/hooks/useWorkspaceMembers';
 import { useToast } from '@/hooks/use-toast';
 import { Users, UserPlus, Mail, Loader2, Ghost } from 'lucide-react';
+import { useEmailLookup } from '@/hooks/useEmailLookup';
+import EmailUserPreview from '@/components/EmailUserPreview';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,6 +34,7 @@ export default function ProjectGuestInviteDialog({ groupId, groupName, trigger }
   const [guestEmail, setGuestEmail] = useState('');
   const [guestRole, setGuestRole] = useState('project_basic:member');
   const [isInviting, setIsInviting] = useState(false);
+  const { previewUser, isLooking, notFound } = useEmailLookup(guestEmail);
 
   const { guardAction: guardReadOnly } = useReadOnlyGuard();
 
@@ -84,6 +87,8 @@ export default function ProjectGuestInviteDialog({ groupId, groupName, trigger }
               />
             </div>
           </div>
+
+          <EmailUserPreview previewUser={previewUser} isLooking={isLooking} notFound={notFound} />
 
           <div className="p-3 rounded-lg bg-muted/50 text-xs text-muted-foreground">
             👽 Khách mời chỉ có quyền truy cập dự án này, không có quyền truy cập các dự án khác trong workspace.
