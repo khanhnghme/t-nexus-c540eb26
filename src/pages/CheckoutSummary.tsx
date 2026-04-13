@@ -66,26 +66,31 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
   const cycle = order.billing_cycle;
   const isCompleted = order.status === 'completed';
 
-  // Calculate billing period from profile
   const planStarted = profile?.plan_started_at;
   const planExpires = profile?.plan_expires_at;
+  const invoiceNumber = order.order_code ? `INV-${order.order_code}` : `INV-${order.id?.slice(0, 8)?.toUpperCase()}`;
+  const paidDate = order.completed_at || order.created_at;
 
   return (
     <div className="hidden print:block bg-white text-black p-10 max-w-[800px] mx-auto" id="invoice-print-area">
-      {/* Header */}
+      {/* Header with Logo */}
       <div className="flex justify-between items-start mb-8 border-b-2 border-gray-300 pb-6">
         <div>
+          <img src="/src/assets/t-nexus-text.png" alt="T-Nexus" style={{ width: 140, height: 'auto' }} className="mb-2" />
+          <p className="text-sm text-gray-500">
+            {isVi ? 'Dịch vụ quản lý dự án số' : 'Digital Project Management Service'}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">https://t-nexus.io.vn</p>
+          <p className="text-xs text-gray-400">Email: support@t-nexus.io.vn</p>
+        </div>
+        <div className="text-right">
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
             {isVi ? 'HÓA ĐƠN' : 'INVOICE'}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             {isVi ? 'Biên nhận thanh toán điện tử' : 'Electronic Payment Receipt'}
           </p>
-        </div>
-        <div className="text-right text-sm text-gray-600">
-          <p className="font-bold text-lg text-gray-900">T-Nexus</p>
-          <p>{isVi ? 'Dịch vụ số' : 'Digital Service'}</p>
-          <p className="text-xs text-gray-400 mt-1">t-nexus.io.vn</p>
+          <p className="text-sm font-mono font-semibold text-gray-700 mt-2">{invoiceNumber}</p>
         </div>
       </div>
 
@@ -96,19 +101,20 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
             {isVi ? 'Thông tin hóa đơn' : 'Invoice Details'}
           </h3>
           <div className="space-y-1.5 text-sm">
+            <p><span className="text-gray-500">{isVi ? 'Số hóa đơn:' : 'Invoice #:'}</span> <span className="font-mono font-medium">{invoiceNumber}</span></p>
             <p><span className="text-gray-500">{isVi ? 'Mã đơn hàng:' : 'Order #:'}</span> <span className="font-mono font-medium">{order.order_code}</span></p>
             {order.paypal_order_id && (
               <p><span className="text-gray-500">Transaction ID:</span> <span className="font-mono text-xs">{order.paypal_order_id}</span></p>
             )}
             <p><span className="text-gray-500">{isVi ? 'Ngày tạo:' : 'Created:'}</span> {formatDateInvoice(order.created_at)}</p>
             {isCompleted && order.completed_at && (
-              <p><span className="text-gray-500">{isVi ? 'Thanh toán:' : 'Paid:'}</span> {formatDateInvoice(order.completed_at)}</p>
+              <p><span className="text-gray-500">{isVi ? 'Ngày thanh toán:' : 'Paid on:'}</span> {formatDateInvoice(order.completed_at)}</p>
             )}
             <p><span className="text-gray-500">{isVi ? 'Phương thức:' : 'Method:'}</span> <span className="capitalize">{order.payment_method || 'PayPal'}</span></p>
             <p>
               <span className="text-gray-500">{isVi ? 'Trạng thái:' : 'Status:'}</span>{' '}
               <span className={`font-semibold ${isCompleted ? 'text-green-700' : 'text-red-600'}`}>
-                {isCompleted ? (isVi ? '✓ Hoàn tất' : '✓ Paid') : (isVi ? '✗ Thất bại' : '✗ Failed')}
+                {isCompleted ? (isVi ? '✓ Đã thanh toán' : '✓ Paid') : (isVi ? '✗ Thất bại' : '✗ Failed')}
               </span>
             </p>
           </div>
@@ -121,12 +127,13 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
             <p className="font-semibold text-gray-900">{profile?.full_name || '—'}</p>
             <p className="text-gray-600">{profile?.email || '—'}</p>
             {profile?.student_id && <p className="text-gray-600">{isVi ? 'MSSV:' : 'Student ID:'} {profile.student_id}</p>}
-            {profile?.institution && <p className="text-gray-600">{profile.institution}</p>}
+            {profile?.institution && <p className="text-gray-600">{isVi ? 'Trường:' : 'Institution:'} {profile.institution}</p>}
+            {profile?.phone && <p className="text-gray-600">{isVi ? 'SĐT:' : 'Phone:'} {profile.phone}</p>}
           </div>
         </div>
       </div>
 
-      {/* Billing Period (only for completed orders with plan info) */}
+      {/* Billing Period */}
       {isCompleted && order.plan && (planStarted || planExpires) && (
         <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
@@ -139,7 +146,12 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
             {planExpires && (
               <p><span className="text-gray-500">{isVi ? 'Ngày hết hạn:' : 'Expires:'}</span> <span className="font-medium">{formatDateInvoice(planExpires)}</span></p>
             )}
-            <p><span className="text-gray-500">{isVi ? 'Chu kỳ:' : 'Cycle:'}</span> <span className="font-medium capitalize">{cycle === 'yearly' ? (isVi ? 'Theo năm' : 'Yearly') : (isVi ? 'Theo tháng' : 'Monthly')}</span></p>
+            <p>
+              <span className="text-gray-500">{isVi ? 'Chu kỳ:' : 'Cycle:'}</span>{' '}
+              <span className="font-medium">
+                {cycle === 'yearly' ? (isVi ? '12 tháng (Theo năm)' : '12 months (Annual)') : (isVi ? '1 tháng (Theo tháng)' : '1 month (Monthly)')}
+              </span>
+            </p>
           </div>
         </div>
       )}
@@ -156,14 +168,13 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
           </tr>
         </thead>
         <tbody>
-          {/* Plan row */}
           {order.plan && (
             <tr className="border-b border-gray-100">
               <td className="py-3 text-gray-500">1</td>
               <td className="py-3">
                 <p className="font-medium">{getPlanLabel(order.plan)} Plan</p>
                 <p className="text-xs text-gray-500">
-                  {cycle === 'yearly' ? (isVi ? 'Gói năm' : 'Annual subscription') : (isVi ? 'Gói tháng' : 'Monthly subscription')}
+                  {cycle === 'yearly' ? (isVi ? 'Gói năm (12 tháng)' : 'Annual subscription (12 months)') : (isVi ? 'Gói tháng (1 tháng)' : 'Monthly subscription (1 month)')}
                 </p>
               </td>
               <td className="py-3 text-right tabular-nums">${(order.base_amount || 0).toFixed(2)}</td>
@@ -172,7 +183,6 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
             </tr>
           )}
 
-          {/* Addon rows */}
           {addons.map((addon, idx) => {
             const meta = ADDON_TYPES.find(a => a.type === addon.type);
             if (!meta || addon.quantity <= 0) return null;
@@ -193,26 +203,22 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
           })}
         </tbody>
 
-        {/* Subtotals & Total */}
         <tfoot>
-          {/* Subtotal */}
           <tr className="border-t border-gray-200">
             <td colSpan={4} className="py-2 text-right text-gray-500">{isVi ? 'Tạm tính' : 'Subtotal'}</td>
             <td className="py-2 text-right tabular-nums">${((order.base_amount || 0) + (order.addon_amount || 0)).toFixed(2)}</td>
           </tr>
 
-          {/* Discount */}
           {(order.discount_amount || 0) > 0 && (
             <tr className="text-green-700">
               <td colSpan={4} className="py-1 text-right">
-                {isVi ? 'Giảm giá' : 'Discount'}
+                {isVi ? 'Mã giảm giá' : 'Coupon Discount'}
                 {order.coupon_code ? ` (${order.coupon_code})` : ''}
               </td>
               <td className="py-1 text-right tabular-nums">-${order.discount_amount.toFixed(2)}</td>
             </tr>
           )}
 
-          {/* Welcome discount */}
           {(order.welcome_discount || 0) > 0 && (
             <tr className="text-green-700">
               <td colSpan={4} className="py-1 text-right">{isVi ? 'Ưu đãi chào mừng' : 'Welcome Discount'}</td>
@@ -220,7 +226,6 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
             </tr>
           )}
 
-          {/* Total */}
           <tr className="border-t-2 border-gray-400">
             <td colSpan={4} className="py-3 text-right font-bold text-base">{isVi ? 'TỔNG CỘNG' : 'TOTAL'}</td>
             <td className="py-3 text-right font-bold text-lg tabular-nums">${(order.total_amount || 0).toFixed(2)} USD</td>
@@ -228,20 +233,58 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
         </tfoot>
       </table>
 
-      {/* Footer Notes */}
-      <div className="border-t border-gray-200 pt-4 space-y-2">
+      {/* Payment Notes */}
+      <div className="mb-6 text-xs text-gray-500 space-y-1">
+        <p className="font-semibold text-gray-600 text-sm mb-1">{isVi ? 'Ghi chú' : 'Notes'}</p>
+        <p>{isVi ? '• Thanh toán được xử lý qua cổng PayPal quốc tế.' : '• Payment processed via international PayPal gateway.'}</p>
+        <p>{isVi ? '• Gói dịch vụ sẽ tự động kích hoạt sau khi thanh toán thành công.' : '• Service plan activates automatically upon successful payment.'}</p>
+        <p>{isVi ? '• Mọi thắc mắc vui lòng liên hệ support@t-nexus.io.vn.' : '• For inquiries, please contact support@t-nexus.io.vn.'}</p>
+      </div>
+
+      {/* Electronic Signature & Stamp */}
+      <div className="flex justify-between items-end mt-8 pt-6 border-t border-gray-200">
+        {/* PAID stamp */}
+        {isCompleted && (
+          <div>
+            <p
+              className="font-bold text-green-600 text-xl uppercase px-4 py-2 inline-block"
+              style={{
+                border: '3px solid #16a34a',
+                borderRadius: 8,
+                transform: 'rotate(-12deg)',
+                opacity: 0.8,
+              }}
+            >
+              {isVi ? 'ĐÃ THANH TOÁN' : 'PAID'}
+            </p>
+          </div>
+        )}
+
+        {/* Signature block */}
+        <div className="text-center" style={{ width: 200 }}>
+          <p className="text-xs text-gray-400 mb-14">
+            {isVi ? 'Chữ ký điện tử' : 'Electronic Signature'}
+          </p>
+          <div className="border-b border-gray-400 w-full mb-2" />
+          <p className="font-bold text-gray-800 text-sm">T-Nexus System</p>
+          <p className="text-[10px] text-gray-400">
+            {paidDate ? formatDateInvoice(paidDate) : new Date().toLocaleDateString(isVi ? 'vi-VN' : 'en-US')}
+          </p>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="border-t border-gray-200 pt-4 mt-6 space-y-1 text-center">
         <p className="text-xs text-gray-500">
           {isVi
-            ? '• Đây là hóa đơn điện tử được tạo tự động bởi hệ thống T-Nexus.'
-            : '• This is a computer-generated electronic invoice by T-Nexus.'}
+            ? 'Đây là hóa đơn điện tử được tạo tự động bởi hệ thống T-Nexus.'
+            : 'This is a computer-generated electronic invoice by T-Nexus.'}
         </p>
-        <p className="text-xs text-gray-500">
-          {isVi
-            ? '• Hóa đơn có giá trị thanh toán mà không cần chữ ký.'
-            : '• This invoice is valid without a signature.'}
+        <p className="text-xs text-gray-400">
+          {isVi ? 'Hỗ trợ:' : 'Support:'} support@t-nexus.io.vn | https://t-nexus.io.vn
         </p>
-        <p className="text-xs text-gray-400 mt-3 text-center">
-          {isVi ? 'Ngày xuất hóa đơn:' : 'Invoice generated on:'} {new Date().toLocaleString(isVi ? 'vi-VN' : 'en-US')}
+        <p className="text-[10px] text-gray-300 mt-2">
+          {isVi ? 'Ngày xuất hóa đơn:' : 'Generated:'} {new Date().toLocaleString(isVi ? 'vi-VN' : 'en-US')}
         </p>
       </div>
     </div>
