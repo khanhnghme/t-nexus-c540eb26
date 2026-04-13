@@ -1,57 +1,63 @@
 
 
-## Plan: Tách Authentication thành `/login` và `/register`
+## Plan: Tách flow quên mật khẩu thành 4 route riêng
 
 ### Tóm tắt
-Tách `MemberAuthForm` (1346 dòng) thành 2 component riêng biệt với 2 route `/login` và `/register`. Giữ nguyên toàn bộ UI/UX, logic, state. Route `/auth` redirect về `/login`.
+Extract forgot password flow (4 steps trong `LoginForm.tsx` lines 496-684) thành 4 page riêng biệt. Dùng `sessionStorage` để bảo vệ `/reset-password-new` (chỉ truy cập khi OTP verified). Route `/reset-password` hiện tại (dùng cho email recovery link) giữ nguyên.
+
+### Flow
+```text
+/forgot-password → nhập email → gửi OTP → navigate /verify-otp
+/verify-otp → nhập OTP 6 số → verify → lưu token vào sessionStorage → navigate /reset-password-new  
+/reset-password-new → nhập mật khẩu mới (guard: check sessionStorage) → reset → clear session → navigate /password-success
+/password-success → thông báo thành công → nút "Đăng nhập ngay" → /login
+```
+
+Note: Dùng `/reset-password-new` thay vì `/reset-password` vì route `/reset-password` đã tồn tại cho flow recovery qua email link (Supabase magic link). Hai flow này hoàn toàn độc lập.
 
 ### Changes
 
-**File 1: `src/components/LoginForm.tsx`** (mới)
-- Chứa toàn bộ logic + UI của tab `login` và `forgot` password từ `MemberAuthForm`
-- Giữ nguyên: validation schema, handleLogin, forgot password flow (4 steps), Google OAuth, Turnstile, block popup, policy checkbox, pending approval screen, email verified screen
-- Link "Đăng ký" → `navigate('/register')` thay vì `setActiveTab('register')`
-- Khi login phát hiện email chưa verify → `navigate('/register?resume_verify=email')` kèm state
+**File 1: `src/pages/ForgotPassword.tsx`** (mới)
+- UI từ `forgotStep === 'input'` (lines 637-682): form nhập email, gọi `password-reset-otp` action `send_code`
+- Thành công → `navigate('/verify-otp', { state: { email } })`
+- Nút quay lại → `/login`
 
-**File 2: `src/components/RegisterForm.tsx`** (mới)
-- Chứa toàn bộ logic + UI của tab `register` từ `MemberAuthForm`
-- Giữ nguyên: registerSchema, handleRegister, institution picker, OTP verify flow, Turnstile, policy checkbox
-- Link "Đăng nhập" → `navigate('/login')` thay vì `setActiveTab('login')`
-- Sau register success + verify → "Đăng nhập ngay" navigate về `/login`
+**File 2: `src/pages/VerifyOtp.tsx`** (mới)
+- UI từ `forgotStep === 'otp'` (lines 579-636): InputOTP 6 số, gọi `password-reset-otp` action `verify_code`
+- Guard: nếu không có `location.state.email` → redirect `/forgot-password`
+- Thành công → lưu `{ email, code, ts }` vào `sessionStorage('pw_reset_verified')` → navigate `/reset-password-new`
+- Nút resend OTP (gọi lại `send_code`)
+- Nút quay lại → `/forgot-password`
 
-**File 3: `src/pages/Login.tsx`** (mới)
-- Layout giống `Auth.tsx` hiện tại (header + footer + LanguageToggle)
-- Render `<LoginForm />`
-- Giữ logic RememberLoginScreen từ `Auth.tsx`
+**File 3: `src/pages/ResetPasswordNew.tsx`** (mới)
+- UI từ `forgotStep === 'newpass'` (lines 522-578): form mật khẩu mới + xác nhận
+- Guard: đọc `sessionStorage('pw_reset_verified')`, nếu không có hoặc expired (>15 phút) → redirect `/forgot-password`
+- Submit: gọi `password-reset-otp` action `reset_password` với email + code từ session
+- Thành công → xóa sessionStorage → navigate `/password-success`
 
-**File 4: `src/pages/Register.tsx`** (mới)
-- Layout giống `Auth.tsx` (header + footer + LanguageToggle)
-- Render `<RegisterForm />`
+**File 4: `src/pages/PasswordSuccess.tsx`** (mới)
+- UI từ `forgotStep === 'done'` (lines 499-521): icon thành công, nút "Đăng nhập ngay" → `/login`
 
-**File 5: `src/App.tsx`**
-- Thêm route `/login` → `Login` page
-- Thêm route `/register` → `Register` page
-- Thêm `/vi/login`, `/vi/register` cho localization
-- Route `/auth` → `<Navigate to="/login" replace />`
-- Cập nhật `ProtectedRoute` redirect từ `/auth` → `/login`
+**File 5: `src/components/LoginForm.tsx`**
+- Xóa toàn bộ forgot password state (lines 35-41) và UI (lines 496-684)
+- Xóa `activeTab` state, chỉ giữ login form
+- Link "Quên mật khẩu" → `navigate('/forgot-password')` thay vì `setActiveTab('forgot')`
+- Xóa import `InputOTP`, `KeyRound`, `CheckCircle2` không dùng nữa
 
-**File 6: `src/pages/Auth.tsx`**
-- Giữ lại nhưng đơn giản hóa: redirect về `/login`
+**File 6: `src/App.tsx`**
+- Import 4 page mới
+- Thêm route `/forgot-password`, `/verify-otp`, `/reset-password-new`, `/password-success`
+- Thêm `/vi/` variants cho localization
 
-**File 7: `src/components/MemberAuthForm.tsx`**
-- Giữ lại export legacy để không break import cũ, re-export `LoginForm`
+**File 7: `src/contexts/LanguageContext.tsx`**
+- Thêm 4 path mới vào `PUBLIC_CANONICAL_PATHS`
 
-**File 8: Cập nhật references**
-- `JoinProject.tsx`: `navigate('/auth')` → `navigate('/login')`
-- `Onboarding.tsx`: `Navigate to="/auth"` → `Navigate to="/login"`
-- `ProtectedRoute` / `ProtectedLayout` trong App.tsx: redirect → `/login`
+### Security
+- `/reset-password-new` bảo vệ bằng sessionStorage token (email + code + timestamp), expire 15 phút
+- Sau reset thành công: xóa sessionStorage, invalidate OTP (server đã mark `used: true`)
+- `/password-success` chỉ là UI tĩnh, không chứa logic nhạy cảm
+- Route `/reset-password` (email recovery link) giữ nguyên, không bị ảnh hưởng
 
-### Shared code
-- `PolicyCheckbox` component và validation schemas (`loginSchema`, `registerSchema`) được extract vào file shared `src/components/auth/shared.tsx` để cả 2 form dùng chung
-- Block popup (maintenance/suspended) cũng shared
-
-### Technical Details
-- State không cần chia sẻ giữa 2 form (login và register hoàn toàn độc lập)
-- Resume verify flow (login phát hiện email chưa xác minh): navigate sang `/register` kèm search params để auto-trigger OTP screen
-- Tất cả `navigate('/auth')` trong codebase sẽ được update sang `/login`
+### Layout
+- Tất cả 4 page mới dùng layout giống Login/Register: ForceLightMode wrapper, TNexusLogo header, Card component
 
