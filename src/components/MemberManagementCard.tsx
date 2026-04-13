@@ -473,9 +473,9 @@ export default function MemberManagementCard({
 
   const resetAddForm = () => {
     setSelectedUserIds(new Set());
+    setSelectedUsersMap(new Map());
     setSelectedRole('project_basic:member');
     setSearchQuery('');
-    setSearchResults([]);
   };
 
   // Email lookup for adding members
