@@ -58,9 +58,11 @@ Deno.serve(async (req) => {
     // Fetch profile
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name, email, student_id, institution, phone, plan_started_at, plan_expires_at")
+      .select("full_name, email, student_id, institution, phone, plan_started_at, plan_expires_at, preferred_locale")
       .eq("id", userId)
       .single();
+
+    const locale = profile?.preferred_locale === 'en' ? 'en' as const : 'vi' as const;
 
     if (!profile?.email) {
       console.error("[payment-email] Profile/email not found for user:", userId);
@@ -72,20 +74,24 @@ Deno.serve(async (req) => {
     const planName = PLAN_LABELS[order.plan] || order.plan || "Add-on";
     const isAddon = order.order_type === "addon";
 
+    const { getEmailTexts } = await import("../_shared/email-i18n.ts");
+    const emailTexts = getEmailTexts(locale);
+
     // 1. Build email body HTML
     const emailHtml = buildPaymentConfirmationEmail({
-      recipientName: profile.full_name || "Khách hàng",
+      recipientName: profile.full_name || (locale === 'en' ? 'Customer' : 'Khách hàng'),
       planName: isAddon ? "Add-on" : `${planName} Plan`,
       amount: order.total_amount,
       orderCode: order.order_code || order.id.slice(0, 8),
       paidAt: order.completed_at || order.created_at,
       billingCycle: order.billing_cycle,
+      locale,
     });
 
     // 2. Try to generate PDF invoice (non-blocking)
     let pdfBytes: Uint8Array | null = null;
     try {
-      pdfBytes = await buildInvoicePdf({ order, profile });
+      pdfBytes = await buildInvoicePdf({ order, profile, locale });
       console.log("[payment-email] PDF generated successfully, size:", pdfBytes.length);
     } catch (pdfErr: any) {
       console.error("[payment-email] PDF generation failed (will send email without attachment):", pdfErr.message);
@@ -105,7 +111,7 @@ Deno.serve(async (req) => {
     const emailPayload: any = {
       from: SENDER_EMAIL,
       to: [profile.email],
-      subject: `Xác nhận thanh toán — T-Nexus (${order.order_code || ""})`,
+      subject: emailTexts.paymentSubject(order.order_code || ""),
       html: emailHtml,
     };
 

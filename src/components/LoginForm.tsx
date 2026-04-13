@@ -142,7 +142,7 @@ export function LoginForm() {
         if (errMsg.includes('email not confirmed') || errMsg.includes('email_not_confirmed')) {
           try {
             const { data: resumeData } = await supabase.functions.invoke('signup-email-otp', {
-              body: { action: 'resume_verification', email: loginEmail.toLowerCase() },
+              body: { action: 'resume_verification', email: loginEmail.toLowerCase(), locale },
             });
 
             if (resumeData?.success) {

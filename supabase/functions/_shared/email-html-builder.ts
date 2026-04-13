@@ -3,42 +3,40 @@
  * Used by signup-email-otp, password-reset-otp, and email-digest edge functions
  *
  * Design: Clean, minimal, white-background email templates
- * - White background, no gradients, no images
- * - Single accent blue for links and highlights
- * - Simple header / body / footer
- * - Readable, professional, compatible with all email clients
  */
+
+import { getEmailTexts, type EmailLocale } from "./email-i18n.ts";
 
 // ─── Design Tokens ───────────────────────────────────────────────────────────
 const C = {
-  accent:      "#2563eb",   // blue-600 — primary accent (links, highlights)
-  accentLight: "#eff6ff",   // blue-50 — light accent background
-  accentBorder:"#bfdbfe",   // blue-200 — accent border
-  text:        "#111827",   // gray-900
-  textSub:     "#374151",   // gray-700
-  muted:       "#6b7280",   // gray-500
-  subtle:      "#9ca3af",   // gray-400
-  border:      "#e5e7eb",   // gray-200
-  borderLight: "#f3f4f6",   // gray-100
-  bg:          "#ffffff",   // white — email background
-  bgLight:     "#f9fafb",   // gray-50 — section background
-  warning:     "#92400e",   // amber-800 text
-  warningBg:   "#fffbeb",   // amber-50
-  warningBdr:  "#fcd34d",   // amber-300
-  danger:      "#b91c1c",   // red-700
-  dangerBg:    "#fef2f2",   // red-50
-  dangerBdr:   "#fca5a5",   // red-300
-  success:     "#065f46",   // emerald-800
-  successBdr:  "#6ee7b7",   // emerald-300
+  accent:      "#2563eb",
+  accentLight: "#eff6ff",
+  accentBorder:"#bfdbfe",
+  text:        "#111827",
+  textSub:     "#374151",
+  muted:       "#6b7280",
+  subtle:      "#9ca3af",
+  border:      "#e5e7eb",
+  borderLight: "#f3f4f6",
+  bg:          "#ffffff",
+  bgLight:     "#f9fafb",
+  warning:     "#92400e",
+  warningBg:   "#fffbeb",
+  warningBdr:  "#fcd34d",
+  danger:      "#b91c1c",
+  dangerBg:    "#fef2f2",
+  dangerBdr:   "#fca5a5",
+  success:     "#065f46",
+  successBdr:  "#6ee7b7",
 } as const;
 
 const SITE_URL = "https://t-nexus.io.vn";
 
 // ─── Shared Parts ─────────────────────────────────────────────────────────────
 
-function emailDoctype(): string {
+function emailDoctype(locale: EmailLocale = 'vi'): string {
   return `<!DOCTYPE html>
-<html lang="vi" dir="ltr" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<html lang="${locale}" dir="ltr" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -69,7 +67,6 @@ function emailDoctype(): string {
 
 const LOGO_URL = "https://xrlczmzgxlmdavhbwsah.supabase.co/storage/v1/object/public/system-assets/t-nexus-text.png";
 
-/** Header with T-Nexus text logo + subtitle */
 function emailHeader(subtitle: string): string {
   return `
   <!-- Header -->
@@ -89,14 +86,14 @@ function emailHeader(subtitle: string): string {
   </tr>`;
 }
 
-/** Simple footer — copyright + website link */
-function emailFooter(year: number): string {
+function emailFooter(year: number, locale: EmailLocale = 'vi'): string {
+  const t = getEmailTexts(locale);
   return `
   <!-- Footer -->
   <tr>
     <td style="padding:24px 40px;border-top:1px solid ${C.border};text-align:center;">
       <p style="margin:0 0 8px;color:${C.subtle};font-size:11px;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;line-height:1.6;">
-        &copy; ${year} T-Nexus. All rights reserved.
+        ${t.footerCopyright(year)}
       </p>
       <a href="${SITE_URL}" style="color:${C.accent};font-size:11px;text-decoration:none;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
         t-nexus.io.vn
@@ -105,7 +102,6 @@ function emailFooter(year: number): string {
   </tr>`;
 }
 
-/** Sub-footer note below the card */
 function emailSubFooter(noteText: string): string {
   return `
   <!-- Sub-footer -->
@@ -129,11 +125,13 @@ interface EmailOptions {
   expiryText: string;
   warningText: string;
   ignoreText: string;
+  locale?: EmailLocale;
 }
 
 export function buildBrandedOtpEmail(options: EmailOptions): string {
-  const { title, subtitle, otpCode, expiryText, warningText, ignoreText } = options;
+  const { title, subtitle, otpCode, expiryText, warningText, ignoreText, locale = 'vi' } = options;
   const year = new Date().getFullYear();
+  const t = getEmailTexts(locale);
 
   const digitBoxes = otpCode
     .split("")
@@ -147,7 +145,7 @@ export function buildBrandedOtpEmail(options: EmailOptions): string {
     )
     .join("");
 
-  return `${emailDoctype()}
+  return `${emailDoctype(locale)}
   <title>${title}</title>
 </head>
 <body style="margin:0;padding:0;background-color:${C.bg};font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;">
@@ -176,7 +174,7 @@ export function buildBrandedOtpEmail(options: EmailOptions): string {
               <tr>${digitBoxes}</tr>
             </table>
             <p style="margin:0 0 28px;color:${C.subtle};font-size:11px;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
-              Nhập mã trên vào ứng dụng để tiếp tục
+              ${t.otpEnterCode}
             </p>
 
             <!-- Divider -->
@@ -201,11 +199,11 @@ export function buildBrandedOtpEmail(options: EmailOptions): string {
           </td>
         </tr>
 
-        ${emailFooter(year)}
+        ${emailFooter(year, locale)}
 
       </table>
 
-      ${emailSubFooter("Email này được gửi tự động từ hệ thống T-Nexus.<br/>Vui lòng không trả lời email này.")}
+      ${emailSubFooter(t.subFooterAutoEmail)}
 
     </td></tr>
   </table>
@@ -227,11 +225,13 @@ interface DigestEmailOptions {
   recipientName: string;
   deadlineTasks: DigestTask[];
   newTasks: DigestTask[];
+  locale?: EmailLocale;
 }
 
 export function buildBrandedDigestEmail(options: DigestEmailOptions): string {
-  const { recipientName, deadlineTasks, newTasks } = options;
+  const { recipientName, deadlineTasks, newTasks, locale = 'vi' } = options;
   const year = new Date().getFullYear();
+  const t = getEmailTexts(locale);
 
   let sectionsHtml = "";
 
@@ -244,10 +244,10 @@ export function buildBrandedDigestEmail(options: DigestEmailOptions): string {
           ? task.hoursLeft <= 6
             ? C.danger
             : task.hoursLeft <= 12
-            ? "#d97706"   // amber-600
-            : "#b45309"   // amber-700
+            ? "#d97706"
+            : "#b45309"
           : C.danger;
-      const hoursText = task.hoursLeft !== undefined ? `còn ${task.hoursLeft}h` : "";
+      const hoursText = task.hoursLeft !== undefined ? t.digestHoursLeft(task.hoursLeft) : "";
 
       taskRows += `
         <tr>
@@ -266,10 +266,10 @@ export function buildBrandedDigestEmail(options: DigestEmailOptions): string {
         <tr>
           <td style="padding-bottom:10px;">
             <span style="font-size:13px;font-weight:600;color:${C.danger};font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
-              Deadline sắp hết
+              ${t.digestDeadlineSection}
             </span>
             <span style="font-size:12px;color:${C.muted};margin-left:6px;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
-              (${deadlineTasks.length} task)
+              (${deadlineTasks.length} task${locale === 'en' && deadlineTasks.length > 1 ? 's' : ''})
             </span>
           </td>
         </tr>
@@ -287,7 +287,7 @@ export function buildBrandedDigestEmail(options: DigestEmailOptions): string {
   if (newTasks.length > 0) {
     let taskRows = "";
     for (const task of newTasks) {
-      const deadlineStr = task.deadlineDisplay || "Chưa có";
+      const deadlineStr = task.deadlineDisplay || t.digestNoDeadline;
 
       taskRows += `
         <tr>
@@ -306,10 +306,10 @@ export function buildBrandedDigestEmail(options: DigestEmailOptions): string {
         <tr>
           <td style="padding-bottom:10px;">
             <span style="font-size:13px;font-weight:600;color:${C.accent};font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
-              Task mới được giao
+              ${t.digestNewTaskSection}
             </span>
             <span style="font-size:12px;color:${C.muted};margin-left:6px;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
-              (${newTasks.length} task)
+              (${newTasks.length} task${locale === 'en' && newTasks.length > 1 ? 's' : ''})
             </span>
           </td>
         </tr>
@@ -323,8 +323,8 @@ export function buildBrandedDigestEmail(options: DigestEmailOptions): string {
       </table>`;
   }
 
-  return `${emailDoctype()}
-  <title>Cập nhật hàng ngày - T-Nexus</title>
+  return `${emailDoctype(locale)}
+  <title>${t.digestTitle}</title>
 </head>
 <body style="margin:0;padding:0;background-color:${C.bg};font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;">
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color:${C.bg};padding:32px 16px;">
@@ -333,7 +333,7 @@ export function buildBrandedDigestEmail(options: DigestEmailOptions): string {
       <!-- Main Card -->
       <table class="email-container" width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:560px;background-color:${C.bg};border:1px solid ${C.border};border-radius:12px;overflow:hidden;">
 
-        ${emailHeader("Cập nhật dự án hàng ngày")}
+        ${emailHeader(t.digestSubtitle)}
 
         <!-- Body -->
         <tr>
@@ -341,10 +341,10 @@ export function buildBrandedDigestEmail(options: DigestEmailOptions): string {
 
             <!-- Greeting -->
             <h1 style="margin:0 0 6px;color:${C.text};font-size:18px;font-weight:700;line-height:1.3;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
-              Xin chào ${recipientName},
+              ${t.digestGreeting(recipientName)}
             </h1>
             <p style="margin:0 0 24px;color:${C.muted};font-size:14px;line-height:1.5;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
-              Đây là tóm tắt hoạt động dự án hôm nay của bạn.
+              ${t.digestSummary}
             </p>
 
             <!-- Divider -->
@@ -357,9 +357,9 @@ export function buildBrandedDigestEmail(options: DigestEmailOptions): string {
               <tr>
                 <td style="background-color:${C.bgLight};border:1px solid ${C.border};border-radius:8px;padding:12px 16px;text-align:center;">
                   <p style="margin:0;color:${C.muted};font-size:13px;line-height:1.5;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
-                    Truy cập
+                    ${t.digestVisitNote}
                     <a href="${SITE_URL}" style="color:${C.accent};text-decoration:none;font-weight:600;">t-nexus.io.vn</a>
-                    để xem chi tiết và cập nhật tiến độ.
+                    ${t.digestVisitAction}
                   </p>
                 </td>
               </tr>
@@ -368,11 +368,11 @@ export function buildBrandedDigestEmail(options: DigestEmailOptions): string {
           </td>
         </tr>
 
-        ${emailFooter(year)}
+        ${emailFooter(year, locale)}
 
       </table>
 
-      ${emailSubFooter("Email tự động từ T-Nexus &middot; Bạn có thể tắt trong phần Thông tin cá nhân.")}
+      ${emailSubFooter(t.subFooterDigest)}
 
     </td></tr>
   </table>
@@ -389,12 +389,14 @@ interface PaymentConfirmationOptions {
   orderCode: string;
   paidAt: string;
   billingCycle: string;
+  locale?: EmailLocale;
 }
 
 export function buildPaymentConfirmationEmail(options: PaymentConfirmationOptions): string {
-  const { recipientName, planName, amount, orderCode, paidAt, billingCycle } = options;
+  const { recipientName, planName, amount, orderCode, paidAt, billingCycle, locale = 'vi' } = options;
   const year = new Date().getFullYear();
-  const cycleLabel = billingCycle === "yearly" ? "Năm" : "Tháng";
+  const t = getEmailTexts(locale);
+  const cycleLabel = billingCycle === "yearly" ? t.cycleYearly : t.cycleMonthly;
 
   const formatDate = (d: string) => {
     const date = new Date(d);
@@ -403,15 +405,14 @@ export function buildPaymentConfirmationEmail(options: PaymentConfirmationOption
 
   const font = "'Segoe UI','Helvetica Neue',Arial,sans-serif";
 
-  // Simple row helper: label left, value right
   const infoRow = (label: string, value: string, isLast = false) => `
     <tr>
       <td style="padding:10px 16px;${isLast ? "" : `border-bottom:1px solid ${C.borderLight};`}font-size:13px;color:${C.muted};font-family:${font};">${label}</td>
       <td style="padding:10px 16px;${isLast ? "" : `border-bottom:1px solid ${C.borderLight};`}font-size:13px;font-weight:600;color:${C.text};text-align:right;font-family:${font};">${value}</td>
     </tr>`;
 
-  return `${emailDoctype()}
-  <title>Xác nhận thanh toán - T-Nexus</title>
+  return `${emailDoctype(locale)}
+  <title>${t.paymentHeaderSubtitle} - T-Nexus</title>
 </head>
 <body style="margin:0;padding:0;background-color:${C.bg};font-family:${font};-webkit-font-smoothing:antialiased;">
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color:${C.bg};padding:32px 16px;">
@@ -420,7 +421,7 @@ export function buildPaymentConfirmationEmail(options: PaymentConfirmationOption
       <!-- Main Card -->
       <table class="email-container" width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:540px;background-color:${C.bg};border:1px solid ${C.border};border-radius:12px;overflow:hidden;">
 
-        ${emailHeader("Xác nhận thanh toán")}
+        ${emailHeader(t.paymentHeaderSubtitle)}
 
         <!-- Body -->
         <tr>
@@ -428,25 +429,25 @@ export function buildPaymentConfirmationEmail(options: PaymentConfirmationOption
 
             <!-- Title -->
             <h1 style="margin:0 0 6px;color:${C.success};font-size:18px;font-weight:700;line-height:1.3;font-family:${font};">
-              ✓ Thanh toán thành công
+              ${t.paymentSuccessTitle}
             </h1>
             <p style="margin:0 0 24px;color:${C.muted};font-size:14px;line-height:1.6;font-family:${font};">
-              Xin chào <strong style="color:${C.text};">${recipientName}</strong>, giao dịch của bạn đã được xác nhận.
+              ${t.paymentGreeting(recipientName)}
             </p>
 
             <!-- Order Info — stacked rows -->
             <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color:${C.bgLight};border:1px solid ${C.border};border-radius:8px;overflow:hidden;margin-bottom:16px;">
-              ${infoRow("Gói dịch vụ", planName)}
-              ${infoRow("Chu kỳ", cycleLabel)}
-              ${infoRow("Mã đơn hàng", `<span style="font-family:'Courier New',Courier,monospace;">${orderCode}</span>`)}
-              ${infoRow("Thời gian", formatDate(paidAt), true)}
+              ${infoRow(t.paymentPlan, planName)}
+              ${infoRow(t.paymentCycle, cycleLabel)}
+              ${infoRow(t.paymentOrderCode, `<span style="font-family:'Courier New',Courier,monospace;">${orderCode}</span>`)}
+              ${infoRow(t.paymentTime, formatDate(paidAt), true)}
             </table>
 
             <!-- Total -->
             <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:20px;">
               <tr>
                 <td style="padding:14px 16px;background-color:${C.accentLight};border:1px solid ${C.accentBorder};border-radius:8px;text-align:center;">
-                  <span style="color:${C.muted};font-size:12px;display:block;margin-bottom:4px;font-family:${font};">Tổng thanh toán</span>
+                  <span style="color:${C.muted};font-size:12px;display:block;margin-bottom:4px;font-family:${font};">${t.paymentTotal}</span>
                   <span style="color:${C.accent};font-size:22px;font-weight:700;font-family:${font};">$${amount.toFixed(2)} USD</span>
                 </td>
               </tr>
@@ -454,7 +455,7 @@ export function buildPaymentConfirmationEmail(options: PaymentConfirmationOption
 
             <!-- PDF note -->
             <p style="margin:0 0 16px;color:${C.textSub};font-size:12px;line-height:1.6;font-family:${font};">
-              📎 Biên lai chi tiết được đính kèm dưới dạng file PDF.
+              ${t.paymentPdfNote}
             </p>
 
             <!-- Divider -->
@@ -462,17 +463,17 @@ export function buildPaymentConfirmationEmail(options: PaymentConfirmationOption
 
             <!-- Help -->
             <p style="margin:0;color:${C.subtle};font-size:12px;line-height:1.5;font-family:${font};">
-              Thắc mắc? Liên hệ <a href="mailto:support@t-nexus.io.vn" style="color:${C.accent};text-decoration:none;">support@t-nexus.io.vn</a>
+              ${t.paymentHelp("support@t-nexus.io.vn")}
             </p>
 
           </td>
         </tr>
 
-        ${emailFooter(year)}
+        ${emailFooter(year, locale)}
 
       </table>
 
-      ${emailSubFooter("Email này được gửi tự động từ hệ thống T-Nexus.<br/>Vui lòng không trả lời email này.")}
+      ${emailSubFooter(t.subFooterAutoEmail)}
 
     </td></tr>
   </table>

@@ -130,6 +130,7 @@ export function RegisterForm() {
           student_id: regStudentId.trim(),
           full_name: regFullName.trim(),
           institution: regInstitution === '__other__' ? regCustomInstitution.trim() : regInstitution,
+          locale,
         },
       });
 
