@@ -240,7 +240,7 @@ export default function MemberManagementCard({
       }
     };
     fetchJoinRequests();
-  }, [groupId, members]);
+  }, [groupId, members.length]);
 
   const handleApproveJoinRequest = async (request: JoinRequest) => {
     if (guardReadOnly()) return;
@@ -1665,13 +1665,13 @@ export default function MemberManagementCard({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Hủy</AlertDialogCancel>
-            <AlertDialogAction
+            <Button
+              variant="destructive"
               onClick={handleDeleteMember}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={isDeleting}
             >
               {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Xóa khỏi project'}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -1687,13 +1687,13 @@ export default function MemberManagementCard({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isBulkProcessing}>Hủy</AlertDialogCancel>
-            <AlertDialogAction
+            <Button
+              variant="destructive"
               onClick={handleBulkDeleteMembers}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={isBulkProcessing}
             >
               {isBulkProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : `Xóa ${selectedMemberIds.size} thành viên`}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
