@@ -67,7 +67,9 @@ function emailDoctype(): string {
   </style>`;
 }
 
-/** Minimal text-only header — brand name + divider */
+const LOGO_URL = "https://xrlczmzgxlmdavhbwsah.supabase.co/storage/v1/object/public/system-assets/t-nexus-text.png";
+
+/** Header with T-Nexus text logo + subtitle */
 function emailHeader(subtitle: string): string {
   return `
   <!-- Header -->
@@ -76,7 +78,7 @@ function emailHeader(subtitle: string): string {
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
         <tr>
           <td style="vertical-align:middle;">
-            <span style="font-size:18px;font-weight:700;color:${C.text};font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;letter-spacing:-0.3px;">T-Nexus</span>
+            <img src="${LOGO_URL}" alt="T-Nexus" width="120" height="auto" style="display:block;border:0;outline:none;max-width:120px;height:auto;" />
           </td>
           <td style="text-align:right;vertical-align:middle;">
             <span style="font-size:12px;color:${C.muted};font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">${subtitle}</span>

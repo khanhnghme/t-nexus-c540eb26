@@ -3,6 +3,8 @@
  */
 import { PDFDocument, rgb, StandardFonts } from "https://esm.sh/pdf-lib@1.17.1";
 
+const LOGO_URL = "https://xrlczmzgxlmdavhbwsah.supabase.co/storage/v1/object/public/system-assets/t-nexus-text.png";
+
 /**
  * Strip Vietnamese diacritics so pdf-lib StandardFonts (WinAnsi) can render the text.
  */
