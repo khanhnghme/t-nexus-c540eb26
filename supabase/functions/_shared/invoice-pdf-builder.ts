@@ -107,28 +107,29 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
   }
 
   // ─── Header ────────────────────────────────────────────────────
+  const headerTopY = y;
   drawText("HOA DON", margin, y, { font: helveticaBold, size: 22, color: gray900 });
-  y -= 10;
+  y -= 12;
   drawText("Bien nhan thanh toan dien tu", margin, y, { size: 8, color: gray500 });
-  y -= 8;
+  y -= 10;
   drawText(invoiceNumber, margin, y, { font: courier, size: 9, color: gray700 });
 
-  // Right side — brand logo or text fallback
+  // Right side — brand logo aligned with header top
   if (logoImage) {
-    const logoDisplayW = 120;
+    const logoDisplayW = 130;
     const logoDisplayH = (logoImage.height / logoImage.width) * logoDisplayW;
     page.drawImage(logoImage, {
       x: pageW - margin - logoDisplayW,
-      y: y + 4,
+      y: headerTopY - logoDisplayH + 6,
       width: logoDisplayW,
       height: logoDisplayH,
     });
   } else {
-    drawText("T-Nexus", pageW - margin, y + 18, { font: helveticaBold, size: 18, color: blue600, align: "right" });
+    drawText("T-Nexus", pageW - margin, headerTopY - 4, { font: helveticaBold, size: 18, color: blue600, align: "right" });
   }
-  drawText("Dich vu quan ly du an so", pageW - margin, y - 6, { size: 7, color: gray400, align: "right" });
+  drawText("Dich vu quan ly du an so", pageW - margin, y - 4, { size: 7, color: gray400, align: "right" });
 
-  y -= 10;
+  y -= 12;
 
   // Divider
   drawLine(margin, y, pageW - margin);
