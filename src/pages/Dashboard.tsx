@@ -108,7 +108,7 @@ interface PendingWorkspaceInvite {
 }
 
 export default function Dashboard() {
-  const { user, profile, mustChangePassword, refreshProfile, isLeader, isAdmin, isSystemAdmin } = useAuth();
+  const { user, profile, mustChangePassword, refreshProfile, isSystemAdmin: isLeader, isAdmin, isSystemAdmin } = useAuth();
   const { activeWorkspace, isAvailable: wsAvailable, refreshWorkspaces } = useWorkspace();
   const { translations, locale } = useLanguage();
   const t = translations.app?.dashboard;

@@ -66,7 +66,7 @@ interface PendingApprovalRow {
 
 
 export default function AdminUsers() {
-  const { user, isAdmin, isLeader } = useAuth();
+  const { user, isAdmin, isSystemAdmin: isLeader } = useAuth();
   const { translations: { app: { admin: t } } } = useLanguage();
   const { toast } = useToast();
 
