@@ -577,7 +577,7 @@ export default function ShareSettingsCard({
               </div>
 
               {/* Hidden QR canvas for download — high resolution, no center logo */}
-              <div id="hidden-qr-canvas" className="hidden">
+              <div id="hidden-qr-canvas" className="absolute -left-[9999px]">
                 <QRCodeCanvas
                   value={`https://t-nexus.io.vn/join?code=${localJoinCode}`}
                   size={400}

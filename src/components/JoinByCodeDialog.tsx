@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { fixStorageUrl } from '@/lib/urlUtils';
 import { logActivity } from '@/lib/activityLogger';
-import { Loader2, Users, Calendar, ArrowLeft, CheckCircle2, UserCheck, XCircle, Clock, Sparkles } from 'lucide-react';
+import { Loader2, Users, Calendar, ArrowLeft, CheckCircle2, UserCheck, XCircle, Clock, Sparkles, Camera, Keyboard } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import joinCodeIllustration from '@/assets/join-code-illustration.png';
@@ -44,13 +44,119 @@ export default function JoinByCodeDialog({ open, onOpenChange, onJoined }: JoinB
   const [groupPreview, setGroupPreview] = useState<GroupPreview | null>(null);
   const [alreadyMember, setAlreadyMember] = useState(false);
   const [alreadyPending, setAlreadyPending] = useState(false);
+  const [mode, setMode] = useState<'code' | 'scan'>('code');
+  const [scannerReady, setScannerReady] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const scannerRef = useRef<any>(null);
+  const scannerContainerId = 'qr-scanner-container';
 
   useEffect(() => {
-    if (open && !groupPreview) {
+    if (open && !groupPreview && mode === 'code') {
       setTimeout(() => inputRefs.current[0]?.focus(), 100);
     }
-  }, [open, groupPreview]);
+  }, [open, groupPreview, mode]);
+
+  // Cleanup scanner on unmount or dialog close
+  useEffect(() => {
+    return () => {
+      stopScanner();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!open) {
+      stopScanner();
+      setMode('code');
+      setCameraError(null);
+      setScannerReady(false);
+    }
+  }, [open]);
+
+  const stopScanner = useCallback(async () => {
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop();
+        scannerRef.current.clear();
+      } catch { /* ignore */ }
+      scannerRef.current = null;
+    }
+    setScannerReady(false);
+  }, []);
+
+  const startScanner = useCallback(async () => {
+    setCameraError(null);
+    try {
+      const { Html5Qrcode } = await import('html5-qrcode');
+      
+      // Wait for DOM element
+      await new Promise(r => setTimeout(r, 200));
+      
+      const el = document.getElementById(scannerContainerId);
+      if (!el) {
+        setCameraError('Không tìm thấy vùng quét');
+        return;
+      }
+
+      const scanner = new Html5Qrcode(scannerContainerId);
+      scannerRef.current = scanner;
+
+      await scanner.start(
+        { facingMode: 'environment' },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1,
+        },
+        (decodedText) => {
+          // Parse QR code URL
+          const codeMatch = decodedText.match(/[?&]code=([A-Za-z0-9]{6})/);
+          if (codeMatch) {
+            const scannedCode = codeMatch[1].toUpperCase();
+            const newDigits = scannedCode.split('');
+            setDigits(newDigits);
+            stopScanner();
+            setMode('code');
+            // Auto lookup
+            setTimeout(() => {
+              handleLookupWithCode(scannedCode);
+            }, 300);
+          } else {
+            // Try if the scanned text is just a 6-char code
+            const plain = decodedText.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+            if (plain.length === 6) {
+              const newDigits = plain.split('');
+              setDigits(newDigits);
+              stopScanner();
+              setMode('code');
+              setTimeout(() => {
+                handleLookupWithCode(plain);
+              }, 300);
+            }
+          }
+        },
+        () => { /* ignore scan errors */ }
+      );
+      setScannerReady(true);
+    } catch (err: any) {
+      console.error('Camera error:', err);
+      if (err?.message?.includes('NotAllowedError') || err?.name === 'NotAllowedError') {
+        setCameraError('Bạn cần cấp quyền camera để quét mã QR');
+      } else if (err?.message?.includes('NotFoundError') || err?.name === 'NotFoundError') {
+        setCameraError('Không tìm thấy camera trên thiết bị');
+      } else {
+        setCameraError('Không thể mở camera. Vui lòng thử lại.');
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (mode === 'scan' && open && !groupPreview) {
+      startScanner();
+    } else {
+      stopScanner();
+    }
+  }, [mode, open, groupPreview]);
 
   const code = digits.join('');
 
@@ -105,9 +211,9 @@ export default function JoinByCodeDialog({ open, onOpenChange, onJoined }: JoinB
     };
   };
 
-  const handleLookup = async () => {
+  const handleLookupWithCode = async (lookupCode: string) => {
     if (!user) return;
-    if (code.length !== 6 || !/^[A-Z0-9]{6}$/.test(code)) {
+    if (lookupCode.length !== 6 || !/^[A-Z0-9]{6}$/.test(lookupCode)) {
       toast({ title: 'Mã không hợp lệ', description: 'Vui lòng nhập đúng 6 ký tự (A-Z, 0-9)', variant: 'destructive' });
       return;
     }
@@ -117,7 +223,7 @@ export default function JoinByCodeDialog({ open, onOpenChange, onJoined }: JoinB
       const { data: group, error: groupError } = await supabase
         .from('groups')
         .select('id, name, description, class_code, instructor_name, created_at, image_url, created_by, zalo_link, join_member_limit, join_require_approval')
-        .eq('join_code', code)
+        .eq('join_code', lookupCode)
         .eq('allow_join_by_code', true)
         .single();
 
@@ -148,6 +254,8 @@ export default function JoinByCodeDialog({ open, onOpenChange, onJoined }: JoinB
       setIsLoading(false);
     }
   };
+
+  const handleLookup = () => handleLookupWithCode(code);
 
   const handleConfirmJoin = async () => {
     if (!user || !profile || !groupPreview) return;
@@ -230,77 +338,146 @@ export default function JoinByCodeDialog({ open, onOpenChange, onJoined }: JoinB
     <Dialog open={open} onOpenChange={(v) => { if (!v) resetState(); onOpenChange(v); }}>
       <DialogContent className="sm:max-w-md p-0 overflow-hidden gap-0">
         {!groupPreview ? (
-          /* ── Code Entry Screen ── */
+          /* ── Code Entry / QR Scanner Screen ── */
           <div className="flex flex-col items-center px-6 py-8 space-y-5">
-            {/* Illustration */}
-            <div className="relative">
-              <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl scale-125" />
-              <img
-                src={joinCodeIllustration}
-                alt="Join code illustration"
-                width={120}
-                height={120}
-                className="relative z-10 drop-shadow-lg"
-              />
+            {/* Mode Toggle */}
+            <div className="flex items-center gap-1 p-1 rounded-full bg-muted w-fit">
+              <button
+                onClick={() => setMode('code')}
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  mode === 'code'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Keyboard className="w-3.5 h-3.5" />
+                Nhập mã
+              </button>
+              <button
+                onClick={() => setMode('scan')}
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  mode === 'scan'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Camera className="w-3.5 h-3.5" />
+                Quét QR
+              </button>
             </div>
 
-            {/* Title & Description */}
-            <div className="text-center space-y-2">
-              <h2 className="text-xl font-bold flex items-center justify-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary" />
-                Nhập mã tham gia
-              </h2>
-              <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px] mx-auto">
-                Nhập mã <span className="font-semibold text-foreground">6 ký tự</span> được trưởng nhóm cung cấp để tìm và tham gia project
-              </p>
-            </div>
-
-            {/* 4 Digit Boxes */}
-            <div className="flex items-center gap-3" onPaste={handlePaste}>
-              {digits.map((digit, i) => (
-                <div key={i} className="relative">
-                  <input
-                    ref={(el) => { inputRefs.current[i] = el; }}
-                    type="text"
-                    inputMode="text"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleDigitChange(i, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(i, e)}
-                    className={`
-                      w-12 h-14 text-center text-xl font-bold rounded-xl
-                      border-2 bg-muted/30 outline-none transition-all duration-200 uppercase
-                      ${digit
-                        ? 'border-primary/50 bg-primary/5 text-foreground shadow-sm shadow-primary/10'
-                        : 'border-border hover:border-primary/30'
-                      }
-                      focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-primary/5
-                    `}
+            {mode === 'code' ? (
+              <>
+                {/* Illustration */}
+                <div className="relative">
+                  <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl scale-125" />
+                  <img
+                    src={joinCodeIllustration}
+                    alt="Join code illustration"
+                    width={120}
+                    height={120}
+                    className="relative z-10 drop-shadow-lg"
                   />
-                  {!digit && (
-                    <span className="absolute inset-0 flex items-center justify-center text-muted-foreground/30 text-xl font-bold pointer-events-none">
-                      •
-                    </span>
-                  )}
                 </div>
-              ))}
-            </div>
 
-            {/* Helper text */}
-            <p className="text-xs text-muted-foreground/70 text-center">
-              💡 Hỗ trợ dán mã từ clipboard • Nhấn Enter để tìm
-            </p>
+                {/* Title & Description */}
+                <div className="text-center space-y-2">
+                  <h2 className="text-xl font-bold flex items-center justify-center gap-2">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                    Nhập mã tham gia
+                  </h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px] mx-auto">
+                    Nhập mã <span className="font-semibold text-foreground">6 ký tự</span> được trưởng nhóm cung cấp để tìm và tham gia project
+                  </p>
+                </div>
 
-            {/* Search Button */}
-            <Button
-              onClick={handleLookup}
-              disabled={code.length !== 6 || isLoading}
-              className="w-full h-11 text-sm font-semibold gap-2"
-              size="lg"
-            >
-              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              Tìm Project
-            </Button>
+                {/* 6 Digit Boxes */}
+                <div className="flex items-center gap-3" onPaste={handlePaste}>
+                  {digits.map((digit, i) => (
+                    <div key={i} className="relative">
+                      <input
+                        ref={(el) => { inputRefs.current[i] = el; }}
+                        type="text"
+                        inputMode="text"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleDigitChange(i, e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(i, e)}
+                        className={`
+                          w-12 h-14 text-center text-xl font-bold rounded-xl
+                          border-2 bg-muted/30 outline-none transition-all duration-200 uppercase
+                          ${digit
+                            ? 'border-primary/50 bg-primary/5 text-foreground shadow-sm shadow-primary/10'
+                            : 'border-border hover:border-primary/30'
+                          }
+                          focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-primary/5
+                        `}
+                      />
+                      {!digit && (
+                        <span className="absolute inset-0 flex items-center justify-center text-muted-foreground/30 text-xl font-bold pointer-events-none">
+                          •
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Helper text */}
+                <p className="text-xs text-muted-foreground/70 text-center">
+                  💡 Hỗ trợ dán mã từ clipboard • Nhấn Enter để tìm
+                </p>
+
+                {/* Search Button */}
+                <Button
+                  onClick={handleLookup}
+                  disabled={code.length !== 6 || isLoading}
+                  className="w-full h-11 text-sm font-semibold gap-2"
+                  size="lg"
+                >
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                  Tìm Project
+                </Button>
+              </>
+            ) : (
+              /* ── QR Scanner Mode ── */
+              <>
+                <div className="text-center space-y-2">
+                  <h2 className="text-xl font-bold flex items-center justify-center gap-2">
+                    <Camera className="w-5 h-5 text-primary" />
+                    Quét mã QR
+                  </h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px] mx-auto">
+                    Hướng camera vào mã QR của project để tự động tham gia
+                  </p>
+                </div>
+
+                <div className="w-full max-w-[300px] mx-auto">
+                  <div
+                    id={scannerContainerId}
+                    className="w-full rounded-xl overflow-hidden border-2 border-primary/20 bg-black/5"
+                    style={{ minHeight: 280 }}
+                  />
+                </div>
+
+                {cameraError && (
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 w-full">
+                    <XCircle className="w-4 h-4 text-destructive shrink-0" />
+                    <p className="text-sm text-destructive">{cameraError}</p>
+                  </div>
+                )}
+
+                {!cameraError && !scannerReady && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="text-sm">Đang khởi động camera...</span>
+                  </div>
+                )}
+
+                <p className="text-xs text-muted-foreground/70 text-center">
+                  📱 Quét mã QR từ thẻ mời hoặc màn hình khác
+                </p>
+              </>
+            )}
           </div>
         ) : (
           /* ── Preview Screen ── */
