@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { fixStorageUrl } from '@/lib/urlUtils';
 import { Link, useNavigate } from 'react-router-dom';
@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   Dialog,
   DialogContent,
@@ -44,6 +46,8 @@ import {
   MessageSquare,
   ImagePlus,
   Palette,
+  ListChecks,
+  Filter,
 } from 'lucide-react';
 import type { Group, GroupMember } from '@/types/database';
 import UserAvatar from '@/components/UserAvatar';
@@ -85,6 +89,9 @@ export default function Groups() {
   const { guardAction: guardReadOnly } = useReadOnlyGuard();
   const [groups, setGroups] = useState<GroupWithMembers[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [modeFilter, setModeFilter] = useState<'all' | 'basic' | 'custom'>('all');
+  const [visibilityFilter, setVisibilityFilter] = useState<'all' | 'private' | 'workspace_public' | 'public_link'>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showModeSelector, setShowModeSelector] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -430,6 +437,21 @@ export default function Groups() {
         return <Badge variant="outline">Guest</Badge>;
     }
   };
+
+  const filteredGroups = useMemo(() => {
+    let result = groups;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(g => g.name.toLowerCase().includes(q));
+    }
+    if (modeFilter !== 'all') {
+      result = result.filter(g => g.project_mode === modeFilter);
+    }
+    if (visibilityFilter !== 'all') {
+      result = result.filter(g => g.visibility === visibilityFilter);
+    }
+    return result;
+  }, [groups, searchQuery, modeFilter, visibilityFilter]);
 
   if (isLoading) {
     return (
@@ -804,6 +826,44 @@ export default function Groups() {
             </Dialog>
         </div>
 
+        {/* Filter Bar */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <div className="relative flex-1 w-full sm:max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder={g.searchPlaceholder || 'Tìm kiếm...'}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-9"
+            />
+          </div>
+          <ToggleGroup type="single" value={modeFilter} onValueChange={(v) => v && setModeFilter(v as any)} className="bg-transparent gap-1">
+            <ToggleGroupItem value="all" className="text-xs px-2.5 py-1.5 h-8 rounded-full border border-transparent data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=off]:bg-muted/50 data-[state=off]:text-muted-foreground hover:data-[state=off]:bg-muted transition-all">
+              {tc?.all || 'Tất cả'}
+            </ToggleGroupItem>
+            <ToggleGroupItem value="basic" className="text-xs px-2.5 py-1.5 h-8 rounded-full border border-transparent data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=off]:bg-muted/50 data-[state=off]:text-muted-foreground hover:data-[state=off]:bg-muted gap-1 transition-all">
+              <ListChecks className="w-3 h-3" />
+              Basic
+            </ToggleGroupItem>
+            <ToggleGroupItem value="custom" className="text-xs px-2.5 py-1.5 h-8 rounded-full border border-transparent data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=off]:bg-muted/50 data-[state=off]:text-muted-foreground hover:data-[state=off]:bg-muted gap-1 transition-all">
+              <Palette className="w-3 h-3" />
+              Custom
+            </ToggleGroupItem>
+          </ToggleGroup>
+          <Select value={visibilityFilter} onValueChange={(v) => setVisibilityFilter(v as any)}>
+            <SelectTrigger className="w-auto min-w-[140px] h-8 text-xs">
+              <Filter className="w-3 h-3 mr-1.5" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{tc?.all || 'Tất cả'}</SelectItem>
+              <SelectItem value="private">🔒 Private</SelectItem>
+              <SelectItem value="workspace_public">🌐 WS Public</SelectItem>
+              <SelectItem value="public_link">🌍 Public</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Groups List */}
         {groups.length === 0 ? (
           <Card>
@@ -815,9 +875,16 @@ export default function Groups() {
               </p>
             </CardContent>
           </Card>
+        ) : filteredGroups.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Search className="w-12 h-12 text-muted-foreground/40 mb-3" />
+              <p className="text-muted-foreground">{tc?.noResults || 'Không tìm thấy kết quả phù hợp'}</p>
+            </CardContent>
+          </Card>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-            {groups.map((group, index) => {
+            {filteredGroups.map((group, index) => {
               // Generate a unique gradient per card based on index
               const gradients = [
                 'from-[hsl(183,100%,21%)] via-[hsl(183,58%,30%)] to-[hsl(200,80%,35%)]',

@@ -67,6 +67,7 @@ import type { Group } from '@/types/database';
 // Removed hard-coded DEFAULT_PROJECT_LIMIT — limits come from plan_limits table
 
 type DashboardFilter = 'all' | 'active' | 'hidden' | 'pending';
+type ProjectModeFilter = 'all' | 'basic' | 'custom';
 
 interface PendingInvitationGroup {
   name: string;
@@ -128,6 +129,7 @@ export default function Dashboard() {
   const [joinedProjectCount, setJoinedProjectCount] = useState(0);
   const [hiddenProjectIds, setHiddenProjectIds] = useState<Set<string>>(new Set());
   const [pendingApprovalGroups, setPendingApprovalGroups] = useState<Group[]>([]);
+  const [modeFilter, setModeFilter] = useState<ProjectModeFilter>('all');
   
   const [filter, setFilter] = useState<DashboardFilter>(() => {
     if (typeof window !== 'undefined' && user?.id) {
@@ -430,16 +432,23 @@ export default function Dashboard() {
 
   const filteredGroups = useMemo(() => {
     if (filter === 'pending') return []; // pending uses separate list
+    let result: Group[];
     switch (filter) {
       case 'hidden':
-        return groups.filter(g => hiddenProjectIds.has(g.id));
+        result = groups.filter(g => hiddenProjectIds.has(g.id));
+        break;
       case 'active':
-        return groups.filter(g => !hiddenProjectIds.has(g.id));
+        result = groups.filter(g => !hiddenProjectIds.has(g.id));
+        break;
       case 'all':
       default:
-        return groups;
+        result = groups;
     }
-  }, [groups, hiddenProjectIds, filter]);
+    if (modeFilter !== 'all') {
+      result = result.filter(g => g.project_mode === modeFilter);
+    }
+    return result;
+  }, [groups, hiddenProjectIds, filter, modeFilter]);
 
   const activeCount = groups.filter(g => !hiddenProjectIds.has(g.id)).length;
   const hiddenCount = groups.filter(g => hiddenProjectIds.has(g.id)).length;
@@ -976,6 +985,18 @@ export default function Dashboard() {
                   <ToggleGroupItem value="all" className="text-xs px-3 sm:px-3.5 py-1.5 h-8 rounded-full border border-transparent data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=off]:bg-muted/50 data-[state=off]:text-muted-foreground hover:data-[state=off]:bg-muted gap-1.5 transition-all">
                     {t?.all || 'All'}
                     <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 min-w-[16px] justify-center bg-muted-foreground/15 text-foreground">{groups.length}</Badge>
+                  </ToggleGroupItem>
+                </ToggleGroup>
+                <div className="w-px h-6 bg-border hidden sm:block" />
+                <ToggleGroup type="single" value={modeFilter} onValueChange={(v) => v && setModeFilter(v as ProjectModeFilter)} className="bg-transparent gap-1">
+                  <ToggleGroupItem value="all" className="text-xs px-2.5 py-1.5 h-8 rounded-full border border-transparent data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=off]:bg-muted/50 data-[state=off]:text-muted-foreground hover:data-[state=off]:bg-muted transition-all">
+                    {locale === 'vi' ? 'Tất cả' : 'All'}
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="basic" className="text-xs px-2.5 py-1.5 h-8 rounded-full border border-transparent data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=off]:bg-muted/50 data-[state=off]:text-muted-foreground hover:data-[state=off]:bg-muted transition-all">
+                    Basic
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="custom" className="text-xs px-2.5 py-1.5 h-8 rounded-full border border-transparent data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=off]:bg-muted/50 data-[state=off]:text-muted-foreground hover:data-[state=off]:bg-muted transition-all">
+                    Custom
                   </ToggleGroupItem>
                 </ToggleGroup>
                 {activeWorkspace ? (
