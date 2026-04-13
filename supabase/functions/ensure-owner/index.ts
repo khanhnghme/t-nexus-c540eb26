@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
 
       await supabaseAdmin.from('user_roles').upsert({
         user_id: adminId,
-        role: 'system_owner'
+        role: 'system:owner'
       }, { onConflict: 'user_id,role' })
 
       return new Response(
@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
 
     await supabaseAdmin.from('user_roles').upsert({
       user_id: adminId,
-      role: 'system_owner'
+      role: 'system:owner'
     }, { onConflict: 'user_id,role' })
 
     return new Response(
