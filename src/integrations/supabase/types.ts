@@ -1877,7 +1877,7 @@ export type Database = {
           social_links?: Json
           status_updated_at?: string | null
           storage_limit_mb?: number | null
-          student_id: string
+          student_id?: string
           suspended_at?: string | null
           suspended_by?: string | null
           suspended_until?: string | null
@@ -3325,10 +3325,6 @@ export type Database = {
         Returns: number
       }
       get_billing_role: { Args: { _user_id: string }; Returns: string }
-      get_email_by_student_id: {
-        Args: { _student_id: string }
-        Returns: string
-      }
       get_group_member_count_for_join: {
         Args: { _group_id: string }
         Returns: {
