@@ -134,7 +134,7 @@ export default function ResetPassword() {
         <Card className="w-full max-w-md shadow-card-lg">
           <CardContent className="pt-6 text-center space-y-4">
             <p className="text-muted-foreground">Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.</p>
-            <Button variant="outline" onClick={() => navigate('/auth')}>
+            <Button variant="outline" onClick={() => navigate('/login')}>
               Quay lại đăng nhập
             </Button>
           </CardContent>

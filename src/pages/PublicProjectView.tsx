@@ -246,7 +246,7 @@ export default function PublicProjectView() {
             
             {/* Login button */}
             <Button asChild variant="ghost" size="sm" className="gap-1 text-white hover:bg-white/10 hover:text-white px-2 sm:px-3">
-              <Link to="/auth">
+              <Link to="/login">
                 <LogIn className="w-4 h-4" />
                 <span className="hidden sm:inline text-sm">Đăng nhập</span>
               </Link>

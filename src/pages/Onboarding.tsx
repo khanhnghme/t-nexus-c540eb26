@@ -15,7 +15,7 @@ export default function Onboarding() {
   }, [refreshProfile]);
 
   if (isLoading) return null;
-  if (!user || !profile) return <Navigate to="/auth" replace />;
+  if (!user || !profile) return <Navigate to="/login" replace />;
   if (profile.onboarding_completed) return <Navigate to="/dashboard" replace />;
 
   return (
