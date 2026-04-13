@@ -188,7 +188,7 @@ export default function MemberManagementCard({
       }
     };
     fetchPendingInvitations();
-  }, [groupId, members]);
+  }, [groupId, members.length]);
 
   const handleCancelInvitation = async (invitationId: string) => {
     const { error } = await supabase
