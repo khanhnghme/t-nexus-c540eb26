@@ -12,6 +12,7 @@ import { Share2, Copy, ExternalLink, Users, Activity, Loader2, Lock, Unlock, Eye
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
+import tNexusLogo from '@/assets/t-nexus-logo.png';
 
 interface ShareSettingsCardProps {
   groupId: string;
