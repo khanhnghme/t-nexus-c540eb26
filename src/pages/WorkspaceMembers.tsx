@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
-  AlertDialogAction,
+  
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -485,17 +485,14 @@ export default function WorkspaceMembers() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isProcessing}>{tc.cancel}</AlertDialogCancel>
-            <AlertDialogAction
+            <Button
               onClick={executeConfirmAction}
               disabled={isProcessing}
-              className={confirmAction?.type === 'remove' || confirmAction?.type === 'bulk_remove'
-                ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                : ''
-              }
+              variant={confirmAction?.type === 'remove' || confirmAction?.type === 'bulk_remove' ? 'destructive' : 'default'}
             >
               {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               {tc.confirm}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
