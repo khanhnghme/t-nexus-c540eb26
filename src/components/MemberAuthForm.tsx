@@ -17,7 +17,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Hash, Lock, Users, Mail, User, UserPlus, LogIn, FileText, Shield, KeyRound, AlertTriangle, GraduationCap, Check, ChevronsUpDown, CheckCircle2, Wrench, ShieldAlert } from 'lucide-react';
+import { Loader2, Lock, Users, Mail, User, UserPlus, LogIn, FileText, Shield, KeyRound, AlertTriangle, GraduationCap, Check, ChevronsUpDown, CheckCircle2, Wrench, ShieldAlert, Hash } from 'lucide-react';
 import tNexusLogoWhite from '@/assets/t-nexus-text-white.png';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,12 +33,12 @@ import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 
 const loginSchema = (ta: Record<string, string>) => z.object({
-  identifier: z.string().min(1, ta.valIdentifierRequired),
+  identifier: z.string().min(1, ta.valIdentifierRequired).email(ta.valEmailFormat || 'Email không hợp lệ'),
   password: z.string().min(6, ta.valPasswordMin),
 });
 
 const registerSchema = (ta: Record<string, string>) => z.object({
-  studentId: z.string().min(1, ta.valStudentIdRequired).max(20, ta.valStudentIdMax),
+  studentId: z.string().max(20, ta.valStudentIdMax).optional().or(z.literal('')),
   fullName: z.string().min(1, ta.valFullNameRequired).max(100, ta.valFullNameMax),
   institution: z.string().min(1, ta.valInstitutionRequired),
   email: z.string().email(ta.valEmailInvalid).max(255, ta.valEmailMax),
@@ -287,36 +287,12 @@ export function MemberAuthForm() {
       turnstileRef.current?.reset();
 
       let loginEmail = input;
-      let profileQuery: 'email' | 'student_id' = isEmail ? 'email' : 'student_id';
-
-      if (!isEmail) {
-        // MSSV path: lookup email
-        const { data: foundEmail, error: lookupError } = await supabase
-          .rpc('get_email_by_student_id', { _student_id: input });
-
-        if (lookupError) {
-          setIsLoading(false);
-          toast({ title: ta.toastSystemError, description: ta.toastCannotCheckId, variant: 'destructive' });
-          return;
-        }
-
-        if (!foundEmail) {
-          setIsLoading(false);
-          toast({
-            title: ta.toastIdNotExist,
-            description: ta.toastIdNotExistDesc,
-            variant: 'destructive',
-          });
-          return;
-        }
-        loginEmail = foundEmail;
-      }
 
       // Check approval
       const { data: profileData } = await supabase
         .from('profiles')
         .select('is_approved, full_name')
-        .eq(profileQuery, input)
+        .eq('email', loginEmail)
         .maybeSingle();
 
       if (profileData && !profileData.is_approved) {
@@ -328,7 +304,7 @@ export function MemberAuthForm() {
         return;
       }
 
-      if (isEmail && !profileData) {
+      if (!profileData) {
         setIsLoading(false);
         toast({
           title: ta.toastEmailNotExist,
