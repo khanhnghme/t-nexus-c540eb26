@@ -259,6 +259,14 @@ export default function MemberManagementCard({
         .insert({ group_id: request.group_id, user_id: request.user_id, role: 'project_member' });
       if (memberError) throw memberError;
 
+      // Auto-add approved user to workspace
+      const { data: grp } = await supabase.from('groups').select('workspace_id').eq('id', groupId).single();
+      if (grp?.workspace_id) {
+        await supabase.functions.invoke('workspace-management', {
+          body: { action: 'ensure_workspace_member', workspace_id: grp.workspace_id, target_user_id: request.user_id },
+        });
+      }
+
       if (user && profile) {
         await logActivity({
           userId: user.id,
@@ -325,12 +333,20 @@ export default function MemberManagementCard({
     setIsBulkJoinProcessing(true);
     try {
       const selected = joinRequests.filter(r => selectedJoinRequestIds.has(r.id));
+      // Get workspace_id once for auto-sync
+      const { data: grp } = await supabase.from('groups').select('workspace_id').eq('id', groupId).single();
       for (const req of selected) {
         await supabase.from('pending_approvals')
           .update({ status: 'approved', processed_by: currentUserId, processed_at: new Date().toISOString() })
           .eq('id', req.id);
         await supabase.from('group_members')
           .insert({ group_id: req.group_id, user_id: req.user_id, role: 'project_member' });
+        // Auto-add to workspace
+        if (grp?.workspace_id) {
+          await supabase.functions.invoke('workspace-management', {
+            body: { action: 'ensure_workspace_member', workspace_id: grp.workspace_id, target_user_id: req.user_id },
+          });
+        }
       }
       toast({ title: 'Thành công', description: `Đã duyệt ${selected.length} yêu cầu` });
       setJoinRequests(prev => prev.filter(r => !selectedJoinRequestIds.has(r.id)));

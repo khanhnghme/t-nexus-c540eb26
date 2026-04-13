@@ -191,6 +191,24 @@ export default function GroupDetail() {
 
   useEffect(() => { if (routeId && user) fetchGroupData(); }, [routeId, user]);
 
+  // Realtime subscription on group_members for auto-refresh when members change
+  useEffect(() => {
+    const gId = group?.id;
+    if (!gId) return;
+    const channel = supabase
+      .channel(`group-members-rt-${gId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'group_members',
+        filter: `group_id=eq.${gId}`,
+      }, () => {
+        fetchGroupData();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [group?.id]);
+
   const fetchGroupData = async () => {
     if (!routeId) return;
     
