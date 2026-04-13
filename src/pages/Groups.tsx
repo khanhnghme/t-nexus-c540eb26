@@ -438,7 +438,21 @@ export default function Groups() {
     }
   };
 
-  if (isLoading) {
+  const filteredGroups = useMemo(() => {
+    let result = groups;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(g => g.name.toLowerCase().includes(q));
+    }
+    if (modeFilter !== 'all') {
+      result = result.filter(g => g.project_mode === modeFilter);
+    }
+    if (visibilityFilter !== 'all') {
+      result = result.filter(g => g.visibility === visibilityFilter);
+    }
+    return result;
+  }, [groups, searchQuery, modeFilter, visibilityFilter]);
+
     return (
       <>
         <div className="flex items-center justify-center min-h-[60vh]">
