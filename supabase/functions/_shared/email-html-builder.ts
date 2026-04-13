@@ -60,8 +60,6 @@ function emailDoctype(locale: EmailLocale = 'vi'): string {
     @media only screen and (max-width: 600px) {
       .email-container { width: 100% !important; max-width: 100% !important; }
       .email-padding { padding-left: 24px !important; padding-right: 24px !important; }
-      .otp-digit { width: 34px !important; height: 44px !important; font-size: 20px !important; line-height: 44px !important; }
-      .otp-table { margin: 0 auto !important; }
     }
   </style>`;
 }
@@ -142,17 +140,12 @@ export function buildBrandedOtpEmail(options: EmailOptions): string {
   const year = new Date().getFullYear();
   const t = getEmailTexts(locale);
 
-  const digitBoxes = otpCode
-    .split("")
-    .map(
-      (d) =>
-        `<td style="padding:0 3px;">
-          <div class="otp-digit" style="width:40px;height:50px;background-color:${C.accentLight};border:1.5px solid ${C.accentBorder};border-radius:8px;line-height:50px;text-align:center;font-size:24px;font-weight:700;color:${C.accent};font-family:'Courier New',Courier,monospace;">
-            ${d}
-          </div>
-        </td>`
-    )
-    .join("");
+  const otpDisplay = `<div style="text-align:center;margin:0 0 8px;">
+              <span style="display:inline-block;padding:14px 28px;background-color:${C.accentLight};border:1.5px solid ${C.accentBorder};border-radius:8px;font-size:28px;font-weight:700;letter-spacing:10px;color:${C.accent};font-family:'Courier New',Courier,monospace;">${otpCode}</span>
+            </div>
+            <p style="margin:0 0 28px;color:${C.subtle};font-size:11px;text-align:center;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
+              ${t.otpEnterCode}
+            </p>`;
 
   return `${emailDoctype(locale)}
   <title>${title}</title>
@@ -178,15 +171,7 @@ export function buildBrandedOtpEmail(options: EmailOptions): string {
               ${expiryText}
             </p>
 
-            <!-- OTP Digits -->
-            <div style="text-align:center;">
-              <table class="otp-table" cellpadding="0" cellspacing="0" role="presentation" align="center" style="margin:0 auto 8px;">
-                <tr>${digitBoxes}</tr>
-              </table>
-            </div>
-            <p style="margin:0 0 28px;color:${C.subtle};font-size:11px;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
-              ${t.otpEnterCode}
-            </p>
+            ${otpDisplay}
 
             <!-- Divider -->
             <div style="height:1px;background-color:${C.border};margin-bottom:20px;"></div>
