@@ -138,7 +138,7 @@ serve(async (req: Request) => {
     if (body.action === "create_member") {
       const { email, student_id, full_name, institution } = body;
       
-      if (!email || !student_id || !full_name) {
+      if (!email || !full_name) {
         return new Response(JSON.stringify({ error: "Missing required fields" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
