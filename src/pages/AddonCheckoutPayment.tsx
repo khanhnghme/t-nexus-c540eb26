@@ -447,23 +447,7 @@ export default function AddonCheckoutPayment() {
                 </button>
                 {paymentMethodOpen && (
                   <div className="px-3 pb-3 pt-1">
-                    {paymentStatus === 'processing' ? (
-                      <div className="flex flex-col items-center justify-center py-8 gap-4 text-center">
-                        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                        <div className="space-y-1">
-                          <p className="font-semibold">
-                            {isVi ? 'Đang xác nhận thanh toán với PayPal' : 'Confirming payment with PayPal'}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {isVi ? 'Hệ thống đang xác minh giao dịch của bạn...' : 'The system is verifying your transaction...'}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-300">
-                          <AlertTriangle className="h-4 w-4 shrink-0" />
-                          <span>{isVi ? 'Vui lòng không thoát hoặc tải lại trang' : 'Please do not leave or reload this page'}</span>
-                        </div>
-                      </div>
-                    ) : orderExpired ? (
+                    {orderExpired ? (
                       <div className="flex flex-col items-center justify-center py-6 gap-2 text-center">
                         <AlertTriangle className="h-5 w-5 text-destructive" />
                         <p className="text-sm text-destructive font-medium">
