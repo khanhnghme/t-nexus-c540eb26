@@ -1,71 +1,108 @@
 
 
-## Bước 12: Cập nhật Edge Functions
+## Bước 13: Cleanup — Xóa deprecated aliases, sửa role strings còn sót
 
 ### Mục tiêu
-Thay tất cả role string cũ (underscore) sang format `resource:role` mới trong 3 edge functions.
+1. Xóa deprecated aliases trong `AuthContext` (`isOwnerSystem`, `isLeader` compat aliases)
+2. Sửa tất cả legacy role strings còn sót trong client-side code
+3. Cleanup legacy types trong `database.ts`
+4. Cập nhật các component/page còn dùng underscore role strings
 
-### Lưu ý quan trọng
-Database function `get_workspace_role()` đã trả về format mới (`workspace:owner`, `workspace:admin`) từ Bước 3. Nên các so sánh với kết quả RPC **phải** dùng format mới, nếu không sẽ **luôn fail**.
+### Phạm vi thay đổi — 13 files
 
-### Phạm vi thay đổi — 3 files
+#### 1. `src/contexts/AuthContext.tsx` — Xóa deprecated aliases
 
-#### 1. `supabase/functions/workspace-management/index.ts` (~20 vị trí)
+- Xóa `isOwnerSystem` (alias của `isSystemOwner`) — thay bằng `isSystemOwner` ở nơi sử dụng
+- Xóa `isLeader` (alias của `isSystemAdmin`) — thay bằng `isSystemAdmin` ở nơi sử dụng
+- Giữ `isAdmin` vì được dùng rộng rãi (alias `isSystemAdmin`)
 
-**So sánh với kết quả `get_workspace_role()` RPC:**
-| Dòng | Trước | Sau |
-|------|-------|-----|
-| 166 | `"workspace_owner"` / `"workspace_admin"` | `"workspace:owner"` / `"workspace:admin"` |
-| 226 | `"workspace_owner"` / `"workspace_admin"` | `"workspace:owner"` / `"workspace:admin"` |
-| 349-350 | `"workspace_owner"` / `"workspace_admin"` | `"workspace:owner"` / `"workspace:admin"` |
-| 564 | `"workspace_admin"` | `"workspace:admin"` |
-| 653 | `"workspace_owner"` / `"workspace_admin"` | `"workspace:owner"` / `"workspace:admin"` |
-| 667,672 | `"workspace_admin"` | `"workspace:admin"` |
+#### 2. `src/types/database.ts` — Cleanup legacy types
 
-**Default role khi insert/validate:**
-| Dòng | Trước | Sau |
-|------|-------|-----|
-| 216 | `"workspace_member"` | `"workspace:member"` |
-| 217-218 | validate `"workspace_admin"` / `"workspace_member"` | `"workspace:admin"` / `"workspace:member"` |
-| 522 | insert `"workspace_member"` | `"workspace:member"` |
-| 615 | insert `"workspace_member"` | `"workspace:member"` |
-| 703-704 | validate `"workspace_admin"` / `"workspace_member"` | `"workspace:admin"` / `"workspace:member"` |
-| 875 | insert `"workspace_admin"` | `"workspace:admin"` |
+- `WorkspaceRole`: xóa legacy values `'workspace_owner' | 'workspace_admin' | 'workspace_member' | 'owner' | 'admin' | 'member'`
+- Xóa hoàn toàn `SystemRoleLegacy`, `WorkspaceRoleLegacy`, `ProjectRoleLegacy` types
 
-**Project role so sánh:**
-| Dòng | Trước | Sau |
-|------|-------|-----|
-| 334 | `"project_member"` | `"project_basic:member"` |
-| 351-352 | `"project_owner"` / `"project_admin"` | `"project_basic:owner"` / `"project_basic:admin"` |
-| 573 | `["project_owner", "project_admin"]` | `["project_basic:owner", "project_basic:admin"]` |
+#### 3. `src/components/layout/DashboardLayout.tsx` (2 vị trí)
 
-**Display labels (trả về client):**
-| Dòng | Trước | Sau |
-|------|-------|-----|
-| 762 | `my_role: "workspace_owner"` | `my_role: "workspace:owner"` |
-| 821 | `role: "workspace_owner"` | `role: "workspace:owner"` |
+| Vị trí | Trước | Sau |
+|--------|-------|-----|
+| Dòng 250 | `workspaceRole !== 'workspace_owner'` | `workspaceRole !== 'workspace:owner'` |
+| Dòng 325, 367 | Destructure `isLeader` từ `useAuth()` | Đổi sang `isSystemAdmin` hoặc xóa logic `isLeader` |
 
-#### 2. `supabase/functions/team-assistant/index.ts` (3 vị trí)
+#### 4. `src/components/SidebarTreeNav.tsx` (6 vị trí)
+
+| Trước | Sau |
+|-------|-----|
+| `'workspace_owner'` | `'workspace:owner'` |
+| `'workspace_admin'` | `'workspace:admin'` |
+| `'workspace_member'` | `'workspace:member'` |
+
+#### 5. `src/pages/Groups.tsx` (5 vị trí)
 
 | Dòng | Trước | Sau |
 |------|-------|-----|
-| 317 | `m.role === 'project_owner' \|\| m.role === 'project_admin'` | `m.role === 'project_basic:owner' \|\| m.role === 'project_basic:admin'` |
-| 351 | `context.currentUser.role === 'project_owner' \|\| ... 'project_admin'` | `... 'project_basic:owner' \|\| ... 'project_basic:admin'` |
-| 887 | `'project_member'` (fallback) | `'project_basic:member'` |
+| 197 | `'project_member'` (fallback myRole) | `'project_basic:member'` |
+| 378 | `role: 'project_admin'` (insert) | `role: 'project_basic:admin'` |
+| 388 | `role: 'project_member'` (invitation) | `role: 'project_basic:member'` |
+| 430-434 | `getRoleBadge` switch: `'project_owner'`, `'project_admin'`, `'project_member'` | `'project_basic:owner'`, `'project_basic:admin'`, `'project_basic:member'` |
+| 970 | `group.myRole === 'project_admin'` | `group.myRole === 'project_basic:admin'` |
 
-#### 3. `supabase/functions/ensure-owner/index.ts` (2 vị trí)
+#### 6. `src/pages/CreateCustomProject.tsx` (1 vị trí)
 
 | Dòng | Trước | Sau |
 |------|-------|-----|
-| 59 | `role: 'system_owner'` | `role: 'system:owner'` |
-| 92 | `role: 'system_owner'` | `role: 'system:owner'` |
+| 109 | `role: "project_admin" as any` | `role: "project_basic:admin"` |
+
+#### 7. `src/pages/AdminUsers.tsx` (3 vị trí)
+
+| Dòng | Trước | Sau |
+|------|-------|-----|
+| 318 | `role: 'project_member'` (insert) | `role: 'project_basic:member'` |
+| 476-479 | `m.role === 'project_owner'`/`'project_admin'` | `'project_basic:owner'`/`'project_basic:admin'` |
+| 811 | `'project_member'` (default) | `'project_basic:member'` |
+
+#### 8. `src/pages/TaskDetail.tsx` (1 vị trí)
+
+| Dòng | Trước | Sau |
+|------|-------|-----|
+| 59 | `'project_admin'` / `'project_owner'` | `'project_basic:admin'` / `'project_basic:owner'` |
+
+#### 9. `src/pages/Dashboard.tsx` (1 vị trí)
+
+| Dòng | Trước | Sau |
+|------|-------|-----|
+| 826 | `inv.role === 'project_admin'` | `inv.role === 'project_basic:admin'` |
+
+#### 10. `src/components/AdminBackupRestore.tsx` (2 vị trí)
+
+| Dòng | Trước | Sau |
+|------|-------|-----|
+| 1604 | `role: 'project_admin'` | `role: 'project_basic:admin'` |
+| 1697 | `role: 'project_admin'` | `role: 'project_basic:admin'` |
+
+#### 11. `src/components/communication/MessageItem.tsx` (1 vị trí)
+
+| Dòng | Trước | Sau |
+|------|-------|-----|
+| 186 | `'project_admin'` / `'project_owner'` | `'project_basic:admin'` / `'project_basic:owner'` |
+
+#### 12. `src/components/JoinByCodeDialog.tsx` (1 vị trí)
+
+| Dòng | Trước | Sau |
+|------|-------|-----|
+| 188 | `role: 'project_member'` | `role: 'project_basic:member'` |
+
+#### 13. `src/components/TaskSubmissionDialog.tsx` + `src/components/calendar/CalendarTaskDetailDialog.tsx` + `src/lib/projectEvidencePdf.ts` (4 vị trí)
+
+- `TaskSubmissionDialog.tsx` dòng 451: `'project_admin'` → `'project_basic:admin'`
+- `CalendarTaskDetailDialog.tsx` dòng 131: `'project_admin'`/`'project_owner'` → `'project_basic:admin'`/`'project_basic:owner'`
+- `projectEvidencePdf.ts` dòng 201, 645: `'project_admin'` → `'project_basic:admin'`
 
 ### Không thay đổi
-- Không sửa client-side code, hooks, contexts, hay pages
-- Không sửa database functions hay migrations (đã cập nhật ở Bước 3)
-- Các edge functions khác (`manage-users`, `email-digest`, `process-plan-cycle`, v.v.) không chứa role strings cần thay
+- `actionType: 'project_member'` trong `activityLogger.ts` và `MemberManagement.tsx` — đây là **activity log type**, không phải role string
+- `roleFilter` cases trong `MemberManagement.tsx` — đây là **UI filter keys**, không phải role comparisons
+- Edge functions (đã xong ở Bước 12)
+- Database (đã xong ở Bước 3)
 
-### Rủi ro
-- `workspace-management` là edge function quan trọng nhất — nếu bỏ sót 1 vị trí, permission check sẽ **luôn fail** vì RPC đã trả format mới
-- Cần deploy lại cả 3 edge functions sau khi sửa
+### Kết quả sau bước này
+Sau khi hoàn thành, chạy `grep -rn` sẽ không còn bất kỳ legacy underscore role string nào được dùng làm **role comparison** trong toàn bộ codebase. Refactor phân quyền `resource:role` hoàn tất.
 
