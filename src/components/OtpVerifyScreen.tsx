@@ -74,7 +74,7 @@ export function OtpVerifyScreen({ email, userId, fullName, studentId, onVerified
 
     try {
       const { data, error } = await supabase.functions.invoke('signup-email-otp', {
-        body: { action: 'resend_code', email, user_id: userId },
+        body: { action: 'resend_code', email, user_id: userId, locale: t.app?.locale || undefined },
       });
 
       if (error || !data?.success) {

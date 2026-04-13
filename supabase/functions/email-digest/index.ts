@@ -168,10 +168,10 @@ Deno.serve(async (req) => {
       if (!digest) continue;
 
       const totalTasks = digest.deadlines.length + digest.newTasks.length;
+      const locale: EmailLocale = (profile as any).preferred_locale === 'en' ? 'en' : 'vi';
+      const t = getEmailTexts(locale);
 
-      const subject = `📊 Cập nhật hàng ngày${
-        digest.deadlines.length > 0 ? ` - ${digest.deadlines.length} deadline sắp hết` : ""
-      }${digest.newTasks.length > 0 ? ` + ${digest.newTasks.length} task mới` : ""}`;
+      const subject = t.digestSubject(digest.deadlines.length, digest.newTasks.length);
 
       const deadlineItems = digest.deadlines.map((task: any) => {
         const deadline = new Date(task.deadline);
@@ -181,8 +181,8 @@ Deno.serve(async (req) => {
 
       const newTaskItems = digest.newTasks.map((task: any) => {
         const deadlineDisplay = task.deadline
-          ? new Date(task.deadline).toLocaleDateString("vi-VN")
-          : "Chưa có";
+          ? new Date(task.deadline).toLocaleDateString(locale === 'en' ? "en-US" : "vi-VN")
+          : t.digestNoDeadline;
         return { title: task.title, project: task.project, deadlineDisplay };
       });
 
@@ -190,6 +190,7 @@ Deno.serve(async (req) => {
         recipientName: profile.full_name,
         deadlineTasks: deadlineItems,
         newTasks: newTaskItems,
+        locale,
       });
 
 
