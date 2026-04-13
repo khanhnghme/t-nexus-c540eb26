@@ -211,7 +211,7 @@ export default function ShareSettingsCard({
       const approvalText = requireApproval ? 'Cần duyệt' : 'Vào ngay';
       ctx.fillText(`Giới hạn: ${limitText}  ·  ${approvalText}`, 100, infoY);
 
-      // — Steps (clean, minimal)
+      // — Steps (clean, detailed)
       infoY += 30;
       ctx.fillStyle = '#111111';
       ctx.font = '600 12px system-ui, -apple-system, sans-serif';
@@ -220,8 +220,9 @@ export default function ShareSettingsCard({
       ctx.fillStyle = '#555555';
       ctx.font = '12px system-ui, -apple-system, sans-serif';
       const steps = [
-        '1. Quét mã QR hoặc truy cập t-nexus.io.vn',
-        `2. Nhấn "Tham gia dự án" → Nhập mã: ${code}`,
+        '1. Quét mã QR hoặc truy cập t-nexus.io.vn/join?code=' + code,
+        '2. Đăng nhập tài khoản T-Nexus (hoặc đăng ký nếu chưa có)',
+        '3. Xác nhận tham gia dự án',
       ];
       steps.forEach((step) => {
         ctx.fillText(step, 100, infoY);
