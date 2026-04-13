@@ -83,33 +83,41 @@ Deno.serve(async (req) => {
       billingCycle: order.billing_cycle,
     });
 
-    // 2. Generate PDF invoice
-    const pdfBytes = buildInvoicePdf({ order, profile });
-
-    // 3. Save PDF to R2 Storage bucket "invoices"
-    const storagePath = `${userId}/${order.order_code || order.id}.pdf`;
+    // 2. Try to generate PDF invoice (non-blocking)
+    let pdfBytes: Uint8Array | null = null;
     try {
-      const r2Endpoint = Deno.env.get("R2_ENDPOINT")!.replace(/\/+$/, '');
-      const r2 = new AwsClient({
-        accessKeyId: Deno.env.get("R2_ACCESS_KEY_ID")!,
-        secretAccessKey: Deno.env.get("R2_SECRET_ACCESS_KEY")!,
-      });
-      const r2Url = `${r2Endpoint}/invoices/${storagePath}`;
-      const r2Res = await r2.fetch(r2Url, {
-        method: "PUT",
-        headers: { "Content-Type": "application/pdf" },
-        body: pdfBytes,
-      });
-      if (r2Res.ok) {
-        console.log("[payment-email] PDF saved to R2:", storagePath);
-      } else {
-        console.warn("[payment-email] R2 upload failed (non-blocking):", r2Res.status, await r2Res.text());
-      }
-    } catch (uploadErr: any) {
-      console.warn("[payment-email] R2 upload error (non-blocking):", uploadErr.message);
+      pdfBytes = await buildInvoicePdf({ order, profile });
+      console.log("[payment-email] PDF generated successfully, size:", pdfBytes.length);
+    } catch (pdfErr: any) {
+      console.error("[payment-email] PDF generation failed (will send email without attachment):", pdfErr.message);
     }
 
-    // 4. Send email via Resend with PDF attachment
+    // 3. Save PDF to R2 Storage bucket "invoices" (if PDF was generated)
+    if (pdfBytes) {
+      const storagePath = `${userId}/${order.order_code || order.id}.pdf`;
+      try {
+        const r2Endpoint = Deno.env.get("R2_ENDPOINT")!.replace(/\/+$/, '');
+        const r2 = new AwsClient({
+          accessKeyId: Deno.env.get("R2_ACCESS_KEY_ID")!,
+          secretAccessKey: Deno.env.get("R2_SECRET_ACCESS_KEY")!,
+        });
+        const r2Url = `${r2Endpoint}/invoices/${storagePath}`;
+        const r2Res = await r2.fetch(r2Url, {
+          method: "PUT",
+          headers: { "Content-Type": "application/pdf" },
+          body: pdfBytes,
+        });
+        if (r2Res.ok) {
+          console.log("[payment-email] PDF saved to R2:", storagePath);
+        } else {
+          console.warn("[payment-email] R2 upload failed (non-blocking):", r2Res.status, await r2Res.text());
+        }
+      } catch (uploadErr: any) {
+        console.warn("[payment-email] R2 upload error (non-blocking):", uploadErr.message);
+      }
+    }
+
+    // 4. Send email via Resend (with or without PDF attachment)
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     const SENDER_EMAIL = Deno.env.get("SENDER_EMAIL") || "T-Nexus <noreply@t-nexus.io.vn>";
 
@@ -120,14 +128,23 @@ Deno.serve(async (req) => {
       });
     }
 
-    const pdfFilename = `Invoice-${order.order_code || orderId.slice(0, 8)}.pdf`;
+    const emailPayload: any = {
+      from: SENDER_EMAIL,
+      to: [profile.email],
+      subject: `Xác nhận thanh toán — T-Nexus (${order.order_code || ""})`,
+      html: emailHtml,
+    };
 
-    // Convert Uint8Array to base64
-    let binary = "";
-    for (let i = 0; i < pdfBytes.length; i++) {
-      binary += String.fromCharCode(pdfBytes[i]);
+    // Attach PDF if available
+    if (pdfBytes) {
+      const pdfFilename = `Invoice-${order.order_code || orderId.slice(0, 8)}.pdf`;
+      let binary = "";
+      for (let i = 0; i < pdfBytes.length; i++) {
+        binary += String.fromCharCode(pdfBytes[i]);
+      }
+      const pdfBase64 = btoa(binary);
+      emailPayload.attachments = [{ filename: pdfFilename, content: pdfBase64 }];
     }
-    const pdfBase64 = btoa(binary);
 
     const resendRes = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -135,18 +152,7 @@ Deno.serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        from: SENDER_EMAIL,
-        to: [profile.email],
-        subject: `Xác nhận thanh toán — T-Nexus (${order.order_code || ""})`,
-        html: emailHtml,
-        attachments: [
-          {
-            filename: pdfFilename,
-            content: pdfBase64,
-          },
-        ],
-      }),
+      body: JSON.stringify(emailPayload),
     });
 
     const resendData = await resendRes.json();
@@ -174,10 +180,10 @@ Deno.serve(async (req) => {
       template_name: "payment_confirmation",
       status: "sent",
       message_id: resendData.id || null,
-      metadata: { order_id: orderId, order_code: order.order_code },
+      metadata: { order_id: orderId, order_code: order.order_code, has_pdf: !!pdfBytes },
     });
 
-    console.log("[payment-email] Sent PDF invoice to", profile.email, "for order", orderId);
+    console.log("[payment-email] Sent to", profile.email, "for order", orderId, "pdf:", !!pdfBytes);
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

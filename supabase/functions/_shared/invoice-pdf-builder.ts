@@ -1,13 +1,12 @@
 /**
- * Server-side PDF invoice builder using jsPDF
- * Generates a professional invoice matching the PrintableInvoice component layout
+ * Server-side PDF invoice builder using pdf-lib (Deno-compatible)
  */
-import { jsPDF } from "https://esm.sh/jspdf@2.5.2";
+import { PDFDocument, rgb, StandardFonts } from "https://esm.sh/pdf-lib@1.17.1";
 
 const ADDON_TYPES = [
-  { type: "projects", emoji: "📁", unitLabel: "+5 dự án" },
-  { type: "storage", emoji: "💾", unitLabel: "+5 GB lưu trữ" },
-  { type: "members", emoji: "👥", unitLabel: "+10 thành viên" },
+  { type: "projects", emoji: "📁", unitLabel: "+5 du an" },
+  { type: "storage", emoji: "💾", unitLabel: "+5 GB luu tru" },
+  { type: "members", emoji: "👥", unitLabel: "+10 thanh vien" },
 ];
 const ADDON_PRICE_MONTHLY = 2.49;
 
@@ -25,12 +24,22 @@ function formatDate(d: string | null): string {
   return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}/${date.getFullYear()} ${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
 }
 
+// Color helpers
+const gray900 = rgb(17 / 255, 24 / 255, 39 / 255);
+const gray700 = rgb(55 / 255, 65 / 255, 81 / 255);
+const gray500 = rgb(107 / 255, 114 / 255, 128 / 255);
+const gray400 = rgb(156 / 255, 163 / 255, 175 / 255);
+const gray200 = rgb(229 / 255, 231 / 255, 235 / 255);
+const green700 = rgb(21 / 255, 128 / 255, 61 / 255);
+const green600 = rgb(22 / 255, 163 / 255, 74 / 255);
+const blue600 = rgb(37 / 255, 99 / 255, 235 / 255);
+
 interface InvoicePdfParams {
   order: any;
   profile: any;
 }
 
-export function buildInvoicePdf(params: InvoicePdfParams): Uint8Array {
+export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Array> {
   const { order, profile } = params;
   const addons: Array<{ type: string; quantity: number }> = Array.isArray(order.addons) ? order.addons : [];
   const cycle = order.billing_cycle;
@@ -38,197 +47,159 @@ export function buildInvoicePdf(params: InvoicePdfParams): Uint8Array {
   const planLabel = PLAN_LABELS[order.plan] || order.plan || "Add-on";
   const invoiceNumber = order.order_code ? `INV-${order.order_code}` : `INV-${order.id?.slice(0, 8)?.toUpperCase()}`;
 
-  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  const pageW = doc.internal.pageSize.getWidth();
-  const margin = 20;
-  const contentW = pageW - margin * 2;
-  let y = margin;
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage([595.28, 841.89]); // A4
+  const { width: pageW, height: pageH } = page.getSize();
 
-  // Colors
-  const gray900 = [17, 24, 39];
-  const gray700 = [55, 65, 81];
-  const gray500 = [107, 114, 128];
-  const gray400 = [156, 163, 175];
-  const gray200 = [229, 231, 235];
-  const green700 = [21, 128, 61];
-  const green600 = [22, 163, 74];
-  const red600 = [220, 38, 38];
-  const blue600 = [37, 99, 235];
+  const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const courier = await pdfDoc.embedFont(StandardFonts.Courier);
+
+  const margin = 56.7; // ~20mm
+  const contentW = pageW - margin * 2;
+  let y = pageH - margin;
+
+  // Helper: draw text
+  const drawText = (text: string, x: number, yPos: number, opts: {
+    font?: any; size?: number; color?: any; align?: "left" | "right" | "center";
+  } = {}) => {
+    const font = opts.font || helvetica;
+    const size = opts.size || 8;
+    const color = opts.color || gray900;
+    const tw = font.widthOfTextAtSize(text, size);
+    let finalX = x;
+    if (opts.align === "right") finalX = x - tw;
+    else if (opts.align === "center") finalX = x - tw / 2;
+    page.drawText(text, { x: finalX, y: yPos, size, font, color });
+    return tw;
+  };
+
+  const drawLine = (x1: number, yPos: number, x2: number, thickness = 0.5) => {
+    page.drawLine({ start: { x: x1, y: yPos }, end: { x: x2, y: yPos }, thickness, color: gray200 });
+  };
 
   // ─── Header ────────────────────────────────────────────────────
-  doc.setFontSize(22);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...gray900);
-  doc.text("HÓA ĐƠN", margin, y + 7);
-
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...gray500);
-  doc.text("Biên nhận thanh toán điện tử", margin, y + 13);
-
-  doc.setFontSize(9);
-  doc.setFont("courier", "bold");
-  doc.setTextColor(...gray700);
-  doc.text(invoiceNumber, margin, y + 19);
+  drawText("HOA DON", margin, y, { font: helveticaBold, size: 22, color: gray900 });
+  y -= 10;
+  drawText("Bien nhan thanh toan dien tu", margin, y, { size: 8, color: gray500 });
+  y -= 8;
+  drawText(invoiceNumber, margin, y, { font: courier, size: 9, color: gray700 });
 
   // Right side — brand
-  doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...blue600);
-  doc.text("T-Nexus", pageW - margin, y + 8, { align: "right" });
+  drawText("T-Nexus", pageW - margin, y + 18, { font: helveticaBold, size: 18, color: blue600, align: "right" });
+  drawText("Dich vu quan ly du an so", pageW - margin, y + 8, { size: 7, color: gray400, align: "right" });
 
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...gray400);
-  doc.text("Dịch vụ quản lý dự án số", pageW - margin, y + 14, { align: "right" });
-
-  y += 24;
+  y -= 10;
 
   // Divider
-  doc.setDrawColor(...gray200);
-  doc.setLineWidth(0.5);
-  doc.line(margin, y, pageW - margin, y);
-  y += 8;
+  drawLine(margin, y, pageW - margin);
+  y -= 12;
 
   // ─── Invoice Info + Customer (2 columns) ───────────────────────
   const colW = contentW / 2;
 
   // Left: Invoice Details
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...gray400);
-  doc.text("THÔNG TIN HÓA ĐƠN", margin, y);
-  y += 5;
+  drawText("THONG TIN HOA DON", margin, y, { font: helveticaBold, size: 7, color: gray400 });
+  y -= 8;
 
   const infoLines: [string, string][] = [
-    ["Mã đơn hàng:", order.order_code || "—"],
-    ["Ngày tạo:", formatDate(order.created_at)],
+    ["Ma don hang:", order.order_code || "—"],
+    ["Ngay tao:", formatDate(order.created_at)],
   ];
   if (isCompleted && order.completed_at) {
-    infoLines.push(["Ngày thanh toán:", formatDate(order.completed_at)]);
+    infoLines.push(["Ngay thanh toan:", formatDate(order.completed_at)]);
   }
-  infoLines.push(["Phương thức:", (order.payment_method || "PayPal").toUpperCase()]);
-  infoLines.push(["Trạng thái:", isCompleted ? "Đã thanh toán" : "Thất bại"]);
+  infoLines.push(["Phuong thuc:", (order.payment_method || "PayPal").toUpperCase()]);
+  infoLines.push(["Trang thai:", isCompleted ? "Da thanh toan" : "That bai"]);
 
   const infoStartY = y;
   for (const [label, value] of infoLines) {
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...gray500);
-    doc.text(label, margin, y);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(isCompleted && label === "Trạng thái:" ? [...green700] : [...gray900]);
-    doc.text(` ${value}`, margin + doc.getTextWidth(label) + 1, y);
-    y += 4.5;
+    const labelW = drawText(label, margin, y, { size: 8, color: gray500 });
+    drawText(` ${value}`, margin + labelW + 2, y, {
+      font: helveticaBold,
+      size: 8,
+      color: label === "Trang thai:" && isCompleted ? green700 : gray900,
+    });
+    y -= 12;
   }
 
   // Right: Customer Info
-  let yRight = infoStartY - 5;
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...gray400);
-  doc.text("THÔNG TIN KHÁCH HÀNG", margin + colW, yRight);
-  yRight += 5;
+  let yRight = infoStartY + 8;
+  drawText("THONG TIN KHACH HANG", margin + colW, yRight, { font: helveticaBold, size: 7, color: gray400 });
+  yRight -= 8;
 
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...gray900);
-  doc.text(profile?.full_name || "—", margin + colW, yRight);
-  yRight += 4.5;
+  drawText(profile?.full_name || "—", margin + colW, yRight, { font: helveticaBold, size: 9, color: gray900 });
+  yRight -= 12;
 
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...gray700);
-  doc.text(profile?.email || "—", margin + colW, yRight);
-  yRight += 4.5;
+  drawText(profile?.email || "—", margin + colW, yRight, { size: 8, color: gray700 });
+  yRight -= 12;
 
   if (profile?.student_id) {
-    doc.text(`MSSV: ${profile.student_id}`, margin + colW, yRight);
-    yRight += 4.5;
+    drawText(`MSSV: ${profile.student_id}`, margin + colW, yRight, { size: 8, color: gray700 });
+    yRight -= 12;
   }
   if (profile?.institution) {
-    doc.text(`Trường: ${profile.institution}`, margin + colW, yRight);
-    yRight += 4.5;
+    drawText(`Truong: ${profile.institution}`, margin + colW, yRight, { size: 8, color: gray700 });
+    yRight -= 12;
   }
 
-  y = Math.max(y, yRight) + 6;
+  y = Math.min(y, yRight) - 8;
 
   // ─── Billing Period ────────────────────────────────────────────
   if (isCompleted && order.plan && (profile?.plan_started_at || profile?.plan_expires_at)) {
-    doc.setFillColor(249, 250, 251);
-    doc.setDrawColor(...gray200);
-    doc.roundedRect(margin, y, contentW, 14, 2, 2, "FD");
-    y += 4;
+    page.drawRectangle({
+      x: margin, y: y - 28, width: contentW, height: 32,
+      color: rgb(249 / 255, 250 / 255, 251 / 255),
+      borderColor: gray200, borderWidth: 0.5,
+    });
 
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...gray400);
-    doc.text("CHU KỲ THANH TOÁN", margin + 4, y);
-    y += 4.5;
+    drawText("CHU KY THANH TOAN", margin + 8, y - 4, { font: helveticaBold, size: 7, color: gray400 });
 
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...gray700);
     const parts: string[] = [];
-    if (profile?.plan_started_at) parts.push(`Kích hoạt: ${formatDate(profile.plan_started_at)}`);
-    if (profile?.plan_expires_at) parts.push(`Hết hạn: ${formatDate(profile.plan_expires_at)}`);
-    parts.push(`Chu kỳ: ${cycle === "yearly" ? "12 tháng" : "1 tháng"}`);
-    doc.text(parts.join("    "), margin + 4, y);
-    y += 8;
+    if (profile?.plan_started_at) parts.push(`Kich hoat: ${formatDate(profile.plan_started_at)}`);
+    if (profile?.plan_expires_at) parts.push(`Het han: ${formatDate(profile.plan_expires_at)}`);
+    parts.push(`Chu ky: ${cycle === "yearly" ? "12 thang" : "1 thang"}`);
+    drawText(parts.join("    "), margin + 8, y - 18, { size: 8, color: gray700 });
+
+    y -= 40;
   }
 
-  y += 2;
+  y -= 4;
 
   // ─── Line Items Table ──────────────────────────────────────────
-  const cols = [margin, margin + 8, margin + 8 + contentW * 0.45, margin + 8 + contentW * 0.65, margin + 8 + contentW * 0.78];
   const colEnd = pageW - margin;
 
   // Header row
-  doc.setDrawColor(...gray200);
-  doc.setLineWidth(0.4);
-  doc.line(margin, y, pageW - margin, y);
-  y += 4;
+  drawLine(margin, y, pageW - margin);
+  y -= 12;
 
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...gray700);
-  doc.text("#", cols[0], y);
-  doc.text("Mô tả", cols[1], y);
-  doc.text("Đơn giá", cols[2], y);
-  doc.text("SL", cols[3], y);
-  doc.text("Thành tiền", colEnd, y, { align: "right" });
-  y += 2;
+  drawText("#", margin, y, { font: helveticaBold, size: 8, color: gray700 });
+  drawText("Mo ta", margin + 16, y, { font: helveticaBold, size: 8, color: gray700 });
+  drawText("Don gia", margin + contentW * 0.5, y, { font: helveticaBold, size: 8, color: gray700 });
+  drawText("SL", margin + contentW * 0.65, y, { font: helveticaBold, size: 8, color: gray700 });
+  drawText("Thanh tien", colEnd, y, { font: helveticaBold, size: 8, color: gray700, align: "right" });
+  y -= 6;
 
-  doc.setLineWidth(0.4);
-  doc.line(margin, y, pageW - margin, y);
-  y += 5;
+  drawLine(margin, y, pageW - margin);
+  y -= 14;
 
   let itemNum = 0;
 
   // Plan row
   if (order.plan) {
     itemNum++;
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...gray900);
-    doc.text(String(itemNum), cols[0], y);
-    doc.text(`${planLabel} Plan`, cols[1], y);
-    doc.setFont("helvetica", "normal");
-    doc.text(`$${(order.base_amount || 0).toFixed(2)}`, cols[2], y);
-    doc.text("1", cols[3], y);
-    doc.setFont("helvetica", "bold");
-    doc.text(`$${(order.base_amount || 0).toFixed(2)}`, colEnd, y, { align: "right" });
-    y += 3.5;
+    drawText(String(itemNum), margin, y, { font: helveticaBold, size: 8, color: gray900 });
+    drawText(`${planLabel} Plan`, margin + 16, y, { font: helveticaBold, size: 8, color: gray900 });
+    drawText(`$${(order.base_amount || 0).toFixed(2)}`, margin + contentW * 0.5, y, { size: 8, color: gray900 });
+    drawText("1", margin + contentW * 0.65, y, { size: 8, color: gray900 });
+    drawText(`$${(order.base_amount || 0).toFixed(2)}`, colEnd, y, { font: helveticaBold, size: 8, color: gray900, align: "right" });
+    y -= 10;
 
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...gray500);
-    doc.text(cycle === "yearly" ? "Gói năm (12 tháng)" : "Gói tháng (1 tháng)", cols[1], y);
-    y += 4;
+    drawText(cycle === "yearly" ? "Goi nam (12 thang)" : "Goi thang (1 thang)", margin + 16, y, { size: 7, color: gray500 });
+    y -= 10;
 
-    doc.setDrawColor(243, 244, 246);
-    doc.line(margin, y, pageW - margin, y);
-    y += 4;
+    page.drawLine({ start: { x: margin, y }, end: { x: pageW - margin, y }, thickness: 0.3, color: rgb(243 / 255, 244 / 255, 246 / 255) });
+    y -= 10;
   }
 
   // Addon rows
@@ -239,147 +210,100 @@ export function buildInvoicePdf(params: InvoicePdfParams): Uint8Array {
     const unitPrice = cycle === "yearly" ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
     const lineTotal = unitPrice * addon.quantity;
 
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...gray900);
-    doc.text(String(itemNum), cols[0], y);
-    doc.text(`${meta.unitLabel}`, cols[1], y);
-    doc.setFont("helvetica", "normal");
-    doc.text(`$${unitPrice.toFixed(2)}`, cols[2], y);
-    doc.text(String(addon.quantity), cols[3], y);
-    doc.setFont("helvetica", "bold");
-    doc.text(`$${lineTotal.toFixed(2)}`, colEnd, y, { align: "right" });
-    y += 3.5;
+    drawText(String(itemNum), margin, y, { font: helveticaBold, size: 8, color: gray900 });
+    drawText(meta.unitLabel, margin + 16, y, { font: helveticaBold, size: 8, color: gray900 });
+    drawText(`$${unitPrice.toFixed(2)}`, margin + contentW * 0.5, y, { size: 8, color: gray900 });
+    drawText(String(addon.quantity), margin + contentW * 0.65, y, { size: 8, color: gray900 });
+    drawText(`$${lineTotal.toFixed(2)}`, colEnd, y, { font: helveticaBold, size: 8, color: gray900, align: "right" });
+    y -= 10;
 
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...gray500);
-    doc.text("Gói bổ sung", cols[1], y);
-    y += 4;
+    drawText("Goi bo sung", margin + 16, y, { size: 7, color: gray500 });
+    y -= 10;
 
-    doc.setDrawColor(243, 244, 246);
-    doc.line(margin, y, pageW - margin, y);
-    y += 4;
+    page.drawLine({ start: { x: margin, y }, end: { x: pageW - margin, y }, thickness: 0.3, color: rgb(243 / 255, 244 / 255, 246 / 255) });
+    y -= 10;
   }
 
   // Subtotal
-  doc.setDrawColor(...gray200);
-  doc.line(margin, y, pageW - margin, y);
-  y += 5;
+  drawLine(margin, y, pageW - margin);
+  y -= 14;
 
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...gray500);
-  doc.text("Tạm tính", colEnd - 30, y, { align: "right" });
-  doc.setTextColor(...gray900);
-  doc.text(`$${((order.base_amount || 0) + (order.addon_amount || 0)).toFixed(2)}`, colEnd, y, { align: "right" });
-  y += 5;
+  drawText("Tam tinh", colEnd - 60, y, { size: 8, color: gray500, align: "right" });
+  drawText(`$${((order.base_amount || 0) + (order.addon_amount || 0)).toFixed(2)}`, colEnd, y, { size: 8, color: gray900, align: "right" });
+  y -= 14;
 
   // Discounts
   if ((order.discount_amount || 0) > 0) {
-    doc.setTextColor(...green700);
-    const discLabel = order.coupon_code ? `Mã giảm giá (${order.coupon_code})` : "Giảm giá";
-    doc.text(discLabel, colEnd - 30, y, { align: "right" });
-    doc.text(`-$${order.discount_amount.toFixed(2)}`, colEnd, y, { align: "right" });
-    y += 5;
+    const discLabel = order.coupon_code ? `Ma giam gia (${order.coupon_code})` : "Giam gia";
+    drawText(discLabel, colEnd - 60, y, { size: 8, color: green700, align: "right" });
+    drawText(`-$${order.discount_amount.toFixed(2)}`, colEnd, y, { size: 8, color: green700, align: "right" });
+    y -= 14;
   }
 
   if ((order.welcome_discount || 0) > 0) {
-    doc.setTextColor(...green700);
-    doc.text("Ưu đãi chào mừng", colEnd - 30, y, { align: "right" });
-    doc.text(`-$${order.welcome_discount.toFixed(2)}`, colEnd, y, { align: "right" });
-    y += 5;
+    drawText("Uu dai chao mung", colEnd - 60, y, { size: 8, color: green700, align: "right" });
+    drawText(`-$${order.welcome_discount.toFixed(2)}`, colEnd, y, { size: 8, color: green700, align: "right" });
+    y -= 14;
   }
 
   // Total
-  doc.setDrawColor(...gray700);
-  doc.setLineWidth(0.6);
-  doc.line(margin, y, pageW - margin, y);
-  y += 6;
+  page.drawLine({ start: { x: margin, y }, end: { x: pageW - margin, y }, thickness: 0.8, color: gray700 });
+  y -= 16;
 
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...gray900);
-  doc.text("TỔNG CỘNG", colEnd - 40, y, { align: "right" });
-  doc.text(`$${(order.total_amount || 0).toFixed(2)} USD`, colEnd, y, { align: "right" });
-  y += 10;
+  drawText("TONG CONG", colEnd - 80, y, { font: helveticaBold, size: 11, color: gray900, align: "right" });
+  drawText(`$${(order.total_amount || 0).toFixed(2)} USD`, colEnd, y, { font: helveticaBold, size: 11, color: gray900, align: "right" });
+  y -= 20;
 
   // ─── Notes ─────────────────────────────────────────────────────
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...gray700);
-  doc.text("Ghi chú", margin, y);
-  y += 4;
+  drawText("Ghi chu", margin, y, { font: helveticaBold, size: 8, color: gray700 });
+  y -= 10;
 
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...gray500);
   const notes = [
-    "Thanh toán được xử lý qua cổng PayPal quốc tế.",
-    "Gói dịch vụ sẽ tự động kích hoạt sau khi thanh toán thành công.",
-    "Mọi thắc mắc vui lòng liên hệ support@t-nexus.io.vn.",
+    "Thanh toan duoc xu ly qua cong PayPal quoc te.",
+    "Goi dich vu se tu dong kich hoat sau khi thanh toan thanh cong.",
+    "Moi thac mac vui long lien he support@t-nexus.io.vn.",
   ];
   for (const note of notes) {
-    doc.text(`• ${note}`, margin, y);
-    y += 3.5;
+    drawText(`- ${note}`, margin, y, { size: 7, color: gray500 });
+    y -= 10;
   }
-  y += 4;
+  y -= 4;
 
   // ─── Signature & Stamp ─────────────────────────────────────────
-  doc.setDrawColor(...gray200);
-  doc.setLineWidth(0.3);
-  doc.line(margin, y, pageW - margin, y);
-  y += 6;
+  drawLine(margin, y, pageW - margin);
+  y -= 16;
 
   // PAID stamp (left)
   if (isCompleted) {
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...green600);
-    doc.setDrawColor(...green600);
-    doc.setLineWidth(0.8);
-    doc.roundedRect(margin, y - 2, 40, 12, 2, 2, "S");
-    doc.text("ĐÃ THANH TOÁN", margin + 3, y + 6);
+    page.drawRectangle({
+      x: margin, y: y - 6, width: 120, height: 24,
+      borderColor: green600, borderWidth: 1.2,
+    });
+    drawText("DA THANH TOAN", margin + 8, y, { font: helveticaBold, size: 14, color: green600 });
   }
 
   // Signature (right)
-  const sigX = pageW - margin - 40;
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...gray400);
-  doc.text("Chữ ký điện tử", sigX + 20, y, { align: "center" });
+  const sigX = pageW - margin - 100;
+  drawText("Chu ky dien tu", sigX + 50, y + 10, { size: 7, color: gray400, align: "center" });
 
-  y += 12;
-  doc.setDrawColor(...gray400);
-  doc.line(sigX, y, sigX + 40, y);
-  y += 4;
+  y -= 14;
+  page.drawLine({ start: { x: sigX + 10, y }, end: { x: sigX + 90, y }, thickness: 0.4, color: gray400 });
+  y -= 10;
 
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...gray900);
-  doc.text("T-Nexus System", sigX + 20, y, { align: "center" });
-  y += 3.5;
-
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...gray400);
-  doc.text(formatDate(order.completed_at || order.created_at), sigX + 20, y, { align: "center" });
-  y += 8;
+  drawText("T-Nexus System", sigX + 50, y, { font: helveticaBold, size: 9, color: gray900, align: "center" });
+  y -= 10;
+  drawText(formatDate(order.completed_at || order.created_at), sigX + 50, y, { size: 7, color: gray400, align: "center" });
+  y -= 16;
 
   // ─── Footer ────────────────────────────────────────────────────
-  doc.setDrawColor(...gray200);
-  doc.line(margin, y, pageW - margin, y);
-  y += 4;
+  drawLine(margin, y, pageW - margin);
+  y -= 10;
 
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...gray500);
-  doc.text("Đây là hóa đơn điện tử được tạo tự động bởi hệ thống T-Nexus.", pageW / 2, y, { align: "center" });
-  y += 3.5;
-  doc.setTextColor(...gray400);
-  doc.text("Hỗ trợ: support@t-nexus.io.vn | https://t-nexus.io.vn", pageW / 2, y, { align: "center" });
+  drawText("Day la hoa don dien tu duoc tao tu dong boi he thong T-Nexus.", pageW / 2, y, { size: 7, color: gray500, align: "center" });
+  y -= 10;
+  drawText("Ho tro: support@t-nexus.io.vn | https://t-nexus.io.vn", pageW / 2, y, { size: 7, color: gray400, align: "center" });
 
   // Return as Uint8Array
-  const arrayBuf = doc.output("arraybuffer");
-  return new Uint8Array(arrayBuf);
+  const pdfBytes = await pdfDoc.save();
+  return new Uint8Array(pdfBytes);
 }
