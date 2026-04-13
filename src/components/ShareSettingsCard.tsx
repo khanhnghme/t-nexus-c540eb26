@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -8,9 +8,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { logActivity } from '@/lib/activityLogger';
 import { supabase } from '@/integrations/supabase/client';
-import { Share2, Copy, ExternalLink, Users, Activity, Loader2, Lock, Unlock, Eye, FolderOpen, KeyRound, Layers, Trophy, ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
+import { Share2, Copy, ExternalLink, Users, Activity, Loader2, Lock, Unlock, Eye, FolderOpen, KeyRound, Layers, Trophy, ChevronDown, ChevronRight, RefreshCw, Download } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
+import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 
 interface ShareSettingsCardProps {
   groupId: string;
