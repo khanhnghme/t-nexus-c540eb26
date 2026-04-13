@@ -580,7 +580,7 @@ export default function Landing() {
               <img src={tNexusTextWhite} alt="T-Nexus" className="h-5 w-auto" />
             </a>
 
-            <nav className="hidden items-center gap-1 lg:flex">
+            <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 lg:flex">
               {NAV_ITEMS.map((item) => (
                 <a
                   key={item.label}
