@@ -1,11 +1,12 @@
-import { Link } from 'react-router-dom';
-import { useState, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useState, useMemo, useCallback } from 'react';
 import { Check, ArrowLeft, Plus, Minus } from 'lucide-react';
 import tNexusText from '@/assets/t-nexus-text.png';
 import gmailLogo from '@/assets/gmail-logo.png';
 import googleDriveLogo from '@/assets/google-drive-logo.png';
 import googleCalendarLogo from '@/assets/google-calendar-logo.png';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import LanguageToggle from '@/components/LanguageToggle';
 
 /* ═══════════════════════ Types ═══════════════════════ */
@@ -44,8 +45,36 @@ function formatPrice(monthly: number | null, yearly: boolean): string {
 export default function Pricing() {
   const [yearly, setYearly] = useState(false);
   const { translations: t, localizedPath: lp } = useLanguage();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const tp = t.pricing;
   const tc = t.common;
+
+  const handleCTA = useCallback((planName: string) => {
+    // Map plan display name back to plan key
+    const nameToKey: Record<string, string> = {
+      [tp.plans.free.name]: 'plan_free',
+      [tp.plans.plus.name]: 'plan_plus',
+      [tp.plans.pro.name]: 'plan_pro',
+      [tp.plans.business.name]: 'plan_business',
+      [tp.plans.enterprise.name]: 'plan_custom',
+    };
+    const planKey = nameToKey[planName] || 'plan_free';
+
+    if (planKey === 'plan_custom') {
+      navigate(lp('/feedback'));
+      return;
+    }
+    if (!user) {
+      navigate(lp('/auth'));
+      return;
+    }
+    if (planKey === 'plan_free') {
+      navigate(lp('/dashboard'));
+      return;
+    }
+    navigate(`/checkout?plan=${planKey}`);
+  }, [user, navigate, lp, tp]);
 
   const LEFT_PLANS: Plan[] = useMemo(() => [
     { name: tp.plans.free.name, monthlyPrice: 0, description: tp.plans.free.description, cta: tp.plans.free.cta, ctaStyle: 'outline', features: tp.plans.free.features },
@@ -158,7 +187,7 @@ export default function Pricing() {
               padding: '24px 22px 28px',
               borderRight: idx < LEFT_PLANS.length - 1 ? '1px solid rgba(55,53,47,0.09)' : 'none',
             }}>
-              <PlanColumn plan={plan} yearly={yearly} tp={tp} />
+              <PlanColumn plan={plan} yearly={yearly} tp={tp} onCTA={() => handleCTA(plan.name)} />
             </div>
           ))}
         </div>
@@ -185,7 +214,7 @@ export default function Pricing() {
               padding: '24px 22px 28px',
               borderRight: idx < RIGHT_PLANS.length - 1 ? '1px solid rgba(55,53,47,0.09)' : 'none',
             }}>
-              <PlanColumn plan={plan} yearly={yearly} tp={tp} />
+              <PlanColumn plan={plan} yearly={yearly} tp={tp} onCTA={() => handleCTA(plan.name)} />
             </div>
           ))}
         </div>
@@ -228,7 +257,7 @@ export default function Pricing() {
         </div>
 
         {/* ── Plans and features — full comparison table ── */}
-        <PlansAndFeatures yearly={yearly} planCols={PLAN_COLS} comparison={COMPARISON} tp={tp} />
+        <PlansAndFeatures yearly={yearly} planCols={PLAN_COLS} comparison={COMPARISON} tp={tp} onCTA={handleCTA} />
 
         {/* ── Questions & answers ── */}
         <QuestionsAndAnswers faqData={FAQ_DATA} tp={tp} />
@@ -303,7 +332,7 @@ const GOOGLE_INTEGRATIONS = [
   { logo: googleCalendarLogo, label: 'Calendar Sync — Two-way real-time sync' },
 ];
 
-function PlanColumn({ plan, yearly, tp }: { plan: Plan; yearly: boolean; tp: any }) {
+function PlanColumn({ plan, yearly, tp, onCTA }: { plan: Plan; yearly: boolean; tp: any; onCTA?: () => void }) {
   const price = formatPrice(plan.monthlyPrice, yearly);
   const isCustom = plan.monthlyPrice === null;
 
@@ -351,6 +380,7 @@ function PlanColumn({ plan, yearly, tp }: { plan: Plan; yearly: boolean; tp: any
       <div style={{ marginBottom: 20 }}>
         {plan.ctaStyle === 'primary' ? (
           <button
+            onClick={onCTA}
             style={{
               width: '100%', padding: '7px 14px', fontSize: 14, fontWeight: 500,
               border: 'none', borderRadius: 8, cursor: 'pointer',
@@ -364,6 +394,7 @@ function PlanColumn({ plan, yearly, tp }: { plan: Plan; yearly: boolean; tp: any
           </button>
         ) : (
           <button
+            onClick={onCTA}
             style={{
               width: '100%', padding: '7px 14px', fontSize: 14, fontWeight: 500,
               border: '1px solid rgba(55,53,47,0.16)',
@@ -428,7 +459,7 @@ const CONNECTED_TOOLS_CATEGORY: FeatureCategory = {
   ],
 };
 
-function PlansAndFeatures({ yearly, planCols, comparison, tp }: { yearly: boolean; planCols: any[]; comparison: FeatureCategory[]; tp: any }) {
+function PlansAndFeatures({ yearly, planCols, comparison, tp, onCTA }: { yearly: boolean; planCols: any[]; comparison: FeatureCategory[]; tp: any; onCTA: (planName: string) => void }) {
   const fullComparison = [...comparison, CONNECTED_TOOLS_CATEGORY];
 
   return (
@@ -475,6 +506,7 @@ function PlansAndFeatures({ yearly, planCols, comparison, tp }: { yearly: boolea
                     {isCustom ? tp.contactUs : <>{price}<span style={{ fontWeight: 400 }}> / {tp.mo}</span></>}
                   </div>
                   <button
+                    onClick={() => onCTA(col.name)}
                     style={{
                       padding: '4px 10px', fontSize: 12, fontWeight: 500, borderRadius: 6, cursor: 'pointer',
                       border: col.primary ? 'none' : '1px solid rgba(55,53,47,0.16)',
