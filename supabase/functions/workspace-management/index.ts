@@ -537,34 +537,72 @@ serve(async (req: Request) => {
     }
 
     // ═══════════════════════════════════════════════
-    // ENSURE WORKSPACE MEMBER (auto-add caller if they belong to a project in this workspace)
+    // ENSURE WORKSPACE MEMBER (auto-add caller or target_user_id if they belong to a project in this workspace)
     // ═══════════════════════════════════════════════
     if (body.action === "ensure_workspace_member") {
       if (!callerId) return err("Authentication required", 401);
       if (!body.workspace_id) return err("workspace_id required");
 
-      // Verify caller is a member of at least one project in this workspace
+      // Determine which user to add: target_user_id (if caller is admin/owner) or caller themselves
+      let targetUserId = callerId;
+      if (body.target_user_id && body.target_user_id !== callerId) {
+        // Verify caller is workspace owner or admin
+        const { data: ws } = await supabaseAdmin
+          .from("workspaces")
+          .select("owner_id")
+          .eq("id", body.workspace_id)
+          .single();
+        const isOwner = ws?.owner_id === callerId;
+        let isWsAdmin = false;
+        if (!isOwner) {
+          const { data: callerMembership } = await supabaseAdmin
+            .from("workspace_members")
+            .select("role")
+            .eq("workspace_id", body.workspace_id)
+            .eq("user_id", callerId)
+            .single();
+          isWsAdmin = callerMembership?.role === "workspace_admin";
+        }
+        // Also allow project leaders in this workspace
+        let isProjectLeader = false;
+        if (!isOwner && !isWsAdmin) {
+          const { data: leaderGroups } = await supabaseAdmin
+            .from("group_members")
+            .select("groups!inner(workspace_id)")
+            .eq("user_id", callerId)
+            .in("role", ["project_owner", "project_admin"]);
+          isProjectLeader = (leaderGroups || []).some(
+            (mg: any) => mg.groups?.workspace_id === body.workspace_id
+          );
+        }
+        if (!isOwner && !isWsAdmin && !isProjectLeader) {
+          return err("Only workspace owner/admin or project leader can add other users", 403);
+        }
+        targetUserId = body.target_user_id;
+      }
+
+      // Verify target user is a member of at least one project in this workspace
       const { data: memberGroups } = await supabaseAdmin
         .from("group_members")
         .select("groups!inner(workspace_id)")
-        .eq("user_id", callerId);
+        .eq("user_id", targetUserId);
 
       const belongsToWs = (memberGroups || []).some(
         (mg: any) => mg.groups?.workspace_id === body.workspace_id
       );
 
       if (!belongsToWs) {
-        return err("You are not a member of any project in this workspace", 403);
+        return err("Target user is not a member of any project in this workspace", 403);
       }
 
       // Check not already owner
-      const { data: ws } = await supabaseAdmin
+      const { data: ws2 } = await supabaseAdmin
         .from("workspaces")
         .select("owner_id")
         .eq("id", body.workspace_id)
         .single();
 
-      if (ws?.owner_id === callerId) {
+      if (ws2?.owner_id === targetUserId) {
         return json({ success: true, already_member: true });
       }
 
@@ -573,12 +611,13 @@ serve(async (req: Request) => {
         .upsert(
           {
             workspace_id: body.workspace_id,
-            user_id: callerId,
+            user_id: targetUserId,
             role: "workspace_member",
           },
           { onConflict: "workspace_id,user_id", ignoreDuplicates: true }
         );
 
+      console.log(`[workspace-mgmt] ensure_workspace_member: added ${targetUserId} to workspace ${body.workspace_id}`);
       return json({ success: true });
     }
 
