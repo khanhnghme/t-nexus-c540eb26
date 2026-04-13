@@ -1,48 +1,36 @@
 
 
-## Plan: Fix & hoàn thiện hệ thống email xác nhận thanh toán
+## Plan: Fix 3 lỗi chặn email thanh toán
 
-### Đánh giá hiện trạng
+### Phân tích lỗi từ logs
 
-Đã hoàn thành:
-- ✅ Edge Function `payment-confirmation-email` — đầy đủ logic
-- ✅ PDF invoice builder (`invoice-pdf-builder.ts`) — layout chuyên nghiệp
-- ✅ Email template (`buildPaymentConfirmationEmail`) — gọn, rõ ràng
-- ✅ R2 upload lưu trữ PDF
-- ✅ Resend API gửi email với PDF đính kèm
-- ✅ Cột `payment_email_sent` (idempotency) — đã có trong DB
-- ✅ Log thành công/thất bại vào `email_send_log`
-- ✅ Trigger từ `capture-paypal-order` (2 chỗ: addon + plan)
-- ✅ Trigger từ `paypal-webhook` (2 chỗ)
-- ✅ `config.toml` — `verify_jwt = false`
-
-### Vấn đề cần fix
-
-**1. Edge Function chưa được deploy**
-- Logs trống → function chưa bao giờ chạy hoặc chưa deploy phiên bản mới nhất
-- Cần deploy lại: `payment-confirmation-email`, `capture-paypal-order`, `paypal-webhook`
-
-**2. jsPDF có thể không hoạt động trong Deno Edge Function**
-- `jsPDF` là thư viện browser-oriented, import qua `esm.sh` có thể gặp lỗi runtime do thiếu `window`/`document` trong Deno
-- Cần thêm polyfill hoặc chuyển sang thư viện PDF tương thích Deno (ví dụ: `pdf-lib`)
-- `pdf-lib` là thư viện pure JavaScript, chạy tốt trên mọi runtime (Deno, Node, browser)
-
-**3. Thiếu error handling cho PDF generation failure**
-- Nếu `buildInvoicePdf()` throw error, toàn bộ function fail → email không gửi được
-- Cần wrap PDF generation trong try/catch — nếu PDF lỗi thì vẫn gửi email (không đính kèm)
+```text
+Lỗi 1 (CHẶN EMAIL):  Resend 422 — Invalid `from` field
+Lỗi 2 (CHẶN PDF):    WinAnsi cannot encode "ễ" — font không hỗ trợ tiếng Việt
+Lỗi 3 (NON-BLOCKING): R2 NoSuchBucket — bucket "invoices" chưa tạo
+```
 
 ### Changes
 
-**1. Viết lại `invoice-pdf-builder.ts` dùng `pdf-lib`**
-- Thay `jsPDF` bằng `pdf-lib` (import từ `https://esm.sh/pdf-lib@1.17.1`)
-- Giữ nguyên layout và nội dung hiện tại
-- `pdf-lib` chạy native trên Deno, không cần DOM
+**1. Fix SENDER_EMAIL secret**
+- Yêu cầu cập nhật secret `SENDER_EMAIL` với giá trị đúng format: `T-Nexus <noreply@t-nexus.io.vn>`
+- Đồng thời domain `t-nexus.io.vn` phải được verify trên Resend dashboard. Nếu chưa verify, tạm dùng `onboarding@resend.dev` để test
 
-**2. Cập nhật `payment-confirmation-email/index.ts`**
-- Wrap `buildInvoicePdf()` trong try/catch
-- Nếu PDF fail → vẫn gửi email không đính kèm + log warning
-- Đảm bảo email luôn được gửi dù PDF có lỗi
+**2. Fix PDF tiếng Việt trong `invoice-pdf-builder.ts`**
+- Thay toàn bộ text tiếng Việt có dấu bằng text ASCII không dấu hoặc tiếng Anh
+- Ví dụ: "Hóa đơn" → "Invoice", "Ngày thanh toán" → "Payment date", v.v.
+- pdf-lib với StandardFonts chỉ hỗ trợ WinAnsi encoding (Latin cơ bản), không thể render tiếng Việt có dấu
 
-**3. Deploy tất cả Edge Functions liên quan**
-- Deploy: `payment-confirmation-email`, `capture-paypal-order`, `paypal-webhook`
+**3. R2 bucket "invoices" — bỏ qua hoặc tạo bucket**
+- Code đã có try/catch non-blocking, email vẫn gửi được dù R2 fail
+- Nếu muốn lưu PDF, cần tạo bucket `invoices` trên Cloudflare R2 dashboard
+- Hoặc bỏ logic upload R2 nếu không cần lưu trữ PDF riêng (vì đã gửi qua email attachment)
+
+**4. Deploy lại edge function**
+- Deploy: `payment-confirmation-email`
+
+### Thứ tự ưu tiên
+1. Fix SENDER_EMAIL → email gửi được ngay
+2. Fix PDF text → PDF tạo được → đính kèm email
+3. R2 bucket → optional, không ảnh hưởng email
 
