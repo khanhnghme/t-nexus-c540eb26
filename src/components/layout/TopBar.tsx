@@ -124,10 +124,10 @@ export default function TopBar() {
     <div className="grid-cell-topbar">
       <div className={cn(
         "flex items-center gap-1 min-w-0 overflow-x-auto scrollbar-none",
-        isProjectMode && "flex-1 justify-center"
+        isProjectMode && !isCustomMode && "flex-1 justify-center"
       )}>
         {isProjectMode ? (
-          <div className="flex items-center gap-0.5 mx-auto">
+          <div className={cn("flex items-center gap-0.5", !isCustomMode && "mx-auto")}>
             {isCustomMode && (
               <>
                 <Tooltip>
