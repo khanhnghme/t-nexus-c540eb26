@@ -243,26 +243,25 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
 
       {/* Electronic Signature & Stamp — compact */}
       <div className="flex justify-between items-end mt-4 pt-3 border-t border-gray-200" style={{ pageBreakInside: 'avoid' }}>
-        {isCompleted && (
-          <div>
-            <p
-              className="font-bold text-green-600 text-base uppercase px-3 py-1 inline-block"
-              style={{
-                border: '2px solid #16a34a',
-                borderRadius: 6,
-                transform: 'rotate(-12deg)',
-                opacity: 0.8,
-              }}
-            >
-              {isVi ? 'ĐÃ THANH TOÁN' : 'PAID'}
+        {/* QR code — left side */}
+        {invoiceQrUrl && (
+          <div className="flex flex-col items-center">
+            <QRCodeSVG value={invoiceQrUrl} size={60} level="M" />
+            <p className="text-[8px] text-gray-400 mt-0.5">
+              {isVi ? 'Quét để xem' : 'Scan to view'}
             </p>
           </div>
         )}
 
         <div className="text-center" style={{ width: 160 }}>
-          <p className="text-[10px] text-gray-400 mb-8">
+          <p className="text-[10px] text-gray-400 mb-3">
             {isVi ? 'Chữ ký điện tử' : 'Electronic Signature'}
           </p>
+          {isCompleted && (
+            <p className="text-[11px] font-bold text-green-600 mb-1">
+              {isVi ? '✓ ĐÃ THANH TOÁN' : '✓ PAID'}
+            </p>
+          )}
           <div className="border-b border-gray-400 w-full mb-1" />
           <p className="font-bold text-gray-800 text-xs">T-Nexus System</p>
           <p className="text-[9px] text-gray-400">
@@ -273,16 +272,6 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
 
       {/* Footer — compact */}
       <div className="border-t border-gray-200 pt-2 mt-3 space-y-0.5 text-center">
-        {invoiceQrUrl && (
-          <div className="flex justify-center mb-2">
-            <div className="flex flex-col items-center">
-              <QRCodeSVG value={invoiceQrUrl} size={70} level="M" />
-              <p className="text-[8px] text-gray-400 mt-0.5">
-                {isVi ? 'Quét để xem hóa đơn' : 'Scan to view invoice'}
-              </p>
-            </div>
-          </div>
-        )}
         <p className="text-[10px] text-gray-500">
           {isVi
             ? 'Đây là hóa đơn điện tử được tạo tự động bởi hệ thống T-Nexus.'
