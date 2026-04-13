@@ -575,12 +575,12 @@ export default function Landing() {
             transition: 'background-color 0.3s, border-bottom 0.3s',
           }}
         >
-          <div className="flex h-16 w-full items-center justify-between px-4 sm:px-6 lg:px-10">
+          <div className="relative flex h-16 w-full items-center justify-between px-4 sm:px-6 lg:px-10">
             <a href="#top" className="flex items-center gap-3">
               <img src={tNexusTextWhite} alt="T-Nexus" className="h-5 w-auto" />
             </a>
 
-            <nav className="hidden items-center gap-1 lg:flex">
+            <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 lg:flex">
               {NAV_ITEMS.map((item) => (
                 <a
                   key={item.label}
