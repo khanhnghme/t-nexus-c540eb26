@@ -453,45 +453,71 @@ export default function ShareSettingsCard({
         <CardContent className="space-y-3 pt-0">
           {localAllowJoin && localJoinCode ? (
             <>
-              <div className="flex gap-2 items-center">
-                <div className="flex-1 bg-muted/50 border rounded-lg px-4 py-3 text-center text-3xl font-bold tracking-[0.5em] font-mono select-all">
+              {/* Compact inline: QR + Code + Actions */}
+              <div className="flex gap-3 items-center">
+                <div className="shrink-0 rounded-lg border bg-background p-1.5">
+                  <QRCodeSVG value={`https://t-nexus.io.vn/join?code=${localJoinCode}`} size={56} level="M" />
+                </div>
+                <div className="flex-1 bg-muted/50 border rounded-lg px-3 py-2.5 text-center text-2xl font-bold tracking-[0.4em] font-mono select-all">
                   {localJoinCode}
                 </div>
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-9 w-9"
+                    className="h-8 w-8"
                     onClick={() => {
+                      const joinUrl = `https://t-nexus.io.vn/join?code=${localJoinCode}`;
                       const inviteText = [
                         `🎯 Bạn được mời tham gia dự án${groupName ? ` "${groupName}"` : ''}!`,
                         ``,
                         `📋 Mã tham gia: ${localJoinCode}`,
+                        `🔗 Link: ${joinUrl}`,
                         ``,
                         `👉 Cách tham gia:`,
-                        `1. Truy cập ứng dụng`,
-                        `2. Nhấn "Tham gia bằng mã"`,
+                        `1. Quét mã QR hoặc truy cập t-nexus.io.vn`,
+                        `2. Nhấn "Tham gia dự án"`,
                         `3. Nhập mã: ${localJoinCode}`,
                       ].join('\n');
                       navigator.clipboard.writeText(inviteText);
                       toast({ title: 'Đã sao chép mã kèm lời mời' });
                     }}
-                    title="Sao chép mã"
+                    title="Sao chép lời mời"
                   >
                     <Copy className="w-3.5 h-3.5" />
                   </Button>
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-9 w-9"
+                    className="h-8 w-8"
                     onClick={handleRegenerateJoinCode}
                     title="Tạo mã mới"
                     disabled={isUpdating}
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${isUpdating ? 'animate-spin' : ''}`} />
                   </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => handleDownloadInviteImage(localJoinCode, groupName || 'Dự án', localMemberLimit, localRequireApproval)}
+                    title="Tải ảnh mời"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                  </Button>
                 </div>
               </div>
+
+              {/* Hidden QR canvas for download */}
+              <div id="hidden-qr-canvas" className="hidden">
+                <QRCodeCanvas value={`https://t-nexus.io.vn/join?code=${localJoinCode}`} size={200} level="H" />
+              </div>
+
+              {/* Brief instruction */}
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                📱 Quét QR hoặc vào <span className="font-medium">t-nexus.io.vn</span> → Tham gia dự án → Nhập mã
+              </p>
+
               {/* Collapsible sub-settings */}
               <Collapsible>
                 <CollapsibleTrigger className="w-full flex items-center justify-between p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors group">
@@ -502,7 +528,6 @@ export default function ShareSettingsCard({
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <div className="space-y-3 p-3 pt-2">
-                    {/* Require approval toggle */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
@@ -534,7 +559,6 @@ export default function ShareSettingsCard({
                         }
                       </p>
                     </div>
-                    {/* Member limit setting */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
@@ -594,9 +618,6 @@ export default function ShareSettingsCard({
                   </div>
                 </CollapsibleContent>
               </Collapsible>
-              <p className="text-xs text-muted-foreground">
-                Chia sẻ mã 6 ký tự này cho thành viên muốn tự tham gia project
-              </p>
             </>
           ) : (
             <p className="text-sm text-muted-foreground py-2">
