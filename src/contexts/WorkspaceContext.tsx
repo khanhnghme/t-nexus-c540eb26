@@ -62,6 +62,31 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         })),
       ];
 
+      // 3. Discover workspaces through project memberships (for guests)
+      const { data: guestGroups } = await (supabase as any)
+        .from('group_members')
+        .select('groups!inner(workspace_id)')
+        .eq('user_id', user.id)
+        .eq('is_guest', true);
+
+      const existingWsIds = new Set(allWorkspaces.map(w => w.id));
+      const guestWsIds = [...new Set(
+        (guestGroups || [])
+          .map((g: any) => g.groups?.workspace_id)
+          .filter((id: string) => id && !existingWsIds.has(id))
+      )];
+
+      if (guestWsIds.length > 0) {
+        const { data: guestWsData } = await (supabase as any)
+          .from('workspaces')
+          .select('*')
+          .in('id', guestWsIds);
+
+        allWorkspaces.push(
+          ...(guestWsData || []).map((w: any) => ({ ...w, my_role: null as unknown as WorkspaceRole }))
+        );
+      }
+
       setWorkspaces(allWorkspaces);
 
       const savedWsId = localStorage.getItem(ACTIVE_WS_KEY);
