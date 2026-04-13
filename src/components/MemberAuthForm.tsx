@@ -423,7 +423,15 @@ export function MemberAuthForm() {
         pendingLoginRef.current = false;
         sessionStorage.removeItem('t-nexus_login_in_progress');
         toast({ title: ta.toastLoginSuccess, description: ta.toastWelcomeBack });
-        navigate('/dashboard');
+
+        // Check for post-login redirect (e.g. from /join?code=...)
+        const postLoginRedirect = sessionStorage.getItem('t-nexus_post_login_redirect');
+        if (postLoginRedirect) {
+          sessionStorage.removeItem('t-nexus_post_login_redirect');
+          navigate(postLoginRedirect);
+        } else {
+          navigate('/dashboard');
+        }
       }
     } catch (err) {
       pendingLoginRef.current = false;
