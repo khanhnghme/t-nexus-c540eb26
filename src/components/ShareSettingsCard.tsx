@@ -143,17 +143,17 @@ export default function ShareSettingsCard({
       ctx.fillText(name.length > 45 ? name.slice(0, 42) + '...' : name, w / 2, 120);
 
       // QR Code section with decorative frame
-      const qrSize = 200;
+      const qrSize = 240;
       const qrX = (w - qrSize) / 2;
-      const qrY = 145;
+      const qrY = 140;
 
       // QR background card
       ctx.fillStyle = '#ffffff';
-      ctx.shadowColor = 'rgba(99, 102, 241, 0.12)';
-      ctx.shadowBlur = 20;
-      ctx.shadowOffsetY = 4;
+      ctx.shadowColor = 'rgba(99, 102, 241, 0.15)';
+      ctx.shadowBlur = 24;
+      ctx.shadowOffsetY = 6;
       ctx.beginPath();
-      ctx.roundRect(qrX - 16, qrY - 16, qrSize + 32, qrSize + 32, 16);
+      ctx.roundRect(qrX - 20, qrY - 20, qrSize + 40, qrSize + 40, 16);
       ctx.fill();
       ctx.shadowColor = 'transparent';
 
@@ -161,13 +161,15 @@ export default function ShareSettingsCard({
       ctx.strokeStyle = '#e2e8f0';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.roundRect(qrX - 16, qrY - 16, qrSize + 32, qrSize + 32, 16);
+      ctx.roundRect(qrX - 20, qrY - 20, qrSize + 40, qrSize + 40, 16);
       ctx.stroke();
 
-      // Draw QR from hidden canvas (which already has logo via imageSettings)
+      // Draw QR from hidden canvas (high-res 400px, scaled down to qrSize)
       const hiddenQR = document.querySelector('#hidden-qr-canvas canvas') as HTMLCanvasElement;
       if (hiddenQR) {
+        ctx.imageSmoothingEnabled = false;
         ctx.drawImage(hiddenQR, qrX, qrY, qrSize, qrSize);
+        ctx.imageSmoothingEnabled = true;
       }
 
       // Code display with accent background
