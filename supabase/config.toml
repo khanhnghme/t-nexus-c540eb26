@@ -13,3 +13,5 @@ project_id = "xrlczmzgxlmdavhbwsah"
     verify_jwt = false
   [functions.gmail-callback]
     verify_jwt = false
+  [functions.payment-confirmation-email]
+    verify_jwt = false
