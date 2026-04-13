@@ -45,6 +45,7 @@ const roundCurrency = (value: number) => Math.round(value * 100) / 100;
 function getOrderPricingBreakdown(order: any) {
   const addons: Array<{ type: string; quantity: number }> = Array.isArray(order?.addons) ? order.addons : [];
   const cycle = order?.billing_cycle === "yearly" ? "yearly" : "monthly";
+  const isAddonOrder = order?.order_type === "addon";
   const welcomeDiscount = roundCurrency(Number(order?.welcome_discount) || 0);
   const addonOriginal = roundCurrency(
     addons.reduce((sum, addon) => {
@@ -61,8 +62,8 @@ function getOrderPricingBreakdown(order: any) {
 
   const fallbackPlanAmount = roundCurrency((Number(order?.base_amount) || 0) + welcomeDiscount);
   const planAmount = roundCurrency(
-    order?.order_type === "addon"
-      ? Number(order?.base_amount) || 0
+    isAddonOrder
+      ? 0
       : typeof planCatalogPrice === "number"
         ? planCatalogPrice
         : fallbackPlanAmount,
@@ -70,11 +71,9 @@ function getOrderPricingBreakdown(order: any) {
 
   const subtotal = roundCurrency(planAmount + addonOriginal);
   const totalAmount = roundCurrency(Number(order?.total_amount) || 0);
-  const grossDiscount = roundCurrency(Math.max(0, subtotal - totalAmount));
-  const couponDiscount = roundCurrency(
-    Math.min(Math.max(0, Number(order?.discount_amount) || 0), Math.max(0, grossDiscount - welcomeDiscount)),
-  );
-  const addonSavings = roundCurrency(Math.max(0, grossDiscount - welcomeDiscount - couponDiscount));
+  const couponDiscount = roundCurrency(isAddonOrder ? 0 : Math.max(0, Number(order?.discount_amount) || 0));
+  const addonFinal = roundCurrency(Number(order?.addon_amount) || 0);
+  const addonSavings = roundCurrency(Math.max(0, addonOriginal - addonFinal));
   const addonSavingsRate = addonOriginal > 0 && addonSavings > 0 ? Math.round((addonSavings / addonOriginal) * 100) : 0;
 
   return {
