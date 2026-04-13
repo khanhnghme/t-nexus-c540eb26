@@ -16,9 +16,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { fixStorageUrl } from '@/lib/urlUtils';
 import { useToast } from '@/hooks/use-toast';
 import {
-  Shield, UserCheck, ArrowUp, ArrowDown, Settings, Eye, EyeOff,
-  Briefcase, HardDrive, Mail, IdCard, Calendar, Loader2, AlertTriangle,
-  FolderKanban, Users, Crown, ExternalLink
+  Shield, ArrowDown, Eye, EyeOff,
+  Briefcase, Mail, IdCard, Calendar, Loader2, AlertTriangle,
+  FolderKanban, Crown, ExternalLink
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
