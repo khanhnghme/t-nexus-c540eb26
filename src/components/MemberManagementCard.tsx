@@ -1415,6 +1415,9 @@ export default function MemberManagementCard({
                             : ''
                         }`}
                         onClick={() => {
+                          if (!selectedUsersMap.has(previewUser.id)) {
+                            setSelectedUsersMap(prev => new Map(prev).set(previewUser.id, previewUser));
+                          }
                           setSelectedUserIds(prev => {
                             const next = new Set(prev);
                             if (next.has(previewUser.id)) next.delete(previewUser.id);
