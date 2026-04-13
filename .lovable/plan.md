@@ -1,31 +1,25 @@
 
 
-## Fix: Website freezes when deleting a member
+## Thêm bộ lọc cho Dashboard (project mode) và trang Groups
 
-### Root Cause
+### Thay đổi
 
-The `AlertDialogAction` component in the delete confirmation dialog has a built-in behavior that automatically closes the dialog on click. However, `handleDeleteMember` ALSO closes the dialog by calling `setMemberToDelete(null)`. This creates a race condition:
+| File | Nội dung |
+|------|----------|
+| `src/pages/Dashboard.tsx` | Thêm filter `project_mode` (Tất cả / Basic / Custom) vào thanh ToggleGroup hiện có. Áp dụng filter lên `filteredGroups`. |
+| `src/pages/Groups.tsx` | Thêm thanh filter phía trên danh sách project: ô tìm kiếm theo tên + filter theo project mode (Tất cả / Basic / Custom) + filter theo visibility (Tất cả / Private / WS Public / Public). Lọc `groups` trước khi render grid. |
 
-1. `handleDeleteMember` sets `memberToDelete = null` → React schedules state update → dialog should close
-2. `AlertDialogAction` fires its internal close → calls `onOpenChange` → sets `memberToDelete = null` again
-3. Radix's controlled vs internal state conflict causes rendering issues during the close animation
+### Chi tiết
 
-Additionally, the `members` array in `useEffect` dependencies (lines 191, 243) causes unnecessary re-fetches on every re-render since `members` is a new reference each time, compounding the issue during the post-delete refresh cascade.
+**Dashboard.tsx:**
+- Thêm state `projectModeFilter`: `'all' | 'basic' | 'custom'`
+- Thêm 3 toggle items (Tất cả / Basic / Custom) bên cạnh filter active/hidden/all hiện có, ngăn cách bằng divider
+- Trong `filteredGroups` useMemo, thêm bước lọc theo `project_mode` nếu không phải `'all'`
 
-### Fix
-
-**File: `src/components/MemberManagementCard.tsx`**
-
-1. **Replace `AlertDialogAction` with `Button` for delete confirmation** — same pattern already used in the Leave Project dialog (line 1969). This eliminates the double-close race condition. Apply to both single-delete and bulk-delete dialogs.
-
-2. **Stabilize `useEffect` dependencies** — Replace `members` with `members.length` or a `membersKey` (stringified user IDs) in the useEffect dependencies for fetching pending invitations and join requests, to avoid unnecessary refetches.
-
-3. **Add `e.preventDefault()` pattern for remaining `AlertDialogAction` buttons** in bulk role change dialog as safety measure.
-
-### Changes summary
-
-| What | Where |
-|------|-------|
-| Replace `AlertDialogAction` with `Button` in delete dialogs | Lines ~1668, ~1690 |
-| Stabilize useEffect deps (`members` → `members.length`) | Lines 191, 243 |
+**Groups.tsx:**
+- Thêm state: `searchQuery` (string), `modeFilter` (`'all' | 'basic' | 'custom'`), `visibilityFilter` (`'all' | 'private' | 'workspace_public' | 'public_link'`)
+- Thêm `filteredGroups` useMemo lọc theo 3 tiêu chí trên
+- Render thanh filter giữa phần header/dialog và grid danh sách: Input search + 2 Select dropdown (Mode, Visibility)
+- Thay `groups.map` bằng `filteredGroups.map` trong grid render
+- Thay `groups.length === 0` bằng logic kiểm tra cả `groups` gốc lẫn `filteredGroups`
 
