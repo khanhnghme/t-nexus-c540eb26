@@ -774,6 +774,7 @@ export default function GroupDetail() {
                 <ShareSettingsCard
                   groupId={group.id}
                   groupSlug={(group as any).slug || null}
+                  groupName={group.name}
                   isPublic={group.is_public || false}
                   shareToken={group.share_token || null}
                   showMembersPublic={group.show_members_public ?? true}

@@ -15,6 +15,7 @@ import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 interface ShareSettingsCardProps {
   groupId: string;
   groupSlug: string | null;
+  groupName?: string;
   isPublic: boolean;
   shareToken: string | null;
   showMembersPublic: boolean;
@@ -43,6 +44,7 @@ function generateJoinCode(): string {
 export default function ShareSettingsCard({
   groupId,
   groupSlug,
+  groupName,
   isPublic,
   shareToken,
   showMembersPublic,
@@ -344,8 +346,18 @@ export default function ShareSettingsCard({
                     size="icon"
                     className="h-9 w-9"
                     onClick={() => {
-                      navigator.clipboard.writeText(localJoinCode);
-                      toast({ title: 'Đã sao chép mã' });
+                      const inviteText = [
+                        `🎯 Bạn được mời tham gia dự án${groupName ? ` "${groupName}"` : ''}!`,
+                        ``,
+                        `📋 Mã tham gia: ${localJoinCode}`,
+                        ``,
+                        `👉 Cách tham gia:`,
+                        `1. Truy cập ứng dụng`,
+                        `2. Nhấn "Tham gia bằng mã"`,
+                        `3. Nhập mã: ${localJoinCode}`,
+                      ].join('\n');
+                      navigator.clipboard.writeText(inviteText);
+                      toast({ title: 'Đã sao chép mã kèm lời mời' });
                     }}
                     title="Sao chép mã"
                   >
