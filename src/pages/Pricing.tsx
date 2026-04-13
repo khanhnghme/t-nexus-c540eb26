@@ -214,7 +214,7 @@ export default function Pricing() {
               padding: '24px 22px 28px',
               borderRight: idx < RIGHT_PLANS.length - 1 ? '1px solid rgba(55,53,47,0.09)' : 'none',
             }}>
-              <PlanColumn plan={plan} yearly={yearly} tp={tp} />
+              <PlanColumn plan={plan} yearly={yearly} tp={tp} onCTA={() => handleCTA(plan.name)} />
             </div>
           ))}
         </div>
