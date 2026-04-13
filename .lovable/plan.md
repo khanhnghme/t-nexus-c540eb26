@@ -1,52 +1,36 @@
 
 
-## Bước 8: Cập nhật components — Member management
+## Bước 9: Cập nhật components — Project content
 
 ### Mục tiêu
-Thay tất cả role string cũ (underscore) sang format `resource:role` mới trong 6 component files liên quan đến quản lý thành viên.
+Thay role string cũ (underscore) sang format `resource:role` mới trong các component liên quan đến nội dung project.
 
-### Phạm vi thay đổi — 6 files
+### Phạm vi thay đổi — 3 files
 
-#### 1. `src/components/MemberManagementCard.tsx` (~20 vị trí)
+Sau khi quét toàn bộ các file được liệt kê ở Bước 9, chỉ có **3 files** thực sự chứa role strings cần thay đổi. Các file khác (`GroupInfoCard`, `ProjectNavigation`, `ShareSettingsCard`, `StageManagement`, `TaskCard`, `KanbanBoard`, `ReadOnlyBanner`, scores components, canvas components) **không chứa** role string cũ nào.
 
-Thay đổi chính:
-- State types: `'project_member' | 'project_admin'` → `'project_basic:member' | 'project_basic:admin'`
-- Initial values: `'project_member'` → `'project_basic:member'`
-- DB insert role: `'project_member'` → `'project_basic:member'`
-- Comparisons: `=== 'project_admin'` → `=== 'project_basic:admin'`, `=== 'project_owner'` → `=== 'project_basic:owner'`
-- Role badge switch-case: `project_owner`, `project_admin` → `project_basic:owner`, `project_basic:admin`
-- SelectItem values trong dialog đổi role
+#### 1. `src/components/GroupDashboard.tsx` (1 vị trí)
 
-#### 2. `src/components/MemberDetailDialog.tsx` (~8 vị trí)
+| Dòng | Trước | Sau |
+|------|-------|-----|
+| 59 | `useState<ProjectRole>('project_member')` | `useState<ProjectRole>('project_basic:member')` |
 
-- `systemRoleLabel` keys: `system_owner` → `system:owner`, `system_admin` → `system:admin`, `project_admin` → `project_basic:admin`, `project_member` → `project_basic:member`
-- `getGroupRoleLabel` switch-case: `project_owner` → `project_basic:owner`, `project_admin` → `project_basic:admin`, `project_member` → `project_basic:member`, `project_guest` → xóa (đã migrate thành member)
-- Badge comparison: `g.role === 'project_admin'` → `g.role === 'project_basic:admin'`
+#### 2. `src/components/TaskEditDialog.tsx` (1 vị trí)
 
-#### 3. `src/components/MemberRoleManagementDialog.tsx` (~10 vị trí)
+| Dòng | Trước | Sau |
+|------|-------|-----|
+| 542 | `member.role === 'project_admin'` | `member.role === 'project_basic:admin'` |
 
-- Promote action: `new_role: 'project_admin'` → `new_role: 'project_basic:admin'`
-- Demote action: `new_role: 'project_member'` → `new_role: 'project_basic:member'`
-- Activity log metadata: `from_role`/`to_role` strings
-- Role comparison: `g.role === 'project_admin'` → `g.role === 'project_basic:admin'`
+#### 3. `src/components/public/PublicMemberList.tsx` (3 vị trí)
 
-#### 4. `src/components/ProjectTransferDialog.tsx` (~5 vị trí)
-
-- `role: 'project_owner'` → `role: 'project_basic:owner'`
-- `.update({ role: 'project_admin' })` → `.update({ role: 'project_basic:admin' })`
-- `.update({ role: 'project_member' })` → `.update({ role: 'project_basic:member' })`
-- Display comparison: `m.role === 'project_owner'` / `'project_admin'` → format mới
-
-#### 5. `src/components/ProfileViewDialog.tsx` (~4 vị trí)
-
-- Default param: `role = 'project_member'` → `role = 'project_basic:member'`
-- Switch-case: `project_owner` → `project_basic:owner`, `project_admin` → `project_basic:admin`
-
-#### 6. `src/components/MemberAuthForm.tsx` (1 vị trí)
-
-- Dòng 368: `r.role === 'system_owner'` → `r.role === 'system:owner'`
+| Dòng | Trước | Sau |
+|------|-------|-----|
+| 69 | `member.role === 'project_admin'` | `member.role === 'project_basic:admin'` |
+| 70 | `member.role === 'project_admin'` | `member.role === 'project_basic:admin'` |
+| 72 | `member.role === 'project_admin'` | `member.role === 'project_basic:admin'` |
 
 ### Không thay đổi
+- `PublicActivityLog.tsx`: `'project_member'` ở dòng 26 là **activity type**, không phải role — giữ nguyên
 - Không sửa hooks, contexts, pages, edge functions, hay database
-- Không thay đổi logic, chỉ thay chuỗi so sánh và type literals
+- Không thay đổi logic, chỉ thay chuỗi so sánh
 
