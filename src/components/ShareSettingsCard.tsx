@@ -12,6 +12,7 @@ import { Share2, Copy, ExternalLink, Users, Activity, Loader2, Lock, Unlock, Eye
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
+import tNexusLogo from '@/assets/t-nexus-logo.png';
 
 interface ShareSettingsCardProps {
   groupId: string;
@@ -77,74 +78,116 @@ export default function ShareSettingsCard({
   const qrCanvasRef = useRef<HTMLDivElement>(null);
 
   const handleDownloadInviteImage = useCallback((code: string, name: string, limit: number | null, requireApproval: boolean) => {
-    const canvas = document.createElement('canvas');
-    const w = 600, h = 720;
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d')!;
+    // Load logo first, then draw everything
+    const logoImg = new Image();
+    logoImg.crossOrigin = 'anonymous';
+    logoImg.src = tNexusLogo;
 
-    // Background
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.roundRect(0, 0, w, h, 24);
-    ctx.fill();
+    const draw = () => {
+      const canvas = document.createElement('canvas');
+      const w = 600, h = 740;
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d')!;
 
-    // Header bar
-    ctx.fillStyle = '#6366f1';
-    ctx.beginPath();
-    ctx.roundRect(0, 0, w, 80, [24, 24, 0, 0]);
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Mời tham gia dự án', w / 2, 50);
+      // Background with subtle gradient
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+      bgGrad.addColorStop(0, '#f8fafc');
+      bgGrad.addColorStop(1, '#ffffff');
+      ctx.fillStyle = bgGrad;
+      ctx.beginPath();
+      ctx.roundRect(0, 0, w, h, 20);
+      ctx.fill();
 
-    // Project name
-    ctx.fillStyle = '#1e1e2e';
-    ctx.font = 'bold 20px system-ui, -apple-system, sans-serif';
-    ctx.fillText(name.length > 40 ? name.slice(0, 37) + '...' : name, w / 2, 120);
+      // Border
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(0, 0, w, h, 20);
+      ctx.stroke();
 
-    // QR Code — render from hidden canvas
-    const joinUrl = `https://t-nexus.io.vn/join?code=${code}`;
-    const tempCanvas = document.createElement('canvas');
-    const tempDiv = document.createElement('div');
-    document.body.appendChild(tempDiv);
-    
-    // Use a simple approach: render QR via imported lib
-    import('qrcode.react').then(({ QRCodeCanvas: QRC }) => {
-      // Instead, draw QR manually using canvas pattern
-      // We'll use the hidden ref if available, or draw a placeholder
+      // Header gradient bar
+      const headerGrad = ctx.createLinearGradient(0, 0, w, 0);
+      headerGrad.addColorStop(0, '#6366f1');
+      headerGrad.addColorStop(1, '#8b5cf6');
+      ctx.fillStyle = headerGrad;
+      ctx.beginPath();
+      ctx.roundRect(0, 0, w, 85, [20, 20, 0, 0]);
+      ctx.fill();
+
+      // Logo in header
+      if (logoImg.complete && logoImg.naturalWidth > 0) {
+        const logoSize = 28;
+        ctx.drawImage(logoImg, 24, (85 - logoSize) / 2, logoSize, logoSize);
+      }
+
+      // Header text
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 20px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('Mời tham gia dự án', 62, 50);
+      ctx.font = '12px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.textAlign = 'right';
+      ctx.fillText('t-nexus.io.vn', w - 24, 50);
+
+      // Project name
+      ctx.fillStyle = '#1e1e2e';
+      ctx.font = 'bold 18px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(name.length > 45 ? name.slice(0, 42) + '...' : name, w / 2, 120);
+
+      // QR Code section with decorative frame
       const qrSize = 200;
       const qrX = (w - qrSize) / 2;
       const qrY = 145;
 
-      // Draw QR border
-      ctx.strokeStyle = '#e2e8f0';
-      ctx.lineWidth = 2;
+      // QR background card
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = 'rgba(99, 102, 241, 0.12)';
+      ctx.shadowBlur = 20;
+      ctx.shadowOffsetY = 4;
       ctx.beginPath();
-      ctx.roundRect(qrX - 12, qrY - 12, qrSize + 24, qrSize + 24, 12);
+      ctx.roundRect(qrX - 16, qrY - 16, qrSize + 32, qrSize + 32, 16);
+      ctx.fill();
+      ctx.shadowColor = 'transparent';
+
+      // QR border
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(qrX - 16, qrY - 16, qrSize + 32, qrSize + 32, 16);
       ctx.stroke();
 
-      // Try to get QR from the hidden canvas in DOM
+      // Draw QR from hidden canvas (which already has logo via imageSettings)
       const hiddenQR = document.querySelector('#hidden-qr-canvas canvas') as HTMLCanvasElement;
       if (hiddenQR) {
         ctx.drawImage(hiddenQR, qrX, qrY, qrSize, qrSize);
       }
 
-      // Code display
+      // Code display with accent background
       const codeY = qrY + qrSize + 50;
-      ctx.fillStyle = '#f1f5f9';
+      const codeGrad = ctx.createLinearGradient(120, codeY - 25, w - 120, codeY - 25);
+      codeGrad.addColorStop(0, '#eef2ff');
+      codeGrad.addColorStop(1, '#f5f3ff');
+      ctx.fillStyle = codeGrad;
       ctx.beginPath();
-      ctx.roundRect(100, codeY - 25, w - 200, 50, 10);
+      ctx.roundRect(120, codeY - 25, w - 240, 50, 12);
       ctx.fill();
-      ctx.fillStyle = '#1e1e2e';
-      ctx.font = 'bold 32px monospace';
+      ctx.strokeStyle = '#c7d2fe';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(120, codeY - 25, w - 240, 50, 12);
+      ctx.stroke();
+
+      ctx.fillStyle = '#4338ca';
+      ctx.font = 'bold 30px monospace';
       ctx.textAlign = 'center';
-      ctx.fillText(code.split('').join(' '), w / 2, codeY + 10);
+      ctx.fillText(code.split('').join('  '), w / 2, codeY + 10);
 
       // Info section
       let infoY = codeY + 65;
-      ctx.font = '15px system-ui, -apple-system, sans-serif';
+      ctx.font = '14px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'left';
       ctx.fillStyle = '#64748b';
 
@@ -154,17 +197,17 @@ export default function ShareSettingsCard({
       ];
       infos.forEach(text => {
         ctx.fillText(text, 80, infoY);
-        infoY += 28;
+        infoY += 26;
       });
 
       // Instructions
-      infoY += 10;
+      infoY += 8;
       ctx.fillStyle = '#6366f1';
-      ctx.font = 'bold 14px system-ui, -apple-system, sans-serif';
+      ctx.font = 'bold 13px system-ui, -apple-system, sans-serif';
       ctx.fillText('📱 Cách tham gia:', 80, infoY);
-      infoY += 24;
+      infoY += 22;
       ctx.fillStyle = '#475569';
-      ctx.font = '13px system-ui, -apple-system, sans-serif';
+      ctx.font = '12px system-ui, -apple-system, sans-serif';
       const steps = [
         '1. Quét mã QR hoặc truy cập t-nexus.io.vn',
         '2. Nhấn "Tham gia dự án"',
@@ -172,23 +215,36 @@ export default function ShareSettingsCard({
       ];
       steps.forEach(s => {
         ctx.fillText(s, 96, infoY);
-        infoY += 22;
+        infoY += 20;
       });
 
-      // Footer
+      // Footer line
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(60, h - 40);
+      ctx.lineTo(w - 60, h - 40);
+      ctx.stroke();
+
       ctx.fillStyle = '#94a3b8';
-      ctx.font = '12px system-ui, -apple-system, sans-serif';
+      ctx.font = '11px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('t-nexus.io.vn', w / 2, h - 20);
+      ctx.fillText('Powered by T-Nexus  •  t-nexus.io.vn', w / 2, h - 18);
 
       // Download
       const link = document.createElement('a');
       link.download = `invite-${code}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
+    };
 
-      document.body.removeChild(tempDiv);
-    });
+    // Wait for logo to load, or proceed without it
+    if (logoImg.complete) {
+      draw();
+    } else {
+      logoImg.onload = draw;
+      logoImg.onerror = draw;
+    }
   }, []);
 
   useEffect(() => {
@@ -455,8 +511,19 @@ export default function ShareSettingsCard({
             <>
               {/* Compact inline: QR + Code + Actions */}
               <div className="flex gap-3 items-center">
-                <div className="shrink-0 rounded-lg border bg-background p-1.5">
-                  <QRCodeSVG value={`https://t-nexus.io.vn/join?code=${localJoinCode}`} size={56} level="M" />
+                <div className="shrink-0 rounded-xl border-2 border-primary/20 bg-background p-2 shadow-sm">
+                  <QRCodeSVG
+                    value={`https://t-nexus.io.vn/join?code=${localJoinCode}`}
+                    size={60}
+                    level="H"
+                    fgColor="hsl(var(--primary))"
+                    imageSettings={{
+                      src: tNexusLogo,
+                      height: 16,
+                      width: 16,
+                      excavate: true,
+                    }}
+                  />
                 </div>
                 <div className="flex-1 bg-muted/50 border rounded-lg px-3 py-2.5 text-center text-2xl font-bold tracking-[0.4em] font-mono select-all">
                   {localJoinCode}
@@ -508,9 +575,19 @@ export default function ShareSettingsCard({
                 </div>
               </div>
 
-              {/* Hidden QR canvas for download */}
+              {/* Hidden QR canvas for download (with logo) */}
               <div id="hidden-qr-canvas" className="hidden">
-                <QRCodeCanvas value={`https://t-nexus.io.vn/join?code=${localJoinCode}`} size={200} level="H" />
+                <QRCodeCanvas
+                  value={`https://t-nexus.io.vn/join?code=${localJoinCode}`}
+                  size={200}
+                  level="H"
+                  imageSettings={{
+                    src: tNexusLogo,
+                    height: 40,
+                    width: 40,
+                    excavate: true,
+                  }}
+                />
               </div>
 
               {/* Brief instruction */}
