@@ -49,6 +49,7 @@ export default function AddonCheckoutPayment() {
   const [cancellingOrder, setCancellingOrder] = useState(false);
   const [showBackDialog, setShowBackDialog] = useState(false);
   const [backDialogTimeLeft, setBackDialogTimeLeft] = useState('');
+  const [paymentMethodOpen, setPaymentMethodOpen] = useState(true);
 
   // Background polling: detect webhook-completed orders
   useEffect(() => {
