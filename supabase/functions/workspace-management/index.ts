@@ -163,7 +163,7 @@ serve(async (req: Request) => {
         _workspace_id: body.workspace_id,
       });
 
-      if (role !== "workspace_owner" && role !== "workspace_admin") {
+      if (role !== "workspace:owner" && role !== "workspace:admin") {
         return err("Only owner or admin can update workspace settings", 403);
       }
 
@@ -213,9 +213,9 @@ serve(async (req: Request) => {
       if (!callerId) return err("Authentication required", 401);
       if (!body.workspace_id || !body.email) return err("workspace_id and email required");
 
-      const inviteRole = body.role || "workspace_member";
-      if (inviteRole !== "workspace_admin" && inviteRole !== "workspace_member") {
-        return err("Role must be 'workspace_admin' or 'workspace_member'");
+      const inviteRole = body.role || "workspace:member";
+      if (inviteRole !== "workspace:admin" && inviteRole !== "workspace:member") {
+        return err("Role must be 'workspace:admin' or 'workspace:member'");
       }
 
       const { data: callerRole } = await supabaseAdmin.rpc("get_workspace_role", {
@@ -223,7 +223,7 @@ serve(async (req: Request) => {
         _workspace_id: body.workspace_id,
       });
 
-      if (callerRole !== "workspace_owner" && callerRole !== "workspace_admin") {
+      if (callerRole !== "workspace:owner" && callerRole !== "workspace:admin") {
         return err("Only owner or admin can invite members", 403);
       }
 
@@ -331,7 +331,7 @@ serve(async (req: Request) => {
         return err("workspace_id, group_id, and email required");
       }
 
-      const guestRole = body.role || "project_member";
+      const guestRole = body.role || "project_basic:member";
 
       const { data: callerWsRole } = await supabaseAdmin.rpc("get_workspace_role", {
         _user_id: callerId,
@@ -346,10 +346,10 @@ serve(async (req: Request) => {
         .maybeSingle();
 
       const canInvite =
-        callerWsRole === "workspace_owner" ||
-        callerWsRole === "workspace_admin" ||
-        callerGroupMember?.role === "project_owner" ||
-        callerGroupMember?.role === "project_admin";
+        callerWsRole === "workspace:owner" ||
+        callerWsRole === "workspace:admin" ||
+        callerGroupMember?.role === "project_basic:owner" ||
+        callerGroupMember?.role === "project_basic:admin";
 
       if (!canInvite) {
         return err("Insufficient permissions to invite guests to this project", 403);
@@ -519,7 +519,7 @@ serve(async (req: Request) => {
                 {
                   workspace_id: groupData.workspace_id,
                   user_id: callerId,
-                  role: "workspace_member",
+                  role: "workspace:member",
                   invited_by: invite.invited_by,
                 },
                 { onConflict: "workspace_id,user_id", ignoreDuplicates: true }
@@ -561,7 +561,7 @@ serve(async (req: Request) => {
             .eq("workspace_id", body.workspace_id)
             .eq("user_id", callerId)
             .single();
-          isWsAdmin = callerMembership?.role === "workspace_admin";
+          isWsAdmin = callerMembership?.role === "workspace:admin";
         }
         // Also allow project leaders in this workspace
         let isProjectLeader = false;
@@ -570,7 +570,7 @@ serve(async (req: Request) => {
             .from("group_members")
             .select("groups!inner(workspace_id)")
             .eq("user_id", callerId)
-            .in("role", ["project_owner", "project_admin"]);
+            .in("role", ["project_basic:owner", "project_basic:admin"]);
           isProjectLeader = (leaderGroups || []).some(
             (mg: any) => mg.groups?.workspace_id === body.workspace_id
           );
@@ -612,7 +612,7 @@ serve(async (req: Request) => {
           {
             workspace_id: body.workspace_id,
             user_id: targetUserId,
-            role: "workspace_member",
+            role: "workspace:member",
           },
           { onConflict: "workspace_id,user_id", ignoreDuplicates: true }
         );
@@ -650,7 +650,7 @@ serve(async (req: Request) => {
         _workspace_id: body.workspace_id,
       });
 
-      if (callerRole !== "workspace_owner" && callerRole !== "workspace_admin") {
+      if (callerRole !== "workspace:owner" && callerRole !== "workspace:admin") {
         return err("Only owner or admin can remove members", 403);
       }
 
@@ -664,12 +664,12 @@ serve(async (req: Request) => {
         return err("Cannot remove the workspace owner");
       }
 
-      if (callerRole === "workspace_admin") {
+      if (callerRole === "workspace:admin") {
         const { data: targetRole } = await supabaseAdmin.rpc("get_workspace_role", {
           _user_id: body.target_user_id,
           _workspace_id: body.workspace_id,
         });
-        if (targetRole === "workspace_admin") {
+        if (targetRole === "workspace:admin") {
           return err("Admins cannot remove other admins. Only the owner can.", 403);
         }
       }
@@ -700,8 +700,8 @@ serve(async (req: Request) => {
 
       if (!isOwner) return err("Only workspace owner can change roles", 403);
 
-      if (body.new_role !== "workspace_admin" && body.new_role !== "workspace_member") {
-        return err("Role must be 'workspace_admin' or 'workspace_member'");
+      if (body.new_role !== "workspace:admin" && body.new_role !== "workspace:member") {
+        return err("Role must be 'workspace:admin' or 'workspace:member'");
       }
 
       const { error: updErr } = await supabaseAdmin
@@ -759,7 +759,7 @@ serve(async (req: Request) => {
       const workspaces = [
         ...(owned || []).map((w: any) => ({
           ...w,
-          my_role: "workspace_owner",
+          my_role: "workspace:owner",
           member_count: w.workspace_members?.[0]?.count || 0,
         })),
         ...(memberOf || []).map((m: any) => ({
@@ -818,7 +818,7 @@ serve(async (req: Request) => {
       const result = [
         {
           ...ownerProfile,
-          role: "workspace_owner",
+          role: "workspace:owner",
           joined_at: null,
         },
         ...(memberRows || []).map((m: any) => ({
@@ -872,7 +872,7 @@ serve(async (req: Request) => {
         .insert({
           workspace_id: body.workspace_id,
           user_id: callerId,
-          role: "workspace_admin",
+          role: "workspace:admin",
         });
 
       return json({ success: true });
