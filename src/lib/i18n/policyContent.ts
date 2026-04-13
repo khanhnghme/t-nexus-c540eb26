@@ -11,7 +11,7 @@ export const POLICY_CONTENT_VI = `# 📜 Điều khoản dịch vụ T-Nexus
 ### 1.1. Định nghĩa thuật ngữ
 - **Nền tảng / Hệ thống**: Ứng dụng web T-Nexus và toàn bộ dịch vụ liên quan (cơ sở dữ liệu, lưu trữ tệp, edge function, email).
 - **Người dùng**: Bất kỳ cá nhân nào tương tác với Hệ thống, bao gồm khách truy cập, thành viên đã đăng ký, và quản trị viên.
-- **Tài khoản**: Hồ sơ xác thực gắn với một email và MSSV duy nhất trong Hệ thống.
+- **Tài khoản**: Hồ sơ xác thực gắn với một email duy nhất trong Hệ thống.
 - **OwnerSystem**: Người dùng có vai trò \`admin\`, sở hữu quyền hạn cao nhất trong Hệ thống.
 - **Leader (Trưởng nhóm)**: Người dùng có vai trò \`leader\` hoặc được chỉ định làm trưởng nhóm trong một project cụ thể.
 - **Member (Thành viên)**: Người dùng có vai trò \`member\`, là cấp quyền cơ bản nhất.
@@ -30,8 +30,7 @@ Chính sách này áp dụng cho:
 ## 2. Đăng ký & Xác thực Tài khoản
 
 ### 2.1. Đăng ký tài khoản
-- Người dùng phải cung cấp đầy đủ: **MSSV**, **họ tên**, **trường/đơn vị**, **email** và **mật khẩu**.
-- MSSV phải duy nhất trong toàn Hệ thống. Mỗi MSSV chỉ được gắn với một tài khoản.
+- Người dùng phải cung cấp đầy đủ: **họ tên**, **email** và **mật khẩu**. Các thông tin khác như MSSV, trường/đơn vị là tùy chọn.
 - Email phải hợp lệ và duy nhất. Hệ thống không cho phép đăng ký nhiều tài khoản cùng email.
 - Mật khẩu phải có tối thiểu **6 ký tự**.
 - Khi tính năng **xác thực email** được bật bởi Admin (theo Điều 10.5), người đăng ký phải xác thực email qua mã OTP trước khi tài khoản được kích hoạt.
@@ -43,13 +42,13 @@ Chính sách này áp dụng cho:
 - Admin có thể tạo tài khoản thủ công cho thành viên mà không cần quy trình đăng ký.
 
 ### 2.3. Đăng nhập
-- Người dùng có thể đăng nhập bằng **email** hoặc **MSSV** kết hợp mật khẩu.
+- Người dùng đăng nhập bằng **email** kết hợp mật khẩu.
 - Khi đăng nhập, người dùng phải **đồng ý với chính sách hệ thống** hiện hành (theo Điều 1.2).
 - Hệ thống hỗ trợ tùy chọn **"Ghi nhớ đăng nhập"**: nếu bật, phiên đăng nhập sẽ được duy trì giữa các lần truy cập.
 - Tài khoản bị đình chỉ hoặc Hệ thống đang bảo trì sẽ bị chặn đăng nhập (theo Điều 6 và Điều 10.1).
 
 ### 2.4. Quên mật khẩu & Đặt lại mật khẩu
-- Người dùng có thể yêu cầu đặt lại mật khẩu thông qua MSSV hoặc email.
+- Người dùng có thể yêu cầu đặt lại mật khẩu thông qua email.
 - Hệ thống gửi mã OTP đến email đã đăng ký để xác minh danh tính.
 - Mật khẩu mới phải đáp ứng yêu cầu tối thiểu 6 ký tự.
 - Admin có thể yêu cầu người dùng **bắt buộc đổi mật khẩu** khi đăng nhập lần tới (\`must_change_password\`).
@@ -302,7 +301,7 @@ Hệ thống tự động gửi thông báo khi:
 - Người dùng chỉ có thể xem profile của **chính mình** hoặc của **tài khoản đã duyệt**.
 - Admin có quyền xem toàn bộ profile bao gồm cả tài khoản chưa duyệt.
 - Mật khẩu được mã hóa và **không bao giờ** lưu dưới dạng văn bản thuần.
-- Email và MSSV được sử dụng làm định danh duy nhất, không được chia sẻ cho bên thứ ba.
+- Email được sử dụng làm định danh duy nhất, không được chia sẻ cho bên thứ ba.
 
 ### 11.3. Phân quyền dữ liệu theo nhóm
 - **Task**: Chỉ thành viên cùng project mới xem được task trong project đó (hoặc Admin).
@@ -397,7 +396,7 @@ export const POLICY_CONTENT_EN = `# 📜 T-Nexus Terms of Service
 ### 1.1. Definitions
 - **Platform / System**: The T-Nexus web application and all associated services (database, file storage, edge functions, email).
 - **User**: Any individual interacting with the System, including visitors, registered members, and administrators.
-- **Account**: System authenticated profile tied to a unique email and Student ID.
+- **Account**: System authenticated profile tied to a unique email.
 - **Admin**: Users with the \`admin\` role, possessing the highest privileges in the System.
 - **Leader**: Users with the \`leader\` role or designated as project leaders.
 - **Member**: Users with the \`member\` role, which is the baseline permission level.
@@ -416,8 +415,7 @@ This policy applies to:
 ## 2. Registration & Account Verification
 
 ### 2.1. Account Registration
-- Users must provide complete information: **Student ID (MSSV)**, **full name**, **institution**, **email**, and **password**.
-- Student ID must be unique system-wide. Each Student ID is bound to a single account.
+- Users must provide: **full name**, **email**, and **password**. Other information such as Student ID and institution is optional.
 - Email must be valid and unique.
 - Passwords must be at least **6 characters** long.
 - If **email verification** is enabled by the Admin (cf. Article 10.5), users must verify their email with an OTP to complete registration.
@@ -429,13 +427,13 @@ This policy applies to:
 - Admins may manually create accounts without going through the registration flow.
 
 ### 2.3. Login
-- Users may log in using their **email** or **Student ID** and password.
+- Users log in using their **email** and password.
 - By logging in, users must **agree to the current system policy**.
 - The system supports a **"Remember Login"** option to persist sessions.
 - Accounts that are suspended, or if the System is under maintenance, will be blocked from logging in (cf. Article 6 and 10.1).
 
 ### 2.4. Password Reset
-- Users can request a password reset using their Student ID or email.
+- Users can request a password reset using their email.
 - The system will send an OTP verify code to the registered email.
 - Passwords must be at least 6 characters long.
 - Admins may require users to **change password** on their next login (\`must_change_password\`).
@@ -649,7 +647,7 @@ System automates alerts upon:
 
 ### 11.2. Info Transparency
 - Passwords are encrypted and inaccessible in plaintext.
-- Student IDs and Emails form unique indices, kept private.
+- Emails are used as unique identifiers and kept private.
 
 ### 11.3. Object Level Data Separation
 - **Tasks & Grades**: Accessible exclusively inside the project container by joined members.
