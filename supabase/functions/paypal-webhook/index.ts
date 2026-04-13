@@ -229,6 +229,20 @@ Deno.serve(async (req) => {
           reason: `Subscription activated ${subscriptionId}`,
         });
 
+        // Fire-and-forget: send payment confirmation email
+        try {
+          await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/payment-confirmation-email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            },
+            body: JSON.stringify({ orderId: order.id, userId: order.user_id }),
+          });
+        } catch (emailErr) {
+          console.warn("[paypal-webhook] Payment email failed (non-blocking):", emailErr);
+        }
+
         console.log(`[paypal-webhook] ACTIVATED: Addon order ${order.id} completed`);
       } else {
         // Plan order
@@ -301,6 +315,20 @@ Deno.serve(async (req) => {
             max_members: planLimits.max_members_per_workspace,
             max_storage_mb: planLimits.max_storage_mb,
           }).eq("owner_id", order.user_id);
+        }
+
+        // Fire-and-forget: send payment confirmation email
+        try {
+          await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/payment-confirmation-email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            },
+            body: JSON.stringify({ orderId: order.id, userId: order.user_id }),
+          });
+        } catch (emailErr) {
+          console.warn("[paypal-webhook] Payment email failed (non-blocking):", emailErr);
         }
 
         console.log(`[paypal-webhook] ACTIVATED: Plan order ${order.id} completed`);

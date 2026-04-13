@@ -1,9 +1,18 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { buildPaymentConfirmationEmail, buildInvoiceHtml } from "../_shared/email-html-builder.ts";
+import { buildPaymentConfirmationEmail } from "../_shared/email-html-builder.ts";
+import { buildInvoicePdf } from "../_shared/invoice-pdf-builder.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+const PLAN_LABELS: Record<string, string> = {
+  plan_free: "Free",
+  plan_plus: "Plus",
+  plan_pro: "Pro",
+  plan_business: "Business",
+  plan_custom: "Custom",
 };
 
 Deno.serve(async (req) => {
@@ -24,7 +33,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Fetch order with idempotency check
+    // Fetch order
     const { data: order, error: orderErr } = await supabase
       .from("orders")
       .select("*")
@@ -60,18 +69,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Build plan label
-    const planLabels: Record<string, string> = {
-      plan_free: "Free",
-      plan_plus: "Plus",
-      plan_pro: "Pro",
-      plan_business: "Business",
-      plan_custom: "Custom",
-    };
-    const planName = planLabels[order.plan] || order.plan || "Add-on";
+    const planName = PLAN_LABELS[order.plan] || order.plan || "Add-on";
     const isAddon = order.order_type === "addon";
 
-    // Build email body
+    // 1. Build email body HTML
     const emailHtml = buildPaymentConfirmationEmail({
       recipientName: profile.full_name || "Khách hàng",
       planName: isAddon ? "Add-on" : `${planName} Plan`,
@@ -81,15 +82,25 @@ Deno.serve(async (req) => {
       billingCycle: order.billing_cycle,
     });
 
-    // Build invoice HTML attachment
-    const invoiceHtml = buildInvoiceHtml({
-      order,
-      profile,
-      planName,
-      isAddon,
-    });
+    // 2. Generate PDF invoice
+    const pdfBytes = buildInvoicePdf({ order, profile });
 
-    // Send via Resend with attachment
+    // 3. Save PDF to Storage bucket "invoices"
+    const storagePath = `${userId}/${order.order_code || order.id}.pdf`;
+    const { error: uploadErr } = await supabase.storage
+      .from("invoices")
+      .upload(storagePath, pdfBytes, {
+        contentType: "application/pdf",
+        upsert: true,
+      });
+
+    if (uploadErr) {
+      console.warn("[payment-email] Storage upload failed (non-blocking):", uploadErr.message);
+    } else {
+      console.log("[payment-email] PDF saved to storage:", storagePath);
+    }
+
+    // 4. Send email via Resend with PDF attachment
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     const SENDER_EMAIL = Deno.env.get("SENDER_EMAIL") || "T-Nexus <noreply@t-nexus.io.vn>";
 
@@ -100,17 +111,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    const invoiceFilename = `Invoice-${order.order_code || orderId.slice(0, 8)}.html`;
+    const pdfFilename = `Invoice-${order.order_code || orderId.slice(0, 8)}.pdf`;
 
-    // Use TextEncoder to properly handle UTF-8 → base64
-    const encoder = new TextEncoder();
-    const invoiceBytes = encoder.encode(invoiceHtml);
     // Convert Uint8Array to base64
     let binary = "";
-    for (let i = 0; i < invoiceBytes.length; i++) {
-      binary += String.fromCharCode(invoiceBytes[i]);
+    for (let i = 0; i < pdfBytes.length; i++) {
+      binary += String.fromCharCode(pdfBytes[i]);
     }
-    const invoiceBase64 = btoa(binary);
+    const pdfBase64 = btoa(binary);
 
     const resendRes = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -125,8 +133,8 @@ Deno.serve(async (req) => {
         html: emailHtml,
         attachments: [
           {
-            filename: invoiceFilename,
-            content: invoiceBase64,
+            filename: pdfFilename,
+            content: pdfBase64,
           },
         ],
       }),
@@ -136,7 +144,6 @@ Deno.serve(async (req) => {
 
     if (!resendRes.ok) {
       console.error("[payment-email] Resend error:", resendData);
-      // Log to email_send_log
       await supabase.from("email_send_log").insert({
         recipient_email: profile.email,
         template_name: "payment_confirmation",
@@ -149,10 +156,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Mark as sent (idempotency flag)
+    // 5. Mark as sent (idempotency)
     await supabase.from("orders").update({ payment_email_sent: true }).eq("id", orderId);
 
-    // Log success
+    // 6. Log success
     await supabase.from("email_send_log").insert({
       recipient_email: profile.email,
       template_name: "payment_confirmation",
@@ -161,7 +168,7 @@ Deno.serve(async (req) => {
       metadata: { order_id: orderId, order_code: order.order_code },
     });
 
-    console.log("[payment-email] Sent successfully to", profile.email, "for order", orderId);
+    console.log("[payment-email] Sent PDF invoice to", profile.email, "for order", orderId);
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
