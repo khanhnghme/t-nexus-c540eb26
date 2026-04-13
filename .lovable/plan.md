@@ -1,41 +1,48 @@
 
 
-## Bước 4: Database migration — Cập nhật DB functions sang format `resource:role`
+## Bước 7: Cập nhật Pages — System/Workspace role strings
 
 ### Mục tiêu
-Một migration SQL duy nhất cập nhật tất cả DB helper functions để dùng format `resource:role` mới. Sau bước này, toàn bộ DB layer (data + functions) đều thống nhất format mới.
+Thay tất cả role string cũ (underscore) sang format `resource:role` mới trong 4 page files. Không thay đổi logic, chỉ thay chuỗi so sánh.
 
-### Các functions cần cập nhật (8 functions)
+### Phạm vi thay đổi — 4 files
 
-| Function | Thay đổi |
-|----------|----------|
-| `is_system_owner(uuid)` | `role = 'system_owner'` → `role = 'system:owner'` |
-| `is_system_admin(uuid)` | `role IN ('system_owner','system_admin')` → `role IN ('system:owner','system:admin')` |
-| `is_project_leader(uuid, uuid)` | `role IN ('project_owner','project_admin')` → `role IN ('project_basic:owner','project_basic:admin')` |
-| `get_workspace_role(uuid, uuid)` | Trả `'workspace:owner'` / `'workspace:admin'` thay vì `'workspace_owner'` / `'workspace_admin'` |
-| `get_billing_role(uuid)` | `role = 'system_owner'` → `'system:owner'`, `role IN (...)` → format mới |
-| `check_admin_user()` | Insert `'system:owner'` thay vì `'system_owner'` |
-| `is_group_leader(uuid, uuid)` | Giữ nguyên (delegate to `is_project_leader`) |
-| `is_group_member(uuid, uuid)` | Giữ nguyên (không dùng role string) |
+#### 1. `src/pages/Dashboard.tsx` (2 vị trí)
 
-### Functions giữ nguyên (không cần sửa)
-- `is_admin()`, `is_leader()`, `is_moderator()`, `is_owner_system()` — chỉ delegate, không chứa role string
-- `is_workspace_owner()` — check `owner_id`, không dùng role string
-- `is_workspace_participant()` — không dùng role string
+| Dòng | Trước | Sau |
+|------|-------|-----|
+| 430 | `wsRole === 'workspace_owner' \|\| wsRole === 'workspace_admin'` | `wsRole === 'workspace:owner' \|\| wsRole === 'workspace:admin'` |
+| 906 | `inv.role_granted === 'workspace_admin'` | `inv.role_granted === 'workspace:admin'` |
 
-### Phạm vi thay đổi
-- **Database**: 1 file migration SQL mới (CREATE OR REPLACE cho 6 functions)
-- **Không sửa**: Không file frontend/edge function nào
-- **RLS policies**: Không cần thay đổi vì đều dùng function wrapper
+#### 2. `src/pages/Groups.tsx` (2 vị trí)
 
-### Chi tiết kỹ thuật
+| Dòng | Trước | Sau |
+|------|-------|-----|
+| 87 | `workspaceRole === 'workspace_owner' \|\| workspaceRole === 'workspace_admin'` | `workspaceRole === 'workspace:owner' \|\| workspaceRole === 'workspace:admin'` |
+| 960 | `group.myRole === 'workspace_admin'` | `group.myRole === 'workspace:admin'` |
 
-```sql
--- is_system_owner: 'system_owner' → 'system:owner'
--- is_system_admin: IN ('system_owner','system_admin') → IN ('system:owner','system:admin')
--- is_project_leader: IN ('project_owner','project_admin') → IN ('project_basic:owner','project_basic:admin')
--- get_workspace_role: return 'workspace_owner'/'workspace_admin' → 'workspace:owner'/'workspace:admin'
--- get_billing_role: tương tự is_system_owner/admin
--- check_admin_user: INSERT role value 'system_owner' → 'system:owner'
-```
+#### 3. `src/pages/WorkspaceSettings.tsx` (2 vị trí)
+
+| Dòng | Trước | Sau |
+|------|-------|-----|
+| 77 | `workspaceRole === 'workspace_owner'` | `workspaceRole === 'workspace:owner'` |
+| 78 | `workspaceRole === 'workspace_admin'` | `workspaceRole === 'workspace:admin'` |
+
+#### 4. `src/pages/MemberManagement.tsx` (8 vị trí)
+
+| Dòng | Trước | Sau |
+|------|-------|-----|
+| 135 | `roles.includes('system_owner') \|\| roles.includes('system_admin')` | `roles.includes('system:owner') \|\| roles.includes('system:admin')` |
+| 173 | `!roles.includes('system_owner') && !roles.includes('system_admin')` | `!roles.includes('system:owner') && !roles.includes('system:admin')` |
+| 174 | `roles.includes('system_admin') && !roles.includes('system_owner')` | `roles.includes('system:admin') && !roles.includes('system:owner')` |
+| 175 | `roles.includes('system_owner')` | `roles.includes('system:owner')` |
+| 293 | `role: 'system_admin'` | `role: 'system:admin'` |
+| 571 | `roles.includes('system_owner')` | `roles.includes('system:owner')` |
+| 574 | `!roles.includes('system_owner') && roles.includes('system_admin')` | `!roles.includes('system:owner') && roles.includes('system:admin')` |
+| 854 | `includes('system_owner')` / `includes('system_admin')` | `includes('system:owner')` / `includes('system:admin')` |
+
+### Không thay đổi
+- Không sửa hooks, contexts, components, edge functions, hay database
+- `WorkspaceMembers.tsx` đã được cập nhật ở Bước 6
+- Admin pages không chứa role strings cũ (đã kiểm tra)
 
