@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
     // Fetch profile
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name, email, student_id, institution, phone, plan_started_at, plan_expires_at, preferred_locale")
+      .select("full_name, email, student_id, institution, phone, plan_started_at, plan_expires_at, preferred_locale, avatar_url")
       .eq("id", userId)
       .single();
 
@@ -86,6 +86,7 @@ Deno.serve(async (req) => {
       paidAt: order.completed_at || order.created_at,
       billingCycle: order.billing_cycle,
       locale,
+      avatarUrl: profile.avatar_url || undefined,
     });
 
     // 2. Try to generate PDF invoice (non-blocking)
@@ -99,7 +100,7 @@ Deno.serve(async (req) => {
 
     // 3. Send email via Resend (with or without PDF attachment)
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    const SENDER_EMAIL = Deno.env.get("SENDER_EMAIL") || "T-Nexus <noreply@t-nexus.io.vn>";
+    const SENDER_EMAIL = "T-Nexus <noreply@t-nexus.io.vn>";
 
     if (!RESEND_API_KEY) {
       console.error("[payment-email] RESEND_API_KEY not configured");
