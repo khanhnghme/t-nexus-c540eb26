@@ -109,7 +109,7 @@ export default function ProjectTransferDialog({
                   user_id: adminId,
                   full_name: adminProfiles[adminId]?.full_name || 'OwnerSystem',
                   avatar_url: adminProfiles[adminId]?.avatar_url || null,
-                  role: 'project_owner',
+                  role: 'project_basic:owner',
                 });
               }
             });
@@ -164,14 +164,14 @@ export default function ProjectTransferDialog({
         // Update new owner's group_members role to leader
         await supabase
           .from('group_members')
-          .update({ role: 'project_admin' })
+          .update({ role: 'project_basic:admin' })
           .eq('group_id', group.id)
           .eq('user_id', newOwnerId);
 
         // Downgrade old owner to member in group
         await supabase
           .from('group_members')
-          .update({ role: 'project_member' })
+          .update({ role: 'project_basic:member' })
           .eq('group_id', group.id)
           .eq('user_id', member.id);
 
@@ -267,7 +267,7 @@ export default function ProjectTransferDialog({
                                   <UserAvatar src={m.avatar_url} name={m.full_name} size="sm" />
                                   <span>{m.full_name}</span>
                                   <span className="text-xs text-muted-foreground">
-                                    ({m.role === 'project_owner' ? 'OwnerSystem' : m.role === 'project_admin' ? 'Phó nhóm' : 'Thành viên'})
+                                    ({m.role === 'project_basic:owner' ? 'OwnerSystem' : m.role === 'project_basic:admin' ? 'Phó nhóm' : 'Thành viên'})
                                   </span>
                                 </div>
                               </SelectItem>
