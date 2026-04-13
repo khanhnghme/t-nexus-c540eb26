@@ -20,6 +20,7 @@ const BUCKET_URL_KEYS: Record<string, string> = {
   'project-resources': 'R2_URL_PROJECT_RESOURCES',
   'system-assets': 'R2_URL_SYSTEM_ASSETS',
   'profile-achievements': 'R2_URL_PROFILE_ACHIEVEMENTS',
+  'invoices': 'R2_URL_INVOICES',
 }
 
 function getR2Config() {
