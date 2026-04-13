@@ -24,6 +24,14 @@ function stripVietnamese(str: string): string {
 
 const ADDON_PRICE_MONTHLY = 2.49;
 
+const PLAN_PRICES: Record<string, { monthly: number | null; yearly: number | null }> = {
+  plan_free: { monthly: 0, yearly: 0 },
+  plan_plus: { monthly: 4.8, yearly: 48 },
+  plan_pro: { monthly: 12, yearly: 120 },
+  plan_business: { monthly: 24, yearly: 240 },
+  plan_custom: { monthly: null, yearly: null },
+};
+
 const PLAN_LABELS: Record<string, string> = {
   plan_free: "Free",
   plan_plus: "Plus",
@@ -31,6 +39,54 @@ const PLAN_LABELS: Record<string, string> = {
   plan_business: "Business",
   plan_custom: "Custom",
 };
+
+const roundCurrency = (value: number) => Math.round(value * 100) / 100;
+
+function getOrderPricingBreakdown(order: any) {
+  const addons: Array<{ type: string; quantity: number }> = Array.isArray(order?.addons) ? order.addons : [];
+  const cycle = order?.billing_cycle === "yearly" ? "yearly" : "monthly";
+  const welcomeDiscount = roundCurrency(Number(order?.welcome_discount) || 0);
+  const addonOriginal = roundCurrency(
+    addons.reduce((sum, addon) => {
+      const quantity = Number(addon?.quantity) || 0;
+      if (quantity <= 0) return sum;
+      const unitPrice = cycle === "yearly" ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
+      return sum + unitPrice * quantity;
+    }, 0),
+  );
+
+  const planCatalogPrice = order?.plan
+    ? (cycle === "yearly" ? PLAN_PRICES[order.plan]?.yearly : PLAN_PRICES[order.plan]?.monthly)
+    : null;
+
+  const fallbackPlanAmount = roundCurrency((Number(order?.base_amount) || 0) + welcomeDiscount);
+  const planAmount = roundCurrency(
+    order?.order_type === "addon"
+      ? Number(order?.base_amount) || 0
+      : typeof planCatalogPrice === "number"
+        ? planCatalogPrice
+        : fallbackPlanAmount,
+  );
+
+  const subtotal = roundCurrency(planAmount + addonOriginal);
+  const totalAmount = roundCurrency(Number(order?.total_amount) || 0);
+  const grossDiscount = roundCurrency(Math.max(0, subtotal - totalAmount));
+  const couponDiscount = roundCurrency(
+    Math.min(Math.max(0, Number(order?.discount_amount) || 0), Math.max(0, grossDiscount - welcomeDiscount)),
+  );
+  const addonSavings = roundCurrency(Math.max(0, grossDiscount - welcomeDiscount - couponDiscount));
+  const addonSavingsRate = addonOriginal > 0 && addonSavings > 0 ? Math.round((addonSavings / addonOriginal) * 100) : 0;
+
+  return {
+    planAmount,
+    subtotal,
+    totalAmount,
+    welcomeDiscount,
+    couponDiscount,
+    addonSavings,
+    addonSavingsRate,
+  };
+}
 
 function formatDate(d: string | null): string {
   if (!d) return "—";
@@ -61,6 +117,7 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
   const isCompleted = order.status === "completed";
   const planLabel = PLAN_LABELS[order.plan] || order.plan || "Add-on";
   const invoiceNumber = order.order_code ? `INV-${order.order_code}` : `INV-${order.id?.slice(0, 8)?.toUpperCase()}`;
+  const pricing = getOrderPricingBreakdown(order);
 
   const ADDON_TYPES = [
     { type: "projects", emoji: "📁", unitLabel: t.pdfAddonProjects },
@@ -255,9 +312,9 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
     itemNum++;
     drawText(String(itemNum), margin, y, { font: fontBold, size: 8, color: gray900 });
     drawText(`${planLabel} Plan`, margin + 16, y, { font: fontBold, size: 8, color: gray900 });
-    drawText(`$${(order.base_amount || 0).toFixed(2)}`, margin + contentW * 0.5, y, { size: 8, color: gray900 });
+    drawText(`$${pricing.planAmount.toFixed(2)}`, margin + contentW * 0.5, y, { size: 8, color: gray900 });
     drawText("1", margin + contentW * 0.65, y, { size: 8, color: gray900 });
-    drawText(`$${(order.base_amount || 0).toFixed(2)}`, colEnd, y, { font: fontBold, size: 8, color: gray900, align: "right" });
+    drawText(`$${pricing.planAmount.toFixed(2)}`, colEnd, y, { font: fontBold, size: 8, color: gray900, align: "right" });
     y -= 10;
 
     drawText(cycle === "yearly" ? t.pdfPlanYearly : t.pdfPlanMonthly, margin + 16, y, { size: 7, color: gray500 });
@@ -293,20 +350,25 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
   y -= 14;
 
   drawText(t.pdfSubtotal, colEnd - 60, y, { size: 8, color: gray500, align: "right" });
-  drawText(`$${((order.base_amount || 0) + (order.addon_amount || 0)).toFixed(2)}`, colEnd, y, { size: 8, color: gray900, align: "right" });
+  drawText(`$${pricing.subtotal.toFixed(2)}`, colEnd, y, { size: 8, color: gray900, align: "right" });
   y -= 14;
 
-  const couponDiscount = (order.discount_amount || 0) - (order.welcome_discount || 0);
-  if (couponDiscount > 0) {
-    const discLabel = order.coupon_code ? t.pdfDiscountCode(order.coupon_code) : t.pdfDiscount;
-    drawText(discLabel, colEnd - 60, y, { size: 8, color: green700, align: "right" });
-    drawText(`-$${couponDiscount.toFixed(2)}`, colEnd, y, { size: 8, color: green700, align: "right" });
+  if (pricing.welcomeDiscount > 0) {
+    drawText(t.pdfWelcomeDiscount, colEnd - 60, y, { size: 8, color: green700, align: "right" });
+    drawText(`-$${pricing.welcomeDiscount.toFixed(2)}`, colEnd, y, { size: 8, color: green700, align: "right" });
     y -= 14;
   }
 
-  if ((order.welcome_discount || 0) > 0) {
-    drawText(t.pdfWelcomeDiscount, colEnd - 60, y, { size: 8, color: green700, align: "right" });
-    drawText(`-$${order.welcome_discount.toFixed(2)}`, colEnd, y, { size: 8, color: green700, align: "right" });
+  if (pricing.addonSavings > 0) {
+    drawText(t.pdfAddonSavings(pricing.addonSavingsRate || undefined), colEnd - 60, y, { size: 8, color: green700, align: "right" });
+    drawText(`-$${pricing.addonSavings.toFixed(2)}`, colEnd, y, { size: 8, color: green700, align: "right" });
+    y -= 14;
+  }
+
+  if (pricing.couponDiscount > 0) {
+    const discLabel = order.coupon_code ? t.pdfDiscountCode(order.coupon_code) : t.pdfDiscount;
+    drawText(discLabel, colEnd - 60, y, { size: 8, color: green700, align: "right" });
+    drawText(`-$${pricing.couponDiscount.toFixed(2)}`, colEnd, y, { size: 8, color: green700, align: "right" });
     y -= 14;
   }
 
