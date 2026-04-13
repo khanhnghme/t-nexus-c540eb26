@@ -3290,6 +3290,7 @@ export type Database = {
         Args: { p_timeout_seconds?: number; p_user_id: string }
         Returns: boolean
       }
+      check_profile_login: { Args: { p_email: string }; Returns: Json }
       check_project_access: {
         Args: { _group_id: string; _user_id: string }
         Returns: {
