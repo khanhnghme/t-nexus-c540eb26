@@ -34,6 +34,7 @@ export default function ProjectGuestInviteDialog({ groupId, groupName, trigger }
   const [guestEmail, setGuestEmail] = useState('');
   const [guestRole, setGuestRole] = useState('project_basic:member');
   const [isInviting, setIsInviting] = useState(false);
+  const { previewUser, isLooking, notFound } = useEmailLookup(guestEmail);
 
   const { guardAction: guardReadOnly } = useReadOnlyGuard();
 
@@ -86,6 +87,8 @@ export default function ProjectGuestInviteDialog({ groupId, groupName, trigger }
               />
             </div>
           </div>
+
+          <EmailUserPreview previewUser={previewUser} isLooking={isLooking} notFound={notFound} />
 
           <div className="p-3 rounded-lg bg-muted/50 text-xs text-muted-foreground">
             👽 Khách mời chỉ có quyền truy cập dự án này, không có quyền truy cập các dự án khác trong workspace.
