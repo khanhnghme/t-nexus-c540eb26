@@ -1,5 +1,4 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { AwsClient } from "https://esm.sh/aws4fetch@1.0.20";
 import { buildPaymentConfirmationEmail } from "../_shared/email-html-builder.ts";
 import { buildInvoicePdf } from "../_shared/invoice-pdf-builder.ts";
 
@@ -92,32 +91,7 @@ Deno.serve(async (req) => {
       console.error("[payment-email] PDF generation failed (will send email without attachment):", pdfErr.message);
     }
 
-    // 3. Save PDF to R2 Storage bucket "invoices" (if PDF was generated)
-    if (pdfBytes) {
-      const storagePath = `${userId}/${order.order_code || order.id}.pdf`;
-      try {
-        const r2Endpoint = Deno.env.get("R2_ENDPOINT")!.replace(/\/+$/, '');
-        const r2 = new AwsClient({
-          accessKeyId: Deno.env.get("R2_ACCESS_KEY_ID")!,
-          secretAccessKey: Deno.env.get("R2_SECRET_ACCESS_KEY")!,
-        });
-        const r2Url = `${r2Endpoint}/invoices/${storagePath}`;
-        const r2Res = await r2.fetch(r2Url, {
-          method: "PUT",
-          headers: { "Content-Type": "application/pdf" },
-          body: pdfBytes,
-        });
-        if (r2Res.ok) {
-          console.log("[payment-email] PDF saved to R2:", storagePath);
-        } else {
-          console.warn("[payment-email] R2 upload failed (non-blocking):", r2Res.status, await r2Res.text());
-        }
-      } catch (uploadErr: any) {
-        console.warn("[payment-email] R2 upload error (non-blocking):", uploadErr.message);
-      }
-    }
-
-    // 4. Send email via Resend (with or without PDF attachment)
+    // 3. Send email via Resend (with or without PDF attachment)
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     const SENDER_EMAIL = Deno.env.get("SENDER_EMAIL") || "T-Nexus <noreply@t-nexus.io.vn>";
 
