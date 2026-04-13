@@ -884,7 +884,7 @@ export default function Groups() {
           </Card>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-            {groups.map((group, index) => {
+            {filteredGroups.map((group, index) => {
               // Generate a unique gradient per card based on index
               const gradients = [
                 'from-[hsl(183,100%,21%)] via-[hsl(183,58%,30%)] to-[hsl(200,80%,35%)]',
