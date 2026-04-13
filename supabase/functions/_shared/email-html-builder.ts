@@ -446,13 +446,22 @@ export function buildPaymentConfirmationEmail(options: PaymentConfirmationOption
         <tr>
           <td class="email-padding" style="padding:32px 40px 28px;">
 
-            <!-- Title -->
-            <h1 style="margin:0 0 6px;color:${C.success};font-size:18px;font-weight:700;line-height:1.3;font-family:${font};">
+            <!-- Title + Avatar -->
+            <h1 style="margin:0 0 12px;color:${C.success};font-size:18px;font-weight:700;line-height:1.3;font-family:${font};">
               ${t.paymentSuccessTitle}
             </h1>
-            <p style="margin:0 0 24px;color:${C.muted};font-size:14px;line-height:1.6;font-family:${font};">
-              ${t.paymentGreeting(recipientName)}
-            </p>
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:24px;">
+              <tr>
+                <td style="width:56px;vertical-align:top;padding-right:14px;">
+                  ${avatarHtml(avatarUrl, recipientName, 48)}
+                </td>
+                <td style="vertical-align:middle;">
+                  <p style="margin:0;color:${C.muted};font-size:14px;line-height:1.6;font-family:${font};">
+                    ${t.paymentGreeting(recipientName)}
+                  </p>
+                </td>
+              </tr>
+            </table>
 
             <!-- Order Info — stacked rows -->
             <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color:${C.bgLight};border:1px solid ${C.border};border-radius:8px;overflow:hidden;margin-bottom:16px;">
