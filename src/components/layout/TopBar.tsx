@@ -1,8 +1,9 @@
+import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useDashboardLayoutContext } from '@/contexts/DashboardLayoutContext';
-import { Moon, Sun, LayoutDashboard, Layers, Users, Award, FolderOpen, Video, Activity, Settings, PanelLeft, FileText, ChevronRight, MoreHorizontal, ArrowLeft } from 'lucide-react';
+import { Moon, Sun, LayoutDashboard, Layers, Users, Award, FolderOpen, Video, Activity, Settings, PanelLeft, FileText, ChevronRight, MoreHorizontal, ArrowLeft, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import tNexusTextWhite from '@/assets/t-nexus-text-white.png';
 import {
@@ -77,6 +78,45 @@ export default function TopBar() {
 
   const isProjectMode = !!projectNavProps;
   const isCustomMode = projectNavProps?.projectMode === 'custom';
+
+  // Inline rename state
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [tempName, setTempName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isRenaming && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isRenaming]);
+
+  const startRename = () => {
+    if (!projectInfo.onRenameProject || !projectInfo.isLeaderInGroup) return;
+    setTempName(projectInfo.projectName || '');
+    setIsRenaming(true);
+  };
+
+  const handleSave = async () => {
+    const trimmed = tempName.trim();
+    if (!trimmed || trimmed === projectInfo.projectName || !projectInfo.onRenameProject) {
+      setIsRenaming(false);
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await projectInfo.onRenameProject(trimmed);
+    } finally {
+      setIsSaving(false);
+      setIsRenaming(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleSave();
+    if (e.key === 'Escape') setIsRenaming(false);
+  };
 
   const tabSource = isCustomMode ? customProjectTabs : projectTabs;
   const visibleTabs = isProjectMode

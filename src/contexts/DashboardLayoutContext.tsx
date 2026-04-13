@@ -4,6 +4,8 @@ interface ProjectInfo {
   projectId?: string;
   projectName?: string;
   zaloLink?: string | null;
+  onRenameProject?: (newName: string) => Promise<void>;
+  isLeaderInGroup?: boolean;
 }
 
 export interface ProjectNavProps {
