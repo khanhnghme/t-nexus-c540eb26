@@ -459,7 +459,7 @@ const CONNECTED_TOOLS_CATEGORY: FeatureCategory = {
   ],
 };
 
-function PlansAndFeatures({ yearly, planCols, comparison, tp }: { yearly: boolean; planCols: any[]; comparison: FeatureCategory[]; tp: any }) {
+function PlansAndFeatures({ yearly, planCols, comparison, tp, onCTA }: { yearly: boolean; planCols: any[]; comparison: FeatureCategory[]; tp: any; onCTA: (planName: string) => void }) {
   const fullComparison = [...comparison, CONNECTED_TOOLS_CATEGORY];
 
   return (
@@ -506,6 +506,7 @@ function PlansAndFeatures({ yearly, planCols, comparison, tp }: { yearly: boolea
                     {isCustom ? tp.contactUs : <>{price}<span style={{ fontWeight: 400 }}> / {tp.mo}</span></>}
                   </div>
                   <button
+                    onClick={() => onCTA(col.name)}
                     style={{
                       padding: '4px 10px', fontSize: 12, fontWeight: 500, borderRadius: 6, cursor: 'pointer',
                       border: col.primary ? 'none' : '1px solid rgba(55,53,47,0.16)',
