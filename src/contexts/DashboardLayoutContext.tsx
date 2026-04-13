@@ -15,6 +15,7 @@ export interface ProjectNavProps {
   hasActiveMeeting?: boolean;
   isScoreFinalized?: boolean;
   projectMode?: 'basic' | 'custom';
+  onRenameProject?: (newName: string) => void;
 }
 
 interface DashboardLayoutContextType {

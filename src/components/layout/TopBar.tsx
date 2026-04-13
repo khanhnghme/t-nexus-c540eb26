@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -78,6 +79,36 @@ export default function TopBar() {
   const isProjectMode = !!projectNavProps;
   const isCustomMode = projectNavProps?.projectMode === 'custom';
 
+  // Inline rename state
+  const [editingName, setEditingName] = useState(false);
+  const [draftName, setDraftName] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editingName && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editingName]);
+
+  const startEditing = () => {
+    if (!projectNavProps?.isLeaderInGroup) return;
+    setDraftName(projectInfo.projectName || '');
+    setEditingName(true);
+  };
+
+  const commitRename = () => {
+    setEditingName(false);
+    const trimmed = draftName.trim();
+    if (trimmed && trimmed !== projectInfo.projectName) {
+      projectNavProps?.onRenameProject?.(trimmed);
+    }
+  };
+
+  const cancelEditing = () => {
+    setEditingName(false);
+  };
+
   const tabSource = isCustomMode ? customProjectTabs : projectTabs;
   const visibleTabs = isProjectMode
     ? tabSource.filter(tab => {
@@ -98,19 +129,56 @@ export default function TopBar() {
         {isProjectMode ? (
           <div className="flex items-center gap-0.5 mx-auto">
             {isCustomMode && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    className="flex items-center justify-center w-7 h-7 rounded-md transition-colors hover:bg-accent shrink-0 mr-1"
-                    onClick={() => navigate('/groups')}
-                  >
-                    <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>{locale === 'vi' ? 'Quay lại' : 'Go back'}</p>
-                </TooltipContent>
-              </Tooltip>
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className="flex items-center justify-center w-7 h-7 rounded-md transition-colors hover:bg-accent shrink-0 mr-1"
+                      onClick={() => navigate('/groups')}
+                    >
+                      <ArrowLeft className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>{locale === 'vi' ? 'Quay lại' : 'Go back'}</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                {/* Editable breadcrumb: Project name */}
+                <div className="flex items-center gap-1 mr-2 shrink-0">
+                  <Link to="/groups" className="hidden sm:inline text-xs text-muted-foreground hover:text-foreground transition-colors">
+                    {locale === 'vi' ? 'Dự án' : 'Projects'}
+                  </Link>
+                  <ChevronRight className="w-3 h-3 text-muted-foreground hidden sm:block" />
+                  {editingName ? (
+                    <input
+                      ref={inputRef}
+                      value={draftName}
+                      onChange={e => setDraftName(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') commitRename();
+                        if (e.key === 'Escape') cancelEditing();
+                      }}
+                      onBlur={commitRename}
+                      className="text-xs font-medium bg-transparent border-b border-primary/50 outline-none px-0.5 py-0 max-w-[160px] text-foreground"
+                    />
+                  ) : (
+                    <span
+                      onClick={startEditing}
+                      className={cn(
+                        "text-xs font-medium text-foreground max-w-[160px] truncate",
+                        projectNavProps?.isLeaderInGroup && "cursor-text hover:border-b hover:border-dashed hover:border-muted-foreground/50"
+                      )}
+                      title={projectInfo.projectName}
+                    >
+                      {projectInfo.projectName || '...'}
+                    </span>
+                  )}
+                </div>
+
+                {/* Separator */}
+                <div className="w-px h-4 bg-border mr-1 shrink-0" />
+              </>
             )}
             {visibleTabs.map((tab) => {
               const Icon = tab.icon;
