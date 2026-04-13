@@ -144,9 +144,10 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
   if (logoImage) {
     const logoDisplayW = 130;
     const logoDisplayH = (logoImage.height / logoImage.width) * logoDisplayW;
+    const logoTopY = headerTopY + 8;
     page.drawImage(logoImage, {
       x: pageW - margin - logoDisplayW,
-      y: headerTopY - logoDisplayH + 6,
+      y: logoTopY - logoDisplayH,
       width: logoDisplayW,
       height: logoDisplayH,
     });
