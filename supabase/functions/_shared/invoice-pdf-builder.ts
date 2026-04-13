@@ -3,6 +3,7 @@
  * Uses embedded Roboto font for full Vietnamese Unicode support
  */
 import { PDFDocument, rgb, StandardFonts } from "https://esm.sh/pdf-lib@1.17.1";
+import QRCode from "https://esm.sh/qrcode@1.5.3";
 import { getEmailTexts, type EmailLocale } from "./email-i18n.ts";
 
 const LOGO_URL = "https://xrlczmzgxlmdavhbwsah.supabase.co/storage/v1/object/public/system-assets/t-nexus-text.png";
@@ -324,6 +325,20 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
   }
   y -= 4;
 
+  // ─── QR Code ────────────────────────────────────────────────────
+  const orderCode = order.order_code || order.id?.slice(0, 8);
+  const invoiceUrl = `https://t-nexus.io.vn/checkout/summary/${orderCode}`;
+  let qrImage: any = null;
+  try {
+    const qrDataUrl: string = await QRCode.toDataURL(invoiceUrl, { margin: 1, width: 200, errorCorrectionLevel: "M" });
+    const qrBase64 = qrDataUrl.split(",")[1];
+    const qrBinary = Uint8Array.from(atob(qrBase64), c => c.charCodeAt(0));
+    qrImage = await pdfDoc.embedPng(qrBinary);
+    console.log("[invoice-pdf] QR code generated for:", invoiceUrl);
+  } catch (qrErr: any) {
+    console.warn("[invoice-pdf] QR generation failed:", qrErr.message);
+  }
+
   // ─── Signature & Stamp ─────────────────────────────────────────
   drawLine(margin, y, pageW - margin);
   y -= 16;
@@ -334,6 +349,15 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
       borderColor: green600, borderWidth: 1.2,
     });
     drawText(t.pdfPaidStamp, margin + 8, y, { font: fontBold, size: 14, color: green600 });
+  }
+
+  // QR code — between PAID stamp and signature
+  if (qrImage) {
+    const qrSize = 60;
+    const qrX = pageW / 2 - qrSize / 2;
+    const qrY = y - 6 - qrSize + 24;
+    page.drawImage(qrImage, { x: qrX, y: qrY, width: qrSize, height: qrSize });
+    drawText("Scan to view", qrX + qrSize / 2, qrY - 8, { size: 6, color: gray400, align: "center" });
   }
 
   const sigX = pageW - margin - 100;
