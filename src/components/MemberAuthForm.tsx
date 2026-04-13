@@ -346,6 +346,36 @@ export function MemberAuthForm() {
       const { error } = await signIn(loginEmail, password);
 
       if (error) {
+        // Check if error is due to unverified email
+        const errMsg = error.message?.toLowerCase() || '';
+        if (errMsg.includes('email not confirmed') || errMsg.includes('email_not_confirmed')) {
+          // Resume verification flow
+          try {
+            const { data: resumeData } = await supabase.functions.invoke('signup-email-otp', {
+              body: { action: 'resume_verification', email: loginEmail.toLowerCase() },
+            });
+
+            if (resumeData?.success) {
+              pendingLoginRef.current = false;
+              sessionStorage.removeItem('t-nexus_login_in_progress');
+              setRegUserId(resumeData.user_id);
+              setRegEmail(resumeData.email);
+              setRegFullName(resumeData.full_name || '');
+              setRegStudentId(resumeData.student_id || '');
+              setIsLoading(false);
+              setActiveTab('register');
+              setRegisterSuccess('verify_email');
+              toast({
+                title: 'Email chưa xác minh',
+                description: 'Đã gửi mã OTP đến email của bạn để xác minh tài khoản.',
+              });
+              return;
+            }
+          } catch (resumeErr) {
+            console.warn('Resume verification failed:', resumeErr);
+          }
+        }
+
         pendingLoginRef.current = false;
         sessionStorage.removeItem('t-nexus_login_in_progress');
         setIsLoading(false);
@@ -524,14 +554,25 @@ export function MemberAuthForm() {
           toast({ title: ta.toastRegisterFailed, description: errMsg, variant: 'destructive' });
         }
       } else {
-        // Backend created user + sent OTP, no session exists on client
-        setRegUserId(registerData.user_id);
-        setIsLoading(false);
-        setRegisterSuccess('verify_email');
-        toast({
-          title: ta.toastCheckEmail,
-          description: ta.toastOtpSent,
-        });
+        // Check if this is a resume flow (user existed but unverified)
+        if (registerData.resume) {
+          setRegUserId(registerData.user_id);
+          setIsLoading(false);
+          setRegisterSuccess('verify_email');
+          toast({
+            title: ta.toastCheckEmail || 'Kiểm tra email',
+            description: 'Tài khoản đã tồn tại nhưng chưa xác minh. Đã gửi lại mã OTP.',
+          });
+        } else {
+          // Backend created user + sent OTP, no session exists on client
+          setRegUserId(registerData.user_id);
+          setIsLoading(false);
+          setRegisterSuccess('verify_email');
+          toast({
+            title: ta.toastCheckEmail,
+            description: ta.toastOtpSent,
+          });
+        }
       }
     } catch (err) {
       isRegisteringRef.current = false;
