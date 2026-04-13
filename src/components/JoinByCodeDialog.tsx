@@ -511,9 +511,28 @@ export default function JoinByCodeDialog({ open, onOpenChange, onJoined }: JoinB
                   </div>
                 )}
 
+                {/* Hidden temp element for file scanning */}
+                <div id="qr-file-scanner-temp" className="hidden" />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleScanFromImage}
+                />
+
                 <p className="text-xs text-muted-foreground/70 text-center">
                   📱 Quét mã QR từ thẻ mời hoặc màn hình khác
                 </p>
+
+                <Button
+                  variant="outline"
+                  className="w-full gap-2"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <ImagePlus className="w-4 h-4" />
+                  Tải ảnh QR từ máy
+                </Button>
               </>
             )}
           </div>
