@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { getPlanLabel } from '@/lib/planConfig';
+import { PLAN_CONFIG, getPlanLabel, type PlanKey } from '@/lib/planConfig';
 
 const STEP_LABELS_EN = ['Order', 'Payment', 'Summary'];
 const STEP_LABELS_VI = ['Đặt hàng', 'Thanh toán', 'Kết quả'];
@@ -56,6 +56,56 @@ const ADDON_TYPES = [
 
 const ADDON_PRICE_MONTHLY = 2.49;
 
+const roundCurrency = (value: number) => Math.round(value * 100) / 100;
+
+function getOrderPricingBreakdown(order: any) {
+  const addons: Array<{ type: string; quantity: number }> = Array.isArray(order?.addons) ? order.addons : [];
+  const cycle = order?.billing_cycle === 'yearly' ? 'yearly' : 'monthly';
+  const isAddonOrder = order?.order_type === 'addon';
+  const welcomeDiscount = roundCurrency(Number(order?.welcome_discount) || 0);
+
+  const addonOriginal = roundCurrency(
+    addons.reduce((sum, addon) => {
+      const quantity = Number(addon?.quantity) || 0;
+      if (quantity <= 0) return sum;
+      const unitPrice = cycle === 'yearly' ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
+      return sum + unitPrice * quantity;
+    }, 0),
+  );
+
+  const planCatalogPrice = order?.plan
+    ? (cycle === 'yearly'
+        ? PLAN_CONFIG[order.plan as PlanKey]?.yearlyPrice
+        : PLAN_CONFIG[order.plan as PlanKey]?.monthlyPrice)
+    : null;
+
+  const fallbackPlanAmount = roundCurrency((Number(order?.base_amount) || 0) + welcomeDiscount);
+  const planAmount = roundCurrency(
+    isAddonOrder
+      ? 0
+      : typeof planCatalogPrice === 'number'
+        ? planCatalogPrice
+        : fallbackPlanAmount,
+  );
+
+  const subtotal = roundCurrency(planAmount + addonOriginal);
+  const totalAmount = roundCurrency(Number(order?.total_amount) || 0);
+  const couponDiscount = roundCurrency(isAddonOrder ? 0 : Math.max(0, Number(order?.discount_amount) || 0));
+  const addonFinal = roundCurrency(Number(order?.addon_amount) || 0);
+  const addonSavings = roundCurrency(Math.max(0, addonOriginal - addonFinal));
+  const addonSavingsRate = addonOriginal > 0 && addonSavings > 0 ? Math.round((addonSavings / addonOriginal) * 100) : 0;
+
+  return {
+    planAmount,
+    subtotal,
+    totalAmount,
+    welcomeDiscount,
+    couponDiscount,
+    addonSavings,
+    addonSavingsRate,
+  };
+}
+
 const formatDateInvoice = (d: string | null) => {
   if (!d) return '—';
   const date = new Date(d);
@@ -67,6 +117,7 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
   const addons: Array<{ type: string; quantity: number }> = Array.isArray(order.addons) ? order.addons : [];
   const cycle = order.billing_cycle;
   const isCompleted = order.status === 'completed';
+  const pricing = getOrderPricingBreakdown(order);
 
   const planStarted = profile?.plan_started_at;
   const planExpires = profile?.plan_expires_at;
@@ -179,7 +230,7 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
               </td>
               <td className="py-3 text-right tabular-nums">${(order.base_amount || 0).toFixed(2)}</td>
               <td className="py-3 text-center">1</td>
-              <td className="py-3 text-right tabular-nums font-medium">${(order.base_amount || 0).toFixed(2)}</td>
+              <td className="py-3 text-right tabular-nums font-medium">${pricing.planAmount.toFixed(2)}</td>
             </tr>
           )}
 
@@ -206,23 +257,34 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
         <tfoot>
           <tr className="border-t border-gray-200">
             <td colSpan={4} className="py-2 text-right text-gray-500">{isVi ? 'Tạm tính' : 'Subtotal'}</td>
-            <td className="py-2 text-right tabular-nums">${((order.base_amount || 0) + (order.addon_amount || 0)).toFixed(2)}</td>
+            <td className="py-2 text-right tabular-nums">${pricing.subtotal.toFixed(2)}</td>
           </tr>
 
-          {((order.discount_amount || 0) - (order.welcome_discount || 0)) > 0 && (
+          {pricing.welcomeDiscount > 0 && (
+            <tr className="text-green-700">
+              <td colSpan={4} className="py-1 text-right">{isVi ? 'Ưu đãi chào mừng' : 'Welcome Discount'}</td>
+              <td className="py-1 text-right tabular-nums">-${pricing.welcomeDiscount.toFixed(2)}</td>
+            </tr>
+          )}
+
+          {pricing.addonSavings > 0 && (
+            <tr className="text-green-700">
+              <td colSpan={4} className="py-1 text-right">
+                {isVi
+                  ? `Tiết kiệm add-on${pricing.addonSavingsRate > 0 ? ` (${pricing.addonSavingsRate}%)` : ''}`
+                  : `Add-on savings${pricing.addonSavingsRate > 0 ? ` (${pricing.addonSavingsRate}%)` : ''}`}
+              </td>
+              <td className="py-1 text-right tabular-nums">-${pricing.addonSavings.toFixed(2)}</td>
+            </tr>
+          )}
+
+          {pricing.couponDiscount > 0 && (
             <tr className="text-green-700">
               <td colSpan={4} className="py-1 text-right">
                 {isVi ? 'Mã giảm giá' : 'Coupon Discount'}
                 {order.coupon_code ? ` (${order.coupon_code})` : ''}
               </td>
-              <td className="py-1 text-right tabular-nums">-${((order.discount_amount || 0) - (order.welcome_discount || 0)).toFixed(2)}</td>
-            </tr>
-          )}
-
-          {(order.welcome_discount || 0) > 0 && (
-            <tr className="text-green-700">
-              <td colSpan={4} className="py-1 text-right">{isVi ? 'Ưu đãi chào mừng' : 'Welcome Discount'}</td>
-              <td className="py-1 text-right tabular-nums">-${order.welcome_discount.toFixed(2)}</td>
+              <td className="py-1 text-right tabular-nums">-${pricing.couponDiscount.toFixed(2)}</td>
             </tr>
           )}
 
@@ -497,6 +559,7 @@ export default function CheckoutSummary() {
   // Parse addons
   const addons: Array<{ type: string; quantity: number }> = Array.isArray(order.addons) ? order.addons : [];
   const cycle = order.billing_cycle;
+  const pricing = getOrderPricingBreakdown(order);
 
   // End time for non-completed
   const endTime = order.completed_at || order.expires_at;
@@ -640,7 +703,7 @@ export default function CheckoutSummary() {
                     ({cycle === 'yearly' ? (isVi ? 'Theo năm' : 'Yearly') : (isVi ? 'Theo tháng' : 'Monthly')})
                   </span>
                 </div>
-                <span className="font-medium">${(order.base_amount || 0).toFixed(2)}</span>
+                <span className="font-medium">${pricing.planAmount.toFixed(2)}</span>
               </div>
             )}
 
@@ -660,22 +723,36 @@ export default function CheckoutSummary() {
               );
             })}
 
-            {/* Discount (coupon only, excluding welcome_discount) */}
-            {((order.discount_amount || 0) - (order.welcome_discount || 0)) > 0 && (
+            <div className="flex justify-between items-center py-1 text-sm">
+              <span className="text-muted-foreground">{isVi ? 'Tạm tính' : 'Subtotal'}</span>
+              <span>${pricing.subtotal.toFixed(2)}</span>
+            </div>
+
+            {pricing.welcomeDiscount > 0 && (
               <div className="flex justify-between items-center py-1 text-emerald-600">
-                <span>
-                  {isVi ? 'Giảm giá' : 'Discount'}
-                  {order.coupon_code ? ` (${order.coupon_code})` : ''}
-                </span>
-                <span>-${((order.discount_amount || 0) - (order.welcome_discount || 0)).toFixed(2)}</span>
+                <span>{isVi ? 'Ưu đãi chào mừng' : 'Welcome Discount'}</span>
+                <span>-${pricing.welcomeDiscount.toFixed(2)}</span>
               </div>
             )}
 
-            {/* Welcome discount */}
-            {(order.welcome_discount || 0) > 0 && (
+            {pricing.addonSavings > 0 && (
               <div className="flex justify-between items-center py-1 text-emerald-600">
-                <span>{isVi ? 'Ưu đãi chào mừng' : 'Welcome Discount'}</span>
-                <span>-${order.welcome_discount.toFixed(2)}</span>
+                <span>
+                  {isVi
+                    ? `Tiết kiệm add-on${pricing.addonSavingsRate > 0 ? ` (${pricing.addonSavingsRate}%)` : ''}`
+                    : `Add-on savings${pricing.addonSavingsRate > 0 ? ` (${pricing.addonSavingsRate}%)` : ''}`}
+                </span>
+                <span>-${pricing.addonSavings.toFixed(2)}</span>
+              </div>
+            )}
+
+            {pricing.couponDiscount > 0 && (
+              <div className="flex justify-between items-center py-1 text-emerald-600">
+                <span>
+                  {isVi ? 'Mã giảm giá' : 'Coupon Discount'}
+                  {order.coupon_code ? ` (${order.coupon_code})` : ''}
+                </span>
+                <span>-${pricing.couponDiscount.toFixed(2)}</span>
               </div>
             )}
 
@@ -684,7 +761,7 @@ export default function CheckoutSummary() {
             {/* Total */}
             <div className="flex justify-between items-center pt-1">
               <span className="text-base font-bold">{isVi ? 'Tổng cộng' : 'Total'}</span>
-              <span className="text-lg font-bold">${(order.total_amount || 0).toFixed(2)}</span>
+              <span className="text-lg font-bold">${pricing.totalAmount.toFixed(2)}</span>
             </div>
           </div>
         </CardContent>
