@@ -133,13 +133,31 @@ export default function GroupDetail() {
     }
   }, [searchParams, currentTab, availableTabs, setCurrentTab]);
 
+  // Rename project handler
+  const handleRenameProject = useCallback(async (newName: string) => {
+    if (!group) return;
+    const { error } = await supabase.from('groups').update({ name: newName }).eq('id', group.id);
+    if (error) {
+      toast({ title: tc.error, description: error.message, variant: 'destructive' });
+      throw error;
+    }
+    toast({ title: locale === 'vi' ? 'Đã đổi tên' : 'Renamed', description: newName });
+    fetchGroupData();
+  }, [group?.id, toast, tc.error, fetchGroupData]);
+
   // Sync project info to persistent layout header
   useEffect(() => {
     if (group) {
-      setProjectInfo({ projectId: group.id, projectName: group.name, zaloLink: group.zalo_link });
+      setProjectInfo({ 
+        projectId: group.id, 
+        projectName: group.name, 
+        zaloLink: group.zalo_link,
+        onRenameProject: handleRenameProject,
+        isLeaderInGroup,
+      });
     }
     return () => setProjectInfo({});
-  }, [group?.id, group?.name, group?.zalo_link, setProjectInfo]);
+  }, [group?.id, group?.name, group?.zalo_link, setProjectInfo, handleRenameProject, isLeaderInGroup]);
 
   // Sync project navigation to TopBar
   useEffect(() => {
