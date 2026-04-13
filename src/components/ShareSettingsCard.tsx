@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -8,9 +8,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { logActivity } from '@/lib/activityLogger';
 import { supabase } from '@/integrations/supabase/client';
-import { Share2, Copy, ExternalLink, Users, Activity, Loader2, Lock, Unlock, Eye, FolderOpen, KeyRound, Layers, Trophy, ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
+import { Share2, Copy, ExternalLink, Users, Activity, Loader2, Lock, Unlock, Eye, FolderOpen, KeyRound, Layers, Trophy, ChevronDown, ChevronRight, RefreshCw, Download } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
+import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 
 interface ShareSettingsCardProps {
   groupId: string;
@@ -73,6 +74,122 @@ export default function ShareSettingsCard({
   const [localMemberLimit, setLocalMemberLimit] = useState<number | null>(joinMemberLimit);
   const [localRequireApproval, setLocalRequireApproval] = useState(joinRequireApproval);
   const memberLimitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const qrCanvasRef = useRef<HTMLDivElement>(null);
+
+  const handleDownloadInviteImage = useCallback((code: string, name: string, limit: number | null, requireApproval: boolean) => {
+    const canvas = document.createElement('canvas');
+    const w = 600, h = 720;
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d')!;
+
+    // Background
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.roundRect(0, 0, w, h, 24);
+    ctx.fill();
+
+    // Header bar
+    ctx.fillStyle = '#6366f1';
+    ctx.beginPath();
+    ctx.roundRect(0, 0, w, 80, [24, 24, 0, 0]);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Mời tham gia dự án', w / 2, 50);
+
+    // Project name
+    ctx.fillStyle = '#1e1e2e';
+    ctx.font = 'bold 20px system-ui, -apple-system, sans-serif';
+    ctx.fillText(name.length > 40 ? name.slice(0, 37) + '...' : name, w / 2, 120);
+
+    // QR Code — render from hidden canvas
+    const joinUrl = `https://t-nexus.io.vn/join?code=${code}`;
+    const tempCanvas = document.createElement('canvas');
+    const tempDiv = document.createElement('div');
+    document.body.appendChild(tempDiv);
+    
+    // Use a simple approach: render QR via imported lib
+    import('qrcode.react').then(({ QRCodeCanvas: QRC }) => {
+      // Instead, draw QR manually using canvas pattern
+      // We'll use the hidden ref if available, or draw a placeholder
+      const qrSize = 200;
+      const qrX = (w - qrSize) / 2;
+      const qrY = 145;
+
+      // Draw QR border
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(qrX - 12, qrY - 12, qrSize + 24, qrSize + 24, 12);
+      ctx.stroke();
+
+      // Try to get QR from the hidden canvas in DOM
+      const hiddenQR = document.querySelector('#hidden-qr-canvas canvas') as HTMLCanvasElement;
+      if (hiddenQR) {
+        ctx.drawImage(hiddenQR, qrX, qrY, qrSize, qrSize);
+      }
+
+      // Code display
+      const codeY = qrY + qrSize + 50;
+      ctx.fillStyle = '#f1f5f9';
+      ctx.beginPath();
+      ctx.roundRect(100, codeY - 25, w - 200, 50, 10);
+      ctx.fill();
+      ctx.fillStyle = '#1e1e2e';
+      ctx.font = 'bold 32px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(code.split('').join(' '), w / 2, codeY + 10);
+
+      // Info section
+      let infoY = codeY + 65;
+      ctx.font = '15px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#64748b';
+
+      const infos = [
+        `👥  Giới hạn: ${limit ? `${limit} người` : 'Không giới hạn'}`,
+        `🔒  Cần duyệt: ${requireApproval ? 'Có' : 'Không — vào ngay'}`,
+      ];
+      infos.forEach(text => {
+        ctx.fillText(text, 80, infoY);
+        infoY += 28;
+      });
+
+      // Instructions
+      infoY += 10;
+      ctx.fillStyle = '#6366f1';
+      ctx.font = 'bold 14px system-ui, -apple-system, sans-serif';
+      ctx.fillText('📱 Cách tham gia:', 80, infoY);
+      infoY += 24;
+      ctx.fillStyle = '#475569';
+      ctx.font = '13px system-ui, -apple-system, sans-serif';
+      const steps = [
+        '1. Quét mã QR hoặc truy cập t-nexus.io.vn',
+        '2. Nhấn "Tham gia dự án"',
+        `3. Nhập mã: ${code}`,
+      ];
+      steps.forEach(s => {
+        ctx.fillText(s, 96, infoY);
+        infoY += 22;
+      });
+
+      // Footer
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '12px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('t-nexus.io.vn', w / 2, h - 20);
+
+      // Download
+      const link = document.createElement('a');
+      link.download = `invite-${code}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+
+      document.body.removeChild(tempDiv);
+    });
+  }, []);
 
   useEffect(() => {
     setLocalIsPublic(isPublic);
@@ -336,45 +453,71 @@ export default function ShareSettingsCard({
         <CardContent className="space-y-3 pt-0">
           {localAllowJoin && localJoinCode ? (
             <>
-              <div className="flex gap-2 items-center">
-                <div className="flex-1 bg-muted/50 border rounded-lg px-4 py-3 text-center text-3xl font-bold tracking-[0.5em] font-mono select-all">
+              {/* Compact inline: QR + Code + Actions */}
+              <div className="flex gap-3 items-center">
+                <div className="shrink-0 rounded-lg border bg-background p-1.5">
+                  <QRCodeSVG value={`https://t-nexus.io.vn/join?code=${localJoinCode}`} size={56} level="M" />
+                </div>
+                <div className="flex-1 bg-muted/50 border rounded-lg px-3 py-2.5 text-center text-2xl font-bold tracking-[0.4em] font-mono select-all">
                   {localJoinCode}
                 </div>
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-9 w-9"
+                    className="h-8 w-8"
                     onClick={() => {
+                      const joinUrl = `https://t-nexus.io.vn/join?code=${localJoinCode}`;
                       const inviteText = [
                         `🎯 Bạn được mời tham gia dự án${groupName ? ` "${groupName}"` : ''}!`,
                         ``,
                         `📋 Mã tham gia: ${localJoinCode}`,
+                        `🔗 Link: ${joinUrl}`,
                         ``,
                         `👉 Cách tham gia:`,
-                        `1. Truy cập ứng dụng`,
-                        `2. Nhấn "Tham gia bằng mã"`,
+                        `1. Quét mã QR hoặc truy cập t-nexus.io.vn`,
+                        `2. Nhấn "Tham gia dự án"`,
                         `3. Nhập mã: ${localJoinCode}`,
                       ].join('\n');
                       navigator.clipboard.writeText(inviteText);
                       toast({ title: 'Đã sao chép mã kèm lời mời' });
                     }}
-                    title="Sao chép mã"
+                    title="Sao chép lời mời"
                   >
                     <Copy className="w-3.5 h-3.5" />
                   </Button>
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-9 w-9"
+                    className="h-8 w-8"
                     onClick={handleRegenerateJoinCode}
                     title="Tạo mã mới"
                     disabled={isUpdating}
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${isUpdating ? 'animate-spin' : ''}`} />
                   </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => handleDownloadInviteImage(localJoinCode, groupName || 'Dự án', localMemberLimit, localRequireApproval)}
+                    title="Tải ảnh mời"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                  </Button>
                 </div>
               </div>
+
+              {/* Hidden QR canvas for download */}
+              <div id="hidden-qr-canvas" className="hidden">
+                <QRCodeCanvas value={`https://t-nexus.io.vn/join?code=${localJoinCode}`} size={200} level="H" />
+              </div>
+
+              {/* Brief instruction */}
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                📱 Quét QR hoặc vào <span className="font-medium">t-nexus.io.vn</span> → Tham gia dự án → Nhập mã
+              </p>
+
               {/* Collapsible sub-settings */}
               <Collapsible>
                 <CollapsibleTrigger className="w-full flex items-center justify-between p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors group">
@@ -385,7 +528,6 @@ export default function ShareSettingsCard({
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <div className="space-y-3 p-3 pt-2">
-                    {/* Require approval toggle */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
@@ -417,7 +559,6 @@ export default function ShareSettingsCard({
                         }
                       </p>
                     </div>
-                    {/* Member limit setting */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
@@ -477,9 +618,6 @@ export default function ShareSettingsCard({
                   </div>
                 </CollapsibleContent>
               </Collapsible>
-              <p className="text-xs text-muted-foreground">
-                Chia sẻ mã 6 ký tự này cho thành viên muốn tự tham gia project
-              </p>
             </>
           ) : (
             <p className="text-sm text-muted-foreground py-2">
