@@ -394,16 +394,21 @@ export default function CheckoutSummary() {
                 <Receipt className="w-4 h-4 mr-2" />
                 {isVi ? 'Lịch sử thanh toán' : 'Billing History'}
               </Button>
+            ) : order.order_type === 'addon' ? (
+              <Button onClick={() => navigate('/service-plan?tab=addon')} className="flex-1">
+                <ArrowRight className="w-4 h-4 mr-2" />
+                {isVi ? 'Xem gói bổ sung' : 'View Add-ons'}
+              </Button>
             ) : (
-              <Button onClick={() => navigate('/dashboard')} className="flex-1">
-                <Home className="w-4 h-4 mr-2" />
-                {isVi ? 'Về Dashboard' : 'Go to Dashboard'}
+              <Button onClick={() => navigate('/service-plan')} className="flex-1">
+                <ArrowRight className="w-4 h-4 mr-2" />
+                {isVi ? 'Xem gói dịch vụ' : 'View Service Plan'}
               </Button>
             )}
           </>
         ) : status === 'failed' ? (
           <>
-            <Button onClick={() => navigate(`/checkout/payment/${orderCode}`)} className="flex-1">
+            <Button onClick={() => navigate(order.order_type === 'addon' ? `/addon-checkout/payment/${orderCode}` : `/checkout/payment/${orderCode}`)} className="flex-1">
               <RotateCcw className="w-4 h-4 mr-2" />
               {isVi ? 'Thanh toán lại' : 'Retry Payment'}
             </Button>
@@ -414,7 +419,7 @@ export default function CheckoutSummary() {
           </>
         ) : (
           <>
-            <Button onClick={() => navigate('/checkout')} className="flex-1">
+            <Button onClick={() => navigate(order.order_type === 'addon' ? '/addon-checkout' : '/checkout')} className="flex-1">
               <ArrowRight className="w-4 h-4 mr-2" />
               {isVi ? 'Tạo đơn mới' : 'Create New Order'}
             </Button>
