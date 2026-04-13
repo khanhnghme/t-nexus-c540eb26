@@ -67,6 +67,7 @@ import CheckoutSummary from "./pages/CheckoutSummary";
 import AdminLayout from "./components/layout/AdminLayout";
 import AdminBilling from "./pages/AdminBilling";
 import AdminUserBilling from "./pages/AdminUserBilling";
+import JoinProject from "./pages/JoinProject";
 
 const CreateCustomProject = React.lazy(() => import("./pages/CreateCustomProject"));
 const PublicCanvasPage = React.lazy(() => import("./pages/PublicCanvasPage"));
@@ -169,6 +170,7 @@ function AppRoutes() {
         <Route path="/share/:token/page/:pageSlug" element={<ForceLightMode><Suspense fallback={null}><PublicCanvasPage /></Suspense></ForceLightMode>} />
         <Route path="/share/:token/page" element={<ForceLightMode><Suspense fallback={null}><PublicCanvasPage /></Suspense></ForceLightMode>} />
         <Route path="/reset-password" element={<ForceLightMode><ResetPassword /></ForceLightMode>} />
+        <Route path="/join" element={<JoinProject />} />
         <Route path="/auth/member" element={<Navigate to="/auth" replace />} />
         <Route path="/auth/admin" element={<Navigate to="/auth" replace />} />
         <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />

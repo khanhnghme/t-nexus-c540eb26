@@ -53,11 +53,22 @@ export default function JoinByCodeDialog({ open, onOpenChange, onJoined, initial
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scannerContainerId = 'qr-scanner-container';
 
+  // Auto-fill and auto-lookup when initialCode is provided
+  const initialCodeProcessedRef = useRef(false);
   useEffect(() => {
-    if (open && !groupPreview && mode === 'code') {
+    if (open && initialCode && initialCode.length === 6 && user && !initialCodeProcessedRef.current) {
+      initialCodeProcessedRef.current = true;
+      const upperCode = initialCode.toUpperCase();
+      setDigits(upperCode.split(''));
+      setTimeout(() => handleLookupWithCode(upperCode), 300);
+    }
+  }, [open, initialCode, user]);
+
+  useEffect(() => {
+    if (open && !groupPreview && mode === 'code' && !initialCode) {
       setTimeout(() => inputRefs.current[0]?.focus(), 100);
     }
-  }, [open, groupPreview, mode]);
+  }, [open, groupPreview, mode, initialCode]);
 
   // Cleanup scanner on unmount or dialog close
   useEffect(() => {

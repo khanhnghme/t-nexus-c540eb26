@@ -41,7 +41,13 @@ export default function RememberLoginScreen({ profile, roles, onLogout }: Rememb
     .toUpperCase() || '?';
 
   const handleContinue = useCallback(() => {
-    navigate('/dashboard');
+    const postLoginRedirect = sessionStorage.getItem('t-nexus_post_login_redirect');
+    if (postLoginRedirect) {
+      sessionStorage.removeItem('t-nexus_post_login_redirect');
+      navigate(postLoginRedirect);
+    } else {
+      navigate('/dashboard');
+    }
   }, [navigate]);
 
   const handleLogout = () => {
