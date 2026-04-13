@@ -1392,7 +1392,7 @@ export default function MemberManagementCard({
                   className="text-[11px] text-primary hover:underline mt-1 text-left"
                   onClick={() => {
                     setIsAddDialogOpen(false);
-                    const { setCurrentTab } = require('@/contexts/NavigationContext');
+                    navSetCurrentTab('settings');
                   }}
                 >
                   💡 Thành viên cũng có thể tự tham gia bằng QR hoặc nhập mã — xem tại Cài đặt
