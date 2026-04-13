@@ -257,7 +257,7 @@ export default function Pricing() {
         </div>
 
         {/* ── Plans and features — full comparison table ── */}
-        <PlansAndFeatures yearly={yearly} planCols={PLAN_COLS} comparison={COMPARISON} tp={tp} />
+        <PlansAndFeatures yearly={yearly} planCols={PLAN_COLS} comparison={COMPARISON} tp={tp} onCTA={handleCTA} />
 
         {/* ── Questions & answers ── */}
         <QuestionsAndAnswers faqData={FAQ_DATA} tp={tp} />
