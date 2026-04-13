@@ -86,11 +86,9 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
         </div>
         <div className="text-right -mt-1">
           <img src="/src/assets/t-nexus-text.png" alt="T-Nexus" style={{ width: 100, height: 'auto' }} className="ml-auto mb-1" />
-          <p className="text-xs text-gray-500">
+          <p className="text-[10px] text-gray-400 mt-0.5">
             {isVi ? 'Dịch vụ quản lý dự án số' : 'Digital Project Management Service'}
           </p>
-          <p className="text-[10px] text-gray-400 mt-0.5">https://t-nexus.io.vn</p>
-          <p className="text-[10px] text-gray-400">Email: support@t-nexus.io.vn</p>
         </div>
       </div>
 
