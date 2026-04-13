@@ -1,4 +1,6 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useEmailLookup } from '@/hooks/useEmailLookup';
+import EmailUserPreview from '@/components/EmailUserPreview';
 import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 import leaveGroupIllustration from '@/assets/leave-group-illustration.png';
 import { useNavigate } from 'react-router-dom';
@@ -118,8 +120,7 @@ export default function MemberManagementCard({
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const [selectedRole, setSelectedRole] = useState<'project_basic:member' | 'project_basic:admin'>('project_basic:member');
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Profile[]>([]);
-  const [isSearchingProfiles, setIsSearchingProfiles] = useState(false);
+  const [selectedUsersMap, setSelectedUsersMap] = useState<Map<string, { id: string; full_name: string; avatar_url: string | null; email: string }>>(new Map());
 
 
 
@@ -472,41 +473,21 @@ export default function MemberManagementCard({
 
   const resetAddForm = () => {
     setSelectedUserIds(new Set());
+    setSelectedUsersMap(new Map());
     setSelectedRole('project_basic:member');
     setSearchQuery('');
-    setSearchResults([]);
   };
 
-  // Search profiles from API when query changes
-  const handleSearchProfiles = async (query: string) => {
-    setSearchQuery(query);
-    if (query.trim().length < 2) {
-      setSearchResults([]);
-      return;
-    }
-    setIsSearchingProfiles(true);
-    try {
-      const memberUserIds = members.map(m => m.user_id);
-      const pendingUserIds = pendingInvitations.map(p => p.invited_user_id);
-      const excludeIds = [...memberUserIds, ...pendingUserIds, currentUserId];
+  // Email lookup for adding members
+  const { previewUser, isLooking, notFound } = useEmailLookup(searchQuery);
 
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('is_approved', true)
-        .or(`full_name.ilike.%${query}%,student_id.ilike.%${query}%,email.ilike.%${query}%`)
-        .not('id', 'in', `(${excludeIds.join(',')})`)
-        .limit(20);
-      
-      setSearchResults(data || []);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsSearchingProfiles(false);
-    }
-  };
-
-  const filteredProfiles = searchResults;
+  // Check if looked-up user is already a member or pending
+  const isAlreadyInProject = useMemo(() => {
+    if (!previewUser) return false;
+    const memberUserIds = members.map(m => m.user_id);
+    const pendingUserIds = pendingInvitations.map(p => p.invited_user_id);
+    return [...memberUserIds, ...pendingUserIds, currentUserId].includes(previewUser.id);
+  }, [previewUser, members, pendingInvitations, currentUserId]);
 
   const handleAddMember = async () => {
     if (guardReadOnly()) return;
@@ -540,7 +521,7 @@ export default function MemberManagementCard({
 
       // Send notifications
       for (const uid of selectedUserIds) {
-        const p = searchResults.find(ap => ap.id === uid);
+        const p = selectedUsersMap.get(uid);
         await notifyProjectInvitation({
           invitedUserId: uid,
           inviterName: profile?.full_name || 'Leader',
@@ -550,7 +531,7 @@ export default function MemberManagementCard({
       }
 
       const addedNames = Array.from(selectedUserIds)
-        .map(uid => searchResults.find(p => p.id === uid)?.full_name)
+        .map(uid => selectedUsersMap.get(uid)?.full_name)
         .filter(Boolean);
 
       await logActivity({
@@ -1419,73 +1400,54 @@ export default function MemberManagementCard({
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
                     <Input
-                      placeholder="Nhập tên hoặc MSSV để tìm kiếm..."
+                      placeholder="Nhập email để tìm kiếm..."
                       value={searchQuery}
-                      onChange={(e) => handleSearchProfiles(e.target.value)}
+                      onChange={(e) => setSearchQuery(e.target.value)}
                       className="h-11 pl-10 border-2 border-primary/30 focus-visible:border-primary focus-visible:ring-primary/20 bg-primary/5 placeholder:text-muted-foreground/70 font-medium"
                     />
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      {isSearchingProfiles ? 'Đang tìm...' : searchQuery.length >= 2 ? `${filteredProfiles.length} kết quả` : 'Nhập ít nhất 2 ký tự'}
-                    </span>
+                  <div className="mt-2">
+                    {previewUser && !isAlreadyInProject && (
+                      <div
+                        className={`cursor-pointer rounded-lg transition-colors ${
+                          selectedUserIds.has(previewUser.id)
+                            ? 'ring-2 ring-primary'
+                            : ''
+                        }`}
+                        onClick={() => {
+                          if (!selectedUsersMap.has(previewUser.id)) {
+                            setSelectedUsersMap(prev => new Map(prev).set(previewUser.id, previewUser));
+                          }
+                          setSelectedUserIds(prev => {
+                            const next = new Set(prev);
+                            if (next.has(previewUser.id)) next.delete(previewUser.id);
+                            else next.add(previewUser.id);
+                            return next;
+                          });
+                        }}
+                      >
+                        <EmailUserPreview previewUser={previewUser} isLooking={false} notFound={false} />
+                      </div>
+                    )}
+                    {previewUser && isAlreadyInProject && (
+                      <div className="flex items-center gap-2 p-2.5 rounded-lg border border-dashed text-muted-foreground text-xs">
+                        <UserCheck className="w-4 h-4 shrink-0" />
+                        <span>Người dùng này đã là thành viên hoặc đã được mời.</span>
+                      </div>
+                    )}
+                    {!previewUser && (
+                      <EmailUserPreview previewUser={null} isLooking={isLooking} notFound={notFound} notFoundText="Không tìm thấy người dùng với email này." />
+                    )}
                   </div>
                 </div>
-                <ScrollArea className="flex-1 mt-3 border rounded-lg p-2">
-                  {filteredProfiles.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-8 text-muted-foreground text-sm">
+                <div className="flex-1 mt-3 flex flex-col items-center justify-center text-muted-foreground text-sm">
+                  {!searchQuery && (
+                    <>
                       <Search className="w-10 h-10 mb-2 opacity-30" />
-                      <p>{searchQuery && searchQuery.length >= 2 ? 'Không tìm thấy thành viên phù hợp' : 'Nhập tên hoặc MSSV để tìm kiếm'}</p>
-                      {(!searchQuery || searchQuery.length < 2) && <p className="text-xs mt-1">Nhập ít nhất 2 ký tự</p>}
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {filteredProfiles.map((p) => (
-                        <div
-                          key={p.id}
-                          className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                            selectedUserIds.has(p.id)
-                              ? 'bg-primary/10 border-2 border-primary' 
-                              : 'bg-muted/30 hover:bg-muted/50 border-2 border-transparent'
-                          }`}
-                          onClick={() => {
-                            setSelectedUserIds(prev => {
-                              const next = new Set(prev);
-                              if (next.has(p.id)) next.delete(p.id);
-                              else next.add(p.id);
-                              return next;
-                            });
-                          }}
-                        >
-                          <Checkbox
-                            checked={selectedUserIds.has(p.id)}
-                            onCheckedChange={() => {
-                              setSelectedUserIds(prev => {
-                                const next = new Set(prev);
-                                if (next.has(p.id)) next.delete(p.id);
-                                else next.add(p.id);
-                                return next;
-                              });
-                            }}
-                          />
-                          <UserAvatar 
-                            src={p.avatar_url} 
-                            name={p.full_name}
-                            size="md"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{p.full_name}</p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {p.institution ? <span className="text-primary/70 font-medium">{p.institution}</span> : null}
-                              {p.institution ? ' • ' : ''}MSSV: {p.student_id}
-                            </p>
-                            <p className="text-xs text-muted-foreground/70 truncate">{p.email}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                      <p>Nhập đúng email để tìm kiếm</p>
+                    </>
                   )}
-                </ScrollArea>
+                </div>
               </div>
 
               {/* Right: Selected & Role - 2 cols */}
@@ -1505,14 +1467,14 @@ export default function MemberManagementCard({
                   ) : (
                     <div className="space-y-1.5">
                       {Array.from(selectedUserIds).map(uid => {
-                        const p = searchResults.find(ap => ap.id === uid);
+                        const p = selectedUsersMap.get(uid);
                         if (!p) return null;
                         return (
                           <div key={uid} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/50">
                             <UserAvatar src={p.avatar_url} name={p.full_name} size="sm" />
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-medium truncate">{p.full_name}</p>
-                              <p className="text-xs text-muted-foreground">{p.institution ? `${p.institution} • ` : ''}{p.student_id}</p>
+                              <p className="text-xs text-muted-foreground truncate">{p.email}</p>
                             </div>
                             <Button
                               variant="ghost"
