@@ -521,7 +521,7 @@ export default function MemberManagementCard({
 
       // Send notifications
       for (const uid of selectedUserIds) {
-        const p = searchResults.find(ap => ap.id === uid);
+        const p = selectedUsersMap.get(uid);
         await notifyProjectInvitation({
           invitedUserId: uid,
           inviterName: profile?.full_name || 'Leader',
