@@ -501,16 +501,20 @@ export default function FirstTimeOnboarding({
   const pwStrength = getPasswordStrength();
 
   // Get features from pricing translations
-  const getPlanFeatures = (planKey: string): string[] => {
+  const getPlanFeatures = (planKey: string): { quotas: string[]; features: string[] } => {
     const pricingPlans = pricingT?.plans as any;
-    if (!pricingPlans) return [];
+    if (!pricingPlans) return { quotas: [], features: [] };
     const map: Record<string, string> = {
       plan_free: 'free',
       plan_plus: 'plus',
       plan_pro: 'pro',
       plan_business: 'business',
     };
-    return pricingPlans[map[planKey]]?.features ?? [];
+    const planData = pricingPlans[map[planKey]];
+    return {
+      quotas: planData?.quotas ?? [],
+      features: planData?.features ?? [],
+    };
   };
 
   const getPlanDescription = (planKey: string): string => {
