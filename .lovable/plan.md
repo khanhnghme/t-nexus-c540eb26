@@ -1,54 +1,41 @@
 
 
-## Bước 1: Tạo `src/lib/permissions.ts` — Permission Engine trung tâm
+## Bước 4: Database migration — Cập nhật DB functions sang format `resource:role`
 
 ### Mục tiêu
-Tạo file mới duy nhất `src/lib/permissions.ts` chứa toàn bộ logic phân quyền theo mô hình `resource:role`. Chưa sửa bất kỳ file nào khác.
+Một migration SQL duy nhất cập nhật tất cả DB helper functions để dùng format `resource:role` mới. Sau bước này, toàn bộ DB layer (data + functions) đều thống nhất format mới.
 
-### Nội dung file mới
+### Các functions cần cập nhật (8 functions)
 
-**Types:**
-```typescript
-export type RoleLevel = 'owner' | 'admin' | 'member';
-export type ResourceType = 'system' | 'workspace' | 'project_basic' | 'project_page';
-export type RoleString = `${ResourceType}:${RoleLevel}`;
-```
+| Function | Thay đổi |
+|----------|----------|
+| `is_system_owner(uuid)` | `role = 'system_owner'` → `role = 'system:owner'` |
+| `is_system_admin(uuid)` | `role IN ('system_owner','system_admin')` → `role IN ('system:owner','system:admin')` |
+| `is_project_leader(uuid, uuid)` | `role IN ('project_owner','project_admin')` → `role IN ('project_basic:owner','project_basic:admin')` |
+| `get_workspace_role(uuid, uuid)` | Trả `'workspace:owner'` / `'workspace:admin'` thay vì `'workspace_owner'` / `'workspace_admin'` |
+| `get_billing_role(uuid)` | `role = 'system_owner'` → `'system:owner'`, `role IN (...)` → format mới |
+| `check_admin_user()` | Insert `'system:owner'` thay vì `'system_owner'` |
+| `is_group_leader(uuid, uuid)` | Giữ nguyên (delegate to `is_project_leader`) |
+| `is_group_member(uuid, uuid)` | Giữ nguyên (không dùng role string) |
 
-**Core functions:**
-
-| Function | Mô tả |
-|----------|--------|
-| `parseRole(str)` | Tách `"project_basic:admin"` → `{ resource: 'project_basic', role: 'admin' }` |
-| `isAtLeast(userRole, minRole)` | So sánh hierarchy: `owner(3) > admin(2) > member(1)` |
-| `can(userRole, action, targetResource)` | Kiểm tra quyền dựa trên role + action + resource, có xử lý inheritance |
-| `canManageRole(actorRole, targetRole)` | Actor có thể quản lý target không (admin không tác động owner) |
-| `canDeleteContent(userRole, authorId, currentUserId)` | Member chỉ xóa nội dung mình tạo |
-
-**Actions:**
-```typescript
-export type Action = 'read' | 'create' | 'edit' | 'delete' | 'delete_resource' | 'manage_members' | 'billing';
-```
-
-**Permission matrix (hardcode trong file):**
-
-| Action | owner | admin | member |
-|--------|-------|-------|--------|
-| read | Yes | Yes | Yes |
-| create | Yes | Yes | Yes |
-| edit | Yes | Yes | Yes |
-| delete (sub-content) | Yes | Yes | Own only* |
-| delete_resource | Yes | Sub-level only | No |
-| manage_members | Yes | Yes (trừ owner) | No |
-| billing | Yes | No | No |
-
-*member delete cần `canDeleteContent()` kiểm tra `authorId === currentUserId`
-
-**Inheritance logic:**
-- `system:admin` → tự động có quyền tại mọi workspace
-- `workspace:admin` → tự động có quyền tại mọi `project_basic` + `project_page` trong workspace đó
-- `project_basic:admin` ≠ `project_page:admin` (độc lập, không kế thừa lẫn nhau)
+### Functions giữ nguyên (không cần sửa)
+- `is_admin()`, `is_leader()`, `is_moderator()`, `is_owner_system()` — chỉ delegate, không chứa role string
+- `is_workspace_owner()` — check `owner_id`, không dùng role string
+- `is_workspace_participant()` — không dùng role string
 
 ### Phạm vi thay đổi
-- **Tạo mới**: `src/lib/permissions.ts` (1 file)
-- **Không sửa**: Không file nào khác bị thay đổi
+- **Database**: 1 file migration SQL mới (CREATE OR REPLACE cho 6 functions)
+- **Không sửa**: Không file frontend/edge function nào
+- **RLS policies**: Không cần thay đổi vì đều dùng function wrapper
+
+### Chi tiết kỹ thuật
+
+```sql
+-- is_system_owner: 'system_owner' → 'system:owner'
+-- is_system_admin: IN ('system_owner','system_admin') → IN ('system:owner','system:admin')
+-- is_project_leader: IN ('project_owner','project_admin') → IN ('project_basic:owner','project_basic:admin')
+-- get_workspace_role: return 'workspace_owner'/'workspace_admin' → 'workspace:owner'/'workspace:admin'
+-- get_billing_role: tương tự is_system_owner/admin
+-- check_admin_user: INSERT role value 'system_owner' → 'system:owner'
+```
 
