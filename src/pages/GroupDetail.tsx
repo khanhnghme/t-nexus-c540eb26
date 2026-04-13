@@ -337,6 +337,21 @@ export default function GroupDetail() {
     }
   };
 
+  // Set rename handler after fetchGroupData is defined
+  useEffect(() => {
+    if (!group) return;
+    const handler = async (newName: string) => {
+      const { error } = await supabase.from('groups').update({ name: newName }).eq('id', group.id);
+      if (error) {
+        toast({ title: tc.error, description: error.message, variant: 'destructive' });
+        throw error;
+      }
+      toast({ title: gd.updated || 'Updated', description: newName });
+      fetchGroupData();
+    };
+    setRenameHandler(() => handler);
+  }, [group?.id, toast, tc.error, gd.updated]);
+
   const handleCreateStage = async () => {
     if (guardReadOnly()) return;
     if (!newStageName.trim() || !group) return;
