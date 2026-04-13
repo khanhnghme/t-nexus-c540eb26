@@ -1,51 +1,47 @@
 
 
-## Nâng cấp: Hiển thị thông tin người dùng khi nhập đúng email trong form mời workspace
+## Redesign thanh TopBar dự án — từ box tabs sang flat inline tabs
 
-### Mục tiêu
+### Hiện trạng
 
-Khi mời thành viên vào workspace, sau khi nhập **chính xác toàn bộ email**, hệ thống sẽ hiển thị preview thông tin người dùng (tên, avatar). Không hỗ trợ tìm kiếm theo tên, MSSV hay bất kỳ trường nào khác — chỉ email chính xác.
+Thanh TopBar hiện tại sử dụng các tab dạng **box/pill** (`bg-primary`, `rounded-lg`, `shadow-sm`) trông nặng nề, chiếm nhiều không gian thị giác. Giống kiểu button group hơn là navigation.
 
-### Thay đổi
+### Hướng redesign — Flat underline tabs (kiểu Notion/Linear)
 
-#### 1. Database — Tạo function `lookup_user_by_email` (SECURITY DEFINER)
+Chuyển sang kiểu tab phẳng, nhẹ, chuyên nghiệp hơn:
 
-```sql
-CREATE FUNCTION public.lookup_user_by_email(p_email text)
-RETURNS json SECURITY DEFINER AS $$
-  SELECT json_build_object(
-    'id', id, 'full_name', full_name, 'avatar_url', avatar_url, 'email', email
-  )
-  FROM public.profiles WHERE email = p_email;
-$$;
+```text
+  ┌─────────────────────────────────────────────────────────┐
+  │  Overview   Tasks   Meetings   Resources   Members  ... │
+  │  ─────────                                              │
+  └─────────────────────────────────────────────────────────┘
 ```
 
-Function chỉ trả về 4 trường không nhạy cảm. Chỉ người đã đăng nhập (authenticated) mới gọi được — sẽ thêm check `auth.uid() IS NOT NULL` trong function body.
-
-#### 2. `src/pages/WorkspaceMembers.tsx` — Thêm user preview
-
-- Thêm state `previewUser` và debounce logic
-- Khi email input thay đổi: validate format email hợp lệ → gọi `supabase.rpc('lookup_user_by_email', { p_email })` 
-- Hiển thị card preview (avatar + tên + email) bên dưới input khi tìm thấy
-- Nếu không tìm thấy → hiển thị nhẹ "Người dùng chưa có tài khoản — lời mời sẽ được gửi qua email"
-- Debounce 500ms để tránh spam API
-
-#### 3. `src/components/ProjectGuestInviteDialog.tsx` — Áp dụng tương tự
-
-- Cùng logic preview khi nhập email mời khách vào dự án
+- Tab active: text đậm + underline (border-bottom 2px primary) — không có background box
+- Tab inactive: text muted, hover nhẹ
+- Icon nhỏ hơn hoặc ẩn icon, chỉ hiện text — gọn hơn
+- Khoảng cách giữa các tab thoáng hơn (`gap-6`)
+- Bỏ `rounded-lg`, `shadow-sm`, `bg-primary` khỏi tab active
 
 ### File thay đổi
 
 | File | Thay đổi |
 |------|----------|
-| `supabase/migrations/` | Tạo function `lookup_user_by_email` |
-| `src/pages/WorkspaceMembers.tsx` | Thêm preview user sau input email |
-| `src/components/ProjectGuestInviteDialog.tsx` | Thêm preview user sau input email |
+| `src/components/layout/TopBar.tsx` | Thay style tab từ box/pill sang flat underline. Bỏ background trên active tab, thêm border-bottom indicator. Giảm kích thước icon hoặc ẩn trên desktop |
+| `src/components/ProjectNavigation.tsx` | Áp dụng cùng style mới (component này vẫn được dùng ở một số nơi) |
 
-### Bảo mật
+### Chi tiết style mới cho tab
 
-- Function yêu cầu `auth.uid() IS NOT NULL` — chỉ user đã đăng nhập mới tra cứu được
-- Không trả về dữ liệu nhạy cảm (chỉ full_name, avatar_url, email)
-- Không hỗ trợ tìm kiếm mờ (LIKE/ILIKE) — chỉ exact match
-- Rate limiting tự nhiên qua debounce 500ms phía client
+**Active tab:**
+- `text-foreground font-semibold` 
+- Underline indicator: `after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-primary after:rounded-full`
+- Không background, không shadow
+
+**Inactive tab:**
+- `text-muted-foreground hover:text-foreground`
+- Không background khi hover (chỉ đổi màu text)
+
+**Container:**
+- Bỏ `bg-background/60 backdrop-blur border rounded-2xl shadow` wrapper
+- Tabs nằm trực tiếp trên TopBar, căn giữa, `gap-1` hoặc `gap-6`
 
