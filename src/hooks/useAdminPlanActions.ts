@@ -33,8 +33,8 @@ export function useAdminPlanActions() {
       .select('role, billing_role')
       .eq('user_id', user.id);
 
-    const isOwner = roles?.some(r => r.role === 'system_owner');
-    const isAdmin = roles?.some(r => r.role === 'system_admin' || r.role === 'system_owner');
+    const isOwner = roles?.some(r => r.role === 'system:owner');
+    const isAdmin = roles?.some(r => r.role === 'system:admin' || r.role === 'system:owner');
     if (!isAdmin) throw new Error('Not authorized');
 
     const billingRole = isOwner ? 'billing_manager' : (roles?.[0]?.billing_role || 'billing_viewer');

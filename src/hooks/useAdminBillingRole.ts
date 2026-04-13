@@ -17,10 +17,10 @@ export function useAdminBillingRole() {
 
       if (!roles || roles.length === 0) return null;
 
-      const isOwner = roles.some(r => r.role === 'system_owner');
+      const isOwner = roles.some(r => r.role === 'system:owner');
       if (isOwner) return 'billing_manager' as BillingRole;
 
-      const isAdmin = roles.some(r => r.role === 'system_admin' || r.role === 'system_owner');
+      const isAdmin = roles.some(r => r.role === 'system:admin' || r.role === 'system:owner');
       if (isAdmin) {
         const billingRole = roles[0]?.billing_role as BillingRole | null;
         return billingRole || 'billing_viewer' as BillingRole;
