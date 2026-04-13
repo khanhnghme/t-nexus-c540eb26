@@ -293,10 +293,11 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
   drawText(`$${((order.base_amount || 0) + (order.addon_amount || 0)).toFixed(2)}`, colEnd, y, { size: 8, color: gray900, align: "right" });
   y -= 14;
 
-  if ((order.discount_amount || 0) > 0) {
+  const couponDiscount = (order.discount_amount || 0) - (order.welcome_discount || 0);
+  if (couponDiscount > 0) {
     const discLabel = order.coupon_code ? t.pdfDiscountCode(order.coupon_code) : t.pdfDiscount;
     drawText(discLabel, colEnd - 60, y, { size: 8, color: green700, align: "right" });
-    drawText(`-$${order.discount_amount.toFixed(2)}`, colEnd, y, { size: 8, color: green700, align: "right" });
+    drawText(`-$${couponDiscount.toFixed(2)}`, colEnd, y, { size: 8, color: green700, align: "right" });
     y -= 14;
   }
 

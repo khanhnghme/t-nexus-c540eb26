@@ -18,7 +18,9 @@ export const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(
   ({ payment, profile, orderCode }, ref) => {
     const displayAmount = payment.final_amount ?? payment.amount;
     const originalAmount = payment.original_amount ?? payment.amount;
-    const hasDiscount = (payment.discount_amount ?? 0) > 0 || (payment.coupon_code);
+    const welcomeDiscount = payment.welcome_discount ?? 0;
+    const couponDiscount = Math.max(0, (payment.discount_amount ?? 0) - welcomeDiscount);
+    const hasDiscount = couponDiscount > 0 || welcomeDiscount > 0;
     const invoiceNumber = payment.invoice_id || (payment.order_id ? `INV-${payment.order_id.slice(0, 12).toUpperCase()}` : `INV-${payment.id?.slice(0, 8)?.toUpperCase()}`);
     const paidDate = payment.paid_at || payment.created_at;
     const isCompleted = payment.status === 'completed' || payment.status === 'paid';
