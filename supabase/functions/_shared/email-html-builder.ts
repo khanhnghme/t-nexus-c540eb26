@@ -60,7 +60,8 @@ function emailDoctype(locale: EmailLocale = 'vi'): string {
     @media only screen and (max-width: 600px) {
       .email-container { width: 100% !important; max-width: 100% !important; }
       .email-padding { padding-left: 24px !important; padding-right: 24px !important; }
-      .otp-digit { width: 40px !important; height: 52px !important; font-size: 22px !important; line-height: 52px !important; }
+      .otp-digit { width: 34px !important; height: 44px !important; font-size: 20px !important; line-height: 44px !important; }
+      .otp-table { margin: 0 auto !important; }
     }
   </style>`;
 }
@@ -145,8 +146,8 @@ export function buildBrandedOtpEmail(options: EmailOptions): string {
     .split("")
     .map(
       (d) =>
-        `<td style="padding:0 4px;">
-          <div class="otp-digit" style="width:46px;height:58px;background-color:${C.accentLight};border:1.5px solid ${C.accentBorder};border-radius:8px;line-height:58px;text-align:center;font-size:26px;font-weight:700;color:${C.accent};font-family:'Courier New',Courier,monospace;">
+        `<td style="padding:0 3px;">
+          <div class="otp-digit" style="width:40px;height:50px;background-color:${C.accentLight};border:1.5px solid ${C.accentBorder};border-radius:8px;line-height:50px;text-align:center;font-size:24px;font-weight:700;color:${C.accent};font-family:'Courier New',Courier,monospace;">
             ${d}
           </div>
         </td>`
@@ -178,9 +179,11 @@ export function buildBrandedOtpEmail(options: EmailOptions): string {
             </p>
 
             <!-- OTP Digits -->
-            <table cellpadding="0" cellspacing="0" role="presentation" style="margin:0 0 8px;">
-              <tr>${digitBoxes}</tr>
-            </table>
+            <div style="text-align:center;">
+              <table class="otp-table" cellpadding="0" cellspacing="0" role="presentation" align="center" style="margin:0 auto 8px;">
+                <tr>${digitBoxes}</tr>
+              </table>
+            </div>
             <p style="margin:0 0 28px;color:${C.subtle};font-size:11px;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
               ${t.otpEnterCode}
             </p>
