@@ -699,10 +699,10 @@ export function MemberAuthForm() {
                 <div className="space-y-2">
                   <Label htmlFor="login-identifier">{ta.identifierLabel}</Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       id="login-identifier"
-                      type="text"
+                      type="email"
                       placeholder={ta.identifierPlaceholder}
                       className="pl-10"
                       value={identifier}
