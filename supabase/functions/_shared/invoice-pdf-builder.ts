@@ -72,10 +72,11 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
   const contentW = pageW - margin * 2;
   let y = pageH - margin;
 
-  // Helper: draw text
-  const drawText = (text: string, x: number, yPos: number, opts: {
+  // Helper: draw text (auto-strips Vietnamese diacritics for WinAnsi compatibility)
+  const drawText = (rawText: string, x: number, yPos: number, opts: {
     font?: any; size?: number; color?: any; align?: "left" | "right" | "center";
   } = {}) => {
+    const text = stripVietnamese(rawText);
     const font = opts.font || helvetica;
     const size = opts.size || 8;
     const color = opts.color || gray900;
