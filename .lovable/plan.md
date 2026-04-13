@@ -1,39 +1,39 @@
 
 
-## Bước 10: Canvas/Page components — `usePageRole` hook + page-level permissions
+## Bước 11: Cập nhật utility files
 
 ### Mục tiêu
-1. Tạo hook `usePageRole(pageId)` để truy vấn `page_members` table và trả về effective role (page role → project role fallback → workspace inheritance).
-2. Cập nhật `CanvasPageView.tsx` để sử dụng `usePageRole` xác định quyền edit thay vì chỉ dựa vào prop `editable` từ parent.
-3. Sửa role strings cũ còn sót trong `GroupDetail.tsx` (file parent truyền `editable` cho Canvas).
+Thay role string cũ (underscore) sang format `resource:role` mới trong các utility files. Cleanup legacy fallback trong `roleLabels.ts`.
 
-### Phạm vi thay đổi — 3 files (1 mới, 2 sửa)
+### Phạm vi thay đổi — 3 files
 
-#### 1. TẠO MỚI: `src/hooks/usePageRole.ts`
+Sau khi quét, `ExcelMemberImport.tsx` **không chứa** role string cũ nào — loại khỏi scope.
 
-Hook trả về effective page role cho user hiện tại:
-- Query `page_members` table theo `pageId` + `user.id`
-- Nếu có record → trả về page role (`project_page:owner/admin/member`)
-- Nếu không → fallback sang project role từ `group_members` (đã là `project_basic:*`)
-- Nếu không có project role → check workspace inheritance qua `get_workspace_role()`
-- Trả về `{ pageRole, canEdit, isLoading }`
-  - `canEdit = true` nếu role level là `owner` hoặc `admin` (dùng `parseRole` + `isAtLeast` từ permissions.ts)
-
-#### 2. `src/components/canvas/CanvasPageView.tsx`
-
-- Import và sử dụng `usePageRole(activePageId)` 
-- Kết hợp `canEdit` từ hook với prop `editable` hiện tại: `const effectiveEditable = editable || canEditPage`
-- Dùng `effectiveEditable` thay cho `editable` trong logic toggle edit mode và truyền xuống CanvasEditor/CanvasSidebar
-
-#### 3. `src/pages/GroupDetail.tsx` (2 vị trí role strings cũ)
+#### 1. `src/lib/excelExport.ts` (3 vị trí)
 
 | Dòng | Trước | Sau |
 |------|-------|-----|
-| 257 | `myMembership?.role === 'project_admin' \|\| myMembership?.role === 'project_owner'` | `myMembership?.role === 'project_basic:admin' \|\| myMembership?.role === 'project_basic:owner'` |
-| 670 | `m.role === 'project_admin'` | `m.role === 'project_basic:admin'` |
+| 46 | `case 'project_owner':` | `case 'project_basic:owner':` |
+| 48 | `case 'project_admin':` | `case 'project_basic:admin':` |
+| 50–52 | `case 'system_owner':` ... `case 'project_member':` | `case 'system:owner':` ... `case 'project_basic:member':` |
+
+#### 2. `src/lib/roleLabels.ts` — Xóa legacy cases
+
+Xóa tất cả legacy fallback cases (dòng 20–22, 35–39, 58–64) vì data đã migrate hoàn toàn ở Bước 3. Giữ lại chỉ các case format mới `resource:role`.
+
+#### 3. `src/components/layout/DashboardLayout.tsx` (6 vị trí)
+
+| Dòng | Trước | Sau |
+|------|-------|-----|
+| 112 | `case 'workspace_owner':` | `case 'workspace:owner':` |
+| 113 | `case 'workspace_admin':` | `case 'workspace:admin':` |
+| 114 | `case 'workspace_member':` | `case 'workspace:member':` |
+| 120 | `case 'workspace_owner':` | `case 'workspace:owner':` |
+| 121 | `case 'workspace_admin':` | `case 'workspace:admin':` |
+| 122 | `case 'workspace_member':` | `case 'workspace:member':` |
 
 ### Không thay đổi
-- `CanvasEditor.tsx` và `CanvasSidebar.tsx`: không chứa role strings, chỉ nhận `editable` prop — không cần sửa
-- Không sửa database, edge functions, hay migration
-- `page_members` table đã tồn tại (tạo ở Bước 3)
+- `ExcelMemberImport.tsx`: không chứa role string cũ
+- Không sửa hooks, contexts, pages, edge functions, hay database
+- Không thay đổi logic, chỉ thay chuỗi so sánh và xóa legacy fallbacks
 
