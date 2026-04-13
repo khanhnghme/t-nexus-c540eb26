@@ -103,6 +103,7 @@ export default function MemberManagementCard({
   const { user, profile } = useAuth();
   const { guardAction: guardReadOnly } = useReadOnlyGuard();
   const navigate = useNavigate();
+  const { setCurrentTab: navSetCurrentTab } = useNavigation();
   const { getPresenceStatus } = useUserPresence('system-global');
   const [memberToDelete, setMemberToDelete] = useState<GroupMember | null>(null);
   const [memberToChangeRole, setMemberToChangeRole] = useState<GroupMember | null>(null);
