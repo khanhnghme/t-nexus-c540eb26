@@ -116,6 +116,14 @@ function emailSubFooter(noteText: string): string {
   </table>`;
 }
 
+function avatarHtml(avatarUrl?: string, name?: string, size = 48): string {
+  if (avatarUrl) {
+    return `<img src="${avatarUrl}" alt="${name || ''}" width="${size}" height="${size}" style="display:block;width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;border:2px solid ${C.border};" />`;
+  }
+  const initials = (name || '?').split(' ').map(w => w[0] || '').join('').slice(0, 2).toUpperCase();
+  return `<div style="width:${size}px;height:${size}px;border-radius:50%;background-color:${C.accentLight};border:2px solid ${C.accentBorder};display:inline-block;text-align:center;line-height:${size}px;font-size:${Math.round(size * 0.4)}px;font-weight:700;color:${C.accent};font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">${initials}</div>`;
+}
+
 // ─── OTP Email ─────────────────────────────────────────────────────────────────
 
 interface EmailOptions {
