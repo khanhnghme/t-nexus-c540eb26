@@ -74,37 +74,37 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
   return (
     <div className="hidden print:block bg-white text-black p-6 max-w-[800px] mx-auto text-[13px]" id="invoice-print-area" style={{ pageBreakInside: 'avoid' }}>
       {/* Header with Logo */}
-      <div className="flex justify-between items-start mb-8 border-b-2 border-gray-300 pb-6">
+      <div className="flex justify-between items-start mb-5 border-b-2 border-gray-300 pb-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
             {isVi ? 'HÓA ĐƠN' : 'INVOICE'}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 mt-0.5">
             {isVi ? 'Biên nhận thanh toán điện tử' : 'Electronic Payment Receipt'}
           </p>
-          <p className="text-sm font-mono font-semibold text-gray-700 mt-2">{invoiceNumber}</p>
+          <p className="text-xs font-mono font-semibold text-gray-700 mt-1">{invoiceNumber}</p>
         </div>
         <div className="text-right">
-          <img src="/src/assets/t-nexus-text.png" alt="T-Nexus" style={{ width: 140, height: 'auto' }} className="ml-auto mb-2" />
-          <p className="text-sm text-gray-500">
+          <img src="/src/assets/t-nexus-text.png" alt="T-Nexus" style={{ width: 120, height: 'auto' }} className="ml-auto mb-1" />
+          <p className="text-xs text-gray-500">
             {isVi ? 'Dịch vụ quản lý dự án số' : 'Digital Project Management Service'}
           </p>
-          <p className="text-xs text-gray-400 mt-1">https://t-nexus.io.vn</p>
-          <p className="text-xs text-gray-400">Email: support@t-nexus.io.vn</p>
+          <p className="text-[10px] text-gray-400 mt-0.5">https://t-nexus.io.vn</p>
+          <p className="text-[10px] text-gray-400">Email: support@t-nexus.io.vn</p>
         </div>
       </div>
 
       {/* Invoice Info + Customer */}
-      <div className="grid grid-cols-2 gap-8 mb-8 items-start">
+      <div className="grid grid-cols-2 gap-6 mb-5 items-start">
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
+          <h3 className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-2">
             {isVi ? 'Thông tin hóa đơn' : 'Invoice Details'}
           </h3>
-          <div className="space-y-1.5 text-sm">
+          <div className="space-y-1 text-[12px]">
             <p><span className="text-gray-500">{isVi ? 'Số hóa đơn:' : 'Invoice #:'}</span> <span className="font-mono font-medium">{invoiceNumber}</span></p>
             <p><span className="text-gray-500">{isVi ? 'Mã đơn hàng:' : 'Order #:'}</span> <span className="font-mono font-medium">{order.order_code}</span></p>
             {order.paypal_order_id && (
-              <p><span className="text-gray-500">Transaction ID:</span> <span className="font-mono text-xs">{order.paypal_order_id}</span></p>
+              <p><span className="text-gray-500">Transaction ID:</span> <span className="font-mono text-[10px]">{order.paypal_order_id}</span></p>
             )}
             <p><span className="text-gray-500">{isVi ? 'Ngày tạo:' : 'Created:'}</span> {formatDateInvoice(order.created_at)}</p>
             {isCompleted && order.completed_at && (
@@ -120,10 +120,10 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
           </div>
         </div>
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
+          <h3 className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-2">
             {isVi ? 'Thông tin khách hàng' : 'Bill To'}
           </h3>
-          <div className="space-y-1.5 text-sm">
+          <div className="space-y-1 text-[12px]">
             <p className="font-semibold text-gray-900">{profile?.full_name || '—'}</p>
             <p className="text-gray-600">{profile?.email || '—'}</p>
             {profile?.student_id && <p className="text-gray-600">{isVi ? 'MSSV:' : 'Student ID:'} {profile.student_id}</p>}
@@ -135,21 +135,21 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
 
       {/* Billing Period */}
       {isCompleted && order.plan && (planStarted || planExpires) && (
-        <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
+        <div className="mb-4 bg-gray-50 border border-gray-200 rounded p-2.5">
+          <h3 className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">
             {isVi ? 'Chu kỳ thanh toán' : 'Billing Period'}
           </h3>
-          <div className="flex gap-8 text-sm">
+          <div className="flex gap-6 text-[12px]">
             {planStarted && (
-              <p><span className="text-gray-500">{isVi ? 'Ngày kích hoạt:' : 'Active from:'}</span> <span className="font-medium">{formatDateInvoice(planStarted)}</span></p>
+              <p><span className="text-gray-500">{isVi ? 'Kích hoạt:' : 'Active:'}</span> <span className="font-medium">{formatDateInvoice(planStarted)}</span></p>
             )}
             {planExpires && (
-              <p><span className="text-gray-500">{isVi ? 'Ngày hết hạn:' : 'Expires:'}</span> <span className="font-medium">{formatDateInvoice(planExpires)}</span></p>
+              <p><span className="text-gray-500">{isVi ? 'Hết hạn:' : 'Expires:'}</span> <span className="font-medium">{formatDateInvoice(planExpires)}</span></p>
             )}
             <p>
               <span className="text-gray-500">{isVi ? 'Chu kỳ:' : 'Cycle:'}</span>{' '}
               <span className="font-medium">
-                {cycle === 'yearly' ? (isVi ? '12 tháng (Theo năm)' : '12 months (Annual)') : (isVi ? '1 tháng (Theo tháng)' : '1 month (Monthly)')}
+                {cycle === 'yearly' ? (isVi ? '12 tháng' : '12 months') : (isVi ? '1 tháng' : '1 month')}
               </span>
             </p>
           </div>
