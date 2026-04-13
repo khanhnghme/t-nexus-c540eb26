@@ -189,6 +189,9 @@ function AppRoutes() {
         <Route path="/share/:token/page" element={<ForceLightMode><Suspense fallback={null}><PublicCanvasPage /></Suspense></ForceLightMode>} />
         <Route path="/reset-password" element={<ForceLightMode><ResetPassword /></ForceLightMode>} />
         <Route path="/join" element={<JoinProject />} />
+        {/* ═══ Invoice summary — accessible without login (handles own auth guard) ═══ */}
+        <Route path="/checkout/summary/:orderCode" element={<CheckoutSummary />} />
+        <Route path="/addon-checkout/summary/:orderCode" element={<CheckoutSummary />} />
         <Route path="/auth/member" element={<Navigate to="/login" replace />} />
         <Route path="/auth/admin" element={<Navigate to="/login" replace />} />
         <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
@@ -200,11 +203,9 @@ function AppRoutes() {
         <Route element={<ProtectedRoute><CheckoutLayoutWrapper /></ProtectedRoute>}>
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/checkout/result" element={<PaymentResult />} />
-          <Route path="/checkout/summary/:orderCode" element={<CheckoutSummary />} />
           <Route path="/checkout/payment/:orderCode" element={<CheckoutPayment />} />
           <Route path="/addon-checkout" element={<AddonCheckout />} />
           <Route path="/addon-checkout/payment/:orderCode" element={<AddonCheckoutPayment />} />
-          <Route path="/addon-checkout/summary/:orderCode" element={<CheckoutSummary />} />
         </Route>
 
         {/* ═══ Protected routes with persistent DashboardLayout ═══ */}
