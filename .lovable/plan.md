@@ -1,36 +1,82 @@
 
 
-## Bước 13: Cleanup — Xóa deprecated aliases, sửa role strings còn sót ✅
+## Bước 14: Tạo Workspace Quota & Feature Engine — `src/lib/workspaceQuota.ts`
 
-### Hoàn thành
-1. Xóa deprecated aliases `isOwnerSystem`, `isLeader` từ `AuthContext` — thay bằng `isSystemAdmin` alias
-2. Cleanup legacy types (`SystemRoleLegacy`, `WorkspaceRoleLegacy`, `ProjectRoleLegacy`) từ `database.ts`
-3. Cập nhật tất cả underscore role strings sang `resource:role` format trong 15+ files
-4. Fix build errors: `RememberLoginScreen`, `MessageItem`, `TaskEditDialog`, `AdminActivity`, `AdminUsers`, `Dashboard`, `PersonalInfo`
+### Mục tiêu
+Tạo file engine trung tâm định nghĩa tất cả **Quota keys** (`resource:limit`) và **Feature keys** (`resource:feature`) theo format mới, đồng thời tạo hook `useWorkspaceQuota()` hợp nhất logic kiểm tra hạn mức/tính năng từ gói cước của Owner.
 
-### Files đã sửa
-- `src/contexts/AuthContext.tsx`
-- `src/types/database.ts`
-- `src/components/layout/DashboardLayout.tsx`
-- `src/components/SidebarTreeNav.tsx`
-- `src/components/RememberLoginScreen.tsx`
-- `src/components/TaskEditDialog.tsx`
-- `src/components/AdminBackupRestore.tsx`
-- `src/components/JoinByCodeDialog.tsx`
-- `src/components/TaskSubmissionDialog.tsx`
-- `src/components/ProjectGuestInviteDialog.tsx`
-- `src/components/communication/MessageItem.tsx`
-- `src/components/calendar/CalendarTaskDetailDialog.tsx`
-- `src/pages/Groups.tsx`
-- `src/pages/CreateCustomProject.tsx`
-- `src/pages/AdminUsers.tsx`
-- `src/pages/AdminActivity.tsx`
-- `src/pages/TaskDetail.tsx`
-- `src/pages/Dashboard.tsx`
-- `src/pages/PersonalInfo.tsx`
-- `src/lib/projectEvidencePdf.ts`
+### Bối cảnh hiện tại
+- `usePlanLimits` — truy vấn giới hạn theo workspace's owner plan (7 consumers)
+- `useAccountLimitsCheck` — truy vấn giới hạn account-wide cho owner (6 consumers)
+- `useWorkspaceBilling` — truy vấn owner plan + project count (ít consumer)
+- Feature check: chỉ có `canExportData` (ad-hoc, nằm trong `usePlanLimits`)
+- **Vấn đề**: Không có kiến trúc thống nhất, feature flags nằm rải rác, không follow naming convention `resource:*`
 
-### Còn lại (UI filter keys, không phải role comparison)
-- `ActivityLogFilters.tsx`, `ProjectActivityLog.tsx`, `PublicActivityLog.tsx` — activity log action types
-- `MemberManagement.tsx` — UI filter keys
-- `Tips.tsx` — tip IDs
+### Phạm vi thay đổi — 2 files (tạo mới + refactor)
+
+#### 1. TẠO MỚI: `src/lib/workspaceQuota.ts`
+
+Định nghĩa bộ khung trung tâm:
+
+```typescript
+// ─── Quota Keys (resource:limit) ───────────────────────
+export type QuotaKey =
+  | 'workspace:limit_count'        // max workspaces
+  | 'workspace:limit_projects'     // max projects (total)
+  | 'workspace:limit_members'      // max unique members
+  | 'workspace:limit_storage_mb'   // max storage
+  | 'workspace:limit_file_size_mb' // max file size
+  | 'workspace:limit_meeting_min'  // max meeting duration
+  | 'workspace:limit_log_days';    // max activity log days
+
+// ─── Feature Keys (resource:feature) ───────────────────
+export type FeatureKey =
+  | 'workspace:feature_export'     // can export data
+  | 'workspace:feature_ai';       // AI assistant (future)
+
+// ─── Mapping: plan_limits columns → keys ────────────────
+const QUOTA_COLUMN_MAP: Record<QuotaKey, string> = {
+  'workspace:limit_count': 'max_workspaces',
+  'workspace:limit_projects': 'max_projects_per_workspace',
+  'workspace:limit_members': 'max_members_per_workspace',
+  'workspace:limit_storage_mb': 'max_storage_mb',
+  'workspace:limit_file_size_mb': 'max_file_size_mb',
+  'workspace:limit_meeting_min': 'max_meeting_duration_minutes',
+  'workspace:limit_log_days': 'max_activity_log_days',
+};
+
+const FEATURE_COLUMN_MAP: Record<FeatureKey, string> = {
+  'workspace:feature_export': 'can_export_data',
+  'workspace:feature_ai': 'can_use_ai', // future column
+};
+
+// ─── Helper functions ───────────────────────────────────
+export function getQuotaLimit(planData: any, key: QuotaKey): number | null;
+export function hasFeature(planData: any, key: FeatureKey): boolean;
+export function isQuotaExceeded(current: number, limit: number | null): boolean;
+```
+
+#### 2. REFACTOR: `src/hooks/usePlanLimits.ts`
+
+- Import `QuotaKey`, `FeatureKey`, helpers từ `workspaceQuota.ts`
+- Interface `PlanLimits` giữ nguyên fields (backward compatible) nhưng thêm:
+  - `getQuota(key: QuotaKey): number | null`
+  - `hasFeature(key: FeatureKey): boolean`
+- Bên trong `fetchLimits`, dùng `getQuotaLimit()` và `hasFeature()` thay vì hardcode column names
+- **KHÔNG đổi tên hook** — giữ `usePlanLimits()` để backward compatible
+- Consumers hiện tại (`canExportData`, `maxMeetingDurationMinutes`, v.v.) vẫn hoạt động
+
+### Không thay đổi
+- `useAccountLimitsCheck` — giữ nguyên (bước sau sẽ refactor)
+- `useWorkspaceBilling` — giữ nguyên
+- `useAccountReadOnly`, `ReadOnlyGuard` — giữ nguyên
+- Không sửa database, edge functions, hay migration
+- Không sửa consumers (components dùng `usePlanLimits`) — backward compatible hoàn toàn
+- `plan_limits` table structure — giữ nguyên, chỉ map columns sang keys mới
+
+### Kết quả
+Sau bước này, hệ thống có **3 engine trung tâm** theo cùng naming convention:
+1. `src/lib/permissions.ts` — RBAC (`resource:role`) ✅ đã có
+2. `src/lib/workspaceQuota.ts` — Quota + Feature (`resource:limit`, `resource:feature`) 🆕
+3. `src/lib/planConfig.ts` — Plan metadata (prices, labels) ✅ đã có
+
