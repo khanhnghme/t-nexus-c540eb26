@@ -347,12 +347,25 @@ export function MemberAuthForm() {
             .eq('user_id', currentUser.id);
           const isUserAdmin = userRoles?.some(r => r.role === 'system:owner') ?? false;
 
-          // Fetch fresh suspension status
+          // Fetch fresh profile status (is_approved, suspended)
           const { data: freshProfile } = await supabase
             .from('profiles')
-            .select('suspended_until, suspension_reason')
+            .select('is_approved, suspended_until, suspension_reason')
             .eq('id', currentUser.id)
             .maybeSingle();
+
+          // Block: Account not approved
+          if (freshProfile && !freshProfile.is_approved) {
+            pendingLoginRef.current = false;
+            sessionStorage.removeItem('t-nexus_login_in_progress');
+            setIsLoading(false);
+            toast({
+              title: ta.toastPendingApproval,
+              description: ta.toastPendingApprovalDesc,
+            });
+            await signOut();
+            return;
+          }
 
           const isSuspended = freshProfile?.suspended_until
             ? new Date(freshProfile.suspended_until).getTime() > Date.now()
