@@ -343,25 +343,22 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
   drawLine(margin, y, pageW - margin);
   y -= 16;
 
-  if (isCompleted) {
-    page.drawRectangle({
-      x: margin, y: y - 6, width: 120, height: 24,
-      borderColor: green600, borderWidth: 1.2,
-    });
-    drawText(t.pdfPaidStamp, margin + 8, y, { font: fontBold, size: 14, color: green600 });
-  }
-
-  // QR code — between PAID stamp and signature
+  // QR code — left side
   if (qrImage) {
     const qrSize = 60;
-    const qrX = pageW / 2 - qrSize / 2;
-    const qrY = y - 6 - qrSize + 24;
-    page.drawImage(qrImage, { x: qrX, y: qrY, width: qrSize, height: qrSize });
-    drawText("Scan to view", qrX + qrSize / 2, qrY - 8, { size: 6, color: gray400, align: "center" });
+    const qrY = y - qrSize + 18;
+    page.drawImage(qrImage, { x: margin, y: qrY, width: qrSize, height: qrSize });
+    drawText("Scan to view", margin + qrSize / 2, qrY - 8, { size: 6, color: gray400, align: "center" });
   }
 
+  // Signature block — right side
   const sigX = pageW - margin - 100;
   drawText(t.pdfSignatureLabel, sigX + 50, y + 10, { size: 7, color: gray400, align: "center" });
+
+  // PAID stamp — small, above signature line
+  if (isCompleted) {
+    drawText(t.pdfPaidStamp, sigX + 50, y - 2, { font: fontBold, size: 9, color: green600, align: "center" });
+  }
 
   y -= 14;
   page.drawLine({ start: { x: sigX + 10, y }, end: { x: sigX + 90, y }, thickness: 0.4, color: gray400 });

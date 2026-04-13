@@ -136,24 +136,19 @@ export const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(
 
         {/* Electronic Signature & Stamp */}
         <div className="flex justify-between items-end mt-8 pt-6 border-t border-gray-200">
-          {isCompleted && (
-            <div>
-              <p
-                className="font-bold text-green-600 text-xl uppercase px-4 py-2 inline-block"
-                style={{
-                  border: '3px solid #16a34a',
-                  borderRadius: 8,
-                  transform: 'rotate(-12deg)',
-                  opacity: 0.8,
-                }}
-              >
-                PAID
-              </p>
+          {/* QR code — left side */}
+          {invoiceUrl && (
+            <div className="flex flex-col items-center">
+              <QRCodeSVG value={invoiceUrl} size={70} level="M" />
+              <p className="text-[9px] text-gray-400 mt-1">Scan to view</p>
             </div>
           )}
 
           <div className="text-center" style={{ width: 200 }}>
-            <p className="text-xs text-gray-400 mb-14">Electronic Signature</p>
+            <p className="text-xs text-gray-400 mb-4">Electronic Signature</p>
+            {isCompleted && (
+              <p className="text-xs font-bold text-green-600 mb-2">✓ PAID</p>
+            )}
             <div className="border-b border-gray-400 w-full mb-2" />
             <p className="font-bold text-gray-800 text-sm">T-Nexus System</p>
             <p className="text-[10px] text-gray-400">
@@ -164,14 +159,6 @@ export const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(
 
         {/* Footer */}
         <div className="border-t border-gray-200 pt-4 mt-6 text-center space-y-1">
-          {invoiceUrl && (
-            <div className="flex justify-center mb-3">
-              <div className="flex flex-col items-center">
-                <QRCodeSVG value={invoiceUrl} size={80} level="M" />
-                <p className="text-[9px] text-gray-400 mt-1">Scan to view invoice</p>
-              </div>
-            </div>
-          )}
           <p className="text-xs text-gray-500">This is a computer-generated electronic invoice by T-Nexus.</p>
           <p className="text-xs text-gray-400">Support: support@t-nexus.io.vn | https://t-nexus.io.vn</p>
           <p className="text-[10px] text-gray-300 mt-2">Generated on {format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
