@@ -74,6 +74,122 @@ export default function ShareSettingsCard({
   const [localMemberLimit, setLocalMemberLimit] = useState<number | null>(joinMemberLimit);
   const [localRequireApproval, setLocalRequireApproval] = useState(joinRequireApproval);
   const memberLimitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const qrCanvasRef = useRef<HTMLDivElement>(null);
+
+  const handleDownloadInviteImage = useCallback((code: string, name: string, limit: number | null, requireApproval: boolean) => {
+    const canvas = document.createElement('canvas');
+    const w = 600, h = 720;
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d')!;
+
+    // Background
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.roundRect(0, 0, w, h, 24);
+    ctx.fill();
+
+    // Header bar
+    ctx.fillStyle = '#6366f1';
+    ctx.beginPath();
+    ctx.roundRect(0, 0, w, 80, [24, 24, 0, 0]);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Mời tham gia dự án', w / 2, 50);
+
+    // Project name
+    ctx.fillStyle = '#1e1e2e';
+    ctx.font = 'bold 20px system-ui, -apple-system, sans-serif';
+    ctx.fillText(name.length > 40 ? name.slice(0, 37) + '...' : name, w / 2, 120);
+
+    // QR Code — render from hidden canvas
+    const joinUrl = `https://t-nexus.io.vn/join?code=${code}`;
+    const tempCanvas = document.createElement('canvas');
+    const tempDiv = document.createElement('div');
+    document.body.appendChild(tempDiv);
+    
+    // Use a simple approach: render QR via imported lib
+    import('qrcode.react').then(({ QRCodeCanvas: QRC }) => {
+      // Instead, draw QR manually using canvas pattern
+      // We'll use the hidden ref if available, or draw a placeholder
+      const qrSize = 200;
+      const qrX = (w - qrSize) / 2;
+      const qrY = 145;
+
+      // Draw QR border
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(qrX - 12, qrY - 12, qrSize + 24, qrSize + 24, 12);
+      ctx.stroke();
+
+      // Try to get QR from the hidden canvas in DOM
+      const hiddenQR = document.querySelector('#hidden-qr-canvas canvas') as HTMLCanvasElement;
+      if (hiddenQR) {
+        ctx.drawImage(hiddenQR, qrX, qrY, qrSize, qrSize);
+      }
+
+      // Code display
+      const codeY = qrY + qrSize + 50;
+      ctx.fillStyle = '#f1f5f9';
+      ctx.beginPath();
+      ctx.roundRect(100, codeY - 25, w - 200, 50, 10);
+      ctx.fill();
+      ctx.fillStyle = '#1e1e2e';
+      ctx.font = 'bold 32px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(code.split('').join(' '), w / 2, codeY + 10);
+
+      // Info section
+      let infoY = codeY + 65;
+      ctx.font = '15px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#64748b';
+
+      const infos = [
+        `👥  Giới hạn: ${limit ? `${limit} người` : 'Không giới hạn'}`,
+        `🔒  Cần duyệt: ${requireApproval ? 'Có' : 'Không — vào ngay'}`,
+      ];
+      infos.forEach(text => {
+        ctx.fillText(text, 80, infoY);
+        infoY += 28;
+      });
+
+      // Instructions
+      infoY += 10;
+      ctx.fillStyle = '#6366f1';
+      ctx.font = 'bold 14px system-ui, -apple-system, sans-serif';
+      ctx.fillText('📱 Cách tham gia:', 80, infoY);
+      infoY += 24;
+      ctx.fillStyle = '#475569';
+      ctx.font = '13px system-ui, -apple-system, sans-serif';
+      const steps = [
+        '1. Quét mã QR hoặc truy cập t-nexus.io.vn',
+        '2. Nhấn "Tham gia dự án"',
+        `3. Nhập mã: ${code}`,
+      ];
+      steps.forEach(s => {
+        ctx.fillText(s, 96, infoY);
+        infoY += 22;
+      });
+
+      // Footer
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '12px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('t-nexus.io.vn', w / 2, h - 20);
+
+      // Download
+      const link = document.createElement('a');
+      link.download = `invite-${code}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+
+      document.body.removeChild(tempDiv);
+    });
+  }, []);
 
   useEffect(() => {
     setLocalIsPublic(isPublic);
