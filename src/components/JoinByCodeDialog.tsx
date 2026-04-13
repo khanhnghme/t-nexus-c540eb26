@@ -33,9 +33,10 @@ interface JoinByCodeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onJoined: () => void;
+  initialCode?: string;
 }
 
-export default function JoinByCodeDialog({ open, onOpenChange, onJoined }: JoinByCodeDialogProps) {
+export default function JoinByCodeDialog({ open, onOpenChange, onJoined, initialCode }: JoinByCodeDialogProps) {
   const { user, profile } = useAuth();
   const { toast } = useToast();
   const [digits, setDigits] = useState(['', '', '', '', '', '']);
