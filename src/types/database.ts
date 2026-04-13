@@ -19,6 +19,11 @@ export type SystemRoleLegacy = SystemRole | 'system_owner' | 'system_admin' | 'o
 export type WorkspaceRoleLegacy = WorkspaceRole | 'workspace_owner' | 'workspace_admin' | 'workspace_member' | 'owner' | 'admin' | 'member';
 export type ProjectRoleLegacy = ProjectRole | 'project_owner' | 'project_admin' | 'project_member' | 'project_guest' | 'leader' | 'member';
 
+// ═══════════════════════════════════════════════════════
+// User Plan
+// ═══════════════════════════════════════════════════════
+export type UserPlan = 'plan_free' | 'plan_plus' | 'plan_pro' | 'plan_business' | 'plan_custom';
+
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE' | 'VERIFIED';
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
 
@@ -61,7 +66,7 @@ export interface Profile {
 export interface UserRole {
   id: string;
   user_id: string;
-  role: SystemRole;
+  role: string; // SystemRole | SystemRoleLegacy during migration
   created_at: string;
 }
 
@@ -86,14 +91,14 @@ export interface Workspace {
   max_storage_mb: number;
   created_at: string;
   updated_at: string;
-  my_role?: WorkspaceRole;
+  my_role?: string; // WorkspaceRole | WorkspaceRoleLegacy during migration
   member_count?: number;
 }
 
 export interface WorkspaceMember {
   workspace_id: string;
   user_id: string;
-  role: WorkspaceRole;
+  role: string; // WorkspaceRole | WorkspaceRoleLegacy during migration
   invited_by: string | null;
   joined_at: string;
   profiles?: Profile;
@@ -150,7 +155,7 @@ export interface GroupMember {
   id: string;
   group_id: string;
   user_id: string;
-  role: ProjectRole;
+  role: string; // ProjectRole | ProjectRoleLegacy during migration
   joined_at: string;
   is_guest?: boolean;
   profiles?: Profile;
@@ -229,7 +234,7 @@ export interface ProjectInvitation {
   group_id: string;
   invited_user_id: string;
   invited_by: string;
-  role: ProjectRole;
+  role: string; // ProjectRole | ProjectRoleLegacy during migration
   status: InvitationStatus;
   expires_at: string | null;
   created_at: string;
