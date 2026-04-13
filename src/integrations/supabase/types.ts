@@ -816,7 +816,7 @@ export type Database = {
           id: string
           is_guest: boolean
           joined_at: string
-          role: Database["public"]["Enums"]["project_role"]
+          role: string
           user_id: string
         }
         Insert: {
@@ -824,7 +824,7 @@ export type Database = {
           id?: string
           is_guest?: boolean
           joined_at?: string
-          role?: Database["public"]["Enums"]["project_role"]
+          role?: string
           user_id: string
         }
         Update: {
@@ -832,7 +832,7 @@ export type Database = {
           id?: string
           is_guest?: boolean
           joined_at?: string
-          role?: Database["public"]["Enums"]["project_role"]
+          role?: string
           user_id?: string
         }
         Relationships: [
@@ -1425,6 +1425,38 @@ export type Database = {
         }
         Relationships: []
       }
+      page_members: {
+        Row: {
+          id: string
+          joined_at: string
+          page_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          page_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          page_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_members_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "project_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       password_reset_codes: {
         Row: {
           code: string
@@ -1909,7 +1941,7 @@ export type Database = {
           id: string
           invited_by: string
           invited_user_id: string
-          role: Database["public"]["Enums"]["project_role"]
+          role: string
           status: string
           updated_at: string
         }
@@ -1920,7 +1952,7 @@ export type Database = {
           id?: string
           invited_by: string
           invited_user_id: string
-          role?: Database["public"]["Enums"]["project_role"]
+          role?: string
           status?: string
           updated_at?: string
         }
@@ -1931,7 +1963,7 @@ export type Database = {
           id?: string
           invited_by?: string
           invited_user_id?: string
-          role?: Database["public"]["Enums"]["project_role"]
+          role?: string
           status?: string
           updated_at?: string
         }
@@ -3090,21 +3122,21 @@ export type Database = {
           billing_role: string | null
           created_at: string
           id: string
-          role: Database["public"]["Enums"]["system_role"]
+          role: string
           user_id: string
         }
         Insert: {
           billing_role?: string | null
           created_at?: string
           id?: string
-          role: Database["public"]["Enums"]["system_role"]
+          role: string
           user_id: string
         }
         Update: {
           billing_role?: string | null
           created_at?: string
           id?: string
-          role?: Database["public"]["Enums"]["system_role"]
+          role?: string
           user_id?: string
         }
         Relationships: []
@@ -3262,7 +3294,7 @@ export type Database = {
         Args: { _group_id: string; _user_id: string }
         Returns: {
           group_id: string
-          group_role: Database["public"]["Enums"]["project_role"]
+          group_role: string
           is_project_guest: boolean
           visibility: Database["public"]["Enums"]["project_visibility"]
           workspace_id: string
@@ -3321,18 +3353,9 @@ export type Database = {
         Args: { _workspace_id: string }
         Returns: number
       }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+      has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       has_system_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["system_role"]
-          _user_id: string
-        }
+        Args: { _role: string; _user_id: string }
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
@@ -3389,16 +3412,9 @@ export type Database = {
       release_sync_lock: { Args: { p_user_id: string }; Returns: undefined }
     }
     Enums: {
-      app_role: "owner_system" | "leader" | "member"
       approval_status: "pending" | "approved" | "rejected"
       invite_scope: "workspace" | "project"
-      project_role:
-        | "project_owner"
-        | "project_admin"
-        | "project_member"
-        | "project_guest"
       project_visibility: "private" | "workspace_public" | "public_link"
-      system_role: "system_owner" | "system_admin"
       task_status: "TODO" | "IN_PROGRESS" | "DONE" | "VERIFIED"
       user_plan:
         | "plan_free"
@@ -3406,7 +3422,6 @@ export type Database = {
         | "plan_pro"
         | "plan_business"
         | "plan_custom"
-      workspace_role: "admin" | "member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3534,17 +3549,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["owner_system", "leader", "member"],
       approval_status: ["pending", "approved", "rejected"],
       invite_scope: ["workspace", "project"],
-      project_role: [
-        "project_owner",
-        "project_admin",
-        "project_member",
-        "project_guest",
-      ],
       project_visibility: ["private", "workspace_public", "public_link"],
-      system_role: ["system_owner", "system_admin"],
       task_status: ["TODO", "IN_PROGRESS", "DONE", "VERIFIED"],
       user_plan: [
         "plan_free",
@@ -3553,7 +3560,6 @@ export const Constants = {
         "plan_business",
         "plan_custom",
       ],
-      workspace_role: ["admin", "member"],
     },
   },
 } as const
