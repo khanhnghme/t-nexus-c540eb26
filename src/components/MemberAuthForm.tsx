@@ -288,30 +288,6 @@ export function MemberAuthForm() {
 
       let loginEmail = input;
 
-      // Check approval
-      const { data: rawProfile } = await supabase
-        .rpc('check_profile_login', { p_email: loginEmail });
-      const profileData = rawProfile as { is_approved: boolean; full_name: string } | null;
-
-      if (profileData && !profileData.is_approved) {
-        setIsLoading(false);
-        toast({
-          title: ta.toastPendingApproval,
-          description: ta.toastPendingApprovalDesc,
-        });
-        return;
-      }
-
-      if (!profileData) {
-        setIsLoading(false);
-        toast({
-          title: ta.toastEmailNotExist,
-          description: ta.toastEmailNotExistDesc,
-          variant: 'destructive',
-        });
-        return;
-      }
-
       // Set ref BEFORE signIn to prevent race condition with useEffect navigation
       pendingLoginRef.current = true;
       // Set session flag to prevent Auth.tsx from showing RememberLoginScreen mid-flow
