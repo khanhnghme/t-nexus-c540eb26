@@ -639,7 +639,7 @@ export default function Landing() {
                 className="h-10 rounded-full px-4 text-sm font-medium shadow-none"
                 style={{ backgroundColor: colorVar('--landing-blue'), color: '#fff' }}
               >
-                <Link to={lp('/auth')}>{tc.login}</Link>
+                <Link to={lp('/login')}>{tc.login}</Link>
               </Button>
             </div>
           </div>
@@ -871,7 +871,7 @@ export default function Landing() {
                       className="h-12 rounded-full px-6 text-sm font-medium shadow-none"
                       style={{ backgroundColor: colorVar('--landing-blue'), color: '#fff' }}
                     >
-                      <Link to={lp('/auth')} className="flex items-center gap-2">
+                      <Link to={lp('/login')} className="flex items-center gap-2">
                         {tl.ctaGetFree} <ArrowRight className="h-4 w-4" />
                       </Link>
                     </Button>
@@ -1347,7 +1347,7 @@ export default function Landing() {
                     className="h-12 rounded-full px-6 text-sm font-medium shadow-none"
                     style={{ backgroundColor: colorVar('--landing-hero-foreground'), color: colorVar('--landing-night') }}
                   >
-                    <Link to={lp('/auth')} className="flex items-center gap-2">
+                    <Link to={lp('/login')} className="flex items-center gap-2">
                       {tl.ctaLogIn} <ArrowRight className="h-4 w-4" />
                     </Link>
                   </Button>
@@ -1403,7 +1403,7 @@ export default function Landing() {
                   {
                     title: tc.download,
                     links: [
-                      { label: tl.footerDownloadLinks[0], href: lp('/auth'), external: false },
+                      { label: tl.footerDownloadLinks[0], href: lp('/login'), external: false },
                       { label: tl.footerDownloadLinks[1], href: lp('/download'), external: false },
                       { label: tl.footerDownloadLinks[2], href: lp('/download'), external: false },
                     ],
@@ -1420,7 +1420,7 @@ export default function Landing() {
                     title: tl.footerContactTitle,
                     links: [
                       { label: adminEmail || tl.footerComingSoon, href: adminEmail ? `mailto:${adminEmail}` : '#resources' },
-                      { label: tc.login, href: lp('/auth'), external: false },
+                      { label: tc.login, href: lp('/login'), external: false },
                       { label: tc.installApp, href: lp('/download'), external: false },
                       { label: '**Explore more →**', href: lp('/guide'), external: false, bold: true },
                     ],
@@ -1525,7 +1525,7 @@ export default function Landing() {
                   </Button>
                 ) : (
                   <Button asChild size="sm" className="h-8 gap-1 shadow-md">
-                    <Link to={lp('/auth')} onClick={closeIntro}>
+                    <Link to={lp('/login')} onClick={closeIntro}>
                       {tc.getStarted} <ArrowRight className="h-4 w-4" />
                     </Link>
                   </Button>

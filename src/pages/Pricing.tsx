@@ -67,7 +67,7 @@ export default function Pricing() {
       return;
     }
     if (!user) {
-      navigate(lp('/auth'));
+      navigate(lp('/login'));
       return;
     }
     if (planKey === 'plan_free') {
