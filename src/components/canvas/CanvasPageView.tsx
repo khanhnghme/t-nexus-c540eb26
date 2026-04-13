@@ -22,6 +22,7 @@ import type { Block } from "@blocknote/core";
 import { useCanvasShortcuts } from "@/hooks/useCanvasShortcuts";
 import { usePageLastEditor } from "@/hooks/usePageLastEditor";
 import { logActivity } from "@/lib/activityLogger";
+import { usePageRole } from "@/hooks/usePageRole";
 import ShortcutHelpDialog from "./ShortcutHelpDialog";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -49,7 +50,12 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
   const editorRef = useRef<CanvasEditorHandle>(null);
   const [activePageId, setActivePageId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isEditMode, setIsEditMode] = useState(editable);
+
+  // Page-level permission check
+  const { canEdit: canEditPage } = usePageRole(activePageId, groupId);
+  const effectiveEditable = editable || canEditPage;
+
+  const [isEditMode, setIsEditMode] = useState(effectiveEditable);
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
 
@@ -82,6 +88,11 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
   useEffect(() => {
     setSidebarOpen(!isMobile);
   }, [isMobile]);
+
+  // Sync isEditMode when effectiveEditable changes
+  useEffect(() => {
+    setIsEditMode(effectiveEditable);
+  }, [effectiveEditable]);
 
   // Auto-select first page
   useEffect(() => {
@@ -212,9 +223,9 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
   // Keyboard shortcuts
   useCanvasShortcuts({
     onForceSave: () => editorRef.current?.forceSave(),
-    onCreatePage: editable ? handleCreatePage : undefined,
+    onCreatePage: effectiveEditable ? handleCreatePage : undefined,
     onToggleSidebar: () => setSidebarOpen(prev => !prev),
-    onToggleEditMode: editable ? () => setIsEditMode(prev => !prev) : undefined,
+    onToggleEditMode: effectiveEditable ? () => setIsEditMode(prev => !prev) : undefined,
     onOpenHelp: () => setShortcutHelpOpen(true),
   }, true);
 
@@ -243,7 +254,7 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
       <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
         <FileText className="h-8 w-8" />
         <p className="text-sm">Chưa có trang nào được tạo.</p>
-        {editable && (
+        {effectiveEditable && (
           <Button
             size="sm"
             onClick={handleCreatePage}
@@ -364,7 +375,7 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
           )}
 
           {/* Edit/View toggle — icon only */}
-          {editable && (
+          {effectiveEditable && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -390,7 +401,7 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              {editable && (
+              {effectiveEditable && (
                 <DropdownMenuItem onClick={() => setSaveTemplateOpen(true)}>
                   <Save className="h-3.5 w-3.5 mr-2" />
                   Lưu làm template
