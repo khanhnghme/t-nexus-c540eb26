@@ -1,47 +1,41 @@
 
 
-## Redesign thanh TopBar dự án — từ box tabs sang flat inline tabs
+## Nâng cấp mã tham gia — QR gọn + tải ảnh mời
 
-### Hiện trạng
+### Đã triển khai
 
-Thanh TopBar hiện tại sử dụng các tab dạng **box/pill** (`bg-primary`, `rounded-lg`, `shadow-sm`) trông nặng nề, chiếm nhiều không gian thị giác. Giống kiểu button group hơn là navigation.
+**File: `src/components/ShareSettingsCard.tsx`**
 
-### Hướng redesign — Flat underline tabs (kiểu Notion/Linear)
+1. Thêm QR code inline 56px bên cạnh mã code (gọn, không chiếm thêm hàng)
+2. Thêm nút Download — tải ảnh PNG đầy đủ thông tin (QR 200px, tên dự án, mã code, giới hạn, trạng thái duyệt, hướng dẫn tham gia)
+3. Dòng hướng dẫn ngắn: "Quét QR hoặc vào t-nexus.io.vn → Tham gia dự án → Nhập mã"
+4. QR encode URL: `https://t-nexus.io.vn/join?code={CODE}`
+5. Copy lời mời có kèm link QR + hướng dẫn chi tiết
 
-Chuyển sang kiểu tab phẳng, nhẹ, chuyên nghiệp hơn:
+### Layout trên giao diện
 
 ```text
-  ┌─────────────────────────────────────────────────────────┐
-  │  Overview   Tasks   Meetings   Resources   Members  ... │
-  │  ─────────                                              │
-  └─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│  [QR 56px]  A B 3 X 7 K     [📋] [🔄] [⬇️]    │
+│  📱 Quét QR hoặc vào t-nexus.io.vn → Tham gia   │
+└──────────────────────────────────────────────────┘
 ```
 
-- Tab active: text đậm + underline (border-bottom 2px primary) — không có background box
-- Tab inactive: text muted, hover nhẹ
-- Icon nhỏ hơn hoặc ẩn icon, chỉ hiện text — gọn hơn
-- Khoảng cách giữa các tab thoáng hơn (`gap-6`)
-- Bỏ `rounded-lg`, `shadow-sm`, `bg-primary` khỏi tab active
+### Ảnh tải về (canvas → PNG)
 
-### File thay đổi
-
-| File | Thay đổi |
-|------|----------|
-| `src/components/layout/TopBar.tsx` | Thay style tab từ box/pill sang flat underline. Bỏ background trên active tab, thêm border-bottom indicator. Giảm kích thước icon hoặc ẩn trên desktop |
-| `src/components/ProjectNavigation.tsx` | Áp dụng cùng style mới (component này vẫn được dùng ở một số nơi) |
-
-### Chi tiết style mới cho tab
-
-**Active tab:**
-- `text-foreground font-semibold` 
-- Underline indicator: `after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-primary after:rounded-full`
-- Không background, không shadow
-
-**Inactive tab:**
-- `text-muted-foreground hover:text-foreground`
-- Không background khi hover (chỉ đổi màu text)
-
-**Container:**
-- Bỏ `bg-background/60 backdrop-blur border rounded-2xl shadow` wrapper
-- Tabs nằm trực tiếp trên TopBar, căn giữa, `gap-1` hoặc `gap-6`
-
+```text
+┌─────────────────────────────────┐
+│      Mời tham gia dự án         │
+│        🎯 Tên dự án             │
+│       ┌────────────┐            │
+│       │  QR 200px  │            │
+│       └────────────┘            │
+│        Mã: AB3X7K              │
+│  👥 Giới hạn: 10 người          │
+│  🔒 Cần duyệt: Có              │
+│  📱 Cách tham gia:              │
+│  Quét QR hoặc vào t-nexus.io.vn │
+│  → Tham gia dự án → Nhập mã    │
+│  📎 t-nexus.io.vn               │
+└─────────────────────────────────┘
+```
