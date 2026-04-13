@@ -152,6 +152,43 @@ export default function TopBar() {
                 </TooltipContent>
               </Tooltip>
             )}
+            {isCustomMode && projectInfo.projectName && (
+              <>
+                {isRenaming ? (
+                  <input
+                    ref={inputRef}
+                    value={tempName}
+                    onChange={(e) => setTempName(e.target.value)}
+                    onBlur={handleSave}
+                    onKeyDown={handleKeyDown}
+                    disabled={isSaving}
+                    className="text-xs font-semibold bg-transparent border-b border-primary/50 outline-none px-1 py-0.5 max-w-[160px] text-foreground mr-1"
+                  />
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={startRename}
+                        className={cn(
+                          "text-xs font-semibold truncate max-w-[160px] px-1.5 py-0.5 rounded-md mr-1 flex items-center gap-1 text-foreground",
+                          projectInfo.isLeaderInGroup && "hover:bg-accent cursor-pointer"
+                        )}
+                        disabled={!projectInfo.isLeaderInGroup}
+                      >
+                        <span className="truncate">{projectInfo.projectName}</span>
+                        {projectInfo.isLeaderInGroup && <Pencil className="w-3 h-3 text-muted-foreground shrink-0" />}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>{projectInfo.isLeaderInGroup 
+                        ? (locale === 'vi' ? 'Nhấn để đổi tên' : 'Click to rename') 
+                        : projectInfo.projectName}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                <span className="text-muted-foreground/40 mr-1">|</span>
+              </>
+            )}
             {visibleTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = projectNavProps.activeTab === tab.id;
