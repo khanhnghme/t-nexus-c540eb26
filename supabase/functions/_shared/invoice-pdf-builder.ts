@@ -94,6 +94,18 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
     page.drawLine({ start: { x: x1, y: yPos }, end: { x: x2, y: yPos }, thickness, color: gray200 });
   };
 
+  // ─── Fetch and embed logo ─────────────────────────────────────
+  let logoImage: any = null;
+  try {
+    const logoRes = await fetch(LOGO_URL);
+    if (logoRes.ok) {
+      const logoBytes = new Uint8Array(await logoRes.arrayBuffer());
+      logoImage = await pdfDoc.embedPng(logoBytes);
+    }
+  } catch (_e) {
+    // fallback to text if logo fetch fails
+  }
+
   // ─── Header ────────────────────────────────────────────────────
   drawText("HOA DON", margin, y, { font: helveticaBold, size: 22, color: gray900 });
   y -= 10;
@@ -101,9 +113,20 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
   y -= 8;
   drawText(invoiceNumber, margin, y, { font: courier, size: 9, color: gray700 });
 
-  // Right side — brand
-  drawText("T-Nexus", pageW - margin, y + 18, { font: helveticaBold, size: 18, color: blue600, align: "right" });
-  drawText("Dich vu quan ly du an so", pageW - margin, y + 8, { size: 7, color: gray400, align: "right" });
+  // Right side — brand logo or text fallback
+  if (logoImage) {
+    const logoDisplayW = 120;
+    const logoDisplayH = (logoImage.height / logoImage.width) * logoDisplayW;
+    page.drawImage(logoImage, {
+      x: pageW - margin - logoDisplayW,
+      y: y + 4,
+      width: logoDisplayW,
+      height: logoDisplayH,
+    });
+  } else {
+    drawText("T-Nexus", pageW - margin, y + 18, { font: helveticaBold, size: 18, color: blue600, align: "right" });
+  }
+  drawText("Dich vu quan ly du an so", pageW - margin, y - 6, { size: 7, color: gray400, align: "right" });
 
   y -= 10;
 
