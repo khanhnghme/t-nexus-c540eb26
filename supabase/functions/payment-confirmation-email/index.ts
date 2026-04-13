@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { AwsClient } from "https://esm.sh/aws4fetch@1.0.20";
 import { buildPaymentConfirmationEmail } from "../_shared/email-html-builder.ts";
 import { buildInvoicePdf } from "../_shared/invoice-pdf-builder.ts";
 
