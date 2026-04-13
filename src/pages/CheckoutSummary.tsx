@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { CheckCircle2, XCircle, Clock, Ban, Loader2, ArrowRight, RotateCcw, Receipt, Printer, CreditCard, Calendar, Hash } from 'lucide-react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { CheckCircle2, XCircle, Clock, Ban, Loader2, ArrowRight, RotateCcw, Receipt, Printer, CreditCard, Calendar, Hash, ShieldAlert, LogIn } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
