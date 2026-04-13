@@ -77,24 +77,69 @@ export default function ShareSettingsCard({
   const memberLimitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const qrCanvasRef = useRef<HTMLDivElement>(null);
 
-  const handleDownloadInviteImage = useCallback((code: string, name: string, limit: number | null, requireApproval: boolean) => {
-    // Load text logo first, then draw everything
-    const logoImg = new Image();
-    logoImg.crossOrigin = 'anonymous';
-    logoImg.src = tNexusTextLogo;
+  const handleDownloadInviteImage = useCallback(async (code: string, name: string, limit: number | null, requireApproval: boolean) => {
+    const loadImage = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Không thể tải logo để tạo ảnh mời'));
+      img.src = src;
+    });
 
-    const draw = () => {
-      const scale = 2; // 2x for high-DPI / retina quality
+    const waitForQrCanvas = () => new Promise<HTMLCanvasElement>((resolve, reject) => {
+      let attempts = 0;
+
+      const checkCanvas = () => {
+        const hiddenCanvas = qrCanvasRef.current?.querySelector('canvas') as HTMLCanvasElement | null;
+
+        if (hiddenCanvas && hiddenCanvas.width > 0 && hiddenCanvas.height > 0) {
+          resolve(hiddenCanvas);
+          return;
+        }
+
+        attempts += 1;
+        if (attempts >= 20) {
+          reject(new Error('Mã QR chưa sẵn sàng để tải xuống'));
+          return;
+        }
+
+        window.requestAnimationFrame(checkCanvas);
+      };
+
+      checkCanvas();
+    });
+
+    const triggerDownload = (url: string) => {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `invite-${code}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
+    try {
+      const [hiddenQR, logoImg] = await Promise.all([
+        waitForQrCanvas(),
+        loadImage(tNexusTextLogo).catch(() => null),
+      ]);
+
+      const scale = 2;
       const canvas = document.createElement('canvas');
-      const w = 600, h = 740;
+      const w = 600;
+      const h = 740;
       canvas.width = w * scale;
       canvas.height = h * scale;
-      canvas.style.width = w + 'px';
-      canvas.style.height = h + 'px';
-      const ctx = canvas.getContext('2d')!;
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        throw new Error('Không thể khởi tạo trình tạo ảnh');
+      }
+
       ctx.scale(scale, scale);
 
-      // Background with subtle gradient
       const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
       bgGrad.addColorStop(0, '#f8fafc');
       bgGrad.addColorStop(1, '#ffffff');
@@ -103,14 +148,12 @@ export default function ShareSettingsCard({
       ctx.roundRect(0, 0, w, h, 20);
       ctx.fill();
 
-      // Border
       ctx.strokeStyle = '#e2e8f0';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.roundRect(0, 0, w, h, 20);
       ctx.stroke();
 
-      // Header gradient bar
       const headerGrad = ctx.createLinearGradient(0, 0, w, 0);
       headerGrad.addColorStop(0, '#6366f1');
       headerGrad.addColorStop(1, '#8b5cf6');
@@ -119,35 +162,30 @@ export default function ShareSettingsCard({
       ctx.roundRect(0, 0, w, 85, [20, 20, 0, 0]);
       ctx.fill();
 
-      // Text logo in header
-      if (logoImg.complete && logoImg.naturalWidth > 0) {
+      if (logoImg) {
         const logoH = 22;
-        const logoW = logoImg.naturalWidth / logoImg.naturalHeight * logoH;
+        const logoW = (logoImg.naturalWidth / logoImg.naturalHeight) * logoH;
         ctx.drawImage(logoImg, 24, (85 - logoH) / 2, logoW, logoH);
       }
 
-      // Header text
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 20px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'left';
-      ctx.fillText('Mời tham gia dự án', logoImg.complete && logoImg.naturalWidth > 0 ? 24 + (logoImg.naturalWidth / logoImg.naturalHeight * 22) + 12 : 24, 50);
+      ctx.fillText('Mời tham gia dự án', logoImg ? 24 + ((logoImg.naturalWidth / logoImg.naturalHeight) * 22) + 12 : 24, 50);
       ctx.font = '12px system-ui, -apple-system, sans-serif';
       ctx.fillStyle = 'rgba(255,255,255,0.8)';
       ctx.textAlign = 'right';
       ctx.fillText('t-nexus.io.vn', w - 24, 50);
 
-      // Project name
       ctx.fillStyle = '#1e1e2e';
       ctx.font = 'bold 18px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(name.length > 45 ? name.slice(0, 42) + '...' : name, w / 2, 120);
+      ctx.fillText(name.length > 45 ? `${name.slice(0, 42)}...` : name, w / 2, 120);
 
-      // QR Code section with decorative frame
       const qrSize = 240;
       const qrX = (w - qrSize) / 2;
       const qrY = 140;
 
-      // QR background card
       ctx.fillStyle = '#ffffff';
       ctx.shadowColor = 'rgba(99, 102, 241, 0.15)';
       ctx.shadowBlur = 24;
@@ -157,22 +195,16 @@ export default function ShareSettingsCard({
       ctx.fill();
       ctx.shadowColor = 'transparent';
 
-      // QR border
       ctx.strokeStyle = '#e2e8f0';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.roundRect(qrX - 20, qrY - 20, qrSize + 40, qrSize + 40, 16);
       ctx.stroke();
 
-      // Draw QR from hidden canvas (high-res 400px, scaled down to qrSize)
-      const hiddenQR = document.querySelector('#hidden-qr-canvas canvas') as HTMLCanvasElement;
-      if (hiddenQR) {
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(hiddenQR, qrX, qrY, qrSize, qrSize);
-        ctx.imageSmoothingEnabled = true;
-      }
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(hiddenQR, qrX, qrY, qrSize, qrSize);
+      ctx.imageSmoothingEnabled = true;
 
-      // Code display with accent background
       const codeY = qrY + qrSize + 50;
       const codeGrad = ctx.createLinearGradient(120, codeY - 25, w - 120, codeY - 25);
       codeGrad.addColorStop(0, '#eef2ff');
@@ -192,7 +224,6 @@ export default function ShareSettingsCard({
       ctx.textAlign = 'center';
       ctx.fillText(code.split('').join('  '), w / 2, codeY + 10);
 
-      // Info section
       let infoY = codeY + 65;
       ctx.font = '14px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'left';
@@ -202,12 +233,12 @@ export default function ShareSettingsCard({
         `👥  Giới hạn: ${limit ? `${limit} người` : 'Không giới hạn'}`,
         `🔒  Cần duyệt: ${requireApproval ? 'Có' : 'Không — vào ngay'}`,
       ];
-      infos.forEach(text => {
+
+      infos.forEach((text) => {
         ctx.fillText(text, 80, infoY);
         infoY += 26;
       });
 
-      // Instructions
       infoY += 8;
       ctx.fillStyle = '#6366f1';
       ctx.font = 'bold 13px system-ui, -apple-system, sans-serif';
@@ -220,12 +251,11 @@ export default function ShareSettingsCard({
         '2. Nhấn "Tham gia dự án"',
         `3. Nhập mã: ${code}`,
       ];
-      steps.forEach(s => {
-        ctx.fillText(s, 96, infoY);
+      steps.forEach((step) => {
+        ctx.fillText(step, 96, infoY);
         infoY += 20;
       });
 
-      // Footer line
       ctx.strokeStyle = '#e2e8f0';
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -238,21 +268,27 @@ export default function ShareSettingsCard({
       ctx.textAlign = 'center';
       ctx.fillText('Powered by T-Nexus  •  t-nexus.io.vn', w / 2, h - 18);
 
-      // Download
-      const link = document.createElement('a');
-      link.download = `invite-${code}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    };
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((result) => {
+          if (!result) {
+            reject(new Error('Không thể tạo file ảnh để tải xuống'));
+            return;
+          }
+          resolve(result);
+        }, 'image/png', 1);
+      });
 
-    // Wait for logo to load, or proceed without it
-    if (logoImg.complete) {
-      draw();
-    } else {
-      logoImg.onload = draw;
-      logoImg.onerror = draw;
+      const blobUrl = URL.createObjectURL(blob);
+      triggerDownload(blobUrl);
+      window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    } catch (error: any) {
+      toast({
+        title: 'Không thể tải ảnh mã QR',
+        description: error?.message || 'Vui lòng thử lại sau vài giây',
+        variant: 'destructive',
+      });
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     setLocalIsPublic(isPublic);
@@ -577,7 +613,7 @@ export default function ShareSettingsCard({
               </div>
 
               {/* Hidden QR canvas for download — high resolution, no center logo */}
-              <div id="hidden-qr-canvas" className="absolute -left-[9999px]">
+              <div id="hidden-qr-canvas" ref={qrCanvasRef} className="pointer-events-none absolute -left-[9999px] top-0 opacity-0" aria-hidden="true">
                 <QRCodeCanvas
                   value={`https://t-nexus.io.vn/join?code=${localJoinCode}`}
                   size={400}
