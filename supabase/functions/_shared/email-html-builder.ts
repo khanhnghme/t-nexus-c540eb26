@@ -142,51 +142,12 @@ export function buildBrandedOtpEmail(options: EmailOptions): string {
   const year = new Date().getFullYear();
   const t = getEmailTexts(locale);
 
-  const digitBoxes = otpCode
-    .split("")
-    .map(
-      (d) =>
-        `<td style="padding:0 3px;">
-          <div class="otp-digit" style="width:40px;height:50px;background-color:${C.accentLight};border:1.5px solid ${C.accentBorder};border-radius:8px;line-height:50px;text-align:center;font-size:24px;font-weight:700;color:${C.accent};font-family:'Courier New',Courier,monospace;">
-            ${d}
-          </div>
-        </td>`
-    )
-    .join("");
-
-  return `${emailDoctype(locale)}
-  <title>${title}</title>
-</head>
-<body style="margin:0;padding:0;background-color:${C.bg};font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;">
-  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color:${C.bg};padding:32px 16px;">
-    <tr><td align="center">
-
-      <!-- Main Card -->
-      <table class="email-container" width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:540px;background-color:${C.bg};border:1px solid ${C.border};border-radius:12px;overflow:hidden;">
-
-        ${emailHeader(subtitle)}
-
-        <!-- Body -->
-        <tr>
-          <td class="email-padding" style="padding:36px 40px 28px;">
-
-            <!-- Title -->
-            <h1 style="margin:0 0 8px;color:${C.text};font-size:20px;font-weight:700;line-height:1.3;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
-              ${title}
-            </h1>
-            <p style="margin:0 0 28px;color:${C.muted};font-size:14px;line-height:1.6;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
-              ${expiryText}
-            </p>
-
-            <!-- OTP Digits -->
-            <div style="text-align:center;">
-              <table class="otp-table" cellpadding="0" cellspacing="0" role="presentation" align="center" style="margin:0 auto 8px;">
-                <tr>${digitBoxes}</tr>
-              </table>
+  const otpDisplay = `<div style="text-align:center;margin:0 0 8px;">
+              <span style="display:inline-block;padding:14px 28px;background-color:${C.accentLight};border:1.5px solid ${C.accentBorder};border-radius:8px;font-size:28px;font-weight:700;letter-spacing:10px;color:${C.accent};font-family:'Courier New',Courier,monospace;">${otpCode}</span>
             </div>
-            <p style="margin:0 0 28px;color:${C.subtle};font-size:11px;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
+            <p style="margin:0 0 28px;color:${C.subtle};font-size:11px;text-align:center;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
               ${t.otpEnterCode}
-            </p>
+            </p>`;
 
             <!-- Divider -->
             <div style="height:1px;background-color:${C.border};margin-bottom:20px;"></div>
