@@ -125,12 +125,12 @@ export default function TopBar() {
                   key={tab.id}
                   onClick={() => projectNavProps.onTabChange(tab.id)}
                   className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150",
+                    "relative inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors duration-150",
                     "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
-                    "whitespace-nowrap shrink-0",
+                    "whitespace-nowrap shrink-0 rounded-md",
                     isActive
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                      ? "text-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   )}
                 >
                   <div className="relative">
@@ -153,11 +153,14 @@ export default function TopBar() {
                     <span className={cn(
                       "px-1 py-0 text-[10px] font-semibold rounded-full min-w-[16px] text-center leading-tight",
                       isActive
-                        ? "bg-primary-foreground/20 text-primary-foreground"
+                        ? "bg-primary/15 text-primary"
                         : "bg-muted-foreground/15 text-muted-foreground"
                     )}>
                       {projectNavProps.membersCount}
                     </span>
+                  )}
+                  {isActive && (
+                    <span className="absolute bottom-0 left-1.5 right-1.5 h-[2px] bg-primary rounded-full" />
                   )}
                 </button>
               );
