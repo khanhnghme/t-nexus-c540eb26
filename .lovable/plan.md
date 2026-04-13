@@ -1,30 +1,42 @@
 
 
-## Plan: Bảo vệ trang Summary + điều hướng sau đăng nhập từ QR
+## Plan: Fix hiển thị tạm tính & giảm giá trên hóa đơn
 
-### Vấn đề hiện tại
-- `CheckoutSummary` nằm trong `ProtectedRoute` → chưa đăng nhập sẽ bị redirect `/login` mất URL
-- Query filter `user_id = user.id` → chỉ chủ đơn xem được, nhưng system:owner/admin cũng cần xem
-- Không có cơ chế lưu URL để quay lại sau login
+### Vấn đề
+Dòng "Tạm tính" (Subtotal) đang hiển thị giá đã trừ giảm giá, thay vì hiển thị giá gốc rồi trừ riêng dòng giảm giá phía dưới. Cần đảm bảo logic nhất quán ở **3 nơi**: trang Summary web, bản in (PrintableInvoice), và PDF đính kèm email.
+
+### Nguyên nhân
+Trong bảng `orders`:
+- `base_amount` = giá gốc plan
+- `addon_amount` = giá addon
+- `discount_amount` = tổng giảm (coupon + welcome + addon saving) — đã gộp cả welcome_discount
+- `welcome_discount` = riêng phần welcome
+
+Khi hiển thị, nếu show cả `discount_amount` VÀ `welcome_discount` riêng → bị trùng (double count). Cần tách rõ: chỉ hiện discount_amount đã trừ welcome_discount (= coupon + addon saving), hoặc gộp thành 1 dòng "Giảm giá" duy nhất.
 
 ### Giải pháp
 
-#### 1. Tách route Summary ra khỏi ProtectedRoute (`App.tsx`)
-- Tạo route riêng cho `/checkout/summary/:orderCode` và `/addon-checkout/summary/:orderCode` **ngoài** `ProtectedRoute`
-- Dùng layout minimal (không cần CheckoutLayoutWrapper phức tạp)
+Thống nhất logic ở cả 3 nơi:
 
-#### 2. Xử lý auth + redirect trong `CheckoutSummary.tsx`
-- Nếu **chưa đăng nhập**: lưu URL hiện tại vào `sessionStorage` key `t-nexus_post_login_redirect`, hiển thị UI yêu cầu đăng nhập với nút "Đăng nhập" (giống JoinProject)
-- Nếu **đã đăng nhập**: kiểm tra quyền:
-  - Chủ đơn hàng (`order.user_id === user.id`) → cho xem
-  - `system:owner` hoặc `system:admin` (query `user_roles`) → cho xem
-  - Khác → hiển thị trang 403 Access Denied
-- Bỏ filter `.eq('user_id', user.id)` trong query, thay bằng chỉ filter `order_code`, rồi kiểm tra quyền sau khi fetch
+1. **Subtotal** = `base_amount + addon_amount` (giá gốc, KHÔNG trừ gì)
+2. **Dòng "Giảm giá coupon"** = chỉ hiện phần coupon: `discount_amount - welcome_discount` (nếu > 0)
+3. **Dòng "Ưu đãi chào mừng"** = `welcome_discount` (nếu > 0)
+4. **TỔNG CỘNG** = `total_amount`
 
-#### 3. Logic đăng nhập quay lại (đã có sẵn)
-- `LoginForm.tsx` và `RememberLoginScreen.tsx` đã đọc `t-nexus_post_login_redirect` → tự động redirect về đúng trang summary sau login
+Kiểm tra: `base_amount + addon_amount - (discount_amount) = total_amount` (vì discount_amount đã gộp tất cả)
 
 ### Files thay đổi
-- `src/App.tsx` — tách 2 route summary ra ngoài ProtectedRoute
-- `src/pages/CheckoutSummary.tsx` — thêm logic auth guard, redirect, access control, 403
+
+1. **`src/pages/CheckoutSummary.tsx`**
+   - PrintableInvoice: sửa dòng coupon discount hiển thị `discount_amount - welcome_discount` thay vì `discount_amount`
+   - Section "Order Breakdown" (card): tương tự
+   
+2. **`supabase/functions/_shared/invoice-pdf-builder.ts`**
+   - Tương tự: dòng discount chỉ hiện `discount_amount - welcome_discount`
+
+3. **`src/components/billing/InvoiceTemplate.tsx`**
+   - Thêm dòng welcome_discount nếu có
+   - Đảm bảo `originalAmount` hiển thị giá gốc, discount tách riêng
+
+4. **Deploy** edge function `payment-confirmation-email`
 
