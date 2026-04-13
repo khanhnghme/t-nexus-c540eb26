@@ -85,6 +85,9 @@ export default function Groups() {
   const { guardAction: guardReadOnly } = useReadOnlyGuard();
   const [groups, setGroups] = useState<GroupWithMembers[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [modeFilter, setModeFilter] = useState<'all' | 'basic' | 'custom'>('all');
+  const [visibilityFilter, setVisibilityFilter] = useState<'all' | 'private' | 'workspace_public' | 'public_link'>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showModeSelector, setShowModeSelector] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
