@@ -3,6 +3,19 @@
  */
 import { PDFDocument, rgb, StandardFonts } from "https://esm.sh/pdf-lib@1.17.1";
 
+/**
+ * Strip Vietnamese diacritics so pdf-lib StandardFonts (WinAnsi) can render the text.
+ */
+function stripVietnamese(str: string): string {
+  if (!str) return str;
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\u0111/g, "d")
+    .replace(/\u0110/g, "D")
+    .replace(/[^\x00-\x7F]/g, "");
+}
+
 const ADDON_TYPES = [
   { type: "projects", emoji: "📁", unitLabel: "+5 du an" },
   { type: "storage", emoji: "💾", unitLabel: "+5 GB luu tru" },
