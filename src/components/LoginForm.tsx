@@ -474,6 +474,7 @@ export function LoginForm() {
                     {ta.registerNow}
                   </button>
                 </p>
+              </div>
           </CardContent>
         </Card>
       </div>
