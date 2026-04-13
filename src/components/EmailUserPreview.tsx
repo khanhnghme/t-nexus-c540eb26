@@ -22,9 +22,8 @@ export default function EmailUserPreview({ previewUser, isLooking, notFound, not
     return (
       <div className="flex items-center gap-3 p-2.5 rounded-lg border border-primary/30 bg-primary/5">
         <UserAvatar
-          userId={previewUser.id}
-          fullName={previewUser.full_name}
-          avatarUrl={previewUser.avatar_url}
+          src={previewUser.avatar_url}
+          name={previewUser.full_name}
           size="sm"
         />
         <div className="min-w-0 flex-1">
