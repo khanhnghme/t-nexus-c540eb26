@@ -46,7 +46,7 @@ interface MemberRoleManagementDialogProps {
   onRoleChanged: () => void;
 }
 
-const DEFAULT_PROJECT_LIMIT = 2;
+
 
 
 export default function MemberRoleManagementDialog({
@@ -60,11 +60,8 @@ export default function MemberRoleManagementDialog({
   const [groups, setGroups] = useState<GroupInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [showPromoteConfirm, setShowPromoteConfirm] = useState(false);
   const [showDemoteConfirm, setShowDemoteConfirm] = useState(false);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
-  const [editingLimits, setEditingLimits] = useState(false);
-  const [projectLimit, setProjectLimit] = useState<number>(DEFAULT_PROJECT_LIMIT);
 
   const isLeaderRole = systemRoles.includes('system:admin');
   const isAdminRole = systemRoles.includes('system:owner');
@@ -78,8 +75,6 @@ export default function MemberRoleManagementDialog({
   useEffect(() => {
     if (open && member) {
       setLoading(true);
-      setProjectLimit(member.project_limit ?? DEFAULT_PROJECT_LIMIT);
-      setEditingLimits(false);
       Promise.all([fetchGroups(member.id)])
         .finally(() => setLoading(false));
     }
@@ -117,45 +112,6 @@ export default function MemberRoleManagementDialog({
   };
 
 
-  const handlePromote = async () => {
-    if (!member) return;
-    setActionLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('manage-users', {
-        body: {
-          action: 'update_role',
-          user_id: member.id,
-          new_role: 'project_basic:admin',
-          requester_id: user?.id,
-        },
-      });
-      if (error || data?.error) throw new Error(data?.error || error?.message);
-
-      // Set default limits
-      await supabase.from('profiles').update({
-        project_limit: DEFAULT_PROJECT_LIMIT,
-      }).eq('id', member.id);
-
-      await logActivity({
-        userId: user!.id,
-        userName: currentProfile?.full_name || 'OwnerSystem',
-        action: 'PROMOTE_MEMBER',
-        actionType: 'project_member',
-        description: `Nâng quyền ${member.full_name} từ Thành viên → Leader`,
-        metadata: { target_user_id: member.id, from_role: 'project_basic:member', to_role: 'project_basic:admin' },
-      });
-
-      await notifyRoleChanged({ userIds: [member.id], adminName: currentProfile?.full_name || 'OwnerSystem', newRole: 'Leader', action: 'promote' });
-      toast({ title: 'Đã nâng quyền', description: `${member.full_name} đã trở thành Leader.` });
-      onRoleChanged();
-      setShowPromoteConfirm(false);
-      onOpenChange(false);
-    } catch (err: any) {
-      toast({ title: 'Lỗi', description: err.message, variant: 'destructive' });
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
   const handleDemoteCheck = () => {
     if (ownedGroups.length > 0) {
@@ -205,33 +161,6 @@ export default function MemberRoleManagementDialog({
     }
   };
 
-  const handleSaveLimits = async () => {
-    if (!member) return;
-    setActionLoading(true);
-    try {
-      const { error } = await supabase.from('profiles').update({
-        project_limit: projectLimit,
-      }).eq('id', member.id);
-      if (error) throw error;
-
-      await logActivity({
-        userId: user!.id,
-        userName: currentProfile?.full_name || 'OwnerSystem',
-        action: 'UPDATE_MEMBER_LIMITS',
-        actionType: 'project_member',
-        description: `Cập nhật giới hạn cho ${member.full_name}: ${projectLimit} projects`,
-        metadata: { target_user_id: member.id, project_limit: projectLimit },
-      });
-
-      toast({ title: 'Đã cập nhật', description: 'Giới hạn đã được lưu.' });
-      setEditingLimits(false);
-      onRoleChanged();
-    } catch (err: any) {
-      toast({ title: 'Lỗi', description: err.message, variant: 'destructive' });
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
   const handleTransferComplete = () => {
     setShowTransferDialog(false);
@@ -300,9 +229,6 @@ export default function MemberRoleManagementDialog({
                 <div className="grid grid-cols-2 gap-3">
                   <StatCard label="Dự án tham gia" value={groups.length} icon={FolderKanban} />
                   <StatCard label="Dự án sở hữu" value={ownedGroups.length} icon={Crown} />
-                  <StatCard label="Giới hạn project" 
-                    value={isLeaderRole ? `${member.project_limit ?? DEFAULT_PROJECT_LIMIT}` : '—'} 
-                    icon={Settings} />
                 </div>
 
                 {/* Projects list */}
@@ -346,59 +272,11 @@ export default function MemberRoleManagementDialog({
 
               {/* Section 2: Giới hạn hệ thống + Hành động */}
               <div className="space-y-4">
-                {/* Limits section - only for leaders */}
-                {isLeaderRole && (
-                  <>
-                    <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                      <Settings className="w-4 h-4" /> Giới hạn hệ thống
-                    </h3>
-                    <div className="rounded-xl border bg-card p-4 space-y-3">
-                      {editingLimits ? (
-                        <>
-                          <div className="space-y-1.5">
-                            <Label className="text-xs">Giới hạn project</Label>
-                            <Input type="number" min={0} value={projectLimit}
-                              onChange={e => setProjectLimit(parseInt(e.target.value) || 0)} />
-                          </div>
-                          <div className="flex gap-2 justify-end">
-                            <Button variant="outline" size="sm" onClick={() => setEditingLimits(false)}>Hủy</Button>
-                            <Button size="sm" onClick={handleSaveLimits} disabled={actionLoading}>
-                              {actionLoading && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
-                              Lưu
-                            </Button>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Giới hạn project</p>
-                            <p className="text-lg font-bold">{member.project_limit ?? DEFAULT_PROJECT_LIMIT}</p>
-                            <p className="text-xs text-muted-foreground">Đã dùng: {ownedGroups.length}</p>
-                          </div>
-                          <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={() => setEditingLimits(true)}>
-                            <Settings className="w-3.5 h-3.5" /> Chỉnh sửa giới hạn
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </>
-                )}
-
                 {/* Admin Actions */}
                 <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                   <Shield className="w-4 h-4" /> Hành động quản trị
                 </h3>
                 <div className="space-y-2">
-                  {/* Promote */}
-                  {isMemberRole && (
-                    <Button variant="outline" className="w-full justify-start gap-2 h-11" onClick={() => setShowPromoteConfirm(true)}>
-                      <ArrowUp className="w-4 h-4 text-green-600" />
-                      <div className="text-left">
-                        <p className="text-sm font-medium">Nâng quyền → Leader</p>
-                        <p className="text-xs text-muted-foreground">Cho phép tạo project, áp dụng giới hạn mặc định</p>
-                      </div>
-                    </Button>
-                  )}
 
                   {/* Demote */}
                   {isLeaderRole && (
@@ -430,27 +308,6 @@ export default function MemberRoleManagementDialog({
         </DialogContent>
       </Dialog>
 
-      {/* Promote Confirm */}
-      <AlertDialog open={showPromoteConfirm} onOpenChange={setShowPromoteConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Nâng quyền thành viên</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bạn có chắc muốn nâng quyền <strong>{member.full_name}</strong> từ <strong>Thành viên</strong> lên <strong>Leader</strong>?
-              <br /><br />
-              Giới hạn mặc định sẽ được áp dụng:
-              <br />• Số project: {DEFAULT_PROJECT_LIMIT}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={actionLoading}>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handlePromote} disabled={actionLoading}>
-              {actionLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Xác nhận nâng quyền
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Demote Confirm */}
       <AlertDialog open={showDemoteConfirm} onOpenChange={setShowDemoteConfirm}>
