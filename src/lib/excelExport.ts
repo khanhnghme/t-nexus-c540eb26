@@ -43,13 +43,13 @@ export function exportMembersToExcel(
 export function getRoleDisplayName(role: string, isGroupCreator?: boolean): string {
   if (isGroupCreator) return 'Trưởng nhóm';
   switch (role) {
-    case 'project_owner':
+    case 'project_basic:owner':
       return 'Trưởng nhóm';
-    case 'project_admin':
+    case 'project_basic:admin':
       return 'Phó nhóm';
-    case 'system_owner':
+    case 'system:owner':
       return 'System Owner';
-    case 'project_member':
+    case 'project_basic:member':
     default:
       return 'Thành viên';
   }
