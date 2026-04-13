@@ -1,44 +1,35 @@
 
 
-## Plan: Fix QR Join Route & Improve Instructions
+## Plan: Thêm tab Thành viên, Resources, Cài đặt cho trang Custom Project (/pa)
 
-### Problem
-1. QR code links (`https://t-nexus.io.vn/join?code=XXXXXX`) return 404 — no `/join` route exists
-2. Invitation image instructions are vague and incomplete
-3. No auto-redirect after login for unauthenticated users visiting join links
+### Tóm tắt
+Hiện tại `/pa` (custom mode) chỉ hiển thị `CanvasPageView` toàn màn hình, không có tab members/resources/settings. Cần mở rộng để custom mode cũng có navigation tabs như basic mode, với canvas là tab mặc định ("pages"), và thêm 3 tab: members, resources, settings.
 
 ### Changes
 
-**File 1: `src/pages/JoinProject.tsx`** (NEW)
-- Create a new page component that handles `/join?code=XXXXXX`
-- Logic:
-  - Parse `code` from URL query params
-  - If user is logged in: auto-open `JoinByCodeDialog` with the code pre-filled, auto-trigger lookup
-  - If user is NOT logged in: show a message "Bạn cần đăng nhập để tham gia dự án" with a login button that redirects to `/auth?redirect=/join?code=XXXXXX`
-  - After successful join, redirect to the project
+**File 1: `src/pages/GroupDetail.tsx`**
+- Thay thế block `group.project_mode === 'custom'` (lines 506-509) — thay vì chỉ render `CanvasPageView`, bọc nó trong cùng hệ thống `Tabs` có điều kiện:
+  - Tab `pages` (mặc định): render `CanvasPageView` như hiện tại
+  - Tab `members`: render `MemberManagementCard` (giống basic mode, line 740)
+  - Tab `resources`: render `ProjectResources` (giống basic mode, line 744)
+  - Tab `settings` (chỉ leader/creator): render `ShareSettingsCard` + danger zone (giống basic mode, lines 773-809)
+- Cập nhật `availableTabs` cho custom mode để bao gồm `pages, members, resources, settings`
 
-**File 2: `src/App.tsx`**
-- Add route: `<Route path="/join" element={<JoinProject />} />`
-- Place in non-localized public routes section (line ~176)
+**File 2: `src/components/layout/TopBar.tsx`**
+- Cập nhật block `isCustomMode` (lines 91-116): thay vì chỉ hiển thị back button + tên project, hiển thị navigation tabs tương tự basic mode nhưng với tab set khác:
+  - `pages` (icon FileText) — canvas editor
+  - `members` (icon Users)
+  - `resources` (icon FolderOpen)  
+  - `settings` (icon Settings, chỉ leader/creator)
+- Giữ lại back button ở bên trái
 
-**File 3: `src/pages/Auth.tsx`**
-- After successful login (in `RememberLoginScreen` or after auth completes), check for `redirect` query param
-- If `redirect` starts with `/join`, navigate there instead of `/dashboard`
-
-**File 4: `src/components/ShareSettingsCard.tsx`**
-- Update the invitation image instructions (lines 222-228):
-  - Step 1: "Truy cập t-nexus.io.vn/join?code=XXXXXX hoặc quét mã QR"
-  - Step 2: "Đăng nhập tài khoản T-Nexus"  
-  - Step 3: "Xác nhận tham gia dự án"
-- Clearer, more accurate 3-step flow matching the actual UX
-
-**File 5: `src/components/AuthForm.tsx` or `src/components/MemberAuthForm.tsx`**
-- After successful login, check `sessionStorage` or URL for pending join redirect
-- If found, navigate to the stored `/join?code=...` URL
+**File 3: `src/components/ProjectNavigation.tsx`** (nếu cần)
+- Thêm tab `pages` vào danh sách tabs cho custom mode
+- Hoặc tạo một set tabs riêng cho custom mode
 
 ### Technical Details
-- The `/join` page uses `useSearchParams` to read the code
-- Pre-fill is done by passing the code as a prop to `JoinByCodeDialog` and auto-triggering `handleLookupWithCode`
-- Redirect flow: store redirect URL in `sessionStorage` key `t-nexus_post_login_redirect` before navigating to `/auth`, then consume it after login
-- The `/join` route is public (not wrapped in `ProtectedRoute`) so unauthenticated users can see the login prompt
+- Tab mặc định cho custom mode là `pages` thay vì `overview`
+- `CanvasPageView` giữ nguyên `h-[calc(100vh-48px)]` khi ở tab `pages`
+- Members, resources, settings tabs render trong container có padding giống basic mode
+- `availableTabs` trong GroupDetail sẽ phân biệt theo `project_mode` để include đúng set tabs
 
