@@ -120,8 +120,7 @@ export default function MemberManagementCard({
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const [selectedRole, setSelectedRole] = useState<'project_basic:member' | 'project_basic:admin'>('project_basic:member');
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Profile[]>([]);
-  const [isSearchingProfiles, setIsSearchingProfiles] = useState(false);
+  const [selectedUsersMap, setSelectedUsersMap] = useState<Map<string, { id: string; full_name: string; avatar_url: string | null; email: string }>>(new Map());
 
 
 
