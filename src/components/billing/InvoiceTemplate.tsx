@@ -111,12 +111,18 @@ export const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(
               </td>
               <td className="py-3 text-right tabular-nums">{originalAmount?.toLocaleString()} {payment.currency}</td>
             </tr>
-            {hasDiscount && (
+            {couponDiscount > 0 && (
               <tr className="border-b border-gray-100 text-green-700">
                 <td className="py-3">
                   Discount {payment.coupon_code && <span className="text-xs">({payment.coupon_code})</span>}
                 </td>
-                <td className="py-3 text-right tabular-nums">-{(payment.discount_amount ?? 0)?.toLocaleString()} {payment.currency}</td>
+                <td className="py-3 text-right tabular-nums">-{couponDiscount?.toLocaleString()} {payment.currency}</td>
+              </tr>
+            )}
+            {welcomeDiscount > 0 && (
+              <tr className="border-b border-gray-100 text-green-700">
+                <td className="py-3">Welcome Discount</td>
+                <td className="py-3 text-right tabular-nums">-{welcomeDiscount?.toLocaleString()} {payment.currency}</td>
               </tr>
             )}
           </tbody>
