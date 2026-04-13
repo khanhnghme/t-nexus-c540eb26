@@ -1,25 +1,25 @@
 
 
-## Thêm bộ lọc cho Dashboard (project mode) và trang Groups
+## Cập nhật điều hướng sau thanh toán tại trang Summary
 
-### Thay đổi
+### Vấn đề
+Hiện tại, khi thanh toán thành công, nút CTA mặc định luôn dẫn về `/dashboard`. Cần điều hướng thông minh hơn dựa vào loại đơn hàng (`order_type`).
 
-| File | Nội dung |
-|------|----------|
-| `src/pages/Dashboard.tsx` | Thêm filter `project_mode` (Tất cả / Basic / Custom) vào thanh ToggleGroup hiện có. Áp dụng filter lên `filteredGroups`. |
-| `src/pages/Groups.tsx` | Thêm thanh filter phía trên danh sách project: ô tìm kiếm theo tên + filter theo project mode (Tất cả / Basic / Custom) + filter theo visibility (Tất cả / Private / WS Public / Public). Lọc `groups` trước khi render grid. |
+### Thay đổi — `src/pages/CheckoutSummary.tsx`
 
-### Chi tiết
+Cập nhật logic nút CTA khi `status === 'completed'` (dòng 381–402):
 
-**Dashboard.tsx:**
-- Thêm state `projectModeFilter`: `'all' | 'basic' | 'custom'`
-- Thêm 3 toggle items (Tất cả / Basic / Custom) bên cạnh filter active/hidden/all hiện có, ngăn cách bằng divider
-- Trong `filteredGroups` useMemo, thêm bước lọc theo `project_mode` nếu không phải `'all'`
+| Trường hợp | Hiện tại | Sau khi sửa |
+|---|---|---|
+| `checkout_from === 'onboarding'` | → `/onboarding` | Giữ nguyên |
+| `checkout_from === 'billing'` | → `/billing-history` | Giữ nguyên |
+| `order_type === 'addon'` | → `/dashboard` ❌ | → `/service-plan?tab=addon` (trang quản lý add-on) |
+| `order_type === 'plan'` (mua/nâng cấp gói) | → `/dashboard` | → `/service-plan` (trang gói dịch vụ) |
+| Mặc định fallback | → `/dashboard` | → `/service-plan` |
 
-**Groups.tsx:**
-- Thêm state: `searchQuery` (string), `modeFilter` (`'all' | 'basic' | 'custom'`), `visibilityFilter` (`'all' | 'private' | 'workspace_public' | 'public_link'`)
-- Thêm `filteredGroups` useMemo lọc theo 3 tiêu chí trên
-- Render thanh filter giữa phần header/dialog và grid danh sách: Input search + 2 Select dropdown (Mode, Visibility)
-- Thay `groups.map` bằng `filteredGroups.map` trong grid render
-- Thay `groups.length === 0` bằng logic kiểm tra cả `groups` gốc lẫn `filteredGroups`
+Cụ thể thay đổi block default (khi không có `checkout_from`):
+- Nếu `order.order_type === 'addon'` → navigate `/service-plan?tab=addon`, label: "Xem gói bổ sung" / "View Add-ons"
+- Ngược lại → navigate `/service-plan`, label: "Xem gói dịch vụ" / "View Service Plan"
+
+Tương tự cập nhật nút `failed` cho addon: nút retry dẫn về `/addon-checkout/payment/${orderCode}` thay vì `/checkout/payment/${orderCode}` (kiểm tra `order.order_type`).
 
