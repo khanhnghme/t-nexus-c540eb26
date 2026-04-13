@@ -642,5 +642,6 @@ export default function CheckoutSummary() {
         )}
       </div>
     </div>
+    </>
   );
 }
