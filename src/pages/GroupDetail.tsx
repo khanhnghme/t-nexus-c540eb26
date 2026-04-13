@@ -810,6 +810,9 @@ export default function GroupDetail() {
 
             {isLeaderInGroup && (group.created_by === user?.id || isAdmin) && (
               <TabsContent value="settings" className="mt-6 space-y-4">
+                {isCustomMode && (
+                  <GroupInfoCard group={group} canEdit={true} onUpdate={fetchGroupData} />
+                )}
                 <ShareSettingsCard
                   groupId={group.id}
                   groupSlug={(group as any).slug || null}
