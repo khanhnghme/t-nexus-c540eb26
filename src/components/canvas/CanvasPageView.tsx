@@ -89,6 +89,11 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
     setSidebarOpen(!isMobile);
   }, [isMobile]);
 
+  // Sync isEditMode when effectiveEditable changes
+  useEffect(() => {
+    setIsEditMode(effectiveEditable);
+  }, [effectiveEditable]);
+
   // Auto-select first page
   useEffect(() => {
     if (!pages?.length) {
@@ -218,9 +223,9 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
   // Keyboard shortcuts
   useCanvasShortcuts({
     onForceSave: () => editorRef.current?.forceSave(),
-    onCreatePage: editable ? handleCreatePage : undefined,
+    onCreatePage: effectiveEditable ? handleCreatePage : undefined,
     onToggleSidebar: () => setSidebarOpen(prev => !prev),
-    onToggleEditMode: editable ? () => setIsEditMode(prev => !prev) : undefined,
+    onToggleEditMode: effectiveEditable ? () => setIsEditMode(prev => !prev) : undefined,
     onOpenHelp: () => setShortcutHelpOpen(true),
   }, true);
 
@@ -249,7 +254,7 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
       <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
         <FileText className="h-8 w-8" />
         <p className="text-sm">Chưa có trang nào được tạo.</p>
-        {editable && (
+        {effectiveEditable && (
           <Button
             size="sm"
             onClick={handleCreatePage}
@@ -370,7 +375,7 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
           )}
 
           {/* Edit/View toggle — icon only */}
-          {editable && (
+          {effectiveEditable && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -396,7 +401,7 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              {editable && (
+              {effectiveEditable && (
                 <DropdownMenuItem onClick={() => setSaveTemplateOpen(true)}>
                   <Save className="h-3.5 w-3.5 mr-2" />
                   Lưu làm template
