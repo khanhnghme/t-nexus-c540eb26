@@ -377,3 +377,119 @@ export function buildBrandedDigestEmail(options: DigestEmailOptions): string {
 </body>
 </html>`;
 }
+
+// ─── Payment Confirmation Email ───────────────────────────────────────────────
+
+interface PaymentConfirmationOptions {
+  recipientName: string;
+  planName: string;
+  amount: number;
+  orderCode: string;
+  paidAt: string;
+  billingCycle: string;
+}
+
+export function buildPaymentConfirmationEmail(options: PaymentConfirmationOptions): string {
+  const { recipientName, planName, amount, orderCode, paidAt, billingCycle } = options;
+  const year = new Date().getFullYear();
+  const cycleLabel = billingCycle === "yearly" ? "Năm" : "Tháng";
+
+  const formatDate = (d: string) => {
+    const date = new Date(d);
+    return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}/${date.getFullYear()} ${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+  };
+
+  return `${emailDoctype()}
+  <title>Xác nhận thanh toán - T-Nexus</title>
+</head>
+<body style="margin:0;padding:0;background-color:${C.bg};font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color:${C.bg};padding:32px 16px;">
+    <tr><td align="center">
+
+      <!-- Main Card -->
+      <table class="email-container" width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:540px;background-color:${C.bg};border:1px solid ${C.border};border-radius:12px;overflow:hidden;">
+
+        ${emailHeader("Xác nhận thanh toán")}
+
+        <!-- Body -->
+        <tr>
+          <td class="email-padding" style="padding:36px 40px 28px;">
+
+            <!-- Success Icon -->
+            <div style="text-align:center;margin-bottom:20px;">
+              <div style="display:inline-block;width:56px;height:56px;border-radius:50%;background-color:#ecfdf5;line-height:56px;text-align:center;font-size:28px;">
+                ✓
+              </div>
+            </div>
+
+            <!-- Title -->
+            <h1 style="margin:0 0 8px;color:${C.text};font-size:20px;font-weight:700;line-height:1.3;text-align:center;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
+              Thanh toán thành công!
+            </h1>
+            <p style="margin:0 0 24px;color:${C.muted};font-size:14px;line-height:1.6;text-align:center;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
+              Xin chào <strong>${recipientName}</strong>, giao dịch của bạn đã được xác nhận.
+            </p>
+
+            <!-- Order Summary Table -->
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color:${C.bgLight};border:1px solid ${C.border};border-radius:8px;overflow:hidden;margin-bottom:20px;">
+              <tr>
+                <td style="padding:12px 16px;border-bottom:1px solid ${C.border};">
+                  <span style="color:${C.muted};font-size:12px;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">Gói dịch vụ</span><br/>
+                  <span style="color:${C.text};font-size:14px;font-weight:600;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">${planName}</span>
+                </td>
+                <td style="padding:12px 16px;border-bottom:1px solid ${C.border};text-align:right;">
+                  <span style="color:${C.muted};font-size:12px;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">Chu kỳ</span><br/>
+                  <span style="color:${C.text};font-size:14px;font-weight:600;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">${cycleLabel}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:12px 16px;border-bottom:1px solid ${C.border};">
+                  <span style="color:${C.muted};font-size:12px;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">Mã đơn hàng</span><br/>
+                  <span style="color:${C.text};font-size:14px;font-weight:600;font-family:'Courier New',Courier,monospace;">${orderCode}</span>
+                </td>
+                <td style="padding:12px 16px;border-bottom:1px solid ${C.border};text-align:right;">
+                  <span style="color:${C.muted};font-size:12px;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">Thời gian</span><br/>
+                  <span style="color:${C.text};font-size:13px;font-weight:600;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">${formatDate(paidAt)}</span>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2" style="padding:14px 16px;text-align:center;">
+                  <span style="color:${C.muted};font-size:12px;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">Tổng thanh toán</span><br/>
+                  <span style="color:${C.accent};font-size:22px;font-weight:700;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">$${amount.toFixed(2)} USD</span>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Attachment note -->
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:20px;">
+              <tr>
+                <td style="background-color:${C.accentLight};border:1px solid ${C.accentBorder};border-radius:8px;padding:12px 16px;">
+                  <p style="margin:0;color:${C.accent};font-size:12px;line-height:1.6;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
+                    📎 Biên lai chi tiết được đính kèm trong email này dưới dạng file PDF.
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Divider -->
+            <div style="height:1px;background-color:${C.border};margin-bottom:16px;"></div>
+
+            <!-- Help note -->
+            <p style="margin:0;color:${C.subtle};font-size:12px;line-height:1.5;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
+              Nếu bạn có thắc mắc, vui lòng liên hệ <a href="mailto:support@t-nexus.io.vn" style="color:${C.accent};text-decoration:none;">support@t-nexus.io.vn</a>.
+            </p>
+
+          </td>
+        </tr>
+
+        ${emailFooter(year)}
+
+      </table>
+
+      ${emailSubFooter("Email này được gửi tự động từ hệ thống T-Nexus.<br/>Vui lòng không trả lời email này.")}
+
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
