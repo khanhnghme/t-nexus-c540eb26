@@ -207,7 +207,7 @@ export function UserPaymentDetailDialog({ payment, open, onClose }: UserPaymentD
 
         {/* Hidden invoice for reference */}
         <div className="hidden">
-          <InvoiceTemplate ref={invoiceRef} payment={payment} profile={profile} />
+          <InvoiceTemplate ref={invoiceRef} payment={payment} profile={profile} orderCode={payment.order_id ? undefined : undefined} />
         </div>
       </DialogContent>
     </Dialog>
