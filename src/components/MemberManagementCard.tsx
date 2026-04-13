@@ -4,6 +4,7 @@ import EmailUserPreview from '@/components/EmailUserPreview';
 import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 import leaveGroupIllustration from '@/assets/leave-group-illustration.png';
 import { useNavigate } from 'react-router-dom';
+import { useNavigation } from '@/contexts/NavigationContext';
 import { deleteWithUndo } from '@/lib/deleteWithUndo';
 import { logActivity } from '@/lib/activityLogger';
 import { notifyProjectInvitation } from '@/lib/notifications';
@@ -102,6 +103,7 @@ export default function MemberManagementCard({
   const { user, profile } = useAuth();
   const { guardAction: guardReadOnly } = useReadOnlyGuard();
   const navigate = useNavigate();
+  const { setCurrentTab: navSetCurrentTab } = useNavigation();
   const { getPresenceStatus } = useUserPresence('system-global');
   const [memberToDelete, setMemberToDelete] = useState<GroupMember | null>(null);
   const [memberToChangeRole, setMemberToChangeRole] = useState<GroupMember | null>(null);
@@ -1386,6 +1388,16 @@ export default function MemberManagementCard({
                 <p className="text-sm text-muted-foreground mt-0.5">
                   Chọn nhiều thành viên từ hệ thống để thêm cùng lúc
                 </p>
+                <button
+                  type="button"
+                  className="text-[11px] text-primary hover:underline mt-1 text-left"
+                  onClick={() => {
+                    setIsAddDialogOpen(false);
+                    navSetCurrentTab('settings');
+                  }}
+                >
+                  💡 Thành viên cũng có thể tự tham gia bằng QR hoặc nhập mã — xem tại Cài đặt
+                </button>
               </div>
               <Button variant="ghost" size="icon" onClick={() => setIsAddDialogOpen(false)}>
                 <X className="w-5 h-5" />
