@@ -1,36 +1,44 @@
 
 
-## Plan: Fix QR Download & Add QR Scanner to Dashboard
+## Plan: Fix QR Join Route & Improve Instructions
 
-### Problem Analysis
-
-1. **Download bug**: The hidden QR canvas (`#hidden-qr-canvas`) uses `className="hidden"` which applies `display: none`. This prevents the `QRCodeCanvas` from rendering actual pixels, so when the download function queries for the canvas element, it gets an empty/non-rendered canvas — resulting in a blank QR area in the downloaded image.
-
-2. **Dashboard join by QR**: Currently the `JoinByCodeDialog` only supports manual 6-character code entry. Users cannot scan a QR code to join a project from the Dashboard.
-
----
+### Problem
+1. QR code links (`https://t-nexus.io.vn/join?code=XXXXXX`) return 404 — no `/join` route exists
+2. Invitation image instructions are vague and incomplete
+3. No auto-redirect after login for unauthenticated users visiting join links
 
 ### Changes
 
-**File 1: `src/components/ShareSettingsCard.tsx`**
-- Fix the hidden QR canvas: change `className="hidden"` to `className="absolute -left-[9999px]"` (off-screen but still rendered) so the canvas pixels are available for the download function
-- This ensures `document.querySelector('#hidden-qr-canvas canvas')` returns a fully rendered canvas
+**File 1: `src/pages/JoinProject.tsx`** (NEW)
+- Create a new page component that handles `/join?code=XXXXXX`
+- Logic:
+  - Parse `code` from URL query params
+  - If user is logged in: auto-open `JoinByCodeDialog` with the code pre-filled, auto-trigger lookup
+  - If user is NOT logged in: show a message "Bạn cần đăng nhập để tham gia dự án" with a login button that redirects to `/auth?redirect=/join?code=XXXXXX`
+  - After successful join, redirect to the project
 
-**File 2: `src/components/JoinByCodeDialog.tsx`**
-- Add a "Scan QR" tab/button alongside the manual code entry screen
-- Integrate the device camera using the browser `navigator.mediaDevices.getUserMedia` API and the `jsQR` library (or `html5-qrcode`) to scan QR codes
-- When a QR code is detected with the pattern `t-nexus.io.vn/join?code=XXXXXX`, auto-fill the 6-digit code and trigger the lookup
-- Add a toggle between "Nhập mã" (manual) and "Quét QR" (camera) modes
-- Handle camera permission errors gracefully
+**File 2: `src/App.tsx`**
+- Add route: `<Route path="/join" element={<JoinProject />} />`
+- Place in non-localized public routes section (line ~176)
 
-**File 3: `package.json`**
-- Add `html5-qrcode` dependency for reliable QR scanning from camera
+**File 3: `src/pages/Auth.tsx`**
+- After successful login (in `RememberLoginScreen` or after auth completes), check for `redirect` query param
+- If `redirect` starts with `/join`, navigate there instead of `/dashboard`
 
----
+**File 4: `src/components/ShareSettingsCard.tsx`**
+- Update the invitation image instructions (lines 222-228):
+  - Step 1: "Truy cập t-nexus.io.vn/join?code=XXXXXX hoặc quét mã QR"
+  - Step 2: "Đăng nhập tài khoản T-Nexus"  
+  - Step 3: "Xác nhận tham gia dự án"
+- Clearer, more accurate 3-step flow matching the actual UX
+
+**File 5: `src/components/AuthForm.tsx` or `src/components/MemberAuthForm.tsx`**
+- After successful login, check `sessionStorage` or URL for pending join redirect
+- If found, navigate to the stored `/join?code=...` URL
 
 ### Technical Details
-
-- The `html5-qrcode` library handles camera access, video stream management, and QR decoding in one package — no need to manually manage `getUserMedia` or parse QR frames
-- The QR scanner will parse the URL from the scanned code, extract the `code` query parameter, and auto-fill + auto-lookup
-- Camera stream will be properly cleaned up when the dialog closes or user switches back to manual mode
+- The `/join` page uses `useSearchParams` to read the code
+- Pre-fill is done by passing the code as a prop to `JoinByCodeDialog` and auto-triggering `handleLookupWithCode`
+- Redirect flow: store redirect URL in `sessionStorage` key `t-nexus_post_login_redirect` before navigating to `/auth`, then consume it after login
+- The `/join` route is public (not wrapped in `ProtectedRoute`) so unauthenticated users can see the login prompt
 
