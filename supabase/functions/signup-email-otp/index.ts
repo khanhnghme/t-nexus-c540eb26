@@ -80,6 +80,61 @@ Deno.serve(async (req) => {
         console.error("Create user error:", createError);
         const msg = createError.message?.toLowerCase() || "";
         if (msg.includes("already") || msg.includes("exists") || msg.includes("registered")) {
+          // Check if this user exists but hasn't confirmed email → resume OTP flow
+          const { data: listData } = await supabase.auth.admin.listUsers({ perPage: 1, page: 1 });
+          // listUsers doesn't filter by email, so search manually
+          let unverifiedUser = null;
+          const { data: allUsers } = await supabase.auth.admin.listUsers({ perPage: 50, page: 1 });
+          if (allUsers?.users) {
+            unverifiedUser = allUsers.users.find(
+              (u) => u.email?.toLowerCase() === email.toLowerCase() && !u.email_confirmed_at
+            );
+          }
+
+          if (unverifiedUser) {
+            // Resume: send new OTP and return resume flag
+            const otpCode = String(Math.floor(100000 + Math.random() * 900000));
+            const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+
+            await supabase
+              .from("email_verification_codes")
+              .update({ used: true })
+              .eq("email", email.toLowerCase())
+              .eq("used", false);
+
+            await supabase.from("email_verification_codes").insert({
+              user_id: unverifiedUser.id,
+              email: email.toLowerCase(),
+              code: otpCode,
+              expires_at: expiresAt,
+            });
+
+            const emailRes = await fetch(`${RESEND_API_URL}/emails`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${resendApiKey}`,
+              },
+              body: JSON.stringify({
+                from: FROM_EMAIL,
+                to: [email.toLowerCase()],
+                subject: `Mã xác minh tài khoản T-Nexus: ${otpCode}`,
+                html: buildSignupOtpHtml(otpCode),
+              }),
+            });
+
+            if (!emailRes.ok) {
+              console.error("Resend resume error:", await emailRes.text());
+            }
+
+            return jsonResponse({
+              success: true,
+              resume: true,
+              user_id: unverifiedUser.id,
+              message: "Tài khoản chưa xác minh. Đã gửi lại mã OTP.",
+            });
+          }
+
           return jsonResponse({ success: false, error: "Email đã được sử dụng." });
         }
         return jsonResponse({ success: false, error: "Không thể tạo tài khoản. Vui lòng thử lại." });
@@ -293,6 +348,94 @@ Deno.serve(async (req) => {
       }
 
       return jsonResponse({ success: true, message: "Mã xác minh mới đã được gửi" });
+    }
+
+    // ===== RESUME VERIFICATION (for login with unverified email) =====
+    if (action === "resume_verification") {
+      if (!email) {
+        return jsonResponse({ error: "Email is required" }, 400);
+      }
+
+      // Find unverified user by email
+      const { data: allUsers } = await supabase.auth.admin.listUsers({ perPage: 50, page: 1 });
+      const unverifiedUser = allUsers?.users?.find(
+        (u) => u.email?.toLowerCase() === email.toLowerCase() && !u.email_confirmed_at
+      );
+
+      if (!unverifiedUser) {
+        return jsonResponse({ success: false, error: "Không tìm thấy tài khoản chưa xác minh." });
+      }
+
+      // Rate limit check
+      const { data: lastCode } = await supabase
+        .from("email_verification_codes")
+        .select("created_at")
+        .eq("email", email.toLowerCase())
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (lastCode) {
+        const elapsed = Date.now() - new Date(lastCode.created_at).getTime();
+        if (elapsed < 60000) {
+          const wait = Math.ceil((60000 - elapsed) / 1000);
+          return jsonResponse({
+            error: `Vui lòng chờ ${wait} giây trước khi gửi lại mã.`,
+            wait_seconds: wait,
+          }, 429);
+        }
+      }
+
+      // Invalidate old codes
+      await supabase
+        .from("email_verification_codes")
+        .update({ used: true })
+        .eq("email", email.toLowerCase())
+        .eq("used", false);
+
+      const otpCode = String(Math.floor(100000 + Math.random() * 900000));
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+
+      await supabase.from("email_verification_codes").insert({
+        user_id: unverifiedUser.id,
+        email: email.toLowerCase(),
+        code: otpCode,
+        expires_at: expiresAt,
+      });
+
+      const emailRes = await fetch(`${RESEND_API_URL}/emails`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${resendApiKey}`,
+        },
+        body: JSON.stringify({
+          from: FROM_EMAIL,
+          to: [email.toLowerCase()],
+          subject: `Mã xác minh tài khoản T-Nexus: ${otpCode}`,
+          html: buildSignupOtpHtml(otpCode),
+        }),
+      });
+
+      if (!emailRes.ok) {
+        console.error("Resend resume_verification error:", await emailRes.text());
+        return jsonResponse({ error: "Không thể gửi email xác minh." }, 500);
+      }
+
+      // Get profile info for client
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("full_name, student_id")
+        .eq("id", unverifiedUser.id)
+        .maybeSingle();
+
+      return jsonResponse({
+        success: true,
+        user_id: unverifiedUser.id,
+        email: email.toLowerCase(),
+        full_name: profileData?.full_name || unverifiedUser.user_metadata?.full_name || "",
+        student_id: profileData?.student_id || unverifiedUser.user_metadata?.student_id || "",
+      });
     }
 
     return jsonResponse({ error: "Invalid action" }, 400);
