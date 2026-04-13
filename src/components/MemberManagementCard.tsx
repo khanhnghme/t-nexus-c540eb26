@@ -531,7 +531,7 @@ export default function MemberManagementCard({
       }
 
       const addedNames = Array.from(selectedUserIds)
-        .map(uid => searchResults.find(p => p.id === uid)?.full_name)
+        .map(uid => selectedUsersMap.get(uid)?.full_name)
         .filter(Boolean);
 
       await logActivity({
