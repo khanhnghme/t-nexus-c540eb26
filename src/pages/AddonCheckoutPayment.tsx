@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
-import { ShieldCheck, Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, CreditCard, Loader2, ChevronDown, ChevronUp, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -49,6 +49,7 @@ export default function AddonCheckoutPayment() {
   const [cancellingOrder, setCancellingOrder] = useState(false);
   const [showBackDialog, setShowBackDialog] = useState(false);
   const [backDialogTimeLeft, setBackDialogTimeLeft] = useState('');
+  const [paymentMethodOpen, setPaymentMethodOpen] = useState(true);
 
   // Background polling: detect webhook-completed orders
   useEffect(() => {
@@ -257,16 +258,6 @@ export default function AddonCheckoutPayment() {
         <span className="text-muted-foreground">{isVi ? 'Mã đơn hàng:' : 'Order ID:'}</span>
         <code className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{order?.order_code || orderCode}</code>
       </div>
-      {order.expires_at && (
-        <OrderCountdown
-          expiresAt={order.expires_at}
-          orderId={order.id}
-          orderCode={order.order_code}
-          isVi={isVi}
-          onExpired={() => setOrderExpired(true)}
-          onCreateNew={() => navigate('/addon-checkout')}
-        />
-      )}
 
       {/* Cancel Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
@@ -392,86 +383,134 @@ export default function AddonCheckoutPayment() {
         </CardContent>
       </Card>
 
-      {/* Payment */}
-      <Card>
-        <CardContent className="p-6 space-y-4">
-          <h2 className="text-base font-semibold">{isVi ? 'Phương thức thanh toán' : 'Payment Method'}</h2>
+      {/* Payment + Pay Box */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+        <div className="lg:col-span-3">
+          <Card>
+            <CardContent className="pt-5 pb-5 space-y-4">
+              <h4 className="text-base font-semibold flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                {isVi ? 'Phương thức thanh toán' : 'Payment Method'}
+              </h4>
 
-          {paymentStatus === 'processing' ? (
-            <div className="flex flex-col items-center justify-center py-8 gap-4 text-center">
-              <Loader2 className="w-10 h-10 animate-spin text-primary" />
-              <div className="space-y-1">
-                <p className="font-semibold">
-                  {isVi ? 'Đang xác nhận thanh toán với PayPal' : 'Confirming payment with PayPal'}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {isVi ? 'Hệ thống đang xác minh giao dịch của bạn...' : 'The system is verifying your transaction...'}
-                </p>
+              <div className="border rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setPaymentMethodOpen(!paymentMethodOpen)}
+                  className="w-full flex items-center justify-between p-3 hover:bg-muted/30 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center">
+                      <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                    </div>
+                    <span className="font-medium text-sm">PayPal</span>
+                  </div>
+                  {paymentMethodOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                </button>
+                {paymentMethodOpen && (
+                  <div className="px-3 pb-3 pt-1">
+                    {paymentStatus === 'processing' ? (
+                      <div className="flex flex-col items-center justify-center py-8 gap-4 text-center">
+                        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                        <div className="space-y-1">
+                          <p className="font-semibold">
+                            {isVi ? 'Đang xác nhận thanh toán với PayPal' : 'Confirming payment with PayPal'}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {isVi ? 'Hệ thống đang xác minh giao dịch của bạn...' : 'The system is verifying your transaction...'}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-300">
+                          <AlertTriangle className="h-4 w-4 shrink-0" />
+                          <span>{isVi ? 'Vui lòng không thoát hoặc tải lại trang' : 'Please do not leave or reload this page'}</span>
+                        </div>
+                      </div>
+                    ) : orderExpired ? (
+                      <div className="flex flex-col items-center justify-center py-6 gap-2 text-center">
+                        <AlertTriangle className="h-5 w-5 text-destructive" />
+                        <p className="text-sm text-destructive font-medium">
+                          {isVi ? 'Đơn hàng đã hết hạn. Vui lòng tạo đơn mới.' : 'Order expired. Please create a new order.'}
+                        </p>
+                        <Button variant="outline" size="sm" onClick={() => navigate('/addon-checkout')}>
+                          {isVi ? 'Tạo đơn mới' : 'Create new order'}
+                        </Button>
+                      </div>
+                    ) : paypalClientId ? (
+                      <div className={(showBackDialog || showCancelDialog) ? 'invisible' : ''}>
+                        <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD', vault: true, intent: 'subscription' }}>
+                          <PayPalButtons
+                            style={{ layout: 'vertical', shape: 'rect', label: 'subscribe', height: 40 }}
+                            createSubscription={async () => createSubscription()}
+                            onApprove={async (data) => { await captureOrder(data.subscriptionID!); }}
+                            onError={(err) => {
+                              const errStr = String(err);
+                              if (errStr.includes('popup close') || errStr.includes('Window is closed')) return;
+                              console.error('PayPal error:', err);
+                              toast({ title: 'PayPal Error', description: 'Payment could not be completed.', variant: 'destructive' });
+                            }}
+                            onCancel={() => {
+                              toast({ title: isVi ? 'Đã hủy' : 'Cancelled', description: isVi ? 'Thanh toán đã bị hủy.' : 'Payment was cancelled.' });
+                            }}
+                          />
+                        </PayPalScriptProvider>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-300">
-                <AlertTriangle className="h-4 w-4 shrink-0" />
-                <span>{isVi ? 'Vui lòng không thoát hoặc tải lại trang' : 'Please do not leave or reload this page'}</span>
-              </div>
-              <div className="w-full max-w-xs space-y-2">
-                <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
-                  <div className="h-full w-1/2 rounded-full bg-primary" style={{ animation: 'pulse 1.5s ease-in-out infinite, addonSlideRight 2s ease-in-out infinite' }} />
+
+              {/* MoMo - disabled */}
+              <div className="border rounded-xl p-3 opacity-50">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30" />
+                  <span className="font-medium text-sm">🟣 MoMo</span>
+                  <span className="text-[10px] border rounded px-1.5 py-0.5 ml-auto text-muted-foreground">{isVi ? 'Sắp ra mắt' : 'Coming soon'}</span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {isVi ? 'Mã đơn hàng:' : 'Order ID:'}{' '}
-                  <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{order?.order_code || orderCode}</code>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Pay Box */}
+        <div className="lg:col-span-2">
+          <Card className="border-primary/30 bg-primary/5">
+            <CardContent className="pt-5 pb-5 space-y-4">
+              <div className="text-center space-y-1">
+                <p className="text-sm text-muted-foreground">{isVi ? 'Tổng thanh toán' : 'Amount Due'}</p>
+                <p className="text-3xl font-bold">${totalAmount.toFixed(2)}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {billingCycle === 'yearly'
+                    ? (isVi ? 'Thanh toán mỗi năm' : 'Billed once per year')
+                    : (isVi ? 'Thanh toán mỗi tháng' : 'Billed once per month')}
                 </p>
               </div>
-              <style>{`
-                @keyframes addonSlideRight {
-                  0%, 100% { transform: translateX(-60%); }
-                  50% { transform: translateX(120%); }
-                }
-              `}</style>
-            </div>
-          ) : orderExpired ? (
-            <div className="flex flex-col items-center justify-center py-6 gap-2 text-center">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
-              <p className="text-sm text-destructive font-medium">
-                {isVi ? 'Đơn hàng đã hết hạn. Vui lòng tạo đơn mới.' : 'Order expired. Please create a new order.'}
-              </p>
-              <Button variant="outline" size="sm" onClick={() => navigate('/addon-checkout')}>
-                {isVi ? 'Tạo đơn mới' : 'Create new order'}
-              </Button>
-            </div>
-          ) : paypalClientId ? (
-            <div className={(showBackDialog || showCancelDialog) ? 'invisible' : ''}>
-              <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD', vault: true, intent: 'subscription' }}>
-                <PayPalButtons
-                  style={{ layout: 'vertical', shape: 'rect', label: 'subscribe', height: 45 }}
-                  createSubscription={async () => createSubscription()}
-                  onApprove={async (data) => { await captureOrder(data.subscriptionID!); }}
-                  onError={(err) => {
-                    const errStr = String(err);
-                    if (errStr.includes('popup close') || errStr.includes('Window is closed')) {
-                      console.warn('PayPal popup closed (may be normal after approval):', errStr);
-                      return;
-                    }
-                    console.error('PayPal error:', err);
-                    toast({ title: 'PayPal Error', description: 'Payment could not be completed.', variant: 'destructive' });
-                  }}
-                  onCancel={() => {
-                    toast({ title: isVi ? 'Đã hủy' : 'Cancelled', description: isVi ? 'Thanh toán đã bị hủy.' : 'Payment was cancelled.' });
-                  }}
+              <Separator />
+              {order.expires_at && !orderExpired && (
+                <OrderCountdown
+                  expiresAt={order.expires_at}
+                  orderId={order.id}
+                  orderCode={order.order_code}
+                  isVi={isVi}
+                  onExpired={() => setOrderExpired(true)}
+                  onCreateNew={() => navigate('/addon-checkout')}
                 />
-              </PayPalScriptProvider>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-            </div>
-          )}
-
-          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>{isVi ? 'Thanh toán an toàn qua PayPal' : 'Secure payment via PayPal'}</span>
-          </div>
-        </CardContent>
-      </Card>
+              )}
+              {orderExpired && (
+                <div className="text-center text-sm text-destructive font-medium">
+                  {isVi ? 'Đơn hàng đã hết hạn' : 'Order has expired'}
+                </div>
+              )}
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground pt-1">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                {isVi ? 'Thanh toán an toàn qua PayPal' : 'Secure payment powered by PayPal'}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
