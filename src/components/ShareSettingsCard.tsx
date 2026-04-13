@@ -124,149 +124,122 @@ export default function ShareSettingsCard({
         loadImage(tNexusTextLogo).catch(() => null),
       ]);
 
-      const scale = 2;
+      const scale = 3;
       const canvas = document.createElement('canvas');
-      const w = 600;
-      const h = 740;
+      const w = 540;
+      const h = 720;
       canvas.width = w * scale;
       canvas.height = h * scale;
       canvas.style.width = `${w}px`;
       canvas.style.height = `${h}px`;
 
       const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        throw new Error('Không thể khởi tạo trình tạo ảnh');
-      }
-
+      if (!ctx) throw new Error('Không thể khởi tạo trình tạo ảnh');
       ctx.scale(scale, scale);
 
-      const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
-      bgGrad.addColorStop(0, '#f8fafc');
-      bgGrad.addColorStop(1, '#ffffff');
-      ctx.fillStyle = bgGrad;
-      ctx.beginPath();
-      ctx.roundRect(0, 0, w, h, 20);
-      ctx.fill();
-
-      ctx.strokeStyle = '#e2e8f0';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.roundRect(0, 0, w, h, 20);
-      ctx.stroke();
-
-      const headerGrad = ctx.createLinearGradient(0, 0, w, 0);
-      headerGrad.addColorStop(0, '#6366f1');
-      headerGrad.addColorStop(1, '#8b5cf6');
-      ctx.fillStyle = headerGrad;
-      ctx.beginPath();
-      ctx.roundRect(0, 0, w, 85, [20, 20, 0, 0]);
-      ctx.fill();
-
-      if (logoImg) {
-        const logoH = 22;
-        const logoW = (logoImg.naturalWidth / logoImg.naturalHeight) * logoH;
-        ctx.drawImage(logoImg, 24, (85 - logoH) / 2, logoW, logoH);
-      }
-
+      // — Background: clean white with thin border
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 20px system-ui, -apple-system, sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText('Mời tham gia dự án', logoImg ? 24 + ((logoImg.naturalWidth / logoImg.naturalHeight) * 22) + 12 : 24, 50);
-      ctx.font = '12px system-ui, -apple-system, sans-serif';
-      ctx.fillStyle = 'rgba(255,255,255,0.8)';
-      ctx.textAlign = 'right';
-      ctx.fillText('t-nexus.io.vn', w - 24, 50);
-
-      ctx.fillStyle = '#1e1e2e';
-      ctx.font = 'bold 18px system-ui, -apple-system, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(name.length > 45 ? `${name.slice(0, 42)}...` : name, w / 2, 120);
-
-      const qrSize = 240;
-      const qrX = (w - qrSize) / 2;
-      const qrY = 140;
-
-      ctx.fillStyle = '#ffffff';
-      ctx.shadowColor = 'rgba(99, 102, 241, 0.15)';
-      ctx.shadowBlur = 24;
-      ctx.shadowOffsetY = 6;
       ctx.beginPath();
-      ctx.roundRect(qrX - 20, qrY - 20, qrSize + 40, qrSize + 40, 16);
+      ctx.roundRect(0, 0, w, h, 16);
       ctx.fill();
-      ctx.shadowColor = 'transparent';
-
-      ctx.strokeStyle = '#e2e8f0';
+      ctx.strokeStyle = '#e0e0e0';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.roundRect(qrX - 20, qrY - 20, qrSize + 40, qrSize + 40, 16);
+      ctx.roundRect(0, 0, w, h, 16);
       ctx.stroke();
+
+      // — Top: Logo (left) + domain (right)
+      const topY = 36;
+      if (logoImg) {
+        const logoH = 20;
+        const logoW = (logoImg.naturalWidth / logoImg.naturalHeight) * logoH;
+        ctx.drawImage(logoImg, 32, topY - logoH / 2, logoW, logoH);
+      }
+      ctx.fillStyle = '#999999';
+      ctx.font = '12px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('t-nexus.io.vn', w - 32, topY + 4);
+
+      // — Thin separator
+      ctx.strokeStyle = '#e8e8e8';
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(32, topY + 20);
+      ctx.lineTo(w - 32, topY + 20);
+      ctx.stroke();
+
+      // — Project name
+      ctx.fillStyle = '#111111';
+      ctx.font = 'bold 18px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      const displayName = name.length > 42 ? `${name.slice(0, 39)}…` : name;
+      ctx.fillText(displayName, w / 2, topY + 52);
+
+      // — "Quét mã để tham gia" label
+      ctx.fillStyle = '#888888';
+      ctx.font = '13px system-ui, -apple-system, sans-serif';
+      ctx.fillText('Quét mã QR để tham gia dự án', w / 2, topY + 76);
+
+      // — QR Code: large, sharp, clean
+      const qrSize = 280;
+      const qrX = (w - qrSize) / 2;
+      const qrY = topY + 96;
 
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(hiddenQR, qrX, qrY, qrSize, qrSize);
       ctx.imageSmoothingEnabled = true;
 
-      const codeY = qrY + qrSize + 50;
-      const codeGrad = ctx.createLinearGradient(120, codeY - 25, w - 120, codeY - 25);
-      codeGrad.addColorStop(0, '#eef2ff');
-      codeGrad.addColorStop(1, '#f5f3ff');
-      ctx.fillStyle = codeGrad;
+      // — Join code section
+      const codeY = qrY + qrSize + 36;
+      ctx.fillStyle = '#f5f5f5';
       ctx.beginPath();
-      ctx.roundRect(120, codeY - 25, w - 240, 50, 12);
+      ctx.roundRect(100, codeY - 22, w - 200, 44, 8);
       ctx.fill();
-      ctx.strokeStyle = '#c7d2fe';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.roundRect(120, codeY - 25, w - 240, 50, 12);
-      ctx.stroke();
 
-      ctx.fillStyle = '#4338ca';
-      ctx.font = 'bold 30px monospace';
+      ctx.fillStyle = '#111111';
+      ctx.font = 'bold 28px monospace';
       ctx.textAlign = 'center';
       ctx.fillText(code.split('').join('  '), w / 2, codeY + 10);
 
-      let infoY = codeY + 65;
-      ctx.font = '14px system-ui, -apple-system, sans-serif';
+      // — Info lines (minimal, no emoji spam)
+      let infoY = codeY + 56;
+      ctx.font = '12px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'left';
-      ctx.fillStyle = '#64748b';
+      ctx.fillStyle = '#777777';
 
-      const infos = [
-        `👥  Giới hạn: ${limit ? `${limit} người` : 'Không giới hạn'}`,
-        `🔒  Cần duyệt: ${requireApproval ? 'Có' : 'Không — vào ngay'}`,
-      ];
+      const limitText = limit ? `${limit} người` : 'Không giới hạn';
+      const approvalText = requireApproval ? 'Cần duyệt' : 'Vào ngay';
+      ctx.fillText(`Giới hạn: ${limitText}  ·  ${approvalText}`, 100, infoY);
 
-      infos.forEach((text) => {
-        ctx.fillText(text, 80, infoY);
-        infoY += 26;
-      });
-
-      infoY += 8;
-      ctx.fillStyle = '#6366f1';
-      ctx.font = 'bold 13px system-ui, -apple-system, sans-serif';
-      ctx.fillText('📱 Cách tham gia:', 80, infoY);
-      infoY += 22;
-      ctx.fillStyle = '#475569';
+      // — Steps (clean, minimal)
+      infoY += 30;
+      ctx.fillStyle = '#111111';
+      ctx.font = '600 12px system-ui, -apple-system, sans-serif';
+      ctx.fillText('Cách tham gia', 100, infoY);
+      infoY += 20;
+      ctx.fillStyle = '#555555';
       ctx.font = '12px system-ui, -apple-system, sans-serif';
       const steps = [
         '1. Quét mã QR hoặc truy cập t-nexus.io.vn',
-        '2. Nhấn "Tham gia dự án"',
-        `3. Nhập mã: ${code}`,
+        `2. Nhấn "Tham gia dự án" → Nhập mã: ${code}`,
       ];
       steps.forEach((step) => {
-        ctx.fillText(step, 96, infoY);
-        infoY += 20;
+        ctx.fillText(step, 100, infoY);
+        infoY += 18;
       });
 
-      ctx.strokeStyle = '#e2e8f0';
-      ctx.lineWidth = 1;
+      // — Bottom separator + footer
+      ctx.strokeStyle = '#e8e8e8';
+      ctx.lineWidth = 0.5;
       ctx.beginPath();
-      ctx.moveTo(60, h - 40);
-      ctx.lineTo(w - 60, h - 40);
+      ctx.moveTo(32, h - 36);
+      ctx.lineTo(w - 32, h - 36);
       ctx.stroke();
 
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '11px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = '#bbbbbb';
+      ctx.font = '10px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Powered by T-Nexus  •  t-nexus.io.vn', w / 2, h - 18);
+      ctx.fillText('Powered by T-Nexus', w / 2, h - 16);
 
       const blob = await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob((result) => {
