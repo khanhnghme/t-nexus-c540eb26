@@ -120,122 +120,127 @@ export default function TopBar() {
       })
     : [];
 
+  const tabButtons = visibleTabs.map((tab) => {
+    const Icon = tab.icon;
+    const isActive = projectNavProps?.activeTab === tab.id;
+    return (
+      <button
+        key={tab.id}
+        onClick={() => projectNavProps?.onTabChange(tab.id)}
+        className={cn(
+          "relative inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors duration-150",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+          "whitespace-nowrap shrink-0 rounded-md",
+          isActive
+            ? "text-foreground"
+            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+        )}
+      >
+        <div className="relative">
+          <Icon className="w-3.5 h-3.5" />
+          {tab.id === 'meetings' && projectNavProps?.hasActiveMeeting && (
+            <span className="absolute -top-1 -right-1 flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive" />
+            </span>
+          )}
+          {tab.id === 'scores' && projectNavProps?.isScoreFinalized && !isActive && (
+            <span className="absolute -top-1 -right-1 flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+            </span>
+          )}
+        </div>
+        <span>{navT[tab.labelKey] || tab.labelKey}</span>
+        {tab.id === 'members' && projectNavProps && (
+          <span className={cn(
+            "px-1 py-0 text-[10px] font-semibold rounded-full min-w-[16px] text-center leading-tight",
+            isActive
+              ? "bg-primary/15 text-primary"
+              : "bg-muted-foreground/15 text-muted-foreground"
+          )}>
+            {projectNavProps.membersCount}
+          </span>
+        )}
+        {isActive && (
+          <span className="absolute bottom-0 left-1.5 right-1.5 h-[2px] bg-primary rounded-full" />
+        )}
+      </button>
+    );
+  });
+
   return (
     <div className="grid-cell-topbar">
-      <div className={cn(
-        "flex items-center gap-1 min-w-0 overflow-x-auto scrollbar-none flex-1",
-        isProjectMode && !isCustomMode && "justify-center"
-      )}>
-        {isProjectMode ? (
-          <div className={cn("flex items-center gap-0.5", !isCustomMode && "mx-auto")}>
-            {isCustomMode && (
-              <>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      className="flex items-center justify-center w-7 h-7 rounded-md transition-colors hover:bg-accent shrink-0 mr-1"
-                      onClick={() => navigate('/groups')}
-                    >
-                      <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p>{locale === 'vi' ? 'Quay lại' : 'Go back'}</p>
-                  </TooltipContent>
-                </Tooltip>
-
-                {/* Editable breadcrumb: Project name */}
-                <div className="flex items-center gap-1 mr-2 shrink-0">
-                  <Link to="/groups" className="hidden sm:inline text-xs text-muted-foreground hover:text-foreground transition-colors">
-                    {locale === 'vi' ? 'Dự án' : 'Projects'}
-                  </Link>
-                  <ChevronRight className="w-3 h-3 text-muted-foreground hidden sm:block" />
-                  {editingName ? (
-                    <input
-                      ref={inputRef}
-                      value={draftName}
-                      onChange={e => setDraftName(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') commitRename();
-                        if (e.key === 'Escape') cancelEditing();
-                      }}
-                      onBlur={commitRename}
-                      className="text-xs font-medium bg-transparent border-b border-primary/50 outline-none px-0.5 py-0 max-w-[160px] text-foreground"
-                    />
-                  ) : (
-                    <span
-                      onClick={startEditing}
-                      className={cn(
-                        "text-xs font-medium text-foreground max-w-[160px] truncate",
-                        projectNavProps?.isLeaderInGroup && "cursor-text hover:border-b hover:border-dashed hover:border-muted-foreground/50"
-                      )}
-                      title={projectInfo.projectName}
-                    >
-                      {projectInfo.projectName || '...'}
-                    </span>
-                  )}
-                </div>
-
-                {/* Separator */}
-                <div className="w-px h-4 bg-border mr-1 shrink-0" />
-              </>
-            )}
-            {visibleTabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = projectNavProps.activeTab === tab.id;
-
-              return (
+      {isProjectMode && isCustomMode ? (
+        /* Custom mode: breadcrumb left, tabs center */
+        <div className="flex items-center min-w-0 overflow-x-auto scrollbar-none flex-1">
+          {/* Left: back + breadcrumb */}
+          <div className="flex items-center gap-0.5 shrink-0">
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <button
-                  key={tab.id}
-                  onClick={() => projectNavProps.onTabChange(tab.id)}
-                  className={cn(
-                    "relative inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors duration-150",
-                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
-                    "whitespace-nowrap shrink-0 rounded-md",
-                    isActive
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  )}
+                  className="flex items-center justify-center w-7 h-7 rounded-md transition-colors hover:bg-accent shrink-0 mr-1"
+                  onClick={() => navigate('/groups')}
                 >
-                  <div className="relative">
-                    <Icon className="w-3.5 h-3.5" />
-                    {tab.id === 'meetings' && projectNavProps.hasActiveMeeting && (
-                      <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive" />
-                      </span>
-                    )}
-                    {tab.id === 'scores' && projectNavProps.isScoreFinalized && !isActive && (
-                      <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
-                      </span>
-                    )}
-                  </div>
-                  <span>{navT[tab.labelKey] || tab.labelKey}</span>
-                  {tab.id === 'members' && (
-                    <span className={cn(
-                      "px-1 py-0 text-[10px] font-semibold rounded-full min-w-[16px] text-center leading-tight",
-                      isActive
-                        ? "bg-primary/15 text-primary"
-                        : "bg-muted-foreground/15 text-muted-foreground"
-                    )}>
-                      {projectNavProps.membersCount}
-                    </span>
-                  )}
-                  {isActive && (
-                    <span className="absolute bottom-0 left-1.5 right-1.5 h-[2px] bg-primary rounded-full" />
-                  )}
+                  <ArrowLeft className="w-4 h-4 text-muted-foreground" />
                 </button>
-              );
-            })}
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>{locale === 'vi' ? 'Quay lại' : 'Go back'}</p>
+              </TooltipContent>
+            </Tooltip>
+            <div className="flex items-center gap-1 shrink-0">
+              <Link to="/groups" className="hidden sm:inline text-xs text-muted-foreground hover:text-foreground transition-colors">
+                {locale === 'vi' ? 'Dự án' : 'Projects'}
+              </Link>
+              <ChevronRight className="w-3 h-3 text-muted-foreground hidden sm:block" />
+              {editingName ? (
+                <input
+                  ref={inputRef}
+                  value={draftName}
+                  onChange={e => setDraftName(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') commitRename();
+                    if (e.key === 'Escape') cancelEditing();
+                  }}
+                  onBlur={commitRename}
+                  className="text-xs font-medium bg-transparent border-b border-primary/50 outline-none px-0.5 py-0 max-w-[160px] text-foreground"
+                />
+              ) : (
+                <span
+                  onClick={startEditing}
+                  className={cn(
+                    "text-xs font-medium text-foreground max-w-[160px] truncate",
+                    projectNavProps?.isLeaderInGroup && "cursor-text hover:border-b hover:border-dashed hover:border-muted-foreground/50"
+                  )}
+                  title={projectInfo.projectName}
+                >
+                  {projectInfo.projectName || '...'}
+                </span>
+              )}
+            </div>
           </div>
-        ) : (
-          <h1 className="text-sm font-semibold truncate" style={{ color: 'var(--_sb-fg, hsl(var(--foreground)))' }}>
-            {pageTitle}
-          </h1>
-        )}
-      </div>
+          {/* Center: tabs */}
+          <div className="flex items-center gap-0.5 mx-auto">
+            {tabButtons}
+          </div>
+        </div>
+      ) : (
+        <div className={cn(
+          "flex items-center gap-1 min-w-0 overflow-x-auto scrollbar-none flex-1",
+          isProjectMode && "justify-center"
+        )}>
+          {isProjectMode ? (
+            <div className="flex items-center gap-0.5 mx-auto">
+              {tabButtons}
+            </div>
+          ) : (
+            <h1 className="text-sm font-semibold truncate" style={{ color: 'var(--_sb-fg, hsl(var(--foreground)))' }}>
+              {pageTitle}
+            </h1>
+          )}
+        </div>
+      )}
 
       <div className="flex items-center gap-2 shrink-0">
         <Tooltip>
