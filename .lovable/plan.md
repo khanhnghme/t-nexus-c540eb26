@@ -1,48 +1,52 @@
 
 
-## Bước 7: Cập nhật Pages — System/Workspace role strings
+## Bước 8: Cập nhật components — Member management
 
 ### Mục tiêu
-Thay tất cả role string cũ (underscore) sang format `resource:role` mới trong 4 page files. Không thay đổi logic, chỉ thay chuỗi so sánh.
+Thay tất cả role string cũ (underscore) sang format `resource:role` mới trong 6 component files liên quan đến quản lý thành viên.
 
-### Phạm vi thay đổi — 4 files
+### Phạm vi thay đổi — 6 files
 
-#### 1. `src/pages/Dashboard.tsx` (2 vị trí)
+#### 1. `src/components/MemberManagementCard.tsx` (~20 vị trí)
 
-| Dòng | Trước | Sau |
-|------|-------|-----|
-| 430 | `wsRole === 'workspace_owner' \|\| wsRole === 'workspace_admin'` | `wsRole === 'workspace:owner' \|\| wsRole === 'workspace:admin'` |
-| 906 | `inv.role_granted === 'workspace_admin'` | `inv.role_granted === 'workspace:admin'` |
+Thay đổi chính:
+- State types: `'project_member' | 'project_admin'` → `'project_basic:member' | 'project_basic:admin'`
+- Initial values: `'project_member'` → `'project_basic:member'`
+- DB insert role: `'project_member'` → `'project_basic:member'`
+- Comparisons: `=== 'project_admin'` → `=== 'project_basic:admin'`, `=== 'project_owner'` → `=== 'project_basic:owner'`
+- Role badge switch-case: `project_owner`, `project_admin` → `project_basic:owner`, `project_basic:admin`
+- SelectItem values trong dialog đổi role
 
-#### 2. `src/pages/Groups.tsx` (2 vị trí)
+#### 2. `src/components/MemberDetailDialog.tsx` (~8 vị trí)
 
-| Dòng | Trước | Sau |
-|------|-------|-----|
-| 87 | `workspaceRole === 'workspace_owner' \|\| workspaceRole === 'workspace_admin'` | `workspaceRole === 'workspace:owner' \|\| workspaceRole === 'workspace:admin'` |
-| 960 | `group.myRole === 'workspace_admin'` | `group.myRole === 'workspace:admin'` |
+- `systemRoleLabel` keys: `system_owner` → `system:owner`, `system_admin` → `system:admin`, `project_admin` → `project_basic:admin`, `project_member` → `project_basic:member`
+- `getGroupRoleLabel` switch-case: `project_owner` → `project_basic:owner`, `project_admin` → `project_basic:admin`, `project_member` → `project_basic:member`, `project_guest` → xóa (đã migrate thành member)
+- Badge comparison: `g.role === 'project_admin'` → `g.role === 'project_basic:admin'`
 
-#### 3. `src/pages/WorkspaceSettings.tsx` (2 vị trí)
+#### 3. `src/components/MemberRoleManagementDialog.tsx` (~10 vị trí)
 
-| Dòng | Trước | Sau |
-|------|-------|-----|
-| 77 | `workspaceRole === 'workspace_owner'` | `workspaceRole === 'workspace:owner'` |
-| 78 | `workspaceRole === 'workspace_admin'` | `workspaceRole === 'workspace:admin'` |
+- Promote action: `new_role: 'project_admin'` → `new_role: 'project_basic:admin'`
+- Demote action: `new_role: 'project_member'` → `new_role: 'project_basic:member'`
+- Activity log metadata: `from_role`/`to_role` strings
+- Role comparison: `g.role === 'project_admin'` → `g.role === 'project_basic:admin'`
 
-#### 4. `src/pages/MemberManagement.tsx` (8 vị trí)
+#### 4. `src/components/ProjectTransferDialog.tsx` (~5 vị trí)
 
-| Dòng | Trước | Sau |
-|------|-------|-----|
-| 135 | `roles.includes('system_owner') \|\| roles.includes('system_admin')` | `roles.includes('system:owner') \|\| roles.includes('system:admin')` |
-| 173 | `!roles.includes('system_owner') && !roles.includes('system_admin')` | `!roles.includes('system:owner') && !roles.includes('system:admin')` |
-| 174 | `roles.includes('system_admin') && !roles.includes('system_owner')` | `roles.includes('system:admin') && !roles.includes('system:owner')` |
-| 175 | `roles.includes('system_owner')` | `roles.includes('system:owner')` |
-| 293 | `role: 'system_admin'` | `role: 'system:admin'` |
-| 571 | `roles.includes('system_owner')` | `roles.includes('system:owner')` |
-| 574 | `!roles.includes('system_owner') && roles.includes('system_admin')` | `!roles.includes('system:owner') && roles.includes('system:admin')` |
-| 854 | `includes('system_owner')` / `includes('system_admin')` | `includes('system:owner')` / `includes('system:admin')` |
+- `role: 'project_owner'` → `role: 'project_basic:owner'`
+- `.update({ role: 'project_admin' })` → `.update({ role: 'project_basic:admin' })`
+- `.update({ role: 'project_member' })` → `.update({ role: 'project_basic:member' })`
+- Display comparison: `m.role === 'project_owner'` / `'project_admin'` → format mới
+
+#### 5. `src/components/ProfileViewDialog.tsx` (~4 vị trí)
+
+- Default param: `role = 'project_member'` → `role = 'project_basic:member'`
+- Switch-case: `project_owner` → `project_basic:owner`, `project_admin` → `project_basic:admin`
+
+#### 6. `src/components/MemberAuthForm.tsx` (1 vị trí)
+
+- Dòng 368: `r.role === 'system_owner'` → `r.role === 'system:owner'`
 
 ### Không thay đổi
-- Không sửa hooks, contexts, components, edge functions, hay database
-- `WorkspaceMembers.tsx` đã được cập nhật ở Bước 6
-- Admin pages không chứa role strings cũ (đã kiểm tra)
+- Không sửa hooks, contexts, pages, edge functions, hay database
+- Không thay đổi logic, chỉ thay chuỗi so sánh và type literals
 
