@@ -127,9 +127,10 @@ export default function TopBar() {
         isProjectMode && !isCustomMode && "justify-center"
       )}>
         {isProjectMode ? (
-          <div className={cn("flex items-center gap-0.5", !isCustomMode && "mx-auto")}>
-            {isCustomMode && (
-              <>
+          isCustomMode ? (
+            <>
+              {/* Left: back + breadcrumb */}
+              <div className="flex items-center gap-0.5 shrink-0">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
@@ -143,8 +144,6 @@ export default function TopBar() {
                     <p>{locale === 'vi' ? 'Quay lại' : 'Go back'}</p>
                   </TooltipContent>
                 </Tooltip>
-
-                {/* Editable breadcrumb: Project name */}
                 <div className="flex items-center gap-1 mr-2 shrink-0">
                   <Link to="/groups" className="hidden sm:inline text-xs text-muted-foreground hover:text-foreground transition-colors">
                     {locale === 'vi' ? 'Dự án' : 'Projects'}
@@ -175,11 +174,13 @@ export default function TopBar() {
                     </span>
                   )}
                 </div>
-
-                {/* Separator */}
-                <div className="w-px h-4 bg-border mr-1 shrink-0" />
-              </>
-            )}
+              </div>
+              {/* Center: tabs */}
+              <div className="flex items-center gap-0.5 mx-auto">
+            </>
+          ) : (
+            <div className="flex items-center gap-0.5 mx-auto">
+          )
             {visibleTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = projectNavProps.activeTab === tab.id;
