@@ -268,6 +268,8 @@ export const en = {
     customPricing: 'pricing',
     contactUs: 'Contact us →',
     includes: 'Includes:',
+    quotasLabel: 'Limits',
+    featuresLabel: 'Features',
     upgradeLabel: 'Upgrade',
     currentPlanLabel: 'Current Plan',
 
@@ -281,13 +283,17 @@ export const en = {
         name: 'Plan Free',
         description: 'For individuals to organize personal projects and life.',
         cta: 'Sign up',
-        features: [
+        quotas: [
           '1 Workspace to create',
           'Total 5 projects across entire account',
           '500 MB total storage (shared across Workspaces)',
           'Max upload 5 MB / file',
           'Total 5 unique seats (shared across all WSs, free)',
           'Meetings up to 15 min',
+        ],
+        features: [
+          'Basic task management',
+          'Group chat',
           'Standard Email Support',
         ],
       },
@@ -295,15 +301,17 @@ export const en = {
         name: 'Plan Plus',
         description: 'For small teams and professionals to work together.',
         cta: 'Get started',
-        features: [
+        quotas: [
           '5 Workspaces to create',
           'Total 15 projects (allocate freely across WSs)',
           '10 GB total storage (shared across Workspaces)',
           'Max upload 100 MB / file',
           'Total 15 unique seats (shared across all WSs, free)',
-          'Unlock Plus features for all members',
           'Meetings up to 60 min',
           'Activity logs (30 days)',
+        ],
+        features: [
+          'Unlock Plus features for all members',
           'Full data export',
           'Standard Email Support',
           'Add-ons available',
@@ -313,15 +321,17 @@ export const en = {
         name: 'Plan Pro',
         description: 'For fast-growing teams to maximize productivity.',
         cta: 'Get started',
-        features: [
+        quotas: [
           '20 Workspaces to create',
           'Total 50 projects (allocate freely across WSs)',
           '50 GB total storage (shared across Workspaces)',
           'Max upload 5 GB / file',
           'Total 50 unique seats (shared across all WSs, free)',
-          'Unlock Pro features for all members',
           'Unlimited meeting time',
           'Unlimited activity logs',
+        ],
+        features: [
+          'Unlock Pro features for all members',
           'Full data export',
           'Priority Support (within 24h-48h)',
           'Add-ons included, 10% off',
@@ -331,15 +341,17 @@ export const en = {
         name: 'Plan Business',
         description: 'For mid-to-large organizations to operate at scale.',
         cta: 'Get started',
-        features: [
+        quotas: [
           '50 Workspaces to create',
           'Total 500 projects (allocate freely across WSs)',
           '200 GB total storage (shared across Workspaces)',
           'Max upload 5 GB / file',
           'Total 200 unique seats (shared across all WSs, free)',
-          'Unlock Business features for all members',
           'Unlimited meeting time',
           'Unlimited activity logs',
+        ],
+        features: [
+          'Unlock Business features for all members',
           'Full data export',
           'Express Support (same business day)',
           'Add-ons included, 20% off',
@@ -349,13 +361,15 @@ export const en = {
         name: 'Plan Enterprise',
         description: 'For organizations needing scalability, control, and security.',
         cta: 'Contact Sales',
-        features: [
+        quotas: [
           'Unlimited Workspaces',
           'Unlimited projects',
           'Unlimited storage',
           'Max upload 5 GB / file',
           'Unlimited unique seats',
           'Unlimited meeting time',
+        ],
+        features: [
           'Enterprise-grade security',
           'Full data export',
           'Dedicated 24/7 support',

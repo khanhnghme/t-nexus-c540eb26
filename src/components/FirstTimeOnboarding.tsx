@@ -31,7 +31,7 @@ import {
   GraduationCap, BookOpen, Phone, Sparkles, Shield,
   Rocket, Eye, EyeOff, Mail, ListChecks, Users, FolderKanban,
   Award, MessageSquare, ChevronLeft, Globe, Crown, Zap,
-  Tag, Plus, Minus, Package,
+  Tag, Plus, Minus, Package, BarChart3,
   ArrowRight, ArrowLeft, ChevronUp, ChevronDown, Building2, ChevronsUpDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -501,16 +501,20 @@ export default function FirstTimeOnboarding({
   const pwStrength = getPasswordStrength();
 
   // Get features from pricing translations
-  const getPlanFeatures = (planKey: string): string[] => {
+  const getPlanFeatures = (planKey: string): { quotas: string[]; features: string[] } => {
     const pricingPlans = pricingT?.plans as any;
-    if (!pricingPlans) return [];
+    if (!pricingPlans) return { quotas: [], features: [] };
     const map: Record<string, string> = {
       plan_free: 'free',
       plan_plus: 'plus',
       plan_pro: 'pro',
       plan_business: 'business',
     };
-    return pricingPlans[map[planKey]]?.features ?? [];
+    const planData = pricingPlans[map[planKey]];
+    return {
+      quotas: planData?.quotas ?? [],
+      features: planData?.features ?? [],
+    };
   };
 
   const getPlanDescription = (planKey: string): string => {
@@ -1185,7 +1189,7 @@ export default function FirstTimeOnboarding({
                   <div className="w-full max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
                     {planCards.map(card => {
                       const cfg = PLAN_CONFIG[card.key];
-                      const features = getPlanFeatures(card.key);
+                      const { quotas, features } = getPlanFeatures(card.key);
                       const desc = getPlanDescription(card.key);
                       const isSelected = selectedPlan === card.key;
                       const originalPrice = cycle === 'yearly' ? cfg.yearlyPrice : cfg.monthlyPrice;
@@ -1230,10 +1234,29 @@ export default function FirstTimeOnboarding({
                             <p className="text-[10px] text-muted-foreground mb-2 leading-relaxed">{desc}</p>
                           )}
 
+                          {/* Quotas */}
+                          <div className="flex items-center gap-1 mb-1">
+                            <BarChart3 className="w-3 h-3 text-muted-foreground" />
+                            <span className="text-[10px] font-semibold text-muted-foreground">{pricingT?.quotasLabel || 'Limits'}</span>
+                          </div>
+                          <ul className="text-[11px] text-muted-foreground space-y-1 mb-2">
+                            {quotas.map((f, i) => (
+                              <li key={`q-${i}`} className="flex items-start gap-1.5">
+                                <Check className="w-3 h-3 shrink-0 mt-0.5 text-blue-500" />
+                                <span>{f}</span>
+                              </li>
+                            ))}
+                          </ul>
+
+                          {/* Features */}
+                          <div className="flex items-center gap-1 mb-1">
+                            <Sparkles className="w-3 h-3 text-muted-foreground" />
+                            <span className="text-[10px] font-semibold text-muted-foreground">{pricingT?.featuresLabel || 'Features'}</span>
+                          </div>
                           <ul className="text-[11px] text-muted-foreground space-y-1">
                             {features.map((f, i) => (
-                              <li key={i} className="flex items-start gap-1.5">
-                                <Check className={cn('w-3 h-3 shrink-0 mt-0.5', card.color)} />
+                              <li key={`f-${i}`} className="flex items-start gap-1.5">
+                                <Check className="w-3 h-3 shrink-0 mt-0.5 text-emerald-500" />
                                 <span>{f}</span>
                               </li>
                             ))}

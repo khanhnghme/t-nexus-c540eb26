@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useMemo, useCallback } from 'react';
-import { Check, ArrowLeft, Plus, Minus } from 'lucide-react';
+import { Check, ArrowLeft, Plus, Minus, BarChart3, Sparkles } from 'lucide-react';
 import tNexusText from '@/assets/t-nexus-text.png';
 import gmailLogo from '@/assets/gmail-logo.png';
 import googleDriveLogo from '@/assets/google-drive-logo.png';
@@ -18,6 +18,7 @@ type Plan = {
   cta: string;
   ctaStyle: 'primary' | 'outline';
   recommended?: boolean;
+  quotas: string[];
   features: string[];
 };
 
@@ -77,14 +78,14 @@ export default function Pricing() {
   }, [user, navigate, lp, tp]);
 
   const LEFT_PLANS: Plan[] = useMemo(() => [
-    { name: tp.plans.free.name, monthlyPrice: 0, description: tp.plans.free.description, cta: tp.plans.free.cta, ctaStyle: 'outline', features: tp.plans.free.features },
-    { name: tp.plans.plus.name, monthlyPrice: 4.8, description: tp.plans.plus.description, cta: tp.plans.plus.cta, ctaStyle: 'outline', features: tp.plans.plus.features },
-    { name: tp.plans.pro.name, monthlyPrice: 12.0, description: tp.plans.pro.description, cta: tp.plans.pro.cta, ctaStyle: 'primary', recommended: true, features: tp.plans.pro.features },
+    { name: tp.plans.free.name, monthlyPrice: 0, description: tp.plans.free.description, cta: tp.plans.free.cta, ctaStyle: 'outline', quotas: tp.plans.free.quotas, features: tp.plans.free.features },
+    { name: tp.plans.plus.name, monthlyPrice: 4.8, description: tp.plans.plus.description, cta: tp.plans.plus.cta, ctaStyle: 'outline', quotas: tp.plans.plus.quotas, features: tp.plans.plus.features },
+    { name: tp.plans.pro.name, monthlyPrice: 12.0, description: tp.plans.pro.description, cta: tp.plans.pro.cta, ctaStyle: 'primary', recommended: true, quotas: tp.plans.pro.quotas, features: tp.plans.pro.features },
   ], [tp]);
 
   const RIGHT_PLANS: Plan[] = useMemo(() => [
-    { name: tp.plans.business.name, monthlyPrice: 24.0, description: tp.plans.business.description, cta: tp.plans.business.cta, ctaStyle: 'outline', features: tp.plans.business.features },
-    { name: tp.plans.enterprise.name, monthlyPrice: null, description: tp.plans.enterprise.description, cta: tp.plans.enterprise.cta, ctaStyle: 'outline', features: tp.plans.enterprise.features },
+    { name: tp.plans.business.name, monthlyPrice: 24.0, description: tp.plans.business.description, cta: tp.plans.business.cta, ctaStyle: 'outline', quotas: tp.plans.business.quotas, features: tp.plans.business.features },
+    { name: tp.plans.enterprise.name, monthlyPrice: null, description: tp.plans.enterprise.description, cta: tp.plans.enterprise.cta, ctaStyle: 'outline', quotas: tp.plans.enterprise.quotas, features: tp.plans.enterprise.features },
   ], [tp]);
 
   const ADDONS: AddOn[] = useMemo(() => tp.addOns, [tp]);
@@ -411,15 +412,29 @@ function PlanColumn({ plan, yearly, tp, onCTA }: { plan: Plan; yearly: boolean; 
         )}
       </div>
 
-      {/* Feature list */}
-      <p style={{ fontSize: 13, fontWeight: 600, color: '#37352f', margin: '0 0 10px' }}>
-        {tp.includes}
-      </p>
+      {/* Quotas section */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '0 0 8px' }}>
+        <BarChart3 size={14} style={{ color: '#37352f' }} />
+        <span style={{ fontSize: 13, fontWeight: 600, color: '#37352f' }}>{tp.quotasLabel}</span>
+      </div>
+      <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {plan.quotas.map((f: string) => (
+          <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, fontSize: 14, color: '#37352f', lineHeight: 1.4 }}>
+            <Check size={15} style={{ color: '#3b82f6', flexShrink: 0, marginTop: 2 }} strokeWidth={2.5} />
+            <span>{f}</span>
+          </li>
+        ))}
+      </ul>
 
+      {/* Features section */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '0 0 8px' }}>
+        <Sparkles size={14} style={{ color: '#37352f' }} />
+        <span style={{ fontSize: 13, fontWeight: 600, color: '#37352f' }}>{tp.featuresLabel}</span>
+      </div>
       <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
         {plan.features.map((f: string) => (
           <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, fontSize: 14, color: '#37352f', lineHeight: 1.4 }}>
-            <Check size={15} style={{ color: '#2383e2', flexShrink: 0, marginTop: 2 }} strokeWidth={2.5} />
+            <Check size={15} style={{ color: '#10b981', flexShrink: 0, marginTop: 2 }} strokeWidth={2.5} />
             <span>{f}</span>
           </li>
         ))}

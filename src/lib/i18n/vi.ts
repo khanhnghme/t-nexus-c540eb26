@@ -269,6 +269,8 @@ export const vi: Translations = {
     customPricing: 'theo yêu cầu',
     contactUs: 'Liên hệ →',
     includes: 'Bao gồm:',
+    quotasLabel: 'Hạn mức',
+    featuresLabel: 'Tính năng',
     upgradeLabel: 'Nâng cấp',
     currentPlanLabel: 'Đang sử dụng',
 
@@ -282,13 +284,17 @@ export const vi: Translations = {
         name: 'Plan Free',
         description: 'Dành cho cá nhân tổ chức dự án và cuộc sống.',
         cta: 'Đăng ký',
-        features: [
+        quotas: [
           '1 Workspace được tạo',
           'Tổng 5 dự án trên toàn tài khoản',
           '500 MB tổng lưu trữ (gộp tất cả Workspace)',
           'Upload tối đa 5 MB / file',
           'Tổng 5 suất thành viên (unique seat, dùng chung cho tất cả WS)',
           'Họp tối đa 15 phút',
+        ],
+        features: [
+          'Quản lý task cơ bản',
+          'Chat nhóm',
           'Standard Email Support',
         ],
       },
@@ -296,15 +302,17 @@ export const vi: Translations = {
         name: 'Plan Plus',
         description: 'Dành cho nhóm nhỏ và chuyên gia cộng tác.',
         cta: 'Bắt đầu',
-        features: [
+        quotas: [
           '5 Workspace được tạo',
           'Tổng 15 dự án (phân bổ tùy ý cho các WS)',
           '10 GB tổng lưu trữ (gộp tất cả Workspace)',
           'Upload tối đa 100 MB / file',
           'Tổng 15 suất thành viên (unique seat, dùng chung cho tất cả WS)',
-          'Mở khóa tính năng Plus cho mọi thành viên',
           'Họp tối đa 60 phút',
           'Nhật ký hoạt động (30 ngày)',
+        ],
+        features: [
+          'Mở khóa tính năng Plus cho mọi thành viên',
           'Xuất dữ liệu đầy đủ',
           'Standard Email Support',
           'Có thể mua thêm add-on',
@@ -314,15 +322,17 @@ export const vi: Translations = {
         name: 'Plan Pro',
         description: 'Dành cho nhóm phát triển nhanh để tối đa năng suất.',
         cta: 'Bắt đầu',
-        features: [
+        quotas: [
           '20 Workspace được tạo',
           'Tổng 50 dự án (phân bổ tùy ý cho các WS)',
           '50 GB tổng lưu trữ (gộp tất cả Workspace)',
           'Upload tối đa 5 GB / file',
           'Tổng 50 suất thành viên (unique seat, dùng chung cho tất cả WS)',
-          'Mở khóa tính năng Pro cho mọi thành viên',
           'Họp không giới hạn',
           'Nhật ký hoạt động không giới hạn',
+        ],
+        features: [
+          'Mở khóa tính năng Pro cho mọi thành viên',
           'Xuất dữ liệu đầy đủ',
           'Priority Support (trong vòng 24h-48h)',
           'Add-on đi kèm, giảm 10%',
@@ -332,15 +342,17 @@ export const vi: Translations = {
         name: 'Plan Business',
         description: 'Dành cho tổ chức vừa đến lớn vận hành ở quy mô.',
         cta: 'Bắt đầu',
-        features: [
+        quotas: [
           '50 Workspace được tạo',
           'Tổng 500 dự án (phân bổ tùy ý cho các WS)',
           '200 GB tổng lưu trữ (gộp tất cả Workspace)',
           'Upload tối đa 5 GB / file',
           'Tổng 200 suất thành viên (unique seat, dùng chung cho tất cả WS)',
-          'Mở khóa tính năng Business cho mọi thành viên',
           'Họp không giới hạn',
           'Nhật ký hoạt động không giới hạn',
+        ],
+        features: [
+          'Mở khóa tính năng Business cho mọi thành viên',
           'Xuất dữ liệu đầy đủ',
           'Express Support (trong cùng ngày làm việc)',
           'Add-on đi kèm, giảm 20%',
@@ -350,13 +362,15 @@ export const vi: Translations = {
         name: 'Plan Enterprise',
         description: 'Dành cho tổ chức cần khả năng mở rộng, kiểm soát và bảo mật.',
         cta: 'Liên hệ Sales',
-        features: [
+        quotas: [
           'Workspace không giới hạn',
           'Dự án không giới hạn',
           'Lưu trữ không giới hạn',
           'Upload tối đa 5 GB / file',
           'Suất thành viên không giới hạn',
           'Họp không giới hạn',
+        ],
+        features: [
           'Bảo mật cấp doanh nghiệp',
           'Xuất dữ liệu đầy đủ',
           'Hỗ trợ 24/7 chuyên dụng',
