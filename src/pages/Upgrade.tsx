@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Check, ArrowLeft, Plus, Minus, AlertTriangle, Zap } from 'lucide-react';
+import { Check, ArrowLeft, Plus, Minus, AlertTriangle, Zap, BarChart3, Sparkles } from 'lucide-react';
 import { ConnectedToolsInline, shouldShowIntegrations, GOOGLE_INTEGRATIONS } from '@/components/ConnectedToolsBadge';
 import gmailLogo from '@/assets/gmail-logo.png';
 import googleDriveLogo from '@/assets/google-drive-logo.png';
@@ -24,6 +24,7 @@ type Plan = {
   ctaStyle: 'primary' | 'outline';
   recommended?: boolean;
   isCurrent?: boolean;
+  quotas: string[];
   features: string[];
 };
 
@@ -119,14 +120,14 @@ export default function Upgrade() {
   };
 
   const LEFT_PLANS: Plan[] = useMemo(() => [
-    { key: 'free', name: tp.plans.free.name, monthlyPrice: 0, description: tp.plans.free.description, cta: getCta('free'), ctaStyle: getCtaStyle('free'), isCurrent: currentPlanKey === 'free', features: tp.plans.free.features },
-    { key: 'plus', name: tp.plans.plus.name, monthlyPrice: 4.8, description: tp.plans.plus.description, cta: getCta('plus'), ctaStyle: getCtaStyle('plus'), isCurrent: currentPlanKey === 'plus', features: tp.plans.plus.features },
-    { key: 'pro', name: tp.plans.pro.name, monthlyPrice: 12.0, description: tp.plans.pro.description, cta: getCta('pro'), ctaStyle: getCtaStyle('pro'), recommended: currentPlanKey !== 'pro', isCurrent: currentPlanKey === 'pro', features: tp.plans.pro.features },
+    { key: 'free', name: tp.plans.free.name, monthlyPrice: 0, description: tp.plans.free.description, cta: getCta('free'), ctaStyle: getCtaStyle('free'), isCurrent: currentPlanKey === 'free', quotas: tp.plans.free.quotas, features: tp.plans.free.features },
+    { key: 'plus', name: tp.plans.plus.name, monthlyPrice: 4.8, description: tp.plans.plus.description, cta: getCta('plus'), ctaStyle: getCtaStyle('plus'), isCurrent: currentPlanKey === 'plus', quotas: tp.plans.plus.quotas, features: tp.plans.plus.features },
+    { key: 'pro', name: tp.plans.pro.name, monthlyPrice: 12.0, description: tp.plans.pro.description, cta: getCta('pro'), ctaStyle: getCtaStyle('pro'), recommended: currentPlanKey !== 'pro', isCurrent: currentPlanKey === 'pro', quotas: tp.plans.pro.quotas, features: tp.plans.pro.features },
   ], [tp, currentPlanKey, currentRank]);
 
   const RIGHT_PLANS: Plan[] = useMemo(() => [
-    { key: 'business', name: tp.plans.business.name, monthlyPrice: 24.0, description: tp.plans.business.description, cta: getCta('business'), ctaStyle: getCtaStyle('business'), isCurrent: currentPlanKey === 'business', features: tp.plans.business.features },
-    { key: 'enterprise', name: tp.plans.enterprise.name, monthlyPrice: null, description: tp.plans.enterprise.description, cta: getCta('enterprise'), ctaStyle: getCtaStyle('enterprise'), isCurrent: currentPlanKey === 'enterprise', features: tp.plans.enterprise.features },
+    { key: 'business', name: tp.plans.business.name, monthlyPrice: 24.0, description: tp.plans.business.description, cta: getCta('business'), ctaStyle: getCtaStyle('business'), isCurrent: currentPlanKey === 'business', quotas: tp.plans.business.quotas, features: tp.plans.business.features },
+    { key: 'enterprise', name: tp.plans.enterprise.name, monthlyPrice: null, description: tp.plans.enterprise.description, cta: getCta('enterprise'), ctaStyle: getCtaStyle('enterprise'), isCurrent: currentPlanKey === 'enterprise', quotas: tp.plans.enterprise.quotas, features: tp.plans.enterprise.features },
   ], [tp, currentPlanKey, currentRank]);
 
   const ADDONS: AddOn[] = useMemo(() => tp.addOns, [tp]);
@@ -436,12 +437,29 @@ function PlanColumn({ plan, yearly, tp, disabled, onSelect, isFirstTimeBuyer = f
         </button>
       </div>
 
-      <p className="text-[13px] font-semibold text-foreground mb-2.5">{tp.includes}</p>
+      {/* Quotas section */}
+      <div className="flex items-center gap-1.5 mb-2">
+        <BarChart3 size={14} className="text-foreground" />
+        <span className="text-[13px] font-semibold text-foreground">{tp.quotasLabel}</span>
+      </div>
+      <ul className="list-none p-0 m-0 flex flex-col gap-1.5 mb-3">
+        {plan.quotas.map((f: string) => (
+          <li key={f} className="flex items-start gap-1.5 text-sm text-foreground leading-relaxed">
+            <Check size={15} className="text-blue-500 shrink-0 mt-0.5" strokeWidth={2.5} />
+            <span>{f}</span>
+          </li>
+        ))}
+      </ul>
 
+      {/* Features section */}
+      <div className="flex items-center gap-1.5 mb-2">
+        <Sparkles size={14} className="text-foreground" />
+        <span className="text-[13px] font-semibold text-foreground">{tp.featuresLabel}</span>
+      </div>
       <ul className="list-none p-0 m-0 flex flex-col gap-1.5">
         {plan.features.map((f: string) => (
           <li key={f} className="flex items-start gap-1.5 text-sm text-foreground leading-relaxed">
-            <Check size={15} className="text-primary shrink-0 mt-0.5" strokeWidth={2.5} />
+            <Check size={15} className="text-emerald-500 shrink-0 mt-0.5" strokeWidth={2.5} />
             <span>{f}</span>
           </li>
         ))}
