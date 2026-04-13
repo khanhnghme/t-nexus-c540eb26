@@ -3,13 +3,13 @@
 // ═══════════════════════════════════════════════════════
 
 // ── System-level Roles (user_roles table) ──
-export type SystemRole = 'system:owner' | 'system:admin';
+export type SystemRole = 'system:owner' | 'system:admin' | 'system_owner' | 'system_admin' | 'owner_system';
 
 // ── Workspace-level Roles ──
-export type WorkspaceRole = 'workspace:owner' | 'workspace:admin' | 'workspace:member';
+export type WorkspaceRole = 'workspace:owner' | 'workspace:admin' | 'workspace:member' | 'workspace_owner' | 'workspace_admin' | 'workspace_member' | 'owner' | 'admin' | 'member';
 
 // ── Project-level Roles (group_members table) ──
-export type ProjectRole = 'project_basic:owner' | 'project_basic:admin' | 'project_basic:member';
+export type ProjectRole = 'project_basic:owner' | 'project_basic:admin' | 'project_basic:member' | 'project_owner' | 'project_admin' | 'project_member' | 'project_guest' | 'leader';
 
 // ── Page-level Roles (horizontal with project_basic) ──
 export type PageRole = 'project_page:owner' | 'project_page:admin' | 'project_page:member';
