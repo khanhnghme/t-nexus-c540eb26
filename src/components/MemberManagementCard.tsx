@@ -479,36 +479,16 @@ export default function MemberManagementCard({
     setSearchResults([]);
   };
 
-  // Search profiles from API when query changes
-  const handleSearchProfiles = async (query: string) => {
-    setSearchQuery(query);
-    if (query.trim().length < 2) {
-      setSearchResults([]);
-      return;
-    }
-    setIsSearchingProfiles(true);
-    try {
-      const memberUserIds = members.map(m => m.user_id);
-      const pendingUserIds = pendingInvitations.map(p => p.invited_user_id);
-      const excludeIds = [...memberUserIds, ...pendingUserIds, currentUserId];
+  // Email lookup for adding members
+  const { previewUser, isLooking, notFound } = useEmailLookup(searchQuery);
 
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('is_approved', true)
-        .or(`full_name.ilike.%${query}%,student_id.ilike.%${query}%,email.ilike.%${query}%`)
-        .not('id', 'in', `(${excludeIds.join(',')})`)
-        .limit(20);
-      
-      setSearchResults(data || []);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsSearchingProfiles(false);
-    }
-  };
-
-  const filteredProfiles = searchResults;
+  // Check if looked-up user is already a member or pending
+  const isAlreadyInProject = useMemo(() => {
+    if (!previewUser) return false;
+    const memberUserIds = members.map(m => m.user_id);
+    const pendingUserIds = pendingInvitations.map(p => p.invited_user_id);
+    return [...memberUserIds, ...pendingUserIds, currentUserId].includes(previewUser.id);
+  }, [previewUser, members, pendingInvitations, currentUserId]);
 
   const handleAddMember = async () => {
     if (guardReadOnly()) return;
