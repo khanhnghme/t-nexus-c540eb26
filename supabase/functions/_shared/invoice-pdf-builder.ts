@@ -143,11 +143,11 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
   drawText(invoiceNumber, margin, y, { font: courier, size: 9, color: gray700 });
 
   if (logoImage) {
-    const logoDisplayW = 90;
+    const logoDisplayW = 75;
     const logoDisplayH = (logoImage.height / logoImage.width) * logoDisplayW;
     const logoTopY = headerTopY + 20;
     page.drawImage(logoImage, {
-      x: pageW - margin - logoDisplayW,
+      x: pageW - margin - logoDisplayW + 8,
       y: logoTopY - logoDisplayH,
       width: logoDisplayW,
       height: logoDisplayH,
