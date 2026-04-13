@@ -47,6 +47,9 @@ export default function PersonalInfo() {
   const [ownedProjectCount, setOwnedProjectCount] = useState(0);
   const [joinedProjectCount, setJoinedProjectCount] = useState(0);
   
+  const [fullName, setFullName] = useState('');
+  const [studentId, setStudentId] = useState('');
+  const [institution, setInstitution] = useState('');
   const [yearBatch, setYearBatch] = useState('');
   const [major, setMajor] = useState('');
   const [phone, setPhone] = useState('');
@@ -55,6 +58,9 @@ export default function PersonalInfo() {
 
   useEffect(() => {
     if (profile) {
+      setFullName(profile.full_name || '');
+      setStudentId(profile.student_id || '');
+      setInstitution(profile.institution || '');
       setYearBatch(profile.year_batch || '');
       setMajor(profile.major || '');
       setPhone(profile.phone || '');
@@ -154,6 +160,7 @@ export default function PersonalInfo() {
     setIsSaving(true);
     try {
       const { error } = await supabase.from('profiles').update({
+        full_name: fullName || null, student_id: studentId || '', institution: institution || null,
         year_batch: yearBatch || null, major: major || null,
         phone: phone || null, skills: skills || null, bio: bio || null,
       }).eq('id', user.id);
@@ -286,6 +293,29 @@ export default function PersonalInfo() {
               <div className="space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
+                    <Label htmlFor="fullName" className="flex items-center gap-2 text-sm font-medium">
+                      <User className="w-4 h-4 text-muted-foreground" />
+                      {t.fullName || 'Họ và tên'}
+                    </Label>
+                    <Input id="fullName" placeholder={t.fullNamePlaceholder || 'Nhập họ và tên'} value={fullName} onChange={(e) => setFullName(e.target.value)} className="h-10" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="studentId" className="flex items-center gap-2 text-sm font-medium">
+                      <GraduationCap className="w-4 h-4 text-muted-foreground" />
+                      {t.studentId}
+                    </Label>
+                    <Input id="studentId" placeholder={t.studentIdPlaceholder || 'Nhập MSSV'} value={studentId} onChange={(e) => setStudentId(e.target.value)} className="h-10" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="institution" className="flex items-center gap-2 text-sm font-medium">
+                    <GraduationCap className="w-4 h-4 text-muted-foreground" />
+                    {t.institution}
+                  </Label>
+                  <Input id="institution" placeholder={t.institutionPlaceholder || 'Nhập đơn vị đào tạo'} value={institution} onChange={(e) => setInstitution(e.target.value)} className="h-10" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
                     <Label htmlFor="yearBatch" className="flex items-center gap-2 text-sm font-medium">
                       <GraduationCap className="w-4 h-4 text-muted-foreground" />
                       {t.yearBatch}
@@ -337,9 +367,10 @@ export default function PersonalInfo() {
             ) : (
               <div className="space-y-1">
                 <div className="grid sm:grid-cols-2 gap-x-6">
-                  <InfoItem icon={GraduationCap} label={t.institution} value={profile?.institution} highlight readOnly />
-                  <InfoItem icon={User} label={t.studentId} value={profile?.student_id} readOnly />
+                  <InfoItem icon={User} label={t.fullName || 'Họ và tên'} value={profile?.full_name} highlight />
                   <InfoItem icon={Mail} label={t.email} value={profile?.email} readOnly />
+                  <InfoItem icon={GraduationCap} label={t.institution} value={profile?.institution} />
+                  <InfoItem icon={GraduationCap} label={t.studentId} value={profile?.student_id} />
                   <InfoItem icon={GraduationCap} label={t.yearBatch} value={profile?.year_batch} />
                   <InfoItem icon={BookOpen} label={t.major} value={profile?.major} />
                   <InfoItem icon={Phone} label={t.phone} value={profile?.phone} />

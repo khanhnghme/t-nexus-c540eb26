@@ -1166,7 +1166,7 @@ export function MemberAuthForm() {
                   {errors.institution && <p className="text-sm text-destructive">{errors.institution}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="reg-student-id">{ta.studentIdLabel} <span className="text-destructive">*</span></Label>
+                  <Label htmlFor="reg-student-id">{ta.studentIdLabel}</Label>
                   <div className="relative">
                     <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
