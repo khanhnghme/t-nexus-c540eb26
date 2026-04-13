@@ -242,7 +242,7 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
             <ChevronRight className={cn('nav-chevron', isProjectsExpanded && 'expanded')} />
             <FolderKanban className="nav-icon" strokeWidth={1.8} />
             <span className="nav-label">{t?.projects || 'Projects'}</span>
-            <span className="text-[10px] opacity-40 tabular-nums">{visibleProjects.length}</span>
+            <span className="text-[10px] opacity-40 tabular-nums">{projects.length}</span>
           </button>
 
           {isProjectsExpanded && (
