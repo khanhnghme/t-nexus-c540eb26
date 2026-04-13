@@ -1,34 +1,61 @@
 
 
-## Kế hoạch triển khai Giai đoạn 4-6: Đã hoàn thành gần hết — chỉ còn dọn dẹp nhỏ
+## Lỗi: Login thất bại vì RLS chặn truy vấn profiles trước khi đăng nhập
 
-### Đánh giá hiện trạng
+### Nguyên nhân gốc
 
-Sau khi rà soát code hiện tại, **hầu hết giai đoạn 4-6 đã được triển khai** trong lần commit trước (cùng với giai đoạn 1-3):
+Khi login, code gọi `supabase.from('profiles').select('is_approved, full_name').eq('email', loginEmail)` **trước** khi user đăng nhập. Lúc này request dùng anon key (chưa xác thực).
 
-| Mục | Trạng thái |
-|-----|-----------|
-| **4. Login** — chỉ chấp nhận Email | ✅ Đã xong |
-| **4. Login** — label "Email", icon Mail | ✅ Đã xong |
-| **4. Login** — bỏ MSSV lookup logic | ✅ Đã xong |
-| **5. Register** — studentId optional trong schema | ✅ Đã xong |
-| **5. Register** — bỏ pre-check trùng MSSV | ✅ Đã xong |
-| **5. Register** — bỏ dấu `*` trên student_id label | ✅ Đã xong |
-| **6. Forgot Password** — chỉ cần email | ✅ Đã xong |
-| **6. Forgot Password** — gửi OTP trực tiếp bằng email | ✅ Đã xong |
-| **6. Forgot Password** — bỏ field MSSV | ✅ Đã xong |
+Các RLS policy trên bảng `profiles` chỉ cho phép SELECT khi:
+- `is_approved = true OR id = auth.uid() OR is_admin(auth.uid())` — nhưng `auth.uid()` = NULL vì chưa đăng nhập
+- Policy này **có** cho phép đọc `is_approved = true` records... nhưng cần kiểm tra lại vì network request trả về `[]`.
 
-### Còn lại: Dọn dẹp nhỏ (2 thay đổi)
+Thực tế: Policy `Users can view all approved profiles` có `qual = (is_approved = true) OR (id = auth.uid()) OR is_admin(auth.uid())` — đáng ra phải trả về profile có `is_approved = true`. Tuy nhiên, policy này dùng `to authenticated` (chỉ áp dụng cho role `authenticated`, không áp dụng cho role `anon`).
 
-#### 1. `src/components/MemberAuthForm.tsx` — Xóa state không dùng
+### Giải pháp
 
-- **Xóa `forgotIdentifier` state** (line 130): `useState('')` — không còn được sử dụng ở bất kỳ đâu trong logic, chỉ được reset trong `setForgotIdentifier('')` (line 872). Xóa cả state declaration và tất cả references.
+Thêm 1 RLS policy cho phép **anon** role SELECT cột `is_approved, full_name` trên bảng `profiles` khi filter theo `email`. Cụ thể:
 
-#### 2. `src/components/MemberAuthForm.tsx` — Xóa `Hash` import nếu không cần
+**Database Migration:**
+```sql
+CREATE POLICY "Anon can check profile approval by email"
+ON public.profiles
+FOR SELECT
+TO anon
+USING (true);
+```
 
-- `Hash` icon hiện chỉ dùng cho field student_id trong form đăng ký (line 1171). Đây là hợp lệ (hiển thị icon cho field MSSV). **Giữ nguyên** — không cần xóa.
+Tuy nhiên, để không lộ toàn bộ dữ liệu profile cho anon, cách tốt hơn là **tạo một database function** `SECURITY DEFINER` để kiểm tra:
 
-### Kết luận
+```sql
+CREATE OR REPLACE FUNCTION public.check_profile_login(p_email text)
+RETURNS json
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  result json;
+BEGIN
+  SELECT json_build_object('is_approved', is_approved, 'full_name', full_name)
+  INTO result
+  FROM public.profiles
+  WHERE email = p_email;
+  
+  RETURN result;
+END;
+$$;
+```
 
-Chỉ cần **1 thay đổi nhỏ**: xóa state `forgotIdentifier` không còn sử dụng trong `MemberAuthForm.tsx`. Toàn bộ logic chính của giai đoạn 4-6 đã hoạt động đúng.
+Sau đó cập nhật `MemberAuthForm.tsx` để gọi `supabase.rpc('check_profile_login', { p_email: loginEmail })` thay vì query trực tiếp bảng profiles.
+
+### Các bước triển khai
+
+1. **Database migration** — Tạo function `check_profile_login` (SECURITY DEFINER, bypass RLS)
+2. **MemberAuthForm.tsx** — Thay đổi query `profiles` bằng `supabase.rpc('check_profile_login', ...)` tại phần login (khoảng line 292-296) và phần forgot password nếu cũng query tương tự
+
+### File thay đổi
+- `supabase/migrations/` — migration mới
+- `src/components/MemberAuthForm.tsx` — 1-2 chỗ thay query
 
