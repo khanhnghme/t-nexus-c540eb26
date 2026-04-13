@@ -209,13 +209,13 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
             <td className="py-2 text-right tabular-nums">${((order.base_amount || 0) + (order.addon_amount || 0)).toFixed(2)}</td>
           </tr>
 
-          {(order.discount_amount || 0) > 0 && (
+          {((order.discount_amount || 0) - (order.welcome_discount || 0)) > 0 && (
             <tr className="text-green-700">
               <td colSpan={4} className="py-1 text-right">
                 {isVi ? 'Mã giảm giá' : 'Coupon Discount'}
                 {order.coupon_code ? ` (${order.coupon_code})` : ''}
               </td>
-              <td className="py-1 text-right tabular-nums">-${order.discount_amount.toFixed(2)}</td>
+              <td className="py-1 text-right tabular-nums">-${((order.discount_amount || 0) - (order.welcome_discount || 0)).toFixed(2)}</td>
             </tr>
           )}
 
@@ -660,14 +660,14 @@ export default function CheckoutSummary() {
               );
             })}
 
-            {/* Discount */}
-            {(order.discount_amount || 0) > 0 && (
+            {/* Discount (coupon only, excluding welcome_discount) */}
+            {((order.discount_amount || 0) - (order.welcome_discount || 0)) > 0 && (
               <div className="flex justify-between items-center py-1 text-emerald-600">
                 <span>
                   {isVi ? 'Giảm giá' : 'Discount'}
                   {order.coupon_code ? ` (${order.coupon_code})` : ''}
                 </span>
-                <span>-${order.discount_amount.toFixed(2)}</span>
+                <span>-${((order.discount_amount || 0) - (order.welcome_discount || 0)).toFixed(2)}</span>
               </div>
             )}
 
