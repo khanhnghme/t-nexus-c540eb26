@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import { format } from 'date-fns';
+import { QRCodeSVG } from 'qrcode.react';
 import { Profile } from '@/types/database';
 import tNexusText from '@/assets/t-nexus-text.png';
 
@@ -10,16 +11,18 @@ const PLAN_LABELS: Record<string, string> = {
 interface InvoiceTemplateProps {
   payment: any;
   profile: Profile;
+  orderCode?: string;
 }
 
 export const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(
-  ({ payment, profile }, ref) => {
+  ({ payment, profile, orderCode }, ref) => {
     const displayAmount = payment.final_amount ?? payment.amount;
     const originalAmount = payment.original_amount ?? payment.amount;
     const hasDiscount = (payment.discount_amount ?? 0) > 0 || (payment.coupon_code);
     const invoiceNumber = payment.invoice_id || (payment.order_id ? `INV-${payment.order_id.slice(0, 12).toUpperCase()}` : `INV-${payment.id?.slice(0, 8)?.toUpperCase()}`);
     const paidDate = payment.paid_at || payment.created_at;
     const isCompleted = payment.status === 'completed' || payment.status === 'paid';
+    const invoiceUrl = orderCode ? `https://t-nexus.io.vn/checkout/summary/${orderCode}` : null;
 
     return (
       <div ref={ref} className="bg-white text-black p-10 max-w-[800px] mx-auto print:p-6" id="invoice-print">
@@ -161,6 +164,14 @@ export const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(
 
         {/* Footer */}
         <div className="border-t border-gray-200 pt-4 mt-6 text-center space-y-1">
+          {invoiceUrl && (
+            <div className="flex justify-center mb-3">
+              <div className="flex flex-col items-center">
+                <QRCodeSVG value={invoiceUrl} size={80} level="M" />
+                <p className="text-[9px] text-gray-400 mt-1">Scan to view invoice</p>
+              </div>
+            </div>
+          )}
           <p className="text-xs text-gray-500">This is a computer-generated electronic invoice by T-Nexus.</p>
           <p className="text-xs text-gray-400">Support: support@t-nexus.io.vn | https://t-nexus.io.vn</p>
           <p className="text-[10px] text-gray-300 mt-2">Generated on {format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
