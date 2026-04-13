@@ -1464,14 +1464,14 @@ export default function MemberManagementCard({
                   ) : (
                     <div className="space-y-1.5">
                       {Array.from(selectedUserIds).map(uid => {
-                        const p = searchResults.find(ap => ap.id === uid);
+                        const p = selectedUsersMap.get(uid);
                         if (!p) return null;
                         return (
                           <div key={uid} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/50">
                             <UserAvatar src={p.avatar_url} name={p.full_name} size="sm" />
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-medium truncate">{p.full_name}</p>
-                              <p className="text-xs text-muted-foreground">{p.institution ? `${p.institution} • ` : ''}{p.student_id}</p>
+                              <p className="text-xs text-muted-foreground truncate">{p.email}</p>
                             </div>
                             <Button
                               variant="ghost"
