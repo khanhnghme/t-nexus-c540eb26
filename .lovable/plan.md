@@ -1,30 +1,30 @@
 
 
-## Plan: Thêm mã QR vào hóa đơn (Summary + PDF đính kèm)
+## Plan: Bảo vệ trang Summary + điều hướng sau đăng nhập từ QR
 
-### Ý tưởng
-Mã QR encode URL đến trang summary: `https://t-nexus.io.vn/checkout/summary/{orderCode}`. Quét QR → mở trực tiếp hóa đơn online.
+### Vấn đề hiện tại
+- `CheckoutSummary` nằm trong `ProtectedRoute` → chưa đăng nhập sẽ bị redirect `/login` mất URL
+- Query filter `user_id = user.id` → chỉ chủ đơn xem được, nhưng system:owner/admin cũng cần xem
+- Không có cơ chế lưu URL để quay lại sau login
 
-### 1. PDF Invoice (`invoice-pdf-builder.ts`)
-- Import `qrcode` từ `https://esm.sh/qrcode@1.5.3`
-- Generate QR PNG buffer từ URL `https://t-nexus.io.vn/checkout/summary/{orderCode}`
-- Embed QR vào PDF bằng `pdfDoc.embedPng()`, kích thước 60×60px
-- Vị trí: góc trái cạnh PAID stamp, trong khối Signature
+### Giải pháp
 
-### 2. Web Summary (`InvoiceTemplate.tsx`)
-- Cài `qrcode.react` (npm)
-- Thêm prop `orderCode` để build URL
-- Render `<QRCodeSVG>` kích thước 80×80px trong khối footer/signature
-- URL: `https://t-nexus.io.vn/checkout/summary/{orderCode}`
+#### 1. Tách route Summary ra khỏi ProtectedRoute (`App.tsx`)
+- Tạo route riêng cho `/checkout/summary/:orderCode` và `/addon-checkout/summary/:orderCode` **ngoài** `ProtectedRoute`
+- Dùng layout minimal (không cần CheckoutLayoutWrapper phức tạp)
 
-### 3. Truyền dữ liệu (`CheckoutSummary.tsx`)
-- Truyền `orderCode` vào `InvoiceTemplate`
+#### 2. Xử lý auth + redirect trong `CheckoutSummary.tsx`
+- Nếu **chưa đăng nhập**: lưu URL hiện tại vào `sessionStorage` key `t-nexus_post_login_redirect`, hiển thị UI yêu cầu đăng nhập với nút "Đăng nhập" (giống JoinProject)
+- Nếu **đã đăng nhập**: kiểm tra quyền:
+  - Chủ đơn hàng (`order.user_id === user.id`) → cho xem
+  - `system:owner` hoặc `system:admin` (query `user_roles`) → cho xem
+  - Khác → hiển thị trang 403 Access Denied
+- Bỏ filter `.eq('user_id', user.id)` trong query, thay bằng chỉ filter `order_code`, rồi kiểm tra quyền sau khi fetch
 
-### 4. Deploy
-- Deploy `payment-confirmation-email`
+#### 3. Logic đăng nhập quay lại (đã có sẵn)
+- `LoginForm.tsx` và `RememberLoginScreen.tsx` đã đọc `t-nexus_post_login_redirect` → tự động redirect về đúng trang summary sau login
 
 ### Files thay đổi
-- `supabase/functions/_shared/invoice-pdf-builder.ts`
-- `src/components/billing/InvoiceTemplate.tsx`
-- `src/pages/CheckoutSummary.tsx`
+- `src/App.tsx` — tách 2 route summary ra ngoài ProtectedRoute
+- `src/pages/CheckoutSummary.tsx` — thêm logic auth guard, redirect, access control, 403
 
