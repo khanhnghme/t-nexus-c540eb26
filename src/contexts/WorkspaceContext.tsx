@@ -69,11 +69,11 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
       if (savedWs) {
         setActiveWorkspace(savedWs);
-        setWorkspaceRole(savedWs.my_role || null);
+        setWorkspaceRole((savedWs.my_role as WorkspaceRole) || null);
       } else if (allWorkspaces.length > 0) {
         const defaultWs = allWorkspaces[0];
         setActiveWorkspace(defaultWs);
-        setWorkspaceRole(defaultWs.my_role || null);
+        setWorkspaceRole((defaultWs.my_role as WorkspaceRole) || null);
         localStorage.setItem(ACTIVE_WS_KEY, defaultWs.id);
       }
     } catch (err) {
@@ -88,7 +88,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const ws = workspaces.find(w => w.id === workspaceId);
     if (ws) {
       setActiveWorkspace(ws);
-      setWorkspaceRole(ws.my_role || null);
+      setWorkspaceRole((ws.my_role as WorkspaceRole) || null);
       localStorage.setItem(ACTIVE_WS_KEY, ws.id);
     }
   }, [workspaces]);
