@@ -1,39 +1,48 @@
 
 
-## Plan: Email xác nhận thanh toán với biên lai PDF đính kèm
+## Plan: Fix & hoàn thiện hệ thống email xác nhận thanh toán
 
-### Tóm tắt
-Hệ thống tự động gửi email xác nhận khi thanh toán thành công, đính kèm biên lai PDF được tạo server-side bằng jsPDF. PDF được lưu vào Storage bucket `invoices` và đính kèm vào email qua Resend API.
+### Đánh giá hiện trạng
 
-### Đã triển khai
+Đã hoàn thành:
+- ✅ Edge Function `payment-confirmation-email` — đầy đủ logic
+- ✅ PDF invoice builder (`invoice-pdf-builder.ts`) — layout chuyên nghiệp
+- ✅ Email template (`buildPaymentConfirmationEmail`) — gọn, rõ ràng
+- ✅ R2 upload lưu trữ PDF
+- ✅ Resend API gửi email với PDF đính kèm
+- ✅ Cột `payment_email_sent` (idempotency) — đã có trong DB
+- ✅ Log thành công/thất bại vào `email_send_log`
+- ✅ Trigger từ `capture-paypal-order` (2 chỗ: addon + plan)
+- ✅ Trigger từ `paypal-webhook` (2 chỗ)
+- ✅ `config.toml` — `verify_jwt = false`
 
-**1. Migration: `payment_email_sent` + Storage bucket `invoices`**
-- Cột `payment_email_sent` (boolean) trên bảng `orders` — chống gửi email trùng
-- Bucket `invoices` (private) — lưu trữ PDF biên lai
+### Vấn đề cần fix
 
-**2. `supabase/functions/_shared/email-html-builder.ts`**
-- Thêm `buildPaymentConfirmationEmail()` — email thông báo ngắn gọn, chuyên nghiệp
+**1. Edge Function chưa được deploy**
+- Logs trống → function chưa bao giờ chạy hoặc chưa deploy phiên bản mới nhất
+- Cần deploy lại: `payment-confirmation-email`, `capture-paypal-order`, `paypal-webhook`
 
-**3. `supabase/functions/_shared/invoice-pdf-builder.ts`** (MỚI)
-- `buildInvoicePdf()` — tạo PDF biên lai bằng jsPDF, layout giống PrintableInvoice
+**2. jsPDF có thể không hoạt động trong Deno Edge Function**
+- `jsPDF` là thư viện browser-oriented, import qua `esm.sh` có thể gặp lỗi runtime do thiếu `window`/`document` trong Deno
+- Cần thêm polyfill hoặc chuyển sang thư viện PDF tương thích Deno (ví dụ: `pdf-lib`)
+- `pdf-lib` là thư viện pure JavaScript, chạy tốt trên mọi runtime (Deno, Node, browser)
 
-**4. `supabase/functions/payment-confirmation-email/index.ts`** (MỚI)
-- Tạo PDF → Lưu Storage → Đính kèm email → Gửi qua Resend
-- Idempotency flag `payment_email_sent`
+**3. Thiếu error handling cho PDF generation failure**
+- Nếu `buildInvoicePdf()` throw error, toàn bộ function fail → email không gửi được
+- Cần wrap PDF generation trong try/catch — nếu PDF lỗi thì vẫn gửi email (không đính kèm)
 
-**5. `capture-paypal-order` + `paypal-webhook`** (CẬP NHẬT)
-- Fire-and-forget trigger sau khi order completed
+### Changes
 
-### Flow
-```text
-Payment success → capture/webhook → order completed
-                                    ↓ (fire-and-forget)
-                          payment-confirmation-email
-                                    ↓
-                          Check payment_email_sent flag
-                          If false → generate PDF (jsPDF)
-                                   → save to Storage (invoices bucket)
-                                   → send email via Resend (PDF attached)
-                                   → set flag true
-                          If true → skip
-```
+**1. Viết lại `invoice-pdf-builder.ts` dùng `pdf-lib`**
+- Thay `jsPDF` bằng `pdf-lib` (import từ `https://esm.sh/pdf-lib@1.17.1`)
+- Giữ nguyên layout và nội dung hiện tại
+- `pdf-lib` chạy native trên Deno, không cần DOM
+
+**2. Cập nhật `payment-confirmation-email/index.ts`**
+- Wrap `buildInvoicePdf()` trong try/catch
+- Nếu PDF fail → vẫn gửi email không đính kèm + log warning
+- Đảm bảo email luôn được gửi dù PDF có lỗi
+
+**3. Deploy tất cả Edge Functions liên quan**
+- Deploy: `payment-confirmation-email`, `capture-paypal-order`, `paypal-webhook`
+
