@@ -332,67 +332,133 @@ const formatTime = (d: string | null) => {
 export default function CheckoutSummary() {
   const { orderCode } = useParams<{ orderCode: string }>();
   const navigate = useNavigate();
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, isLoading: authLoading, refreshProfile } = useAuth();
   const isVi = (profile as any)?.preferred_locale === 'vi' || document.documentElement.lang === 'vi';
 
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
+
+  // If not logged in after auth finishes loading, save URL and show login prompt
+  const needsLogin = !authLoading && !user;
 
   useEffect(() => {
-    if (!user || !orderCode) return;
-    supabase
-      .from('orders')
-      .select('*')
-      .eq('order_code', orderCode)
-      .eq('user_id', user.id)
-      .single()
-      .then(async ({ data, error }) => {
-        if (error || !data) {
-          navigate('/billing-history', { replace: true });
-          return;
-        }
-        if (data.status === 'pending') {
-          // Don't redirect immediately — poll briefly in case webhook is about to complete
-          let resolved = false;
-          for (let i = 0; i < 8; i++) {
-            await new Promise(r => setTimeout(r, 3000));
-            const { data: fresh } = await supabase
-              .from('orders')
-              .select('status')
-              .eq('order_code', orderCode)
-              .eq('user_id', user.id)
-              .maybeSingle();
-            if (fresh && fresh.status !== 'pending') {
-              // Re-fetch full order
-              const { data: fullOrder } = await supabase
-                .from('orders')
-                .select('*')
-                .eq('order_code', orderCode)
-                .eq('user_id', user.id)
-                .single();
-              if (fullOrder) {
-                setOrder(fullOrder);
-                if (fullOrder.status === 'completed') refreshProfile();
-                setLoading(false);
-                resolved = true;
-                break;
-              }
-            }
-          }
-          if (!resolved) {
-            // Still pending after ~24s — redirect back to payment
-            const route = data.order_type === 'addon' ? `/addon-checkout/payment/${orderCode}` : `/checkout/payment/${orderCode}`;
-            navigate(route, { replace: true });
-          }
-          return;
-        }
-        setOrder(data);
-        if (data.status === 'completed') refreshProfile();
-        setLoading(false);
-      });
-  }, [user, orderCode, navigate, refreshProfile]);
+    if (needsLogin && orderCode) {
+      sessionStorage.setItem('t-nexus_post_login_redirect', window.location.pathname);
+    }
+  }, [needsLogin, orderCode]);
 
-  if (loading) {
+  useEffect(() => {
+    if (!user || !orderCode || authLoading) return;
+    (async () => {
+      // Fetch order by order_code only (no user_id filter)
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('order_code', orderCode)
+        .single();
+
+      if (error || !data) {
+        navigate('/billing-history', { replace: true });
+        return;
+      }
+
+      // Access control: owner or system:owner/system:admin
+      if (data.user_id !== user.id) {
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id);
+        const userRoles = (roles || []).map((r: any) => r.role);
+        if (!userRoles.includes('system:owner') && !userRoles.includes('system:admin')) {
+          setAccessDenied(true);
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (data.status === 'pending') {
+        let resolved = false;
+        for (let i = 0; i < 8; i++) {
+          await new Promise(r => setTimeout(r, 3000));
+          const { data: fresh } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('order_code', orderCode)
+            .maybeSingle();
+          if (fresh && fresh.status !== 'pending') {
+            setOrder(fresh);
+            if (fresh.status === 'completed') refreshProfile();
+            setLoading(false);
+            resolved = true;
+            break;
+          }
+        }
+        if (!resolved) {
+          const route = data.order_type === 'addon' ? `/addon-checkout/payment/${orderCode}` : `/checkout/payment/${orderCode}`;
+          navigate(route, { replace: true });
+        }
+        return;
+      }
+      setOrder(data);
+      if (data.status === 'completed') refreshProfile();
+      setLoading(false);
+    })();
+  }, [user, orderCode, navigate, refreshProfile, authLoading]);
+
+  // --- Login prompt (not logged in) ---
+  if (needsLogin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <Card className="max-w-sm w-full mx-4">
+          <CardContent className="pt-8 pb-6 text-center space-y-4">
+            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+              <LogIn className="w-7 h-7 text-primary" />
+            </div>
+            <h2 className="text-lg font-semibold">
+              {isVi ? 'Đăng nhập để xem hóa đơn' : 'Sign in to view invoice'}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {isVi
+                ? 'Bạn cần đăng nhập bằng tài khoản đã mua đơn hàng này.'
+                : 'Please sign in with the account that made this purchase.'}
+            </p>
+            <Button asChild className="w-full">
+              <Link to="/login">{isVi ? 'Đăng nhập' : 'Sign in'}</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // --- Access denied (wrong user, not admin) ---
+  if (accessDenied) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <Card className="max-w-sm w-full mx-4">
+          <CardContent className="pt-8 pb-6 text-center space-y-4">
+            <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
+              <ShieldAlert className="w-7 h-7 text-destructive" />
+            </div>
+            <h2 className="text-lg font-semibold">
+              {isVi ? 'Truy cập bị từ chối' : 'Access Denied'}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {isVi
+                ? 'Bạn không có quyền xem hóa đơn này. Chỉ chủ đơn hàng hoặc quản trị viên mới được phép truy cập.'
+                : 'You do not have permission to view this invoice. Only the order owner or system administrators can access it.'}
+            </p>
+            <Button asChild variant="outline" className="w-full">
+              <Link to="/dashboard">{isVi ? 'Về trang chủ' : 'Go to Dashboard'}</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
