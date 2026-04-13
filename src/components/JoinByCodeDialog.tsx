@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { fixStorageUrl } from '@/lib/urlUtils';
 import { logActivity } from '@/lib/activityLogger';
-import { Loader2, Users, Calendar, ArrowLeft, CheckCircle2, UserCheck, XCircle, Clock, Sparkles, Camera, Keyboard } from 'lucide-react';
+import { Loader2, Users, Calendar, ArrowLeft, CheckCircle2, UserCheck, XCircle, Clock, Sparkles, Camera, Keyboard, ImagePlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import joinCodeIllustration from '@/assets/join-code-illustration.png';
