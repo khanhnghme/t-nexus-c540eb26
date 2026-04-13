@@ -331,7 +331,7 @@ export function MemberAuthForm() {
         setIsLoading(false);
         toast({
           title: ta.toastLoginFailed,
-          description: error.message === 'Invalid login credentials' ? ta.toastInvalidCredentials : error.message,
+          description: ta.toastInvalidCredentials,
           variant: 'destructive',
         });
       } else {
