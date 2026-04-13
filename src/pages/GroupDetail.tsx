@@ -150,7 +150,7 @@ export default function GroupDetail() {
       toast({ title: tc.error, description: error.message, variant: 'destructive' });
     } else {
       fetchGroupData();
-      logActivity({ userId: user?.id || '', userName: profile?.full_name || '', groupId: group.id, action: 'project_renamed', actionType: 'update', description: `Đổi tên dự án thành "${trimmed}"` });
+      logActivity({ userId: user?.id || '', userName: profile?.full_name || '', groupId: group.id, action: 'project_renamed', actionType: 'setting', description: `Đổi tên dự án thành "${trimmed}"` });
     }
   }, [group, user?.id, profile?.full_name, toast, tc.error]);
 
