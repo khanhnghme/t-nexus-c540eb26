@@ -60,8 +60,6 @@ function emailDoctype(locale: EmailLocale = 'vi'): string {
     @media only screen and (max-width: 600px) {
       .email-container { width: 100% !important; max-width: 100% !important; }
       .email-padding { padding-left: 24px !important; padding-right: 24px !important; }
-      .otp-digit { width: 34px !important; height: 44px !important; font-size: 20px !important; line-height: 44px !important; }
-      .otp-table { margin: 0 auto !important; }
     }
   </style>`;
 }
