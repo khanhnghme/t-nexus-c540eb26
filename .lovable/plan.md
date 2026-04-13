@@ -1,36 +1,41 @@
 
 
-## Plan: Fix 3 lỗi chặn email thanh toán
+## Plan: Thêm logo T-Nexus text vào PDF invoice và tất cả email
 
-### Phân tích lỗi từ logs
+### Tổng quan
+- Thay text "T-Nexus" trong header email và PDF bằng **ảnh logo T-Nexus text** (`t-nexus-text.png`)
+- Áp dụng cho: email OTP đăng ký, OTP quên mật khẩu, email bill thanh toán, email digest
+- Cập nhật PDF invoice để nhúng logo thay vì text thuần
 
-```text
-Lỗi 1 (CHẶN EMAIL):  Resend 422 — Invalid `from` field
-Lỗi 2 (CHẶN PDF):    WinAnsi cannot encode "ễ" — font không hỗ trợ tiếng Việt
-Lỗi 3 (NON-BLOCKING): R2 NoSuchBucket — bucket "invoices" chưa tạo
-```
+### Các bước thực hiện
 
-### Changes
+**1. Upload logo T-Nexus text lên storage công khai**
+- Upload file `src/assets/t-nexus-text.png` lên Supabase Storage bucket `system-assets` (đã public)
+- Lấy public URL để dùng trong email HTML (email client cần URL tuyệt đối, không dùng base64)
 
-**1. Fix SENDER_EMAIL secret**
-- Yêu cầu cập nhật secret `SENDER_EMAIL` với giá trị đúng format: `T-Nexus <noreply@t-nexus.io.vn>`
-- Đồng thời domain `t-nexus.io.vn` phải được verify trên Resend dashboard. Nếu chưa verify, tạm dùng `onboarding@resend.dev` để test
+**2. Tạo base64 của logo T-Nexus text cho PDF**
+- Convert `src/assets/t-nexus-text.png` sang base64 string
+- Cập nhật file `supabase/functions/_shared/invoice-pdf-builder.ts`:
+  - Embed logo PNG base64 trực tiếp trong file
+  - Dùng `pdfDoc.embedPng()` để nhúng logo vào PDF header (góc phải)
+  - Thay dòng `drawText("T-Nexus", ...)` bằng `page.drawImage(logoImage, ...)`
 
-**2. Fix PDF tiếng Việt trong `invoice-pdf-builder.ts`**
-- Thay toàn bộ text tiếng Việt có dấu bằng text ASCII không dấu hoặc tiếng Anh
-- Ví dụ: "Hóa đơn" → "Invoice", "Ngày thanh toán" → "Payment date", v.v.
-- pdf-lib với StandardFonts chỉ hỗ trợ WinAnsi encoding (Latin cơ bản), không thể render tiếng Việt có dấu
+**3. Cập nhật email HTML builder — thêm logo vào header**
+- Sửa `supabase/functions/_shared/email-html-builder.ts`:
+  - Trong `emailHeader()`: thay `<span>T-Nexus</span>` bằng `<img src="[PUBLIC_URL]/t-nexus-text.png" alt="T-Nexus" width="120" height="auto">`
+  - Giữ alt text "T-Nexus" làm fallback
+  - Tất cả email (OTP, reset password, payment, digest) tự động cập nhật vì dùng chung `emailHeader()`
 
-**3. R2 bucket "invoices" — bỏ qua hoặc tạo bucket**
-- Code đã có try/catch non-blocking, email vẫn gửi được dù R2 fail
-- Nếu muốn lưu PDF, cần tạo bucket `invoices` trên Cloudflare R2 dashboard
-- Hoặc bỏ logic upload R2 nếu không cần lưu trữ PDF riêng (vì đã gửi qua email attachment)
+**4. Thiết kế lại email sạch hơn**
+- Cải thiện spacing, padding trong email body
+- Tăng khoảng cách giữa các section
+- Typography rõ ràng hơn, dễ đọc hơn
 
-**4. Deploy lại edge function**
-- Deploy: `payment-confirmation-email`
+**5. Deploy lại edge functions**
+- Deploy: `signup-email-otp`, `password-reset-otp`, `payment-confirmation-email`, `email-digest`
 
-### Thứ tự ưu tiên
-1. Fix SENDER_EMAIL → email gửi được ngay
-2. Fix PDF text → PDF tạo được → đính kèm email
-3. R2 bucket → optional, không ảnh hưởng email
+### Lưu ý
+- Logo trong email **phải** dùng URL tuyệt đối (nhiều email client block base64/CID images)
+- Logo trong PDF dùng base64 embed (OK cho PDF)
+- Bucket `system-assets` đã public nên URL truy cập được từ mọi email client
 
