@@ -3,6 +3,19 @@
  */
 import { PDFDocument, rgb, StandardFonts } from "https://esm.sh/pdf-lib@1.17.1";
 
+/**
+ * Strip Vietnamese diacritics so pdf-lib StandardFonts (WinAnsi) can render the text.
+ */
+function stripVietnamese(str: string): string {
+  if (!str) return str;
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\u0111/g, "d")
+    .replace(/\u0110/g, "D")
+    .replace(/[^\x00-\x7F]/g, "");
+}
+
 const ADDON_TYPES = [
   { type: "projects", emoji: "📁", unitLabel: "+5 du an" },
   { type: "storage", emoji: "💾", unitLabel: "+5 GB luu tru" },
@@ -59,10 +72,11 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
   const contentW = pageW - margin * 2;
   let y = pageH - margin;
 
-  // Helper: draw text
-  const drawText = (text: string, x: number, yPos: number, opts: {
+  // Helper: draw text (auto-strips Vietnamese diacritics for WinAnsi compatibility)
+  const drawText = (rawText: string, x: number, yPos: number, opts: {
     font?: any; size?: number; color?: any; align?: "left" | "right" | "center";
   } = {}) => {
+    const text = stripVietnamese(rawText);
     const font = opts.font || helvetica;
     const size = opts.size || 8;
     const color = opts.color || gray900;
