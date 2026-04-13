@@ -254,7 +254,7 @@ export default function GroupDetail() {
         const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
         setMembers(membersData.map(m => ({ ...m, profiles: profilesMap.get(m.user_id) })) as GroupMember[]);
         const myMembership = membersData.find(m => m.user_id === user?.id);
-        setIsLeaderInGroup(myMembership?.role === 'project_admin' || myMembership?.role === 'project_owner' || isAdmin);
+        setIsLeaderInGroup(myMembership?.role === 'project_basic:admin' || myMembership?.role === 'project_basic:owner' || isAdmin);
 
         // ── Access check ──
         const isMember = !!myMembership;

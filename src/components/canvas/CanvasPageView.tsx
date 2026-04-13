@@ -22,6 +22,7 @@ import type { Block } from "@blocknote/core";
 import { useCanvasShortcuts } from "@/hooks/useCanvasShortcuts";
 import { usePageLastEditor } from "@/hooks/usePageLastEditor";
 import { logActivity } from "@/lib/activityLogger";
+import { usePageRole } from "@/hooks/usePageRole";
 import ShortcutHelpDialog from "./ShortcutHelpDialog";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -49,7 +50,12 @@ export default function CanvasPageView({ groupId, editable = false, projectSlug,
   const editorRef = useRef<CanvasEditorHandle>(null);
   const [activePageId, setActivePageId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isEditMode, setIsEditMode] = useState(editable);
+
+  // Page-level permission check
+  const { canEdit: canEditPage } = usePageRole(activePageId, groupId);
+  const effectiveEditable = editable || canEditPage;
+
+  const [isEditMode, setIsEditMode] = useState(effectiveEditable);
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
 
