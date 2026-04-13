@@ -182,17 +182,17 @@ export default function MemberDetailDialog({
 
   // System role labels (for user_roles)
   const systemRoleLabel: Record<string, string> = {
-    'system_owner': 'System Owner', 'system_admin': 'System Admin', 'project_admin': 'Thành viên Nâng cao', 'project_member': 'Thành viên'
+    'system:owner': 'System Owner', 'system:admin': 'System Admin', 'project_basic:admin': 'Thành viên Nâng cao', 'project_basic:member': 'Thành viên'
   };
 
   // Use centralized role label utility
   const getGroupRoleLabel = (role: string, isCreator: boolean) => {
     if (isCreator) return 'Trưởng nhóm';
     switch (role) {
-      case 'project_owner': return 'Trưởng nhóm';
-      case 'project_admin': return 'Phó nhóm';
-      case 'project_member': return 'Thành viên';
-      case 'project_guest': return 'Khách';
+      case 'project_basic:owner': return 'Trưởng nhóm';
+      case 'project_basic:admin': return 'Phó nhóm';
+      case 'project_basic:member': return 'Thành viên';
+      case 'project_basic:guest': return 'Khách';
       default: return role;
     }
   };
@@ -229,8 +229,8 @@ export default function MemberDetailDialog({
               </div>
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {systemRoles.map(r => (
-                  <Badge key={r} variant={r === 'system_owner' ? 'destructive' : 'secondary'} className="text-xs gap-1">
-                    {r === 'system_owner' ? <Shield className="w-3 h-3" /> : <UserCheck className="w-3 h-3" />}
+                  <Badge key={r} variant={r === 'system:owner' ? 'destructive' : 'secondary'} className="text-xs gap-1">
+                    {r === 'system:owner' ? <Shield className="w-3 h-3" /> : <UserCheck className="w-3 h-3" />}
                     {systemRoleLabel[r] || r}
                   </Badge>
                 ))}
@@ -384,7 +384,7 @@ export default function MemberDetailDialog({
                             )}
                             <span className="text-sm font-medium">{g.name}</span>
                           </div>
-                          <Badge variant={g.is_creator ? 'default' : g.role === 'project_admin' ? 'default' : 'secondary'} className={`text-xs ${g.is_creator ? 'bg-accent/15 text-accent border-accent/30' : ''}`}>
+                          <Badge variant={g.is_creator ? 'default' : g.role === 'project_basic:admin' ? 'default' : 'secondary'} className={`text-xs ${g.is_creator ? 'bg-accent/15 text-accent border-accent/30' : ''}`}>
                             {getGroupRoleLabel(g.role, g.is_creator)}
                           </Badge>
                         </div>

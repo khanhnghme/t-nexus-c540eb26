@@ -64,7 +64,7 @@ export default function ProfileViewDialog({
   open,
   onOpenChange,
   profile,
-  role = 'project_member' as any,
+  role = 'project_basic:member' as any,
   isGroupCreator = false,
   groupId,
 }: ProfileViewDialogProps) {
@@ -192,9 +192,9 @@ export default function ProfileViewDialog({
       return <Badge className="bg-accent/15 text-accent gap-1 border-accent/30"><Crown className="w-3 h-3" />Trưởng nhóm</Badge>;
     }
     switch (role) {
-      case 'project_owner':
+      case 'project_basic:owner':
         return <Badge className="bg-destructive/10 text-destructive gap-1"><Shield className="w-3 h-3" />Chủ dự án</Badge>;
-      case 'project_admin':
+      case 'project_basic:admin':
         return <Badge className="bg-primary/10 text-primary gap-1"><Crown className="w-3 h-3" />Phó nhóm</Badge>;
       default:
         return <Badge variant="secondary" className="gap-1"><UserCheck className="w-3 h-3" />Thành viên</Badge>;

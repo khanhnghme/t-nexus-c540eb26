@@ -66,8 +66,8 @@ export default function MemberRoleManagementDialog({
   const [editingLimits, setEditingLimits] = useState(false);
   const [projectLimit, setProjectLimit] = useState<number>(DEFAULT_PROJECT_LIMIT);
 
-  const isLeaderRole = systemRoles.includes('system_admin');
-  const isAdminRole = systemRoles.includes('system_owner');
+  const isLeaderRole = systemRoles.includes('system:admin');
+  const isAdminRole = systemRoles.includes('system:owner');
   const isMemberRole = !isLeaderRole && !isAdminRole;
 
   const currentRoleLabel = isAdminRole ? 'OwnerSystem' : isLeaderRole ? 'Leader' : 'Thành viên';
@@ -125,7 +125,7 @@ export default function MemberRoleManagementDialog({
         body: {
           action: 'update_role',
           user_id: member.id,
-          new_role: 'project_admin',
+          new_role: 'project_basic:admin',
           requester_id: user?.id,
         },
       });
@@ -140,9 +140,9 @@ export default function MemberRoleManagementDialog({
         userId: user!.id,
         userName: currentProfile?.full_name || 'OwnerSystem',
         action: 'PROMOTE_MEMBER',
-        actionType: 'project_member',
+        actionType: 'project_basic:member',
         description: `Nâng quyền ${member.full_name} từ Thành viên → Leader`,
-        metadata: { target_user_id: member.id, from_role: 'project_member', to_role: 'project_admin' },
+        metadata: { target_user_id: member.id, from_role: 'project_basic:member', to_role: 'project_basic:admin' },
       });
 
       await notifyRoleChanged({ userIds: [member.id], adminName: currentProfile?.full_name || 'OwnerSystem', newRole: 'Leader', action: 'promote' });
@@ -173,7 +173,7 @@ export default function MemberRoleManagementDialog({
         body: {
           action: 'update_role',
           user_id: member.id,
-          new_role: 'project_member',
+          new_role: 'project_basic:member',
           requester_id: user?.id,
         },
       });
@@ -188,9 +188,9 @@ export default function MemberRoleManagementDialog({
         userId: user!.id,
         userName: currentProfile?.full_name || 'OwnerSystem',
         action: 'DEMOTE_MEMBER',
-        actionType: 'project_member',
+        actionType: 'project_basic:member',
         description: `Hạ quyền ${member.full_name} từ Leader → Thành viên`,
-        metadata: { target_user_id: member.id, from_role: 'project_admin', to_role: 'project_member' },
+        metadata: { target_user_id: member.id, from_role: 'project_basic:admin', to_role: 'project_basic:member' },
       });
 
       await notifyRoleChanged({ userIds: [member.id], adminName: currentProfile?.full_name || 'OwnerSystem', newRole: 'Thành viên', action: 'demote' });
@@ -218,7 +218,7 @@ export default function MemberRoleManagementDialog({
         userId: user!.id,
         userName: currentProfile?.full_name || 'OwnerSystem',
         action: 'UPDATE_MEMBER_LIMITS',
-        actionType: 'project_member',
+        actionType: 'project_basic:member',
         description: `Cập nhật giới hạn cho ${member.full_name}: ${projectLimit} projects`,
         metadata: { target_user_id: member.id, project_limit: projectLimit },
       });
@@ -323,7 +323,7 @@ export default function MemberRoleManagementDialog({
                             <div className="min-w-0">
                               <p className="text-sm font-medium truncate">{g.name}</p>
                               <p className="text-xs text-muted-foreground">
-                                {g.is_owner ? 'Owner' : g.role === 'project_admin' ? 'Phó nhóm' : 'Thành viên'} • {g.member_count} TV
+                                {g.is_owner ? 'Owner' : g.role === 'project_basic:admin' ? 'Phó nhóm' : 'Thành viên'} • {g.member_count} TV
                               </p>
                             </div>
                           </div>
