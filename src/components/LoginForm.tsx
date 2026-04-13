@@ -8,9 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Lock, Users, Mail, LogIn, KeyRound, CheckCircle2 } from 'lucide-react';
+import { Loader2, Lock, Users, Mail, LogIn, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { TurnstileWidget, type TurnstileWidgetRef } from '@/components/TurnstileWidget';
 import { lovable } from '@/integrations/lovable/index';
@@ -30,15 +30,6 @@ export function LoginForm() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [activeTab, setActiveTab] = useState<'login' | 'forgot'>('login');
-
-  const [forgotEmailInput, setForgotEmailInput] = useState('');
-  const [forgotLoading, setForgotLoading] = useState(false);
-  const [forgotStep, setForgotStep] = useState<'input' | 'otp' | 'newpass' | 'done'>('input');
-  const [forgotEmail, setForgotEmail] = useState('');
-  const [otpCode, setOtpCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileWidgetRef>(null);
 
@@ -320,22 +311,13 @@ export function LoginForm() {
         <Card className="w-full shadow-card-lg border-border/50">
           <CardHeader className="text-center pb-2">
             <CardTitle className="text-lg font-heading">
-              {activeTab === 'login' ? ta.tabLogin : ta.tabForgot}
+              {ta.tabLogin}
             </CardTitle>
             <CardDescription>
-              {activeTab === 'login'
-                ? ta.loginDesc
-                : forgotStep === 'done'
-                  ? ta.forgotDoneDesc
-                  : forgotStep === 'newpass'
-                    ? ta.forgotNewPassDesc
-                    : forgotStep === 'otp'
-                      ? ta.forgotOtpDesc
-                      : ta.forgotDesc}
+              {ta.loginDesc}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {activeTab === 'login' ? (
               <div className="space-y-4">
                 <form onSubmit={handleLogin} data-auth-form="login" className="space-y-4">
                 <div className="space-y-2">
@@ -371,10 +353,10 @@ export function LoginForm() {
                   </div>
                   {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                   <div className="flex justify-end">
-                    <button
+                     <button
                       type="button"
                       className="text-xs font-medium text-foreground hover:underline"
-                      onClick={() => { setActiveTab('forgot'); setForgotStep('input'); setErrors({}); }}
+                      onClick={() => navigate('/forgot-password')}
                     >
                       {ta.forgotPasswordLink}
                     </button>
@@ -492,197 +474,6 @@ export function LoginForm() {
                     {ta.registerNow}
                   </button>
                 </p>
-              </div>
-            ) : (
-              /* Forgot password flow */
-              <div className="space-y-4">
-                {forgotStep === 'done' ? (
-                  <div className="text-center space-y-4">
-                    <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto">
-                      <CheckCircle2 className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                    <h3 className="text-lg font-heading font-semibold text-emerald-700 dark:text-emerald-400">{ta.forgotResetSuccess}</h3>
-                    <p className="text-sm text-muted-foreground">{ta.forgotResetSuccessDesc}</p>
-                    <Button
-                      className="w-full"
-                      onClick={() => {
-                        setActiveTab('login');
-                        setForgotStep('input');
-                        setForgotEmailInput('');
-                        setForgotEmail('');
-                        setOtpCode('');
-                        setNewPassword('');
-                        setNewPasswordConfirm('');
-                        setErrors({});
-                      }}
-                    >
-                      {ta.forgotLoginNow}
-                    </Button>
-                  </div>
-                ) : forgotStep === 'newpass' ? (
-                  <form onSubmit={async (e) => {
-                    e.preventDefault();
-                    setErrors({});
-                    if (!newPassword || newPassword.length < 6) {
-                      setErrors({ newPass: ta.valPasswordMinForgot });
-                      return;
-                    }
-                    if (newPassword !== newPasswordConfirm) {
-                      setErrors({ newPassConfirm: ta.valPasswordMismatchForgot });
-                      return;
-                    }
-                    setForgotLoading(true);
-                    try {
-                      const { data, error } = await supabase.functions.invoke('password-reset-otp', {
-                        body: { action: 'reset_password', email: forgotEmail, code: otpCode, new_password: newPassword },
-                      });
-                      setForgotLoading(false);
-                      if (error || !data?.success) {
-                        toast({ title: ta.forgotOtpError, description: data?.error || ta.forgotResetError, variant: 'destructive' });
-                      } else {
-                        setForgotStep('done');
-                      }
-                    } catch {
-                      setForgotLoading(false);
-                      toast({ title: 'Lỗi hệ thống', description: 'Có lỗi xảy ra.', variant: 'destructive' });
-                    }
-                  }} className="space-y-4">
-                    <p className="text-sm text-muted-foreground text-center">
-                      {ta.forgotNewPassForAccount} <span className="font-medium text-foreground">{forgotEmail}</span>
-                    </p>
-                    <div className="space-y-2">
-                      <Label htmlFor="new-pass">{ta.forgotNewPassword}</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input id="new-pass" type="password" placeholder={ta.forgotNewPassPlaceholder} className="pl-10" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} disabled={forgotLoading} autoFocus />
-                      </div>
-                      {errors.newPass && <p className="text-sm text-destructive">{errors.newPass}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="new-pass-confirm">{ta.forgotConfirmLabel}</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input id="new-pass-confirm" type="password" placeholder={ta.forgotConfirmNewPlaceholder} className="pl-10" value={newPasswordConfirm} onChange={(e) => setNewPasswordConfirm(e.target.value)} disabled={forgotLoading} />
-                      </div>
-                      {errors.newPassConfirm && <p className="text-sm text-destructive">{errors.newPassConfirm}</p>}
-                    </div>
-                    <Button type="submit" className="w-full font-semibold" disabled={forgotLoading}>
-                      {forgotLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
-                      {ta.forgotResetButton}
-                    </Button>
-                    <p className="text-sm text-center">
-                      <button type="button" className="text-primary hover:underline font-medium" onClick={() => { setForgotStep('otp'); setNewPassword(''); setNewPasswordConfirm(''); }}>
-                        ← {ta.forgotBackToLogin}
-                      </button>
-                    </p>
-                  </form>
-                ) : forgotStep === 'otp' ? (
-                  <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground text-center">
-                      {ta.forgotOtpDesc} <span className="font-medium text-foreground">{forgotEmail}</span>
-                    </p>
-                    <div className="flex justify-center">
-                      <InputOTP
-                        maxLength={6}
-                        value={otpCode}
-                        onChange={(val) => {
-                          setOtpCode(val);
-                          setErrors({});
-                        }}
-                        disabled={forgotLoading}
-                      >
-                        <InputOTPGroup>
-                          <InputOTPSlot index={0} />
-                          <InputOTPSlot index={1} />
-                          <InputOTPSlot index={2} />
-                          <InputOTPSlot index={3} />
-                          <InputOTPSlot index={4} />
-                          <InputOTPSlot index={5} />
-                        </InputOTPGroup>
-                      </InputOTP>
-                    </div>
-                    {errors.otp && <p className="text-sm text-destructive text-center">{errors.otp}</p>}
-                    <Button
-                      className="w-full font-semibold"
-                      disabled={forgotLoading || otpCode.length !== 6}
-                      onClick={async () => {
-                        setForgotLoading(true);
-                        setErrors({});
-                        try {
-                          const { data, error } = await supabase.functions.invoke('password-reset-otp', {
-                            body: { action: 'verify_code', email: forgotEmail, code: otpCode },
-                          });
-                          setForgotLoading(false);
-                          if (error || !data?.success) {
-                            setErrors({ otp: data?.error || ta.forgotOtpIncorrect });
-                            setOtpCode('');
-                          } else {
-                            setForgotStep('newpass');
-                          }
-                        } catch {
-                          setForgotLoading(false);
-                          setErrors({ otp: ta.toastGenericError });
-                        }
-                      }}
-                    >
-                      {forgotLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                      {ta.forgotVerify}
-                    </Button>
-                    <p className="text-sm text-center">
-                      <button type="button" className="text-primary hover:underline font-medium" onClick={() => { setForgotStep('input'); setOtpCode(''); setErrors({}); }}>
-                        ← {ta.forgotBackToLogin}
-                      </button>
-                    </p>
-                  </div>
-                ) : (
-                  <form onSubmit={async (e) => {
-                    e.preventDefault();
-                    setErrors({});
-                    const emailInput = forgotEmailInput.trim();
-                    if (!emailInput) {
-                      setErrors(prev => ({ ...prev, forgotEmail: ta.forgotEmailRequiredError }));
-                      return;
-                    }
-                    setForgotLoading(true);
-                    try {
-                      const { data, error } = await supabase.functions.invoke('password-reset-otp', {
-                        body: { action: 'send_code', email: emailInput },
-                      });
-                      setForgotLoading(false);
-                      if (error || !data?.success) {
-                        toast({ title: ta.forgotOtpError, description: data?.error || ta.forgotCannotSendOtp, variant: 'destructive' });
-                      } else {
-                        setForgotEmail(emailInput);
-                        setForgotStep('otp');
-                        toast({ title: ta.forgotOtpSentToast, description: ta.forgotOtpSentToastDesc });
-                      }
-                    } catch {
-                      setForgotLoading(false);
-                      toast({ title: 'Lỗi hệ thống', description: 'Có lỗi xảy ra.', variant: 'destructive' });
-                    }
-                  }} className="space-y-4">
-                    <p className="text-sm text-muted-foreground text-center">{ta.forgotEnterDesc}</p>
-                    <div className="space-y-2">
-                      <Label htmlFor="forgot-email">{ta.forgotEmailLabel}</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input id="forgot-email" type="email" placeholder="email@example.com" className="pl-10" value={forgotEmailInput} onChange={(e) => setForgotEmailInput(e.target.value)} disabled={forgotLoading} autoFocus />
-                      </div>
-                      {errors.forgotEmail && <p className="text-sm text-destructive">{errors.forgotEmail}</p>}
-                    </div>
-                    <Button type="submit" className="w-full font-semibold bg-foreground text-background hover:bg-foreground/90" disabled={forgotLoading}>
-                      {forgotLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Mail className="w-4 h-4 mr-2" />}
-                      {ta.forgotSendButton}
-                    </Button>
-                    <p className="text-sm text-center">
-                      <button type="button" className="text-primary hover:underline font-medium" onClick={() => { setActiveTab('login'); setErrors({}); setForgotEmailInput(''); }}>
-                        {ta.forgotBackToLogin}
-                      </button>
-                    </p>
-                  </form>
-                )}
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
