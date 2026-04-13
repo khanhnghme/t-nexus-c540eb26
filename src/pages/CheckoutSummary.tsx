@@ -157,14 +157,14 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
       )}
 
       {/* Line Items Table */}
-      <table className="w-full mb-6 text-sm border-collapse">
+      <table className="w-full mb-4 text-[12px] border-collapse">
         <thead>
           <tr className="border-b-2 border-gray-300">
-            <th className="text-left py-3 font-semibold text-gray-700">#</th>
-            <th className="text-left py-3 font-semibold text-gray-700">{isVi ? 'Mô tả' : 'Description'}</th>
-            <th className="text-right py-3 font-semibold text-gray-700">{isVi ? 'Đơn giá' : 'Unit Price'}</th>
-            <th className="text-center py-3 font-semibold text-gray-700">{isVi ? 'SL' : 'Qty'}</th>
-            <th className="text-right py-3 font-semibold text-gray-700">{isVi ? 'Thành tiền' : 'Amount'}</th>
+            <th className="text-left py-2 font-semibold text-gray-700">#</th>
+            <th className="text-left py-2 font-semibold text-gray-700">{isVi ? 'Mô tả' : 'Description'}</th>
+            <th className="text-right py-2 font-semibold text-gray-700">{isVi ? 'Đơn giá' : 'Unit Price'}</th>
+            <th className="text-center py-2 font-semibold text-gray-700">{isVi ? 'SL' : 'Qty'}</th>
+            <th className="text-right py-2 font-semibold text-gray-700">{isVi ? 'Thành tiền' : 'Amount'}</th>
           </tr>
         </thead>
         <tbody>
