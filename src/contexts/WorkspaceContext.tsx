@@ -55,7 +55,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         .eq('user_id', user.id);
 
       const allWorkspaces: Workspace[] = [
-        ...(ownedWs || []).map((w: any) => ({ ...w, my_role: 'workspace_owner' as WorkspaceRole })),
+        ...(ownedWs || []).map((w: any) => ({ ...w, my_role: 'workspace:owner' as WorkspaceRole })),
         ...(memberWs || []).map((m: any) => ({
           ...m.workspaces,
           my_role: m.role as WorkspaceRole,

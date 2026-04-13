@@ -225,8 +225,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const isSystemOwner = roles.includes('system_owner');
-  const isSystemAdmin = isSystemOwner || roles.includes('system_admin');
+  const isSystemOwner = roles.includes('system:owner');
+  const isSystemAdmin = isSystemOwner || roles.includes('system:admin');
   // Backward-compat aliases
   const isOwnerSystem = isSystemOwner;
   const isAdmin = isSystemAdmin;
