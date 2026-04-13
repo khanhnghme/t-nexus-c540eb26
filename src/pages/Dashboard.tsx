@@ -67,6 +67,7 @@ import type { Group } from '@/types/database';
 // Removed hard-coded DEFAULT_PROJECT_LIMIT — limits come from plan_limits table
 
 type DashboardFilter = 'all' | 'active' | 'hidden' | 'pending';
+type ProjectModeFilter = 'all' | 'basic' | 'custom';
 
 interface PendingInvitationGroup {
   name: string;
