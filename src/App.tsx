@@ -23,6 +23,8 @@ import { LegacyProjectRedirect, LegacyTaskRedirect, LegacyPageRedirect, LegacyFi
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import CheckoutLayoutWrapper from "@/components/layout/CheckoutLayoutWrapper";
 import Landing from "./pages/Landing";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Groups from "./pages/Groups";
@@ -77,8 +79,8 @@ const queryClient = new QueryClient();
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading, isApproved, profile } = useAuth();
   if (isLoading) return null;
-  if (!user) return <Navigate to="/auth" replace />;
-  if (profile && !profile.is_approved) return <Navigate to="/auth" replace />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (profile && !profile.is_approved) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
@@ -98,8 +100,8 @@ function ProtectedLayout() {
   const { user, isLoading, profile } = useAuth();
 
   if (isLoading) return null;
-  if (!user) return <Navigate to="/auth" replace />;
-  if (profile && !profile.is_approved) return <Navigate to="/auth" replace />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (profile && !profile.is_approved) return <Navigate to="/login" replace />;
 
   return (
     <DashboardLayoutProvider>
@@ -142,6 +144,8 @@ function AppRoutes() {
         {/* ═══ Localized public routes — EN (root) ═══ */}
         <Route path="/" element={<ForceLightMode><Landing /></ForceLightMode>} />
         <Route path="/auth" element={<ForceLightMode><Auth /></ForceLightMode>} />
+        <Route path="/login" element={<ForceLightMode><Login /></ForceLightMode>} />
+        <Route path="/register" element={<ForceLightMode><Register /></ForceLightMode>} />
         <Route path="/pricing" element={<ForceLightMode><Pricing /></ForceLightMode>} />
         <Route path="/download" element={<ForceLightMode><DownloadPage /></ForceLightMode>} />
         <Route path="/guide" element={<ForceLightMode><Guide /></ForceLightMode>} />
@@ -153,6 +157,8 @@ function AppRoutes() {
         <Route path="/vi">
           <Route index element={<ForceLightMode><Landing /></ForceLightMode>} />
           <Route path="auth" element={<ForceLightMode><Auth /></ForceLightMode>} />
+          <Route path="login" element={<ForceLightMode><Login /></ForceLightMode>} />
+          <Route path="register" element={<ForceLightMode><Register /></ForceLightMode>} />
           <Route path="pricing" element={<ForceLightMode><Pricing /></ForceLightMode>} />
           <Route path="download" element={<ForceLightMode><DownloadPage /></ForceLightMode>} />
           <Route path="guide" element={<ForceLightMode><Guide /></ForceLightMode>} />
@@ -171,8 +177,8 @@ function AppRoutes() {
         <Route path="/share/:token/page" element={<ForceLightMode><Suspense fallback={null}><PublicCanvasPage /></Suspense></ForceLightMode>} />
         <Route path="/reset-password" element={<ForceLightMode><ResetPassword /></ForceLightMode>} />
         <Route path="/join" element={<JoinProject />} />
-        <Route path="/auth/member" element={<Navigate to="/auth" replace />} />
-        <Route path="/auth/admin" element={<Navigate to="/auth" replace />} />
+        <Route path="/auth/member" element={<Navigate to="/login" replace />} />
+        <Route path="/auth/admin" element={<Navigate to="/login" replace />} />
         <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
         <Route path="/u/:username" element={<ForceLightMode><PublicProfile /></ForceLightMode>} />
         <Route path="/file-preview" element={<ForceLightMode><FilePreview /></ForceLightMode>} />

@@ -89,7 +89,7 @@ export default function JoinProject() {
 
   const handleLogin = () => {
     sessionStorage.setItem('t-nexus_post_login_redirect', redirectUrl);
-    navigate('/auth');
+    navigate('/login');
   };
 
   return (

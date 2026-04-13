@@ -625,7 +625,7 @@ export default function FirstTimeOnboarding({
                 type="button"
                 onClick={async () => {
                   await supabase.auth.signOut();
-                  navigate('/auth');
+                  navigate('/login');
                 }}
                 title={isVi ? 'Đăng xuất' : 'Log out'}
                 className="shrink-0 p-1.5 rounded-lg hover:bg-white/15 text-white/60 hover:text-white transition-colors"

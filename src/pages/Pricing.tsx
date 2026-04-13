@@ -67,7 +67,7 @@ export default function Pricing() {
       return;
     }
     if (!user) {
-      navigate(lp('/auth'));
+      navigate(lp('/login'));
       return;
     }
     if (planKey === 'plan_free') {
@@ -742,7 +742,7 @@ function PricingFooter({ tp, tc, lp }: { tp: any; tc: any; lp: (path: string) =>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <a href="mailto:support@t-nexus.io.vn" style={linkStyle}>support@t-nexus.io.vn</a>
                 {tp.footerContactLinks.map((label: string, i: number) => (
-                  <Link key={label} to={lp(i === 0 ? '/auth' : '/download')} style={linkStyle}>{label}</Link>
+                  <Link key={label} to={lp(i === 0 ? '/login' : '/download')} style={linkStyle}>{label}</Link>
                 ))}
               </div>
             </div>
