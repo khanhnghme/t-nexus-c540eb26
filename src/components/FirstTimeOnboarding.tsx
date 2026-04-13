@@ -1229,6 +1229,9 @@ export default function FirstTimeOnboarding({
                             </span>
                             {displayPrice !== null && <span className="text-xs font-normal text-muted-foreground">/{cycleLabel}</span>}
                           </div>
+                          {displayPrice !== null && displayPrice !== 0 && (
+                            <p className="text-[9px] text-muted-foreground mb-1 leading-tight">{pricingT?.accountCoverAll || 'One billing account — all your Workspaces included'}</p>
+                          )}
 
                           {desc && (
                             <p className="text-[10px] text-muted-foreground mb-2 leading-relaxed">{desc}</p>

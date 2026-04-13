@@ -203,10 +203,15 @@ export default function Upgrade() {
         <h1 style={{
           fontSize: 'clamp(26px, 3.5vw, 40px)', fontWeight: 700,
           letterSpacing: '-0.035em', lineHeight: 1.12,
-          margin: '0 0 32px', textAlign: 'center',
+          margin: '0 0 8px', textAlign: 'center',
         }} className="text-foreground">
           {tp.heroTitle}
         </h1>
+        <p className="text-sm text-muted-foreground text-center mb-2">{tp.accountCoverAll}</p>
+        <div className="flex items-center justify-center gap-2 mb-6 px-4 py-2 rounded-lg bg-emerald-500/5 border border-emerald-500/15 w-fit mx-auto">
+          <Check size={15} className="text-emerald-500" />
+          <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">{tp.noPerWorkspace}</span>
+        </div>
 
         {/* Welcome Offer Banner */}
         {isFirstTimeBuyer && (
@@ -286,6 +291,11 @@ export default function Upgrade() {
               <PlanColumn plan={plan} yearly={yearly} tp={tp} disabled={!isOwner} onSelect={handleSelectPlan} isFirstTimeBuyer={isFirstTimeBuyer} isScheduled={plan.key === nextPlanKey} />
             </div>
           ))}
+        </div>
+
+        {/* Signature line */}
+        <div className="flex items-center justify-center gap-2 mt-8 px-5 py-3 rounded-xl bg-orange-500/5 border border-orange-500/15 w-fit mx-auto">
+          <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">🔥 {tp.signatureLine}</span>
         </div>
 
         {/* Add-ons */}
@@ -410,7 +420,7 @@ function PlanColumn({ plan, yearly, tp, disabled, onSelect, isFirstTimeBuyer = f
         )}
         {!isCustom && (
           <span className="text-xs text-muted-foreground">
-            {tp.perWorkspace} / {yearly ? tp.mo : tp.month}
+            / {yearly ? tp.mo : tp.month}
           </span>
         )}
         {isCustom && (

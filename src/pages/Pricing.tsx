@@ -149,10 +149,24 @@ export default function Pricing() {
         <h1 style={{
           fontSize: 'clamp(30px, 4.2vw, 48px)', fontWeight: 700,
           letterSpacing: '-0.035em', lineHeight: 1.12,
-          color: '#37352f', margin: '0 0 40px', textAlign: 'center',
+          color: '#37352f', margin: '0 0 12px', textAlign: 'center',
         }}>
           {tp.heroTitle}
         </h1>
+        <p style={{ fontSize: 15, color: '#787774', textAlign: 'center', margin: '0 0 8px' }}>
+          {tp.accountCoverAll}
+        </p>
+
+        {/* Highlight banner */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          padding: '8px 16px', borderRadius: 8,
+          background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)',
+          margin: '0 auto 32px', width: 'fit-content',
+        }}>
+          <Check size={15} style={{ color: '#10b981' }} />
+          <span style={{ fontSize: 14, fontWeight: 500, color: '#10b981' }}>{tp.noPerWorkspace}</span>
+        </div>
 
         {/* Toggle row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
@@ -218,6 +232,16 @@ export default function Pricing() {
               <PlanColumn plan={plan} yearly={yearly} tp={tp} onCTA={() => handleCTA(plan.name)} />
             </div>
           ))}
+        </div>
+
+        {/* Signature line */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          padding: '14px 20px', borderRadius: 10,
+          background: 'rgba(251,146,60,0.06)', border: '1px solid rgba(251,146,60,0.15)',
+          margin: '32px 0 0',
+        }}>
+          <span style={{ fontSize: 15, fontWeight: 600, color: '#ea580c' }}>🔥 {tp.signatureLine}</span>
         </div>
 
         {/* ── Add-on Section ── */}
@@ -358,19 +382,24 @@ function PlanColumn({ plan, yearly, tp, onCTA }: { plan: Plan; yearly: boolean; 
       </div>
 
       {/* Price line */}
-      <div style={{ minHeight: 56, marginBottom: 8, display: 'flex', alignItems: 'baseline', flexWrap: 'wrap' }}>
+      <div style={{ minHeight: 56, marginBottom: 4, display: 'flex', alignItems: 'baseline', flexWrap: 'wrap' }}>
         <span style={{ fontSize: 30, fontWeight: 700, color: '#37352f', letterSpacing: '-0.02em', lineHeight: 1 }}>
           {price}
         </span>
         {!isCustom && (
           <span style={{ fontSize: 12, color: '#a5a29a', marginLeft: 6 }}>
-            {tp.perWorkspace} / {yearly ? tp.mo : tp.month}
+            / {yearly ? tp.mo : tp.month}
           </span>
         )}
         {isCustom && (
           <span style={{ fontSize: 12, color: '#a5a29a', marginLeft: 6 }}>{tp.customPricing}</span>
         )}
       </div>
+      {!isCustom && price !== '$0' && (
+        <p style={{ fontSize: 11, color: '#a5a29a', margin: '0 0 8px', lineHeight: 1.3 }}>
+          {tp.accountCoverAll}
+        </p>
+      )}
 
       {/* Description */}
       <p style={{ fontSize: 13, color: '#787774', lineHeight: 1.5, margin: '0 0 14px', minHeight: 60 }}>
