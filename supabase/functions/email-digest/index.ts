@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
     // 6. Get profiles
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id, full_name, email, email_notifications, preferred_locale")
+      .select("id, full_name, email, email_notifications, preferred_locale, avatar_url")
       .in("id", userIds);
 
     // 7. Check already sent today
@@ -191,6 +191,7 @@ Deno.serve(async (req) => {
         deadlineTasks: deadlineItems,
         newTasks: newTaskItems,
         locale,
+        avatarUrl: (profile as any).avatar_url || undefined,
       });
 
 
@@ -203,7 +204,7 @@ Deno.serve(async (req) => {
         status: 'pending',
       });
 
-      const senderEmail = Deno.env.get('SENDER_EMAIL') || 'noreply@lovable.app';
+      const senderEmail = 'T-Nexus <noreply@t-nexus.io.vn>';
       const { error: enqueueError } = await supabase.rpc('enqueue_email', {
         queue_name: 'transactional_emails',
         payload: {
