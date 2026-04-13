@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { buildBrandedOtpEmail } from "../_shared/email-html-builder.ts";
+import { getEmailTexts, type EmailLocale } from "../_shared/email-i18n.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,14 +18,16 @@ function jsonResponse(data: Record<string, unknown>, status = 200) {
   });
 }
 
-function buildResetOtpHtml(otpCode: string): string {
+function buildResetOtpHtml(otpCode: string, locale: EmailLocale = 'vi'): string {
+  const t = getEmailTexts(locale);
   return buildBrandedOtpEmail({
-    title: "Đặt lại mật khẩu",
-    subtitle: "Yêu cầu khôi phục tài khoản",
+    title: t.otpResetTitle,
+    subtitle: t.otpResetSubtitle,
     otpCode,
-    expiryText: 'Mã xác minh bên dưới có hiệu lực trong <strong>10 phút</strong>.',
-    warningText: '<strong>Không chia sẻ mã này cho bất kỳ ai.</strong> T-Nexus sẽ không bao giờ yêu cầu bạn cung cấp mã OTP qua tin nhắn hay điện thoại.',
-    ignoreText: 'Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.',
+    expiryText: t.otpResetExpiry,
+    warningText: t.otpResetWarning,
+    ignoreText: t.otpResetIgnore,
+    locale,
   });
 }
 
@@ -42,11 +45,26 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { action, email, code, new_password } = body;
 
+    // Resolve locale from profile
+    async function getLocaleByEmail(emailAddr: string): Promise<EmailLocale> {
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("preferred_locale")
+          .eq("email", emailAddr.toLowerCase())
+          .maybeSingle();
+        return data?.preferred_locale === 'en' ? 'en' : 'vi';
+      } catch { return 'vi'; }
+    }
+
     // ===== SEND OTP CODE =====
     if (action === "send_code") {
       if (!email) {
         return jsonResponse({ error: "Email is required" }, 400);
       }
+
+      const locale = await getLocaleByEmail(email);
+      const t = getEmailTexts(locale);
 
       const otpCode = String(Math.floor(100000 + Math.random() * 900000));
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
@@ -72,8 +90,8 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           from: FROM_EMAIL,
           to: [email.toLowerCase()],
-          subject: `Mã xác minh đặt lại mật khẩu: ${otpCode}`,
-          html: buildResetOtpHtml(otpCode),
+          subject: t.otpResetSubject(otpCode),
+          html: buildResetOtpHtml(otpCode, locale),
         }),
       });
 

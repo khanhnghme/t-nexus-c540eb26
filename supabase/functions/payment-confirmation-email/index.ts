@@ -58,9 +58,11 @@ Deno.serve(async (req) => {
     // Fetch profile
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name, email, student_id, institution, phone, plan_started_at, plan_expires_at")
+      .select("full_name, email, student_id, institution, phone, plan_started_at, plan_expires_at, preferred_locale")
       .eq("id", userId)
       .single();
+
+    const locale = profile?.preferred_locale === 'en' ? 'en' as const : 'vi' as const;
 
     if (!profile?.email) {
       console.error("[payment-email] Profile/email not found for user:", userId);
