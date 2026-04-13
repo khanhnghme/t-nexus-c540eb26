@@ -72,39 +72,39 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
   const paidDate = order.completed_at || order.created_at;
 
   return (
-    <div className="hidden print:block bg-white text-black p-10 max-w-[800px] mx-auto" id="invoice-print-area">
+    <div className="hidden print:block bg-white text-black p-6 max-w-[800px] mx-auto text-[13px]" id="invoice-print-area" style={{ pageBreakInside: 'avoid' }}>
       {/* Header with Logo */}
-      <div className="flex justify-between items-start mb-8 border-b-2 border-gray-300 pb-6">
+      <div className="flex justify-between items-start mb-5 border-b-2 border-gray-300 pb-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
             {isVi ? 'HÓA ĐƠN' : 'INVOICE'}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 mt-0.5">
             {isVi ? 'Biên nhận thanh toán điện tử' : 'Electronic Payment Receipt'}
           </p>
-          <p className="text-sm font-mono font-semibold text-gray-700 mt-2">{invoiceNumber}</p>
+          <p className="text-xs font-mono font-semibold text-gray-700 mt-1">{invoiceNumber}</p>
         </div>
         <div className="text-right">
-          <img src="/src/assets/t-nexus-text.png" alt="T-Nexus" style={{ width: 140, height: 'auto' }} className="ml-auto mb-2" />
-          <p className="text-sm text-gray-500">
+          <img src="/src/assets/t-nexus-text.png" alt="T-Nexus" style={{ width: 120, height: 'auto' }} className="ml-auto mb-1" />
+          <p className="text-xs text-gray-500">
             {isVi ? 'Dịch vụ quản lý dự án số' : 'Digital Project Management Service'}
           </p>
-          <p className="text-xs text-gray-400 mt-1">https://t-nexus.io.vn</p>
-          <p className="text-xs text-gray-400">Email: support@t-nexus.io.vn</p>
+          <p className="text-[10px] text-gray-400 mt-0.5">https://t-nexus.io.vn</p>
+          <p className="text-[10px] text-gray-400">Email: support@t-nexus.io.vn</p>
         </div>
       </div>
 
       {/* Invoice Info + Customer */}
-      <div className="grid grid-cols-2 gap-8 mb-8 items-start">
+      <div className="grid grid-cols-2 gap-6 mb-5 items-start">
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
+          <h3 className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-2">
             {isVi ? 'Thông tin hóa đơn' : 'Invoice Details'}
           </h3>
-          <div className="space-y-1.5 text-sm">
+          <div className="space-y-1 text-[12px]">
             <p><span className="text-gray-500">{isVi ? 'Số hóa đơn:' : 'Invoice #:'}</span> <span className="font-mono font-medium">{invoiceNumber}</span></p>
             <p><span className="text-gray-500">{isVi ? 'Mã đơn hàng:' : 'Order #:'}</span> <span className="font-mono font-medium">{order.order_code}</span></p>
             {order.paypal_order_id && (
-              <p><span className="text-gray-500">Transaction ID:</span> <span className="font-mono text-xs">{order.paypal_order_id}</span></p>
+              <p><span className="text-gray-500">Transaction ID:</span> <span className="font-mono text-[10px]">{order.paypal_order_id}</span></p>
             )}
             <p><span className="text-gray-500">{isVi ? 'Ngày tạo:' : 'Created:'}</span> {formatDateInvoice(order.created_at)}</p>
             {isCompleted && order.completed_at && (
@@ -120,10 +120,10 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
           </div>
         </div>
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
+          <h3 className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-2">
             {isVi ? 'Thông tin khách hàng' : 'Bill To'}
           </h3>
-          <div className="space-y-1.5 text-sm">
+          <div className="space-y-1 text-[12px]">
             <p className="font-semibold text-gray-900">{profile?.full_name || '—'}</p>
             <p className="text-gray-600">{profile?.email || '—'}</p>
             {profile?.student_id && <p className="text-gray-600">{isVi ? 'MSSV:' : 'Student ID:'} {profile.student_id}</p>}
@@ -135,21 +135,21 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
 
       {/* Billing Period */}
       {isCompleted && order.plan && (planStarted || planExpires) && (
-        <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
+        <div className="mb-4 bg-gray-50 border border-gray-200 rounded p-2.5">
+          <h3 className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">
             {isVi ? 'Chu kỳ thanh toán' : 'Billing Period'}
           </h3>
-          <div className="flex gap-8 text-sm">
+          <div className="flex gap-6 text-[12px]">
             {planStarted && (
-              <p><span className="text-gray-500">{isVi ? 'Ngày kích hoạt:' : 'Active from:'}</span> <span className="font-medium">{formatDateInvoice(planStarted)}</span></p>
+              <p><span className="text-gray-500">{isVi ? 'Kích hoạt:' : 'Active:'}</span> <span className="font-medium">{formatDateInvoice(planStarted)}</span></p>
             )}
             {planExpires && (
-              <p><span className="text-gray-500">{isVi ? 'Ngày hết hạn:' : 'Expires:'}</span> <span className="font-medium">{formatDateInvoice(planExpires)}</span></p>
+              <p><span className="text-gray-500">{isVi ? 'Hết hạn:' : 'Expires:'}</span> <span className="font-medium">{formatDateInvoice(planExpires)}</span></p>
             )}
             <p>
               <span className="text-gray-500">{isVi ? 'Chu kỳ:' : 'Cycle:'}</span>{' '}
               <span className="font-medium">
-                {cycle === 'yearly' ? (isVi ? '12 tháng (Theo năm)' : '12 months (Annual)') : (isVi ? '1 tháng (Theo tháng)' : '1 month (Monthly)')}
+                {cycle === 'yearly' ? (isVi ? '12 tháng' : '12 months') : (isVi ? '1 tháng' : '1 month')}
               </span>
             </p>
           </div>
@@ -157,14 +157,14 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
       )}
 
       {/* Line Items Table */}
-      <table className="w-full mb-6 text-sm border-collapse">
+      <table className="w-full mb-4 text-[12px] border-collapse">
         <thead>
           <tr className="border-b-2 border-gray-300">
-            <th className="text-left py-3 font-semibold text-gray-700">#</th>
-            <th className="text-left py-3 font-semibold text-gray-700">{isVi ? 'Mô tả' : 'Description'}</th>
-            <th className="text-right py-3 font-semibold text-gray-700">{isVi ? 'Đơn giá' : 'Unit Price'}</th>
-            <th className="text-center py-3 font-semibold text-gray-700">{isVi ? 'SL' : 'Qty'}</th>
-            <th className="text-right py-3 font-semibold text-gray-700">{isVi ? 'Thành tiền' : 'Amount'}</th>
+            <th className="text-left py-2 font-semibold text-gray-700">#</th>
+            <th className="text-left py-2 font-semibold text-gray-700">{isVi ? 'Mô tả' : 'Description'}</th>
+            <th className="text-right py-2 font-semibold text-gray-700">{isVi ? 'Đơn giá' : 'Unit Price'}</th>
+            <th className="text-center py-2 font-semibold text-gray-700">{isVi ? 'SL' : 'Qty'}</th>
+            <th className="text-right py-2 font-semibold text-gray-700">{isVi ? 'Thành tiền' : 'Amount'}</th>
           </tr>
         </thead>
         <tbody>
@@ -234,23 +234,22 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
       </table>
 
       {/* Payment Notes */}
-      <div className="mb-6 text-xs text-gray-500 space-y-1">
-        <p className="font-semibold text-gray-600 text-sm mb-1">{isVi ? 'Ghi chú' : 'Notes'}</p>
+      <div className="mb-3 text-[11px] text-gray-500 space-y-0.5">
+        <p className="font-semibold text-gray-600 text-xs mb-0.5">{isVi ? 'Ghi chú' : 'Notes'}</p>
         <p>{isVi ? '• Thanh toán được xử lý qua cổng PayPal quốc tế.' : '• Payment processed via international PayPal gateway.'}</p>
         <p>{isVi ? '• Gói dịch vụ sẽ tự động kích hoạt sau khi thanh toán thành công.' : '• Service plan activates automatically upon successful payment.'}</p>
         <p>{isVi ? '• Mọi thắc mắc vui lòng liên hệ support@t-nexus.io.vn.' : '• For inquiries, please contact support@t-nexus.io.vn.'}</p>
       </div>
 
-      {/* Electronic Signature & Stamp */}
-      <div className="flex justify-between items-end mt-8 pt-6 border-t border-gray-200">
-        {/* PAID stamp */}
+      {/* Electronic Signature & Stamp — compact */}
+      <div className="flex justify-between items-end mt-4 pt-3 border-t border-gray-200" style={{ pageBreakInside: 'avoid' }}>
         {isCompleted && (
           <div>
             <p
-              className="font-bold text-green-600 text-xl uppercase px-4 py-2 inline-block"
+              className="font-bold text-green-600 text-base uppercase px-3 py-1 inline-block"
               style={{
-                border: '3px solid #16a34a',
-                borderRadius: 8,
+                border: '2px solid #16a34a',
+                borderRadius: 6,
                 transform: 'rotate(-12deg)',
                 opacity: 0.8,
               }}
@@ -260,31 +259,27 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
           </div>
         )}
 
-        {/* Signature block */}
-        <div className="text-center" style={{ width: 200 }}>
-          <p className="text-xs text-gray-400 mb-14">
+        <div className="text-center" style={{ width: 160 }}>
+          <p className="text-[10px] text-gray-400 mb-8">
             {isVi ? 'Chữ ký điện tử' : 'Electronic Signature'}
           </p>
-          <div className="border-b border-gray-400 w-full mb-2" />
-          <p className="font-bold text-gray-800 text-sm">T-Nexus System</p>
-          <p className="text-[10px] text-gray-400">
+          <div className="border-b border-gray-400 w-full mb-1" />
+          <p className="font-bold text-gray-800 text-xs">T-Nexus System</p>
+          <p className="text-[9px] text-gray-400">
             {paidDate ? formatDateInvoice(paidDate) : new Date().toLocaleDateString(isVi ? 'vi-VN' : 'en-US')}
           </p>
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="border-t border-gray-200 pt-4 mt-6 space-y-1 text-center">
-        <p className="text-xs text-gray-500">
+      {/* Footer — compact */}
+      <div className="border-t border-gray-200 pt-2 mt-3 space-y-0.5 text-center">
+        <p className="text-[10px] text-gray-500">
           {isVi
             ? 'Đây là hóa đơn điện tử được tạo tự động bởi hệ thống T-Nexus.'
             : 'This is a computer-generated electronic invoice by T-Nexus.'}
         </p>
-        <p className="text-xs text-gray-400">
+        <p className="text-[10px] text-gray-400">
           {isVi ? 'Hỗ trợ:' : 'Support:'} support@t-nexus.io.vn | https://t-nexus.io.vn
-        </p>
-        <p className="text-[10px] text-gray-300 mt-2">
-          {isVi ? 'Ngày xuất hóa đơn:' : 'Generated:'} {new Date().toLocaleString(isVi ? 'vi-VN' : 'en-US')}
         </p>
       </div>
     </div>
