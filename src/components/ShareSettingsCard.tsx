@@ -12,7 +12,7 @@ import { Share2, Copy, ExternalLink, Users, Activity, Loader2, Lock, Unlock, Eye
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
-import tNexusLogo from '@/assets/t-nexus-logo.png';
+import tNexusTextLogo from '@/assets/t-nexus-text.png';
 
 interface ShareSettingsCardProps {
   groupId: string;
@@ -78,17 +78,21 @@ export default function ShareSettingsCard({
   const qrCanvasRef = useRef<HTMLDivElement>(null);
 
   const handleDownloadInviteImage = useCallback((code: string, name: string, limit: number | null, requireApproval: boolean) => {
-    // Load logo first, then draw everything
+    // Load text logo first, then draw everything
     const logoImg = new Image();
     logoImg.crossOrigin = 'anonymous';
-    logoImg.src = tNexusLogo;
+    logoImg.src = tNexusTextLogo;
 
     const draw = () => {
+      const scale = 2; // 2x for high-DPI / retina quality
       const canvas = document.createElement('canvas');
       const w = 600, h = 740;
-      canvas.width = w;
-      canvas.height = h;
+      canvas.width = w * scale;
+      canvas.height = h * scale;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
       const ctx = canvas.getContext('2d')!;
+      ctx.scale(scale, scale);
 
       // Background with subtle gradient
       const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
@@ -115,17 +119,18 @@ export default function ShareSettingsCard({
       ctx.roundRect(0, 0, w, 85, [20, 20, 0, 0]);
       ctx.fill();
 
-      // Logo in header
+      // Text logo in header
       if (logoImg.complete && logoImg.naturalWidth > 0) {
-        const logoSize = 28;
-        ctx.drawImage(logoImg, 24, (85 - logoSize) / 2, logoSize, logoSize);
+        const logoH = 22;
+        const logoW = logoImg.naturalWidth / logoImg.naturalHeight * logoH;
+        ctx.drawImage(logoImg, 24, (85 - logoH) / 2, logoW, logoH);
       }
 
       // Header text
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 20px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'left';
-      ctx.fillText('Mời tham gia dự án', 62, 50);
+      ctx.fillText('Mời tham gia dự án', logoImg.complete && logoImg.naturalWidth > 0 ? 24 + (logoImg.naturalWidth / logoImg.naturalHeight * 22) + 12 : 24, 50);
       ctx.font = '12px system-ui, -apple-system, sans-serif';
       ctx.fillStyle = 'rgba(255,255,255,0.8)';
       ctx.textAlign = 'right';
@@ -138,17 +143,17 @@ export default function ShareSettingsCard({
       ctx.fillText(name.length > 45 ? name.slice(0, 42) + '...' : name, w / 2, 120);
 
       // QR Code section with decorative frame
-      const qrSize = 200;
+      const qrSize = 240;
       const qrX = (w - qrSize) / 2;
-      const qrY = 145;
+      const qrY = 140;
 
       // QR background card
       ctx.fillStyle = '#ffffff';
-      ctx.shadowColor = 'rgba(99, 102, 241, 0.12)';
-      ctx.shadowBlur = 20;
-      ctx.shadowOffsetY = 4;
+      ctx.shadowColor = 'rgba(99, 102, 241, 0.15)';
+      ctx.shadowBlur = 24;
+      ctx.shadowOffsetY = 6;
       ctx.beginPath();
-      ctx.roundRect(qrX - 16, qrY - 16, qrSize + 32, qrSize + 32, 16);
+      ctx.roundRect(qrX - 20, qrY - 20, qrSize + 40, qrSize + 40, 16);
       ctx.fill();
       ctx.shadowColor = 'transparent';
 
@@ -156,13 +161,15 @@ export default function ShareSettingsCard({
       ctx.strokeStyle = '#e2e8f0';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.roundRect(qrX - 16, qrY - 16, qrSize + 32, qrSize + 32, 16);
+      ctx.roundRect(qrX - 20, qrY - 20, qrSize + 40, qrSize + 40, 16);
       ctx.stroke();
 
-      // Draw QR from hidden canvas (which already has logo via imageSettings)
+      // Draw QR from hidden canvas (high-res 400px, scaled down to qrSize)
       const hiddenQR = document.querySelector('#hidden-qr-canvas canvas') as HTMLCanvasElement;
       if (hiddenQR) {
+        ctx.imageSmoothingEnabled = false;
         ctx.drawImage(hiddenQR, qrX, qrY, qrSize, qrSize);
+        ctx.imageSmoothingEnabled = true;
       }
 
       // Code display with accent background
@@ -517,12 +524,6 @@ export default function ShareSettingsCard({
                     size={60}
                     level="H"
                     fgColor="hsl(var(--primary))"
-                    imageSettings={{
-                      src: tNexusLogo,
-                      height: 16,
-                      width: 16,
-                      excavate: true,
-                    }}
                   />
                 </div>
                 <div className="flex-1 bg-muted/50 border rounded-lg px-3 py-2.5 text-center text-2xl font-bold tracking-[0.4em] font-mono select-all">
@@ -575,18 +576,12 @@ export default function ShareSettingsCard({
                 </div>
               </div>
 
-              {/* Hidden QR canvas for download (with logo) */}
+              {/* Hidden QR canvas for download — high resolution, no center logo */}
               <div id="hidden-qr-canvas" className="hidden">
                 <QRCodeCanvas
                   value={`https://t-nexus.io.vn/join?code=${localJoinCode}`}
-                  size={200}
+                  size={400}
                   level="H"
-                  imageSettings={{
-                    src: tNexusLogo,
-                    height: 40,
-                    width: 40,
-                    excavate: true,
-                  }}
                 />
               </div>
 
