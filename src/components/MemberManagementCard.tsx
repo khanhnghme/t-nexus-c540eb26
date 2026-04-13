@@ -1388,16 +1388,6 @@ export default function MemberManagementCard({
                 <p className="text-sm text-muted-foreground mt-0.5">
                   Chọn nhiều thành viên từ hệ thống để thêm cùng lúc
                 </p>
-                <button
-                  type="button"
-                  className="text-[11px] text-primary hover:underline mt-1 text-left"
-                  onClick={() => {
-                    setIsAddDialogOpen(false);
-                    navSetCurrentTab('settings');
-                  }}
-                >
-                  💡 Thành viên cũng có thể tự tham gia bằng QR hoặc nhập mã — xem tại Cài đặt
-                </button>
               </div>
               <Button variant="ghost" size="icon" onClick={() => setIsAddDialogOpen(false)}>
                 <X className="w-5 h-5" />
