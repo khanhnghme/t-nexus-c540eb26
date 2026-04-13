@@ -12,7 +12,7 @@ import { Share2, Copy, ExternalLink, Users, Activity, Loader2, Lock, Unlock, Eye
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
-import tNexusLogo from '@/assets/t-nexus-logo.png';
+import tNexusTextLogo from '@/assets/t-nexus-text.png';
 
 interface ShareSettingsCardProps {
   groupId: string;
@@ -78,16 +78,19 @@ export default function ShareSettingsCard({
   const qrCanvasRef = useRef<HTMLDivElement>(null);
 
   const handleDownloadInviteImage = useCallback((code: string, name: string, limit: number | null, requireApproval: boolean) => {
-    // Load logo first, then draw everything
+    // Load text logo first, then draw everything
     const logoImg = new Image();
     logoImg.crossOrigin = 'anonymous';
-    logoImg.src = tNexusLogo;
+    logoImg.src = tNexusTextLogo;
 
     const draw = () => {
+      const scale = 2; // 2x for high-DPI / retina quality
       const canvas = document.createElement('canvas');
       const w = 600, h = 740;
-      canvas.width = w;
-      canvas.height = h;
+      canvas.width = w * scale;
+      canvas.height = h * scale;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
       const ctx = canvas.getContext('2d')!;
 
       // Background with subtle gradient
