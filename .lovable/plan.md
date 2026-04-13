@@ -1,28 +1,30 @@
 
 
-## Plan: Fix OTP email layout + PDF invoice logo size
+## Plan: Thêm mã QR vào hóa đơn (Summary + PDF đính kèm)
 
-### 1. Redesign OTP digit boxes trong email (`email-html-builder.ts`)
+### Ý tưởng
+Mã QR encode URL đến trang summary: `https://t-nexus.io.vn/checkout/summary/{orderCode}`. Quét QR → mở trực tiếp hóa đơn online.
 
-**Vấn đề**: 6 ô OTP hiện tại dùng `<table>` với mỗi ô `width:46px` + padding `4px` — trên màn hình nhỏ có thể bị tràn/rớt dòng.
+### 1. PDF Invoice (`invoice-pdf-builder.ts`)
+- Import `qrcode` từ `https://esm.sh/qrcode@1.5.3`
+- Generate QR PNG buffer từ URL `https://t-nexus.io.vn/checkout/summary/{orderCode}`
+- Embed QR vào PDF bằng `pdfDoc.embedPng()`, kích thước 60×60px
+- Vị trí: góc trái cạnh PAID stamp, trong khối Signature
 
-**Giải pháp**:
-- Wrap OTP table trong `<div style="text-align:center">` và thêm `align="center"` cho table
-- Giảm kích thước ô: `width:40px; height:50px; font-size:24px` (mặc định), responsive mobile: `width:34px; height:44px; font-size:20px`
-- Giảm padding giữa các ô: `padding:0 3px`
-- Thêm responsive class cho toàn bộ OTP container với `max-width` phù hợp
-- Cập nhật media query `@media (max-width:600px)` cho `.otp-digit` xuống `width:34px; height:44px; font-size:20px`
+### 2. Web Summary (`InvoiceTemplate.tsx`)
+- Cài `qrcode.react` (npm)
+- Thêm prop `orderCode` để build URL
+- Render `<QRCodeSVG>` kích thước 80×80px trong khối footer/signature
+- URL: `https://t-nexus.io.vn/checkout/summary/{orderCode}`
 
-### 2. Giảm kích thước logo trong PDF invoice (`invoice-pdf-builder.ts`)
+### 3. Truyền dữ liệu (`CheckoutSummary.tsx`)
+- Truyền `orderCode` vào `InvoiceTemplate`
 
-**Vấn đề**: `logoDisplayW = 130` quá lớn, logo bị rớt/chiếm quá nhiều không gian.
-
-**Giải pháp**:
-- Giảm `logoDisplayW` từ `130` xuống `90`
-- Logo sẽ nhỏ gọn hơn, nằm gọn bên phải header
+### 4. Deploy
+- Deploy `payment-confirmation-email`
 
 ### Files thay đổi
-- `supabase/functions/_shared/email-html-builder.ts` — OTP digit boxes + responsive
-- `supabase/functions/_shared/invoice-pdf-builder.ts` — logo width 130 → 90
-- Deploy: `payment-confirmation-email`, `signup-email-otp`, `password-reset-otp`
+- `supabase/functions/_shared/invoice-pdf-builder.ts`
+- `src/components/billing/InvoiceTemplate.tsx`
+- `src/pages/CheckoutSummary.tsx`
 
