@@ -3211,6 +3211,7 @@ export const vi: Translations = {
     scores: 'Điểm',
     logs: 'Nhật ký',
     settings: 'Cài đặt',
+    pages: 'Trang',
     },
   },
 

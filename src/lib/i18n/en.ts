@@ -3284,6 +3284,7 @@ export const en = {
     scores: 'Scores',
     logs: 'Logs',
     settings: 'Settings',
+    pages: 'Pages',
     },
   },
 
