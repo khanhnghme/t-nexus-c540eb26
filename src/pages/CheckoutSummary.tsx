@@ -399,7 +399,26 @@ export default function CheckoutSummary() {
   const endTime = order.completed_at || order.expires_at;
 
   return (
-    <div className="max-w-2xl mx-auto py-8 px-4 space-y-6">
+    <>
+    {/* Print styles */}
+    <style>{`
+      @media print {
+        body * { visibility: hidden !important; }
+        #invoice-print-area, #invoice-print-area * { visibility: visible !important; }
+        #invoice-print-area { 
+          position: absolute; left: 0; top: 0; width: 100%;
+          display: block !important;
+        }
+        .print\\:block { display: block !important; }
+        .print\\:hidden { display: none !important; }
+      }
+    `}</style>
+
+    {/* Printable invoice (hidden on screen, shown on print) */}
+    <PrintableInvoice order={order} profile={profile} isVi={isVi} />
+
+    {/* Screen content */}
+    <div className="max-w-2xl mx-auto py-8 px-4 space-y-6 print:hidden">
       <StepProgress isVi={isVi} status={status} />
 
       {/* Section 1: Status Header */}
