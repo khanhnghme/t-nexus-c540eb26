@@ -289,8 +289,9 @@ export function MemberAuthForm() {
       let loginEmail = input;
 
       // Check approval
-      const { data: profileData } = await supabase
+      const { data: rawProfile } = await supabase
         .rpc('check_profile_login', { p_email: loginEmail });
+      const profileData = rawProfile as { is_approved: boolean; full_name: string } | null;
 
       if (profileData && !profileData.is_approved) {
         setIsLoading(false);
