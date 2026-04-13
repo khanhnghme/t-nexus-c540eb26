@@ -302,7 +302,7 @@ export default function Dashboard() {
         .from('group_members')
         .select('user_id')
         .eq('group_id', invitation.group_id)
-        .in('role', ['project_admin', 'project_owner']);
+        .in('role', ['project_basic:admin', 'project_basic:owner']);
 
       if (leaders && leaders.length > 0) {
         await notifyInvitationResponse({
