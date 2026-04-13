@@ -167,6 +167,10 @@ function AppRoutes() {
           <Route path="auth" element={<ForceLightMode><Auth /></ForceLightMode>} />
           <Route path="login" element={<ForceLightMode><Login /></ForceLightMode>} />
           <Route path="register" element={<ForceLightMode><Register /></ForceLightMode>} />
+          <Route path="forgot-password" element={<ForceLightMode><ForgotPassword /></ForceLightMode>} />
+          <Route path="verify-otp" element={<ForceLightMode><VerifyOtp /></ForceLightMode>} />
+          <Route path="reset-password-new" element={<ForceLightMode><ResetPasswordNew /></ForceLightMode>} />
+          <Route path="password-success" element={<ForceLightMode><PasswordSuccess /></ForceLightMode>} />
           <Route path="pricing" element={<ForceLightMode><Pricing /></ForceLightMode>} />
           <Route path="download" element={<ForceLightMode><DownloadPage /></ForceLightMode>} />
           <Route path="guide" element={<ForceLightMode><Guide /></ForceLightMode>} />
