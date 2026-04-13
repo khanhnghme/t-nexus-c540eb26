@@ -141,6 +141,19 @@ export default function GroupDetail() {
     return () => setProjectInfo({});
   }, [group?.id, group?.name, group?.zalo_link, setProjectInfo]);
 
+  const handleRenameProject = useCallback(async (newName: string) => {
+    if (!group || !newName.trim()) return;
+    const trimmed = newName.trim();
+    if (trimmed === group.name) return;
+    const { error } = await supabase.from('groups').update({ name: trimmed }).eq('id', group.id);
+    if (error) {
+      toast({ title: tc.error, description: error.message, variant: 'destructive' });
+    } else {
+      fetchGroupData();
+      logActivity({ userId: user?.id || '', userName: profile?.full_name || '', groupId: group.id, action: 'project_renamed', actionType: 'setting', description: `Đổi tên dự án thành "${trimmed}"` });
+    }
+  }, [group, user?.id, profile?.full_name, toast, tc.error]);
+
   // Sync project navigation to TopBar
   useEffect(() => {
     if (group) {
@@ -153,10 +166,11 @@ export default function GroupDetail() {
         hasActiveMeeting,
         isScoreFinalized: !!(group as any).score_finalized_at,
         projectMode: (group.project_mode === 'custom' ? 'custom' : 'basic') as 'basic' | 'custom',
+        onRenameProject: handleRenameProject,
       });
     }
     return () => setProjectNavProps(null);
-  }, [group, activeTab, handleTabChange, isLeaderInGroup, isAdmin, members.length, hasActiveMeeting, user?.id, setProjectNavProps]);
+  }, [group, activeTab, handleTabChange, isLeaderInGroup, isAdmin, members.length, hasActiveMeeting, user?.id, setProjectNavProps, handleRenameProject]);
   
   const handleGoBack = () => {
     goBack(availableTabs);
