@@ -74,8 +74,8 @@ export default function WorkspaceSettings() {
   const [wsStorageMb, setWsStorageMb] = useState(0);
   const [planLimits, setPlanLimits] = useState<{ maxMembers: number | null; maxStorage: number | null }>({ maxMembers: null, maxStorage: null });
 
-  const isOwner = workspaceRole === 'workspace_owner';
-  const canEdit = isOwner || workspaceRole === 'workspace_admin';
+  const isOwner = workspaceRole === 'workspace:owner';
+  const canEdit = isOwner || workspaceRole === 'workspace:admin';
 
   useEffect(() => {
     if (activeWorkspace) {
