@@ -75,6 +75,13 @@ interface MemberToAdd {
   institution: string | null;
 }
 
+const MIN_MEMBER_EMAIL_SEARCH_LENGTH = 3;
+
+const isMemberEmailSearchReady = (query: string) => {
+  const normalizedQuery = query.trim().toLowerCase();
+  return normalizedQuery.length >= MIN_MEMBER_EMAIL_SEARCH_LENGTH && normalizedQuery.includes('@');
+};
+
 export default function Groups() {
   const { user, isSystemAdmin, profile } = useAuth();
   const navigate = useNavigate();
@@ -211,10 +218,11 @@ export default function Groups() {
 
   const handleSearchMembers = async (query: string) => {
     setMemberSearch(query);
+    const normalizedQuery = query.trim().toLowerCase();
     
-    // Require at least 2 characters to search
-    if (query.trim().length < 2) {
+    if (!isMemberEmailSearchReady(normalizedQuery)) {
       setSearchResults([]);
+      setIsSearching(false);
       return;
     }
     
@@ -225,7 +233,7 @@ export default function Groups() {
         .select('id, full_name, student_id, email, avatar_url, institution')
         .eq('is_approved', true)
         .neq('id', user!.id)
-        .or(`full_name.ilike.%${query}%,student_id.ilike.%${query}%,email.ilike.%${query}%`)
+        .ilike('email', `%${normalizedQuery}%`)
         .limit(20);
       
       const filtered = (data || []).filter(
@@ -452,6 +460,14 @@ export default function Groups() {
     }
     return result;
   }, [groups, searchQuery, modeFilter, visibilityFilter]);
+
+  const trimmedMemberSearch = memberSearch.trim();
+  const memberEmailSearchReady = isMemberEmailSearchReady(trimmedMemberSearch);
+  const memberSearchFeedback = trimmedMemberSearch
+    ? memberEmailSearchReady
+      ? g.notFound
+      : g.memberEmailMinChars
+    : g.memberEmailHint;
 
   if (isLoading) {
     return (
@@ -716,9 +732,14 @@ export default function Groups() {
 
                         {/* Search */}
                         <div className="relative mt-3 flex-shrink-0">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
                           <Input
-                            placeholder={g.searchPlaceholder}
+                            type="email"
+                            inputMode="email"
+                            autoCapitalize="none"
+                            autoCorrect="off"
+                            spellCheck={false}
+                            placeholder={g.memberEmailPlaceholder}
                             value={memberSearch}
                             onChange={(e) => handleSearchMembers(e.target.value)}
                             className="pl-9 h-11 border-2 border-primary/30 focus-visible:border-primary focus-visible:ring-primary/20 bg-primary/5 placeholder:text-muted-foreground/70 font-medium"
@@ -764,8 +785,10 @@ export default function Groups() {
                           ) : (
                             <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
                               <Search className="w-10 h-10 mb-2 opacity-30" />
-                              <p className="text-sm">{memberSearch && memberSearch.length >= 2 ? g.notFound : g.searchHint}</p>
-                              {!memberSearch && <p className="text-xs mt-1">{g.minChars}</p>}
+                              <p className="text-sm text-center px-4">{memberSearchFeedback}</p>
+                              {!memberEmailSearchReady && (
+                                <p className="text-xs mt-1">{g.memberEmailOnly}</p>
+                              )}
                             </div>
                           )}
                         </div>
