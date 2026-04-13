@@ -1,63 +1,49 @@
 
 
-## Plan: Email & PDF Invoice song ngữ (EN/VI) theo setting người dùng
+## Plan: Fix PDF Invoice — Hỗ trợ hiển thị tiếng Việt đúng dấu
 
-### Tổng quan
-Tất cả email hệ thống (OTP đăng ký, OTP quên mật khẩu, xác nhận thanh toán, digest) và PDF invoice sẽ hiển thị nội dung **tiếng Anh hoặc tiếng Việt** tùy theo `profiles.preferred_locale` của người dùng.
+### Nguyên nhân gốc
+PDF invoice đang dùng **StandardFonts.Helvetica** từ pdf-lib. Font Helvetica chỉ hỗ trợ bảng ký tự Latin-1, **không hỗ trợ tiếng Việt có dấu** (ă, ơ, ư, ễ, ệ...). Hàm `stripVietnamese()` buộc phải xóa hết dấu trước khi vẽ text → "HÓA ĐƠN" thành "HOA DON", "Đã thanh toán" thành "Da thanh toan".
 
-### Các thay đổi
+File i18n (`email-i18n.ts`) cũng đã viết sẵn text PDF không dấu (e.g. `pdfHeader: 'HOA DON'`) vì biết font không hỗ trợ.
 
-**1. Tạo file i18n cho email (`supabase/functions/_shared/email-i18n.ts`)**
-- Map tất cả text string theo locale `vi` / `en`
-- Bao gồm: OTP email (title, subtitle, expiry, warning, ignore), payment email (labels, subject), digest email, PDF invoice (labels, notes, footer)
-- Export hàm `getEmailTexts(locale: 'vi' | 'en')` trả về object chứa tất cả text
+### Giải pháp
+Embed **custom font hỗ trợ Unicode/Vietnamese** (Roboto hoặc Noto Sans) vào PDF thay vì dùng Helvetica.
 
-**2. Cập nhật `email-html-builder.ts`**
-- Các hàm `buildBrandedOtpEmail`, `buildPaymentConfirmationEmail`, `buildBrandedDigestEmail` nhận thêm param `locale?: 'vi' | 'en'` (default `'vi'`)
-- Dùng `getEmailTexts(locale)` để lấy text thay vì hardcode tiếng Việt
-- `emailDoctype()` cập nhật `lang` attribute theo locale
-- `emailFooter()`, `emailSubFooter()` cũng theo locale
+### Các bước thực hiện
 
-**3. Cập nhật `invoice-pdf-builder.ts`**
-- `buildInvoicePdf` nhận thêm param `locale?: 'vi' | 'en'` (default `'vi'`)
-- Tất cả label trong PDF (HÓA ĐƠN → INVOICE, Mã đơn hàng → Order code, Tổng cộng → TOTAL, v.v.) dùng text từ i18n
+**1. Cập nhật `invoice-pdf-builder.ts`**
+- Fetch font Roboto (Regular + Bold) từ Google Fonts CDN tại runtime:
+  - `https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxP.ttf` (Regular)
+  - `https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmWUlfBBc9.ttf` (Bold)
+- Dùng `pdfDoc.embedFont(fontBytes)` thay vì `StandardFonts.Helvetica`
+- **Xóa hàm `stripVietnamese()`** — không cần strip dấu nữa
+- Giữ `Courier` cho mã đơn hàng (ASCII, không cần Vietnamese)
+- Thêm fallback: nếu fetch font fail → dùng Helvetica + strip như cũ
 
-**4. Cập nhật `payment-confirmation-email/index.ts`**
-- Thêm `preferred_locale` vào query profile: `.select("..., preferred_locale")`
-- Pass `locale` vào `buildPaymentConfirmationEmail()` và `buildInvoicePdf()`
-- Subject email cũng theo locale
+**2. Cập nhật `email-i18n.ts` — PDF labels viết đúng tiếng Việt**
+- `pdfHeader: 'HÓA ĐƠN'` thay vì `'HOA DON'`
+- `pdfSubHeader: 'Biên nhận thanh toán điện tử'` thay vì `'Bien nhan thanh toan dien tu'`
+- Tương tự cho tất cả ~40 PDF labels tiếng Việt (pdfNotes, pdfStatus, pdfPaidStamp, v.v.)
 
-**5. Cập nhật `signup-email-otp/index.ts`**
-- Khi gửi OTP: query `preferred_locale` từ profiles (nếu user đã có profile)
-- Cho user mới đăng ký (chưa có profile): nhận `locale` từ request body (frontend gửi kèm)
-- Pass locale vào `buildBrandedOtpEmail()`
-- Subject email theo locale
+**3. Deploy lại edge functions**
+- Deploy: `payment-confirmation-email` (function duy nhất tạo PDF)
 
-**6. Cập nhật `password-reset-otp/index.ts`**
-- Query `preferred_locale` từ profiles theo email
-- Pass locale vào `buildBrandedOtpEmail()`
-- Subject email theo locale
+### Chi tiết kỹ thuật
 
-**7. Cập nhật `email-digest/index.ts`**
-- Query `preferred_locale` từ profile
-- Pass locale vào `buildBrandedDigestEmail()`
+```
+// Fetch custom font
+const [regBytes, boldBytes] = await Promise.all([
+  fetch(ROBOTO_REGULAR_URL).then(r => r.arrayBuffer()),
+  fetch(ROBOTO_BOLD_URL).then(r => r.arrayBuffer()),
+]);
+const fontRegular = await pdfDoc.embedFont(regBytes);
+const fontBold = await pdfDoc.embedFont(boldBytes);
+```
 
-**8. Cập nhật frontend gửi locale kèm request**
-- `RegisterForm.tsx`: gửi `locale` (từ `useLanguage()`) khi gọi `signup-email-otp`
-- `OtpVerifyScreen.tsx`: gửi `locale` khi resend
-- `LoginForm.tsx`: gửi `locale` khi resume verification
+pdf-lib hỗ trợ embed TTF/OTF fonts với full Unicode subsetting → tiếng Việt hiển thị đúng dấu hoàn toàn.
 
-**9. Deploy lại edge functions**
-- Deploy: `signup-email-otp`, `password-reset-otp`, `payment-confirmation-email`, `email-digest`
-
-### Ví dụ text i18n
-
-| Key | VI | EN |
-|-----|----|----|
-| OTP title (signup) | Xác minh tài khoản | Verify your account |
-| OTP title (reset) | Đặt lại mật khẩu | Reset your password |
-| Payment success | ✓ Thanh toán thành công | ✓ Payment successful |
-| PDF header | HÓA ĐƠN | INVOICE |
-| PDF total | TỔNG CỘNG | TOTAL |
-| Billing cycle yearly | Năm | Yearly |
+### Kết quả
+- PDF invoice hiển thị **đầy đủ dấu tiếng Việt** giống trang Summary trên web
+- Không ảnh hưởng logic khác, chỉ thay font rendering
 
