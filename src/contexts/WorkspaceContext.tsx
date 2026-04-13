@@ -66,8 +66,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       const { data: guestGroups } = await (supabase as any)
         .from('group_members')
         .select('groups!inner(workspace_id)')
-        .eq('user_id', user.id)
-        .eq('is_guest', true);
+        .eq('user_id', user.id);
 
       const existingWsIds = new Set(allWorkspaces.map(w => w.id));
       const guestWsIds = [...new Set(
