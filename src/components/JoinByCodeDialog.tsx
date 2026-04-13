@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { fixStorageUrl } from '@/lib/urlUtils';
 import { logActivity } from '@/lib/activityLogger';
-import { Loader2, Users, Calendar, ArrowLeft, CheckCircle2, UserCheck, XCircle, Clock, Sparkles, Camera, Keyboard } from 'lucide-react';
+import { Loader2, Users, Calendar, ArrowLeft, CheckCircle2, UserCheck, XCircle, Clock, Sparkles, Camera, Keyboard, ImagePlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import joinCodeIllustration from '@/assets/join-code-illustration.png';
@@ -49,6 +49,7 @@ export default function JoinByCodeDialog({ open, onOpenChange, onJoined }: JoinB
   const [cameraError, setCameraError] = useState<string | null>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const scannerRef = useRef<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const scannerContainerId = 'qr-scanner-container';
 
   useEffect(() => {
@@ -149,6 +150,43 @@ export default function JoinByCodeDialog({ open, onOpenChange, onJoined }: JoinB
       }
     }
   }, []);
+
+  const handleScanFromImage = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Reset input so same file can be re-selected
+    e.target.value = '';
+
+    try {
+      const { Html5Qrcode } = await import('html5-qrcode');
+      const scanner = new Html5Qrcode('qr-file-scanner-temp');
+      const decodedText = await scanner.scanFile(file, true);
+      scanner.clear();
+
+      const codeMatch = decodedText.match(/[?&]code=([A-Za-z0-9]{6})/);
+      if (codeMatch) {
+        const scannedCode = codeMatch[1].toUpperCase();
+        setDigits(scannedCode.split(''));
+        stopScanner();
+        setMode('code');
+        setTimeout(() => handleLookupWithCode(scannedCode), 300);
+        return;
+      }
+
+      const plain = decodedText.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+      if (plain.length === 6) {
+        setDigits(plain.split(''));
+        stopScanner();
+        setMode('code');
+        setTimeout(() => handleLookupWithCode(plain), 300);
+        return;
+      }
+
+      toast({ title: 'Không nhận diện được mã', description: 'Ảnh không chứa mã QR hợp lệ. Vui lòng thử ảnh khác.', variant: 'destructive' });
+    } catch {
+      toast({ title: 'Không nhận diện được mã', description: 'Không tìm thấy mã QR trong ảnh. Vui lòng thử ảnh rõ hơn.', variant: 'destructive' });
+    }
+  }, [toast, stopScanner]);
 
   useEffect(() => {
     if (mode === 'scan' && open && !groupPreview) {
@@ -473,9 +511,28 @@ export default function JoinByCodeDialog({ open, onOpenChange, onJoined }: JoinB
                   </div>
                 )}
 
+                {/* Hidden temp element for file scanning */}
+                <div id="qr-file-scanner-temp" className="hidden" />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleScanFromImage}
+                />
+
                 <p className="text-xs text-muted-foreground/70 text-center">
                   📱 Quét mã QR từ thẻ mời hoặc màn hình khác
                 </p>
+
+                <Button
+                  variant="outline"
+                  className="w-full gap-2"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <ImagePlus className="w-4 h-4" />
+                  Tải ảnh QR từ máy
+                </Button>
               </>
             )}
           </div>
