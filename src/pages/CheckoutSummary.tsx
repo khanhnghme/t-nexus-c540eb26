@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CheckCircle2, XCircle, Clock, Ban, Loader2, ArrowRight, RotateCcw, Receipt, Printer, CreditCard, Calendar, Hash } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -62,6 +63,7 @@ const formatDateInvoice = (d: string | null) => {
 };
 
 function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; isVi: boolean }) {
+  const invoiceQrUrl = order.order_code ? `https://t-nexus.io.vn/checkout/summary/${order.order_code}` : null;
   const addons: Array<{ type: string; quantity: number }> = Array.isArray(order.addons) ? order.addons : [];
   const cycle = order.billing_cycle;
   const isCompleted = order.status === 'completed';
@@ -271,6 +273,16 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
 
       {/* Footer — compact */}
       <div className="border-t border-gray-200 pt-2 mt-3 space-y-0.5 text-center">
+        {invoiceQrUrl && (
+          <div className="flex justify-center mb-2">
+            <div className="flex flex-col items-center">
+              <QRCodeSVG value={invoiceQrUrl} size={70} level="M" />
+              <p className="text-[8px] text-gray-400 mt-0.5">
+                {isVi ? 'Quét để xem hóa đơn' : 'Scan to view invoice'}
+              </p>
+            </div>
+          </div>
+        )}
         <p className="text-[10px] text-gray-500">
           {isVi
             ? 'Đây là hóa đơn điện tử được tạo tự động bởi hệ thống T-Nexus.'
