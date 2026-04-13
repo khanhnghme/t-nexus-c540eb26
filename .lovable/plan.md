@@ -1,76 +1,31 @@
 
 
-## Fix: Project Guest không thấy workspace và project sau khi accept invite
+## Fix: Website freezes when deleting a member
 
-### Nguyên nhân gốc
+### Root Cause
 
-Khi user được mời vào project với vai trò `project_guest`, họ được thêm vào `group_members` (với `is_guest=true`) nhưng **KHÔNG** được thêm vào `workspace_members` (đúng theo kiến trúc guest isolation).
+The `AlertDialogAction` component in the delete confirmation dialog has a built-in behavior that automatically closes the dialog on click. However, `handleDeleteMember` ALSO closes the dialog by calling `setMemberToDelete(null)`. This creates a race condition:
 
-Tuy nhiên có 2 chỗ chặn:
+1. `handleDeleteMember` sets `memberToDelete = null` → React schedules state update → dialog should close
+2. `AlertDialogAction` fires its internal close → calls `onOpenChange` → sets `memberToDelete = null` again
+3. Radix's controlled vs internal state conflict causes rendering issues during the close animation
 
-1. **RLS trên bảng `workspaces`**: Policy `workspace_select_participant` chỉ cho phép SELECT nếu user là `owner_id` HOẶC có record trong `workspace_members`. Guest không thỏa cả hai → không đọc được workspace row.
+Additionally, the `members` array in `useEffect` dependencies (lines 191, 243) causes unnecessary re-fetches on every re-render since `members` is a new reference each time, compounding the issue during the post-delete refresh cascade.
 
-2. **`WorkspaceContext.tsx`**: Chỉ query 2 nguồn (owned workspaces + workspace_members). Không bao giờ tìm workspace thông qua `group_members`.
+### Fix
 
-### Giải pháp
+**File: `src/components/MemberManagementCard.tsx`**
 
-**File 1: Database migration** — Thêm RLS policy mới trên bảng `workspaces`
+1. **Replace `AlertDialogAction` with `Button` for delete confirmation** — same pattern already used in the Leave Project dialog (line 1969). This eliminates the double-close race condition. Apply to both single-delete and bulk-delete dialogs.
 
-```sql
-CREATE POLICY "workspace_select_project_guest"
-ON public.workspaces FOR SELECT
-TO authenticated
-USING (
-  EXISTS (
-    SELECT 1 FROM public.group_members gm
-    JOIN public.groups g ON g.id = gm.group_id
-    WHERE gm.user_id = auth.uid()
-      AND g.workspace_id = workspaces.id
-  )
-);
-```
+2. **Stabilize `useEffect` dependencies** — Replace `members` with `members.length` or a `membersKey` (stringified user IDs) in the useEffect dependencies for fetching pending invitations and join requests, to avoid unnecessary refetches.
 
-Policy này cho phép user đọc workspace row nếu họ là member của bất kỳ project nào trong workspace đó (kể cả guest).
+3. **Add `e.preventDefault()` pattern for remaining `AlertDialogAction` buttons** in bulk role change dialog as safety measure.
 
-**File 2: `src/contexts/WorkspaceContext.tsx`** — Thêm bước 3 discover guest workspaces
+### Changes summary
 
-Sau khi fetch owned + member workspaces, thêm query:
-
-```typescript
-// 3. Discover workspaces through project memberships (for guests)
-const { data: guestGroups } = await (supabase as any)
-  .from('group_members')
-  .select('groups!inner(workspace_id)')
-  .eq('user_id', user.id)
-  .eq('is_guest', true);
-
-const existingWsIds = new Set(allWorkspaces.map(w => w.id));
-const guestWsIds = [...new Set(
-  (guestGroups || [])
-    .map((g: any) => g.groups?.workspace_id)
-    .filter((id: string) => id && !existingWsIds.has(id))
-)];
-
-if (guestWsIds.length > 0) {
-  const { data: guestWsData } = await (supabase as any)
-    .from('workspaces')
-    .select('*')
-    .in('id', guestWsIds);
-  
-  allWorkspaces.push(
-    ...(guestWsData || []).map((w: any) => ({ ...w, my_role: null }))
-  );
-}
-```
-
-`my_role = null` đánh dấu user không có quyền workspace-level — chỉ là guest ở project level.
-
-### Tổng kết
-
-| Thay đổi | File |
-|----------|------|
-| Thêm RLS policy cho workspace SELECT | Migration SQL |
-| Thêm query discover guest workspaces | `src/contexts/WorkspaceContext.tsx` |
-
-Không cần thay đổi gì ở `useWorkspaceProjects.ts` — hook đó đã filter project theo `group_members` + `workspace_id`, sẽ tự hiện project khi workspace được discover.
+| What | Where |
+|------|-------|
+| Replace `AlertDialogAction` with `Button` in delete dialogs | Lines ~1668, ~1690 |
+| Stabilize useEffect deps (`members` → `members.length`) | Lines 191, 243 |
 
