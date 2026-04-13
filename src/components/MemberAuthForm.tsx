@@ -127,7 +127,7 @@ export function MemberAuthForm() {
   const [activeTab, setActiveTab] = useState<'login' | 'register' | 'forgot'>('login');
   const [registerSuccess, setRegisterSuccess] = useState<false | 'pending' | 'approved' | 'verify_email'>(false);
   const isRegisteringRef = useRef(false);
-  const [forgotIdentifier, setForgotIdentifier] = useState('');
+  
   const [forgotEmailInput, setForgotEmailInput] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotStep, setForgotStep] = useState<'input' | 'otp' | 'newpass' | 'done'>('input');
@@ -869,7 +869,7 @@ export function MemberAuthForm() {
                       onClick={() => {
                         setActiveTab('login');
                         setForgotStep('input');
-                        setForgotIdentifier('');
+                        
                         setForgotEmailInput('');
                         setForgotEmail('');
                         setOtpCode('');
