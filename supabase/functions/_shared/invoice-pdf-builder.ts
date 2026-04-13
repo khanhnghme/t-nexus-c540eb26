@@ -1,10 +1,15 @@
 /**
  * Server-side PDF invoice builder using pdf-lib (Deno-compatible)
+ * Uses embedded Roboto font for full Vietnamese Unicode support
  */
 import { PDFDocument, rgb, StandardFonts } from "https://esm.sh/pdf-lib@1.17.1";
 import { getEmailTexts, type EmailLocale } from "./email-i18n.ts";
 
 const LOGO_URL = "https://xrlczmzgxlmdavhbwsah.supabase.co/storage/v1/object/public/system-assets/t-nexus-text.png";
+
+// Google Fonts CDN - Roboto supports full Vietnamese Unicode
+const ROBOTO_REGULAR_URL = "https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxP.ttf";
+const ROBOTO_BOLD_URL = "https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmWUlfBBc9.ttf";
 
 function stripVietnamese(str: string): string {
   if (!str) return str;
@@ -66,8 +71,32 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
   const page = pdfDoc.addPage([595.28, 841.89]);
   const { width: pageW, height: pageH } = page.getSize();
 
-  const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  // Try to embed Roboto for Vietnamese support, fallback to Helvetica
+  let fontRegular: any;
+  let fontBold: any;
+  let useCustomFont = false;
+
+  try {
+    const [regBytes, boldBytes] = await Promise.all([
+      fetch(ROBOTO_REGULAR_URL).then(r => {
+        if (!r.ok) throw new Error(`Font fetch failed: ${r.status}`);
+        return r.arrayBuffer();
+      }),
+      fetch(ROBOTO_BOLD_URL).then(r => {
+        if (!r.ok) throw new Error(`Font fetch failed: ${r.status}`);
+        return r.arrayBuffer();
+      }),
+    ]);
+    fontRegular = await pdfDoc.embedFont(regBytes, { subset: true });
+    fontBold = await pdfDoc.embedFont(boldBytes, { subset: true });
+    useCustomFont = true;
+    console.log("[invoice-pdf] Roboto fonts embedded successfully");
+  } catch (fontErr: any) {
+    console.warn("[invoice-pdf] Custom font failed, falling back to Helvetica:", fontErr.message);
+    fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  }
+
   const courier = await pdfDoc.embedFont(StandardFonts.Courier);
 
   const margin = 56.7;
@@ -77,8 +106,9 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
   const drawText = (rawText: string, x: number, yPos: number, opts: {
     font?: any; size?: number; color?: any; align?: "left" | "right" | "center";
   } = {}) => {
-    const text = stripVietnamese(rawText);
-    const font = opts.font || helvetica;
+    // Only strip Vietnamese if using Helvetica fallback
+    const text = useCustomFont ? rawText : stripVietnamese(rawText);
+    const font = opts.font || fontRegular;
     const size = opts.size || 8;
     const color = opts.color || gray900;
     const tw = font.widthOfTextAtSize(text, size);
@@ -105,7 +135,7 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
 
   // ─── Header ────────────────────────────────────────────────────
   const headerTopY = y;
-  drawText(t.pdfHeader, margin, y, { font: helveticaBold, size: 22, color: gray900 });
+  drawText(t.pdfHeader, margin, y, { font: fontBold, size: 22, color: gray900 });
   y -= 12;
   drawText(t.pdfSubHeader, margin, y, { size: 8, color: gray500 });
   y -= 10;
@@ -121,7 +151,7 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
       height: logoDisplayH,
     });
   } else {
-    drawText("T-Nexus", pageW - margin, headerTopY - 4, { font: helveticaBold, size: 18, color: blue600, align: "right" });
+    drawText("T-Nexus", pageW - margin, headerTopY - 4, { font: fontBold, size: 18, color: blue600, align: "right" });
   }
   drawText(t.pdfBrandDesc, pageW - margin, y - 4, { size: 7, color: gray400, align: "right" });
 
@@ -132,7 +162,7 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
   // ─── Invoice Info + Customer (2 columns) ───────────────────────
   const colW = contentW / 2;
 
-  drawText(t.pdfInfoSection, margin, y, { font: helveticaBold, size: 7, color: gray400 });
+  drawText(t.pdfInfoSection, margin, y, { font: fontBold, size: 7, color: gray400 });
   y -= 8;
 
   const infoLines: [string, string][] = [
@@ -149,7 +179,7 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
   for (const [label, value] of infoLines) {
     const labelW = drawText(label, margin, y, { size: 8, color: gray500 });
     drawText(` ${value}`, margin + labelW + 2, y, {
-      font: helveticaBold,
+      font: fontBold,
       size: 8,
       color: label === t.pdfStatus && isCompleted ? green700 : gray900,
     });
@@ -157,10 +187,10 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
   }
 
   let yRight = infoStartY + 8;
-  drawText(t.pdfCustomerSection, margin + colW, yRight, { font: helveticaBold, size: 7, color: gray400 });
+  drawText(t.pdfCustomerSection, margin + colW, yRight, { font: fontBold, size: 7, color: gray400 });
   yRight -= 8;
 
-  drawText(profile?.full_name || "—", margin + colW, yRight, { font: helveticaBold, size: 9, color: gray900 });
+  drawText(profile?.full_name || "—", margin + colW, yRight, { font: fontBold, size: 9, color: gray900 });
   yRight -= 12;
 
   drawText(profile?.email || "—", margin + colW, yRight, { size: 8, color: gray700 });
@@ -185,7 +215,7 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
       borderColor: gray200, borderWidth: 0.5,
     });
 
-    drawText(t.pdfBillingPeriod, margin + 8, y - 4, { font: helveticaBold, size: 7, color: gray400 });
+    drawText(t.pdfBillingPeriod, margin + 8, y - 4, { font: fontBold, size: 7, color: gray400 });
 
     const parts: string[] = [];
     if (profile?.plan_started_at) parts.push(`${t.pdfActivated} ${formatDate(profile.plan_started_at)}`);
@@ -204,11 +234,11 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
   drawLine(margin, y, pageW - margin);
   y -= 12;
 
-  drawText(t.pdfColNum, margin, y, { font: helveticaBold, size: 8, color: gray700 });
-  drawText(t.pdfColDesc, margin + 16, y, { font: helveticaBold, size: 8, color: gray700 });
-  drawText(t.pdfColUnit, margin + contentW * 0.5, y, { font: helveticaBold, size: 8, color: gray700 });
-  drawText(t.pdfColQty, margin + contentW * 0.65, y, { font: helveticaBold, size: 8, color: gray700 });
-  drawText(t.pdfColTotal, colEnd, y, { font: helveticaBold, size: 8, color: gray700, align: "right" });
+  drawText(t.pdfColNum, margin, y, { font: fontBold, size: 8, color: gray700 });
+  drawText(t.pdfColDesc, margin + 16, y, { font: fontBold, size: 8, color: gray700 });
+  drawText(t.pdfColUnit, margin + contentW * 0.5, y, { font: fontBold, size: 8, color: gray700 });
+  drawText(t.pdfColQty, margin + contentW * 0.65, y, { font: fontBold, size: 8, color: gray700 });
+  drawText(t.pdfColTotal, colEnd, y, { font: fontBold, size: 8, color: gray700, align: "right" });
   y -= 6;
 
   drawLine(margin, y, pageW - margin);
@@ -218,11 +248,11 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
 
   if (order.plan) {
     itemNum++;
-    drawText(String(itemNum), margin, y, { font: helveticaBold, size: 8, color: gray900 });
-    drawText(`${planLabel} Plan`, margin + 16, y, { font: helveticaBold, size: 8, color: gray900 });
+    drawText(String(itemNum), margin, y, { font: fontBold, size: 8, color: gray900 });
+    drawText(`${planLabel} Plan`, margin + 16, y, { font: fontBold, size: 8, color: gray900 });
     drawText(`$${(order.base_amount || 0).toFixed(2)}`, margin + contentW * 0.5, y, { size: 8, color: gray900 });
     drawText("1", margin + contentW * 0.65, y, { size: 8, color: gray900 });
-    drawText(`$${(order.base_amount || 0).toFixed(2)}`, colEnd, y, { font: helveticaBold, size: 8, color: gray900, align: "right" });
+    drawText(`$${(order.base_amount || 0).toFixed(2)}`, colEnd, y, { font: fontBold, size: 8, color: gray900, align: "right" });
     y -= 10;
 
     drawText(cycle === "yearly" ? t.pdfPlanYearly : t.pdfPlanMonthly, margin + 16, y, { size: 7, color: gray500 });
@@ -239,11 +269,11 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
     const unitPrice = cycle === "yearly" ? ADDON_PRICE_MONTHLY * 10 : ADDON_PRICE_MONTHLY;
     const lineTotal = unitPrice * addon.quantity;
 
-    drawText(String(itemNum), margin, y, { font: helveticaBold, size: 8, color: gray900 });
-    drawText(meta.unitLabel, margin + 16, y, { font: helveticaBold, size: 8, color: gray900 });
+    drawText(String(itemNum), margin, y, { font: fontBold, size: 8, color: gray900 });
+    drawText(meta.unitLabel, margin + 16, y, { font: fontBold, size: 8, color: gray900 });
     drawText(`$${unitPrice.toFixed(2)}`, margin + contentW * 0.5, y, { size: 8, color: gray900 });
     drawText(String(addon.quantity), margin + contentW * 0.65, y, { size: 8, color: gray900 });
-    drawText(`$${lineTotal.toFixed(2)}`, colEnd, y, { font: helveticaBold, size: 8, color: gray900, align: "right" });
+    drawText(`$${lineTotal.toFixed(2)}`, colEnd, y, { font: fontBold, size: 8, color: gray900, align: "right" });
     y -= 10;
 
     drawText(t.pdfAddonLabel, margin + 16, y, { size: 7, color: gray500 });
@@ -278,12 +308,12 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
   page.drawLine({ start: { x: margin, y }, end: { x: pageW - margin, y }, thickness: 0.8, color: gray700 });
   y -= 16;
 
-  drawText(t.pdfTotal, colEnd - 80, y, { font: helveticaBold, size: 11, color: gray900, align: "right" });
-  drawText(`$${(order.total_amount || 0).toFixed(2)} USD`, colEnd, y, { font: helveticaBold, size: 11, color: gray900, align: "right" });
+  drawText(t.pdfTotal, colEnd - 80, y, { font: fontBold, size: 11, color: gray900, align: "right" });
+  drawText(`$${(order.total_amount || 0).toFixed(2)} USD`, colEnd, y, { font: fontBold, size: 11, color: gray900, align: "right" });
   y -= 20;
 
   // ─── Notes ─────────────────────────────────────────────────────
-  drawText(t.pdfNotes, margin, y, { font: helveticaBold, size: 8, color: gray700 });
+  drawText(t.pdfNotes, margin, y, { font: fontBold, size: 8, color: gray700 });
   y -= 10;
 
   const notes = [t.pdfNote1, t.pdfNote2, t.pdfNote3];
@@ -302,7 +332,7 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
       x: margin, y: y - 6, width: 120, height: 24,
       borderColor: green600, borderWidth: 1.2,
     });
-    drawText(t.pdfPaidStamp, margin + 8, y, { font: helveticaBold, size: 14, color: green600 });
+    drawText(t.pdfPaidStamp, margin + 8, y, { font: fontBold, size: 14, color: green600 });
   }
 
   const sigX = pageW - margin - 100;
@@ -312,7 +342,7 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
   page.drawLine({ start: { x: sigX + 10, y }, end: { x: sigX + 90, y }, thickness: 0.4, color: gray400 });
   y -= 10;
 
-  drawText("T-Nexus System", sigX + 50, y, { font: helveticaBold, size: 9, color: gray900, align: "center" });
+  drawText("T-Nexus System", sigX + 50, y, { font: fontBold, size: 9, color: gray900, align: "center" });
   y -= 10;
   drawText(formatDate(order.completed_at || order.created_at), sigX + 50, y, { size: 7, color: gray400, align: "center" });
   y -= 16;
