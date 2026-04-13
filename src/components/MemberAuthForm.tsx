@@ -496,14 +496,7 @@ export function MemberAuthForm() {
       setTurnstileToken(null);
       turnstileRef.current?.reset();
 
-      const { data: existingEmail } = await supabase
-        .rpc('get_email_by_student_id', { _student_id: regStudentId.trim() });
 
-      if (existingEmail) {
-        setIsLoading(false);
-        toast({ title: ta.toastIdAlreadyExists, description: ta.toastIdAlreadyExistsDesc, variant: 'destructive' });
-        return;
-      }
 
       // Register via backend — no client session created
       isRegisteringRef.current = true;
@@ -522,9 +515,7 @@ export function MemberAuthForm() {
         isRegisteringRef.current = false;
         setIsLoading(false);
         const errMsg = registerData?.error || registerError?.message || ta.toastRegisterFailed;
-        if (errMsg.includes('MSSV') || errMsg.includes('Student ID')) {
-          toast({ title: ta.toastIdAlreadyExists, description: errMsg, variant: 'destructive' });
-        } else if (errMsg.includes('Email')) {
+        if (errMsg.includes('Email')) {
           toast({ title: ta.toastEmailAlreadyExists, description: errMsg, variant: 'destructive' });
         } else {
           toast({ title: ta.toastRegisterFailed, description: errMsg, variant: 'destructive' });
@@ -1009,40 +1000,23 @@ export function MemberAuthForm() {
                   <form onSubmit={async (e) => {
                     e.preventDefault();
                     setErrors({});
-                    const sid = forgotIdentifier.trim();
                     const emailInput = forgotEmailInput.trim();
-                    if (!sid) {
-                      setErrors(prev => ({ ...prev, forgotId: ta.valStudentIdRequired }));
-                      return;
-                    }
                     if (!emailInput) {
                       setErrors(prev => ({ ...prev, forgotEmail: ta.forgotEmailRequiredError }));
                       return;
                     }
                     setForgotLoading(true);
                     try {
-                      const { data: registeredEmail } = await supabase.rpc('get_email_by_student_id', { _student_id: sid });
-                      if (!registeredEmail) {
-                        setForgotLoading(false);
-                        toast({ title: ta.toastIdNotExist, description: ta.forgotNoUserFound, variant: 'destructive' });
-                        return;
-                      }
-                      if (registeredEmail.toLowerCase() !== emailInput.toLowerCase()) {
-                        setForgotLoading(false);
-                        toast({ title: ta.forgotOtpError, description: ta.forgotEmailMismatch, variant: 'destructive' });
-                        return;
-                      }
-
                       // Send OTP via edge function
                       const { data, error } = await supabase.functions.invoke('password-reset-otp', {
-                        body: { action: 'send_code', email: registeredEmail },
+                        body: { action: 'send_code', email: emailInput },
                       });
 
                       setForgotLoading(false);
                       if (error || !data?.success) {
                         toast({ title: ta.forgotOtpError, description: data?.error || ta.forgotCannotSendOtp, variant: 'destructive' });
                       } else {
-                        setForgotEmail(registeredEmail);
+                        setForgotEmail(emailInput);
                         setForgotStep('otp');
                         toast({ title: ta.forgotOtpSentToast, description: ta.forgotOtpSentToastDesc });
                       }
@@ -1055,18 +1029,10 @@ export function MemberAuthForm() {
                       {ta.forgotEnterDesc}
                     </p>
                     <div className="space-y-2">
-                      <Label htmlFor="forgot-id">{ta.forgotStudentIdLabel}</Label>
-                      <div className="relative">
-                        <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input id="forgot-id" type="text" placeholder="31241234567" className="pl-10" value={forgotIdentifier} onChange={(e) => setForgotIdentifier(e.target.value)} disabled={forgotLoading} autoFocus />
-                      </div>
-                      {errors.forgotId && <p className="text-sm text-destructive">{errors.forgotId}</p>}
-                    </div>
-                    <div className="space-y-2">
                       <Label htmlFor="forgot-email">{ta.forgotEmailLabel}</Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input id="forgot-email" type="email" placeholder="email@example.com" className="pl-10" value={forgotEmailInput} onChange={(e) => setForgotEmailInput(e.target.value)} disabled={forgotLoading} />
+                        <Input id="forgot-email" type="email" placeholder="email@example.com" className="pl-10" value={forgotEmailInput} onChange={(e) => setForgotEmailInput(e.target.value)} disabled={forgotLoading} autoFocus />
                       </div>
                       {errors.forgotEmail && <p className="text-sm text-destructive">{errors.forgotEmail}</p>}
                     </div>
@@ -1075,7 +1041,7 @@ export function MemberAuthForm() {
                       {ta.forgotSendButton}
                     </Button>
                     <p className="text-sm text-center">
-                      <button type="button" className="text-primary hover:underline font-medium" onClick={() => { setActiveTab('login'); setErrors({}); setForgotIdentifier(''); setForgotEmailInput(''); }}>
+                      <button type="button" className="text-primary hover:underline font-medium" onClick={() => { setActiveTab('login'); setErrors({}); setForgotEmailInput(''); }}>
                         {ta.forgotBackToLogin}
                       </button>
                     </p>
