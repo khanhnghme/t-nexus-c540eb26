@@ -293,6 +293,11 @@ export default function Upgrade() {
           ))}
         </div>
 
+        {/* Signature line */}
+        <div className="flex items-center justify-center gap-2 mt-8 px-5 py-3 rounded-xl bg-orange-500/5 border border-orange-500/15 w-fit mx-auto">
+          <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">🔥 {tp.signatureLine}</span>
+        </div>
+
         {/* Add-ons */}
         <div style={{ marginTop: 56, paddingBottom: 72 }}>
           <h2 className="text-lg font-bold text-foreground mb-1">{tp.addOnTitle}</h2>
