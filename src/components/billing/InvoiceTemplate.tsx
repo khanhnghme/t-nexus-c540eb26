@@ -1,6 +1,7 @@
 import { forwardRef } from 'react';
 import { format } from 'date-fns';
 import { Profile } from '@/types/database';
+import tNexusText from '@/assets/t-nexus-text.png';
 
 const PLAN_LABELS: Record<string, string> = {
   plan_free: 'Free', plan_plus: 'Plus', plan_pro: 'Pro', plan_business: 'Business', plan_custom: 'Custom',
@@ -16,6 +17,9 @@ export const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(
     const displayAmount = payment.final_amount ?? payment.amount;
     const originalAmount = payment.original_amount ?? payment.amount;
     const hasDiscount = (payment.discount_amount ?? 0) > 0 || (payment.coupon_code);
+    const invoiceNumber = payment.invoice_id || (payment.order_id ? `INV-${payment.order_id.slice(0, 12).toUpperCase()}` : `INV-${payment.id?.slice(0, 8)?.toUpperCase()}`);
+    const paidDate = payment.paid_at || payment.created_at;
+    const isCompleted = payment.status === 'completed' || payment.status === 'paid';
 
     return (
       <div ref={ref} className="bg-white text-black p-10 max-w-[800px] mx-auto print:p-6" id="invoice-print">
@@ -27,15 +31,18 @@ export const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(
           }
         `}</style>
 
-        {/* Header */}
+        {/* Header with Logo */}
         <div className="flex justify-between items-start mb-8 border-b border-gray-200 pb-6">
           <div>
+            <img src={tNexusText} alt="T-Nexus" style={{ width: 140, height: 'auto' }} className="mb-2" />
+            <p className="text-xs text-gray-500">Digital Project Management Service</p>
+            <p className="text-xs text-gray-400 mt-1">https://t-nexus.io.vn</p>
+            <p className="text-xs text-gray-400">Email: support@t-nexus.io.vn</p>
+          </div>
+          <div className="text-right">
             <h1 className="text-3xl font-bold text-gray-900 tracking-tight">INVOICE</h1>
             <p className="text-sm text-gray-500 mt-1">Payment Receipt</p>
-          </div>
-          <div className="text-right text-sm text-gray-600">
-            <p className="font-semibold text-gray-900">TaskFlow</p>
-            <p>Digital Service</p>
+            <p className="text-sm font-mono font-semibold text-gray-700 mt-2">{invoiceNumber}</p>
           </div>
         </div>
 
@@ -44,11 +51,16 @@ export const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Invoice Details</h3>
             <div className="space-y-1 text-sm">
-              {payment.invoice_id && <p><span className="text-gray-500">Invoice #:</span> {payment.invoice_id}</p>}
+              <p><span className="text-gray-500">Invoice #:</span> {invoiceNumber}</p>
               {payment.transaction_id && <p><span className="text-gray-500">Transaction:</span> {payment.transaction_id}</p>}
               {payment.order_id && <p><span className="text-gray-500">Order:</span> {payment.order_id}</p>}
-              <p><span className="text-gray-500">Date:</span> {payment.paid_at ? format(new Date(payment.paid_at), 'dd/MM/yyyy HH:mm') : format(new Date(payment.created_at), 'dd/MM/yyyy HH:mm')}</p>
-              <p><span className="text-gray-500">Status:</span> {payment.status === 'completed' || payment.status === 'paid' ? 'Paid' : payment.status}</p>
+              <p><span className="text-gray-500">Date:</span> {paidDate ? format(new Date(paidDate), 'dd/MM/yyyy HH:mm') : format(new Date(payment.created_at), 'dd/MM/yyyy HH:mm')}</p>
+              <p>
+                <span className="text-gray-500">Status:</span>{' '}
+                <span className={`font-semibold ${isCompleted ? 'text-green-700' : 'text-red-600'}`}>
+                  {isCompleted ? '✓ Paid' : payment.status}
+                </span>
+              </p>
               {payment.payment_method && <p><span className="text-gray-500">Method:</span> {payment.payment_method}</p>}
             </div>
           </div>
@@ -57,10 +69,26 @@ export const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(
             <div className="space-y-1 text-sm">
               <p className="font-medium text-gray-900">{profile.full_name}</p>
               <p className="text-gray-600">{profile.email}</p>
+              {profile.student_id && <p className="text-gray-600">Student ID: {profile.student_id}</p>}
               {profile.institution && <p className="text-gray-600">{profile.institution}</p>}
             </div>
           </div>
         </div>
+
+        {/* Billing Period */}
+        {isCompleted && (profile.plan_started_at || profile.plan_expires_at) && (
+          <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Billing Period</h3>
+            <div className="flex gap-6 text-sm">
+              {profile.plan_started_at && (
+                <p><span className="text-gray-500">Active from:</span> <span className="font-medium">{format(new Date(profile.plan_started_at), 'dd/MM/yyyy')}</span></p>
+              )}
+              {profile.plan_expires_at && (
+                <p><span className="text-gray-500">Expires:</span> <span className="font-medium">{format(new Date(profile.plan_expires_at), 'dd/MM/yyyy')}</span></p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Line Items */}
         <table className="w-full mb-6 text-sm">
@@ -95,10 +123,47 @@ export const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(
           </tfoot>
         </table>
 
+        {/* Payment Notes */}
+        <div className="mb-6 text-xs text-gray-500 space-y-1">
+          <p className="font-semibold text-gray-600 text-sm mb-1">Notes</p>
+          <p>• Payment processed via international PayPal gateway.</p>
+          <p>• Service plan activates automatically upon successful payment.</p>
+          <p>• For inquiries, please contact support@t-nexus.io.vn.</p>
+        </div>
+
+        {/* Electronic Signature & Stamp */}
+        <div className="flex justify-between items-end mt-8 pt-6 border-t border-gray-200">
+          {isCompleted && (
+            <div>
+              <p
+                className="font-bold text-green-600 text-xl uppercase px-4 py-2 inline-block"
+                style={{
+                  border: '3px solid #16a34a',
+                  borderRadius: 8,
+                  transform: 'rotate(-12deg)',
+                  opacity: 0.8,
+                }}
+              >
+                PAID
+              </p>
+            </div>
+          )}
+
+          <div className="text-center" style={{ width: 200 }}>
+            <p className="text-xs text-gray-400 mb-14">Electronic Signature</p>
+            <div className="border-b border-gray-400 w-full mb-2" />
+            <p className="font-bold text-gray-800 text-sm">T-Nexus System</p>
+            <p className="text-[10px] text-gray-400">
+              {paidDate ? format(new Date(paidDate), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm')}
+            </p>
+          </div>
+        </div>
+
         {/* Footer */}
-        <div className="border-t border-gray-200 pt-4 text-center text-xs text-gray-400">
-          <p>Thank you for your purchase! This is a computer-generated invoice.</p>
-          <p className="mt-1">Generated on {format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
+        <div className="border-t border-gray-200 pt-4 mt-6 text-center space-y-1">
+          <p className="text-xs text-gray-500">This is a computer-generated electronic invoice by T-Nexus.</p>
+          <p className="text-xs text-gray-400">Support: support@t-nexus.io.vn | https://t-nexus.io.vn</p>
+          <p className="text-[10px] text-gray-300 mt-2">Generated on {format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
         </div>
       </div>
     );
