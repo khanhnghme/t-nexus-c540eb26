@@ -258,16 +258,6 @@ export default function AddonCheckoutPayment() {
         <span className="text-muted-foreground">{isVi ? 'Mã đơn hàng:' : 'Order ID:'}</span>
         <code className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{order?.order_code || orderCode}</code>
       </div>
-      {order.expires_at && (
-        <OrderCountdown
-          expiresAt={order.expires_at}
-          orderId={order.id}
-          orderCode={order.order_code}
-          isVi={isVi}
-          onExpired={() => setOrderExpired(true)}
-          onCreateNew={() => navigate('/addon-checkout')}
-        />
-      )}
 
       {/* Cancel Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
