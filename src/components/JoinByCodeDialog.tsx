@@ -49,6 +49,7 @@ export default function JoinByCodeDialog({ open, onOpenChange, onJoined }: JoinB
   const [cameraError, setCameraError] = useState<string | null>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const scannerRef = useRef<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const scannerContainerId = 'qr-scanner-container';
 
   useEffect(() => {
