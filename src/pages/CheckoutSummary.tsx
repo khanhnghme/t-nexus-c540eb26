@@ -72,7 +72,7 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
   const paidDate = order.completed_at || order.created_at;
 
   return (
-    <div className="hidden print:block bg-white text-black p-10 max-w-[800px] mx-auto" id="invoice-print-area">
+    <div className="hidden print:block bg-white text-black p-6 max-w-[800px] mx-auto text-[13px]" id="invoice-print-area" style={{ pageBreakInside: 'avoid' }}>
       {/* Header with Logo */}
       <div className="flex justify-between items-start mb-8 border-b-2 border-gray-300 pb-6">
         <div>
@@ -234,23 +234,22 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
       </table>
 
       {/* Payment Notes */}
-      <div className="mb-6 text-xs text-gray-500 space-y-1">
-        <p className="font-semibold text-gray-600 text-sm mb-1">{isVi ? 'Ghi chú' : 'Notes'}</p>
+      <div className="mb-3 text-[11px] text-gray-500 space-y-0.5">
+        <p className="font-semibold text-gray-600 text-xs mb-0.5">{isVi ? 'Ghi chú' : 'Notes'}</p>
         <p>{isVi ? '• Thanh toán được xử lý qua cổng PayPal quốc tế.' : '• Payment processed via international PayPal gateway.'}</p>
         <p>{isVi ? '• Gói dịch vụ sẽ tự động kích hoạt sau khi thanh toán thành công.' : '• Service plan activates automatically upon successful payment.'}</p>
         <p>{isVi ? '• Mọi thắc mắc vui lòng liên hệ support@t-nexus.io.vn.' : '• For inquiries, please contact support@t-nexus.io.vn.'}</p>
       </div>
 
-      {/* Electronic Signature & Stamp */}
-      <div className="flex justify-between items-end mt-8 pt-6 border-t border-gray-200">
-        {/* PAID stamp */}
+      {/* Electronic Signature & Stamp — compact */}
+      <div className="flex justify-between items-end mt-4 pt-3 border-t border-gray-200" style={{ pageBreakInside: 'avoid' }}>
         {isCompleted && (
           <div>
             <p
-              className="font-bold text-green-600 text-xl uppercase px-4 py-2 inline-block"
+              className="font-bold text-green-600 text-base uppercase px-3 py-1 inline-block"
               style={{
-                border: '3px solid #16a34a',
-                borderRadius: 8,
+                border: '2px solid #16a34a',
+                borderRadius: 6,
                 transform: 'rotate(-12deg)',
                 opacity: 0.8,
               }}
@@ -260,31 +259,27 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
           </div>
         )}
 
-        {/* Signature block */}
-        <div className="text-center" style={{ width: 200 }}>
-          <p className="text-xs text-gray-400 mb-14">
+        <div className="text-center" style={{ width: 160 }}>
+          <p className="text-[10px] text-gray-400 mb-8">
             {isVi ? 'Chữ ký điện tử' : 'Electronic Signature'}
           </p>
-          <div className="border-b border-gray-400 w-full mb-2" />
-          <p className="font-bold text-gray-800 text-sm">T-Nexus System</p>
-          <p className="text-[10px] text-gray-400">
+          <div className="border-b border-gray-400 w-full mb-1" />
+          <p className="font-bold text-gray-800 text-xs">T-Nexus System</p>
+          <p className="text-[9px] text-gray-400">
             {paidDate ? formatDateInvoice(paidDate) : new Date().toLocaleDateString(isVi ? 'vi-VN' : 'en-US')}
           </p>
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="border-t border-gray-200 pt-4 mt-6 space-y-1 text-center">
-        <p className="text-xs text-gray-500">
+      {/* Footer — compact */}
+      <div className="border-t border-gray-200 pt-2 mt-3 space-y-0.5 text-center">
+        <p className="text-[10px] text-gray-500">
           {isVi
             ? 'Đây là hóa đơn điện tử được tạo tự động bởi hệ thống T-Nexus.'
             : 'This is a computer-generated electronic invoice by T-Nexus.'}
         </p>
-        <p className="text-xs text-gray-400">
+        <p className="text-[10px] text-gray-400">
           {isVi ? 'Hỗ trợ:' : 'Support:'} support@t-nexus.io.vn | https://t-nexus.io.vn
-        </p>
-        <p className="text-[10px] text-gray-300 mt-2">
-          {isVi ? 'Ngày xuất hóa đơn:' : 'Generated:'} {new Date().toLocaleString(isVi ? 'vi-VN' : 'en-US')}
         </p>
       </div>
     </div>
