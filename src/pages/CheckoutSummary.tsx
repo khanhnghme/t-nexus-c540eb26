@@ -99,7 +99,7 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
             {isVi ? 'Thông tin hóa đơn' : 'Invoice Details'}
           </h3>
           <div className="space-y-1 text-[12px]">
-            <p><span className="text-gray-500">{isVi ? 'Số hóa đơn:' : 'Invoice #:'}</span> <span className="font-mono font-medium">{invoiceNumber}</span></p>
+            
             <p><span className="text-gray-500">{isVi ? 'Mã đơn hàng:' : 'Order #:'}</span> <span className="font-mono font-medium">{order.order_code}</span></p>
             {order.paypal_order_id && (
               <p><span className="text-gray-500">Transaction ID:</span> <span className="font-mono text-[10px]">{order.paypal_order_id}</span></p>
