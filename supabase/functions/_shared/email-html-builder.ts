@@ -149,6 +149,32 @@ export function buildBrandedOtpEmail(options: EmailOptions): string {
               ${t.otpEnterCode}
             </p>`;
 
+  return `${emailDoctype(locale)}
+  <title>${title}</title>
+</head>
+<body style="margin:0;padding:0;background-color:${C.bg};font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color:${C.bg};padding:32px 16px;">
+    <tr><td align="center">
+
+      <!-- Main Card -->
+      <table class="email-container" width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:540px;background-color:${C.bg};border:1px solid ${C.border};border-radius:12px;overflow:hidden;">
+
+        ${emailHeader(subtitle)}
+
+        <!-- Body -->
+        <tr>
+          <td class="email-padding" style="padding:36px 40px 28px;">
+
+            <!-- Title -->
+            <h1 style="margin:0 0 8px;color:${C.text};font-size:20px;font-weight:700;line-height:1.3;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
+              ${title}
+            </h1>
+            <p style="margin:0 0 28px;color:${C.muted};font-size:14px;line-height:1.6;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;">
+              ${expiryText}
+            </p>
+
+            ${otpDisplay}
+
             <!-- Divider -->
             <div style="height:1px;background-color:${C.border};margin-bottom:20px;"></div>
 
