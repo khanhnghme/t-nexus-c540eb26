@@ -92,6 +92,7 @@ export default function ShareSettingsCard({
       canvas.style.width = w + 'px';
       canvas.style.height = h + 'px';
       const ctx = canvas.getContext('2d')!;
+      ctx.scale(scale, scale);
 
       // Background with subtle gradient
       const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
@@ -118,17 +119,18 @@ export default function ShareSettingsCard({
       ctx.roundRect(0, 0, w, 85, [20, 20, 0, 0]);
       ctx.fill();
 
-      // Logo in header
+      // Text logo in header
       if (logoImg.complete && logoImg.naturalWidth > 0) {
-        const logoSize = 28;
-        ctx.drawImage(logoImg, 24, (85 - logoSize) / 2, logoSize, logoSize);
+        const logoH = 22;
+        const logoW = logoImg.naturalWidth / logoImg.naturalHeight * logoH;
+        ctx.drawImage(logoImg, 24, (85 - logoH) / 2, logoW, logoH);
       }
 
       // Header text
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 20px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'left';
-      ctx.fillText('Mời tham gia dự án', 62, 50);
+      ctx.fillText('Mời tham gia dự án', logoImg.complete && logoImg.naturalWidth > 0 ? 24 + (logoImg.naturalWidth / logoImg.naturalHeight * 22) + 12 : 24, 50);
       ctx.font = '12px system-ui, -apple-system, sans-serif';
       ctx.fillStyle = 'rgba(255,255,255,0.8)';
       ctx.textAlign = 'right';
