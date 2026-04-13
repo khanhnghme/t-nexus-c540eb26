@@ -133,21 +133,13 @@ export default function GroupDetail() {
     }
   }, [searchParams, currentTab, availableTabs, setCurrentTab]);
 
-  // Sync project info to persistent layout header (onRenameProject set after fetchGroupData)
-  const [renameHandler, setRenameHandler] = useState<((name: string) => Promise<void>) | undefined>();
-
+  // Sync project info to persistent layout header
   useEffect(() => {
     if (group) {
-      setProjectInfo({ 
-        projectId: group.id, 
-        projectName: group.name, 
-        zaloLink: group.zalo_link,
-        onRenameProject: renameHandler,
-        isLeaderInGroup,
-      });
+      setProjectInfo({ projectId: group.id, projectName: group.name, zaloLink: group.zalo_link });
     }
     return () => setProjectInfo({});
-  }, [group?.id, group?.name, group?.zalo_link, setProjectInfo, renameHandler, isLeaderInGroup]);
+  }, [group?.id, group?.name, group?.zalo_link, setProjectInfo]);
 
   // Sync project navigation to TopBar
   useEffect(() => {
@@ -336,21 +328,6 @@ export default function GroupDetail() {
       setIsLoading(false);
     }
   };
-
-  // Set rename handler after fetchGroupData is defined
-  useEffect(() => {
-    if (!group) return;
-    const handler = async (newName: string) => {
-      const { error } = await supabase.from('groups').update({ name: newName }).eq('id', group.id);
-      if (error) {
-        toast({ title: tc.error, description: error.message, variant: 'destructive' });
-        throw error;
-      }
-      toast({ title: gd.updated || 'Updated', description: newName });
-      fetchGroupData();
-    };
-    setRenameHandler(() => handler);
-  }, [group?.id, toast, tc.error, gd.updated]);
 
   const handleCreateStage = async () => {
     if (guardReadOnly()) return;
@@ -810,9 +787,6 @@ export default function GroupDetail() {
 
             {isLeaderInGroup && (group.created_by === user?.id || isAdmin) && (
               <TabsContent value="settings" className="mt-6 space-y-4">
-                {isCustomMode && (
-                  <GroupInfoCard group={group} canEdit={true} onUpdate={fetchGroupData} />
-                )}
                 <ShareSettingsCard
                   groupId={group.id}
                   groupSlug={(group as any).slug || null}

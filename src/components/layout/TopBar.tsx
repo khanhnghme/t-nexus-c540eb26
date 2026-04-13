@@ -1,9 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useDashboardLayoutContext } from '@/contexts/DashboardLayoutContext';
-import { Moon, Sun, LayoutDashboard, Layers, Users, Award, FolderOpen, Video, Activity, Settings, PanelLeft, FileText, ChevronRight, MoreHorizontal, ArrowLeft, Pencil } from 'lucide-react';
+import { Moon, Sun, LayoutDashboard, Layers, Users, Award, FolderOpen, Video, Activity, Settings, PanelLeft, FileText, ChevronRight, MoreHorizontal, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import tNexusTextWhite from '@/assets/t-nexus-text-white.png';
 import {
@@ -79,45 +78,6 @@ export default function TopBar() {
   const isProjectMode = !!projectNavProps;
   const isCustomMode = projectNavProps?.projectMode === 'custom';
 
-  // Inline rename state
-  const [isRenaming, setIsRenaming] = useState(false);
-  const [tempName, setTempName] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (isRenaming && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [isRenaming]);
-
-  const startRename = () => {
-    if (!projectInfo.onRenameProject || !projectInfo.isLeaderInGroup) return;
-    setTempName(projectInfo.projectName || '');
-    setIsRenaming(true);
-  };
-
-  const handleSave = async () => {
-    const trimmed = tempName.trim();
-    if (!trimmed || trimmed === projectInfo.projectName || !projectInfo.onRenameProject) {
-      setIsRenaming(false);
-      return;
-    }
-    setIsSaving(true);
-    try {
-      await projectInfo.onRenameProject(trimmed);
-    } finally {
-      setIsSaving(false);
-      setIsRenaming(false);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleSave();
-    if (e.key === 'Escape') setIsRenaming(false);
-  };
-
   const tabSource = isCustomMode ? customProjectTabs : projectTabs;
   const visibleTabs = isProjectMode
     ? tabSource.filter(tab => {
@@ -151,43 +111,6 @@ export default function TopBar() {
                   <p>{locale === 'vi' ? 'Quay lại' : 'Go back'}</p>
                 </TooltipContent>
               </Tooltip>
-            )}
-            {isCustomMode && projectInfo.projectName && (
-              <>
-                {isRenaming ? (
-                  <input
-                    ref={inputRef}
-                    value={tempName}
-                    onChange={(e) => setTempName(e.target.value)}
-                    onBlur={handleSave}
-                    onKeyDown={handleKeyDown}
-                    disabled={isSaving}
-                    className="text-xs font-semibold bg-transparent border-b border-primary/50 outline-none px-1 py-0.5 max-w-[160px] text-foreground mr-1"
-                  />
-                ) : (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={startRename}
-                        className={cn(
-                          "text-xs font-semibold truncate max-w-[160px] px-1.5 py-0.5 rounded-md mr-1 flex items-center gap-1 text-foreground",
-                          projectInfo.isLeaderInGroup && "hover:bg-accent cursor-pointer"
-                        )}
-                        disabled={!projectInfo.isLeaderInGroup}
-                      >
-                        <span className="truncate">{projectInfo.projectName}</span>
-                        {projectInfo.isLeaderInGroup && <Pencil className="w-3 h-3 text-muted-foreground shrink-0" />}
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      <p>{projectInfo.isLeaderInGroup 
-                        ? (locale === 'vi' ? 'Nhấn để đổi tên' : 'Click to rename') 
-                        : projectInfo.projectName}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-                <span className="text-muted-foreground/40 mr-1">|</span>
-              </>
             )}
             {visibleTabs.map((tab) => {
               const Icon = tab.icon;

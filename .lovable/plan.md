@@ -1,27 +1,35 @@
 
 
-## Plan: Thêm chỉnh sửa tên project cho trang /pa (Custom Mode)
+## Plan: Thêm tab Thành viên, Resources, Cài đặt cho trang Custom Project (/pa)
 
-### Vấn đề
-Trang `/pa` (custom mode) không có tab Overview → không có cách nào để đổi tên project hoặc chỉnh thông tin project. User muốn có thể đổi tên mà không chiếm thêm diện tích.
-
-### Giải pháp
-Thêm khả năng **click vào tên project trên TopBar** để đổi tên inline — không cần thêm UI hay tab mới.
+### Tóm tắt
+Hiện tại `/pa` (custom mode) chỉ hiển thị `CanvasPageView` toàn màn hình, không có tab members/resources/settings. Cần mở rộng để custom mode cũng có navigation tabs như basic mode, với canvas là tab mặc định ("pages"), và thêm 3 tab: members, resources, settings.
 
 ### Changes
 
-**File 1: `src/components/layout/TopBar.tsx`**
-- Trong block custom mode, biến tên project từ text tĩnh thành **inline editable**: click vào tên → biến thành input, Enter/blur để lưu, Escape để hủy
-- Chỉ cho phép edit khi `isLeaderInGroup` = true (phó nhóm trở lên)
-- Thành viên thường vẫn chỉ thấy text tĩnh
+**File 1: `src/pages/GroupDetail.tsx`**
+- Thay thế block `group.project_mode === 'custom'` (lines 506-509) — thay vì chỉ render `CanvasPageView`, bọc nó trong cùng hệ thống `Tabs` có điều kiện:
+  - Tab `pages` (mặc định): render `CanvasPageView` như hiện tại
+  - Tab `members`: render `MemberManagementCard` (giống basic mode, line 740)
+  - Tab `resources`: render `ProjectResources` (giống basic mode, line 744)
+  - Tab `settings` (chỉ leader/creator): render `ShareSettingsCard` + danger zone (giống basic mode, lines 773-809)
+- Cập nhật `availableTabs` cho custom mode để bao gồm `pages, members, resources, settings`
 
-**File 2: `src/pages/GroupDetail.tsx`**
-- Truyền thêm callback `onRenameProject` vào TopBar props (hoặc qua context) để cập nhật tên project vào database
-- Tái sử dụng logic update group name đã có (supabase update `groups` table)
-- Thêm `GroupInfoCard` dialog cho custom mode trong settings tab — khi leader muốn chỉnh thêm thông tin khác (mô tả, mã lớp, giảng viên...) thì vào tab Settings
+**File 2: `src/components/layout/TopBar.tsx`**
+- Cập nhật block `isCustomMode` (lines 91-116): thay vì chỉ hiển thị back button + tên project, hiển thị navigation tabs tương tự basic mode nhưng với tab set khác:
+  - `pages` (icon FileText) — canvas editor
+  - `members` (icon Users)
+  - `resources` (icon FolderOpen)  
+  - `settings` (icon Settings, chỉ leader/creator)
+- Giữ lại back button ở bên trái
+
+**File 3: `src/components/ProjectNavigation.tsx`** (nếu cần)
+- Thêm tab `pages` vào danh sách tabs cho custom mode
+- Hoặc tạo một set tabs riêng cho custom mode
 
 ### Technical Details
-- TopBar: dùng state `isRenaming` + controlled input, blur/Enter triggers `onRenameProject(newName)`
-- `onRenameProject` gọi `supabase.from('groups').update({ name }).eq('id', groupId)` rồi `fetchGroupData()`
-- Trong settings tab (đã có cho custom mode), thêm `GroupInfoCard` để chỉnh đầy đủ thông tin project
+- Tab mặc định cho custom mode là `pages` thay vì `overview`
+- `CanvasPageView` giữ nguyên `h-[calc(100vh-48px)]` khi ở tab `pages`
+- Members, resources, settings tabs render trong container có padding giống basic mode
+- `availableTabs` trong GroupDetail sẽ phân biệt theo `project_mode` để include đúng set tabs
 
