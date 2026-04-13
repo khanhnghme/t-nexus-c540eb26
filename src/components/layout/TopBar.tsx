@@ -42,6 +42,13 @@ const projectTabs: NavTab[] = [
   { id: 'settings', labelKey: 'settings', icon: Settings, showAlways: false },
 ];
 
+const customProjectTabs: NavTab[] = [
+  { id: 'pages', labelKey: 'pages', icon: FileText, showAlways: true },
+  { id: 'members', labelKey: 'members', icon: Users, showAlways: true },
+  { id: 'resources', labelKey: 'resources', icon: FolderOpen, showAlways: true },
+  { id: 'settings', labelKey: 'settings', icon: Settings, showAlways: false },
+];
+
 function getBreadcrumb(pathname: string, locale: string) {
   const direct = routeLabels[pathname];
   if (direct) return direct[locale === 'vi' ? 'vi' : 'en'];
@@ -71,13 +78,13 @@ export default function TopBar() {
   const isProjectMode = !!projectNavProps;
   const isCustomMode = projectNavProps?.projectMode === 'custom';
 
-  const visibleTabs = (isProjectMode && !isCustomMode)
-    ? projectTabs.filter(tab => {
+  const tabSource = isCustomMode ? customProjectTabs : projectTabs;
+  const visibleTabs = isProjectMode
+    ? tabSource.filter(tab => {
         if (tab.showAlways) return true;
         const showSettings = projectNavProps.isLeaderInGroup && projectNavProps.isGroupCreator;
-        const showLogs = projectNavProps.isLeaderInGroup && projectNavProps.isGroupCreator;
         if (tab.id === 'settings') return showSettings;
-        if (tab.id === 'logs') return showLogs;
+        if (tab.id === 'logs') return projectNavProps.isLeaderInGroup && projectNavProps.isGroupCreator;
         return false;
       })
     : [];
@@ -88,34 +95,23 @@ export default function TopBar() {
         "flex items-center gap-1 min-w-0 overflow-x-auto scrollbar-none",
         isProjectMode && "flex-1 justify-center"
       )}>
-        {isProjectMode && isCustomMode ? (
-          /* ── AFFiNE-style TopBar for Custom/Canvas mode ── */
-          <div className="flex items-center gap-2 w-full px-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  className="flex items-center justify-center w-7 h-7 rounded-md transition-colors hover:bg-accent shrink-0"
-                  onClick={() => navigate('/groups')}
-                >
-                  <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>{locale === 'vi' ? 'Quay lại' : 'Go back'}</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <div className="h-4 w-px bg-border shrink-0" />
-
-            <div className="flex items-center gap-1.5 min-w-0">
-              <FileText className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-              <span className="text-sm font-medium truncate max-w-[200px]" style={{ color: 'var(--_sb-fg, hsl(var(--foreground)))' }}>
-                {projectInfo.projectName || pageTitle}
-              </span>
-            </div>
-          </div>
-        ) : isProjectMode ? (
+        {isProjectMode ? (
           <div className="flex items-center gap-0.5 mx-auto">
+            {isCustomMode && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className="flex items-center justify-center w-7 h-7 rounded-md transition-colors hover:bg-accent shrink-0 mr-1"
+                    onClick={() => navigate('/groups')}
+                  >
+                    <ArrowLeft className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>{locale === 'vi' ? 'Quay lại' : 'Go back'}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
             {visibleTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = projectNavProps.activeTab === tab.id;
@@ -148,7 +144,7 @@ export default function TopBar() {
                       </span>
                     )}
                   </div>
-                  <span>{navT[tab.labelKey]}</span>
+                  <span>{navT[tab.labelKey] || tab.labelKey}</span>
                   {tab.id === 'members' && (
                     <span className={cn(
                       "px-1 py-0 text-[10px] font-semibold rounded-full min-w-[16px] text-center leading-tight",

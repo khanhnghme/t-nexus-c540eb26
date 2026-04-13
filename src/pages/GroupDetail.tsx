@@ -93,20 +93,31 @@ export default function GroupDetail() {
   
   const [hasActiveMeeting, setHasActiveMeeting] = useState(false);
   
-  // Compute available tabs based on permissions
-  const availableTabs = [
-    'overview',
-    'tasks',
-    'meetings',
-    'members',
-    'resources',
-    'scores',
-    ...(isLeaderInGroup && (group?.created_by === user?.id || isAdmin) ? ['logs'] : []),
-    ...(isLeaderInGroup && (group?.created_by === user?.id || isAdmin) ? ['settings'] : [])
-  ];
+  const isCustomMode = group?.project_mode === 'custom';
+
+  // Compute available tabs based on permissions and project mode
+  const availableTabs = isCustomMode
+    ? [
+        'pages',
+        'members',
+        'resources',
+        ...(isLeaderInGroup && (group?.created_by === user?.id || isAdmin) ? ['settings'] : [])
+      ]
+    : [
+        'overview',
+        'tasks',
+        'meetings',
+        'members',
+        'resources',
+        'scores',
+        ...(isLeaderInGroup && (group?.created_by === user?.id || isAdmin) ? ['logs'] : []),
+        ...(isLeaderInGroup && (group?.created_by === user?.id || isAdmin) ? ['settings'] : [])
+      ];
+  
+  const defaultTab = isCustomMode ? 'pages' : 'overview';
   
   // Sync local tab state with navigation context
-  const activeTab = currentTab && availableTabs.includes(currentTab) ? currentTab : 'overview';
+  const activeTab = currentTab && availableTabs.includes(currentTab) ? currentTab : defaultTab;
   
   const handleTabChange = useCallback((tabId: string) => {
     setCurrentTab(tabId);
@@ -118,7 +129,7 @@ export default function GroupDetail() {
     if (tabFromUrl && availableTabs.includes(tabFromUrl)) {
       setCurrentTab(tabFromUrl);
     } else if (!currentTab || !availableTabs.includes(currentTab)) {
-      setCurrentTab('overview');
+      setCurrentTab(defaultTab);
     }
   }, [searchParams, currentTab, availableTabs, setCurrentTab]);
 
@@ -503,31 +514,36 @@ export default function GroupDetail() {
   return (
       <div>
 
-      {group.project_mode === 'custom' ? (
-        <div className="animate-fade-in h-[calc(100vh-48px)]">
-          <CanvasPageView groupId={group.id} editable={isLeaderInGroup} projectSlug={projectSlug} wsShortId={wsShortId} />
-        </div>
-      ) : (
       <div>
         <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-0">
-          {/* Hidden TabsList - using ProjectNavigation instead */}
+          {/* Hidden TabsList - using TopBar navigation instead */}
           <div className="sr-only">
             <TabsList>
-              <TabsTrigger value="overview">{gd.tabOverview}</TabsTrigger>
-              <TabsTrigger value="tasks">{gd.tabTasks}</TabsTrigger>
-              <TabsTrigger value="meetings">{gd.tabMeetings}</TabsTrigger>
+              {isCustomMode && <TabsTrigger value="pages">Pages</TabsTrigger>}
+              {!isCustomMode && <TabsTrigger value="overview">{gd.tabOverview}</TabsTrigger>}
+              {!isCustomMode && <TabsTrigger value="tasks">{gd.tabTasks}</TabsTrigger>}
+              {!isCustomMode && <TabsTrigger value="meetings">{gd.tabMeetings}</TabsTrigger>}
               <TabsTrigger value="members">{gd.tabMembers}</TabsTrigger>
               <TabsTrigger value="resources">{gd.tabResources}</TabsTrigger>
-              <TabsTrigger value="scores">{gd.tabScores}</TabsTrigger>
-              <TabsTrigger value="logs">{gd.tabLogs}</TabsTrigger>
+              {!isCustomMode && <TabsTrigger value="scores">{gd.tabScores}</TabsTrigger>}
+              {!isCustomMode && <TabsTrigger value="logs">{gd.tabLogs}</TabsTrigger>}
               <TabsTrigger value="settings">{gd.tabSettings}</TabsTrigger>
             </TabsList>
           </div>
 
+          {/* Canvas tab for custom mode */}
+          {isCustomMode && (
+            <TabsContent value="pages" className="mt-0">
+              <div className="animate-fade-in h-[calc(100vh-48px)]">
+                <CanvasPageView groupId={group.id} editable={isLeaderInGroup} projectSlug={projectSlug} wsShortId={wsShortId} />
+              </div>
+            </TabsContent>
+          )}
+
           {/* Contextual Action Buttons */}
           <div className="px-4 md:px-6 pt-3">
             {/* Contextual Action Buttons for Leader */}
-            {isLeaderInGroup && (
+            {!isCustomMode && isLeaderInGroup && (
               <div className="flex gap-2">
                 {activeTab === 'tasks' && (
                   <>
@@ -811,7 +827,6 @@ export default function GroupDetail() {
           </div>
         </Tabs>
       </div>
-      )}
 
       <TaskEditDialog task={editingTask} stages={stages} members={members} isOpen={!!editingTask} onClose={() => setEditingTask(null)} onSave={fetchGroupData} canEdit={isLeaderInGroup} groupCreatorId={group.created_by} />
       
