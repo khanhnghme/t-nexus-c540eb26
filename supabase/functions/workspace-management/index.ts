@@ -20,7 +20,8 @@ type Action =
   | "leave_workspace"
   | "list_my_workspaces"
   | "get_workspace_members"
-  | "transfer_ownership";
+  | "transfer_ownership"
+  | "ensure_workspace_member";
 
 interface RequestBody {
   action: Action;
@@ -430,7 +431,7 @@ serve(async (req: Request) => {
           invitee_email: body.email,
           invitee_user_id: inviteeProfile?.id || null,
           role_granted: guestRole,
-          is_guest: true,
+          is_guest: false,
           invited_by: callerId,
         })
         .select()
@@ -491,17 +492,92 @@ serve(async (req: Request) => {
           .insert({
             group_id: invite.group_id,
             user_id: callerId,
-            role: invite.role_granted, // project_member, project_guest, etc.
-            is_guest: invite.role_granted === 'project_guest',
+            role: invite.role_granted,
+            is_guest: false,
           });
 
         if (addErr) return err(addErr.message);
+
+        // Auto-add to workspace as member
+        const { data: groupData } = await supabaseAdmin
+          .from("groups")
+          .select("workspace_id")
+          .eq("id", invite.group_id)
+          .single();
+
+        if (groupData?.workspace_id) {
+          const { data: ws } = await supabaseAdmin
+            .from("workspaces")
+            .select("owner_id")
+            .eq("id", groupData.workspace_id)
+            .single();
+
+          if (ws && ws.owner_id !== callerId) {
+            await supabaseAdmin
+              .from("workspace_members")
+              .upsert(
+                {
+                  workspace_id: groupData.workspace_id,
+                  user_id: callerId,
+                  role: "workspace_member",
+                  invited_by: invite.invited_by,
+                },
+                { onConflict: "workspace_id,user_id", ignoreDuplicates: true }
+              );
+          }
+        }
       }
 
       await supabaseAdmin
         .from("workspace_invites")
         .update({ status: "accepted", invitee_user_id: callerId })
         .eq("id", invite.id);
+
+      return json({ success: true });
+    }
+
+    // ═══════════════════════════════════════════════
+    // ENSURE WORKSPACE MEMBER (auto-add caller if they belong to a project in this workspace)
+    // ═══════════════════════════════════════════════
+    if (body.action === "ensure_workspace_member") {
+      if (!callerId) return err("Authentication required", 401);
+      if (!body.workspace_id) return err("workspace_id required");
+
+      // Verify caller is a member of at least one project in this workspace
+      const { data: memberGroups } = await supabaseAdmin
+        .from("group_members")
+        .select("groups!inner(workspace_id)")
+        .eq("user_id", callerId);
+
+      const belongsToWs = (memberGroups || []).some(
+        (mg: any) => mg.groups?.workspace_id === body.workspace_id
+      );
+
+      if (!belongsToWs) {
+        return err("You are not a member of any project in this workspace", 403);
+      }
+
+      // Check not already owner
+      const { data: ws } = await supabaseAdmin
+        .from("workspaces")
+        .select("owner_id")
+        .eq("id", body.workspace_id)
+        .single();
+
+      if (ws?.owner_id === callerId) {
+        return json({ success: true, already_member: true });
+      }
+
+      await supabaseAdmin
+        .from("workspace_members")
+        .upsert(
+          {
+            workspace_id: body.workspace_id,
+            user_id: callerId,
+            role: "workspace_member",
+          },
+          { onConflict: "workspace_id,user_id", ignoreDuplicates: true }
+        );
 
       return json({ success: true });
     }
