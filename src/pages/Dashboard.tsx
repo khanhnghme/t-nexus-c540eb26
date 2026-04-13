@@ -987,6 +987,18 @@ export default function Dashboard() {
                     <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 min-w-[16px] justify-center bg-muted-foreground/15 text-foreground">{groups.length}</Badge>
                   </ToggleGroupItem>
                 </ToggleGroup>
+                <div className="w-px h-6 bg-border hidden sm:block" />
+                <ToggleGroup type="single" value={modeFilter} onValueChange={(v) => v && setModeFilter(v as ProjectModeFilter)} className="bg-transparent gap-1">
+                  <ToggleGroupItem value="all" className="text-xs px-2.5 py-1.5 h-8 rounded-full border border-transparent data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=off]:bg-muted/50 data-[state=off]:text-muted-foreground hover:data-[state=off]:bg-muted transition-all">
+                    {locale === 'vi' ? 'Tất cả' : 'All'}
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="basic" className="text-xs px-2.5 py-1.5 h-8 rounded-full border border-transparent data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=off]:bg-muted/50 data-[state=off]:text-muted-foreground hover:data-[state=off]:bg-muted transition-all">
+                    Basic
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="custom" className="text-xs px-2.5 py-1.5 h-8 rounded-full border border-transparent data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=off]:bg-muted/50 data-[state=off]:text-muted-foreground hover:data-[state=off]:bg-muted transition-all">
+                    Custom
+                  </ToggleGroupItem>
+                </ToggleGroup>
                 {activeWorkspace ? (
                   <Link to="/groups">
                     <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md transition-all" size="sm">
