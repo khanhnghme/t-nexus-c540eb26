@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+import {
+  QuotaKey,
+  FeatureKey,
+  getQuotaFromPlan,
+  hasFeatureInPlan,
+  isQuotaExceeded as _isQuotaExceeded,
+  effectiveQuota,
+} from '@/lib/workspaceQuota';
 
 interface PlanLimits {
   maxWorkspaces: number | null;
@@ -19,6 +27,11 @@ interface PlanLimits {
   baseTotalMembers: number | null;
   baseStorageMb: number | null;
   isLoading: boolean;
+  // ─── New unified API ────────────────────────────────
+  /** Get quota limit by standardized key (includes addon bonus where applicable) */
+  getQuota: (key: QuotaKey) => number | null;
+  /** Check if a feature is enabled in the workspace plan */
+  hasFeature: (key: FeatureKey) => boolean;
 }
 
 /**
@@ -29,32 +42,18 @@ interface PlanLimits {
  */
 export function usePlanLimits(): PlanLimits {
   const { activeWorkspace } = useWorkspace();
-  const [limits, setLimits] = useState<PlanLimits>({
-    maxWorkspaces: null,
-    maxTotalProjects: null,
-    maxTotalMembers: null,
-    maxStorageMb: null,
-    maxMeetingDurationMinutes: null,
-    maxActivityLogDays: null,
-    canExportData: false,
-    bonusProjects: 0,
-    bonusMembers: 0,
-    bonusStorageMb: 0,
-    baseTotalProjects: null,
-    baseTotalMembers: null,
-    baseStorageMb: null,
-    isLoading: true,
-  });
+  const [planData, setPlanData] = useState<Record<string, any> | null>(null);
+  const [bonuses, setBonuses] = useState({ projects: 0, members: 0, storageMb: 0 });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!activeWorkspace) {
-      setLimits(prev => ({ ...prev, isLoading: false }));
+      setIsLoading(false);
       return;
     }
 
     const fetchLimits = async () => {
       try {
-        // Get workspace owner id
         const ownerId = activeWorkspace.owner_id;
 
         const [planTextRes, addonRes] = await Promise.all([
@@ -66,51 +65,68 @@ export function usePlanLimits(): PlanLimits {
 
         const planText = planTextRes.data;
         if (!planText) {
-          setLimits(prev => ({ ...prev, isLoading: false }));
+          setIsLoading(false);
           return;
         }
 
-        const { data: planData } = await supabase
+        const { data } = await supabase
           .from('plan_limits')
           .select('*')
           .eq('plan', planText as any)
           .maybeSingle();
 
         const addonData = Array.isArray(addonRes.data) ? addonRes.data[0] : addonRes.data;
-        const bonusProjects = addonData?.bonus_projects ?? 0;
-        const bonusMembers = addonData?.bonus_members ?? 0;
-        const bonusStorageMb = addonData?.bonus_storage_mb ?? 0;
-
-        const baseProjects = planData?.max_projects_per_workspace ?? null;
-        const baseMembers = planData?.max_members_per_workspace ?? null;
-        const baseStorage = planData?.max_storage_mb ?? null;
-
-        setLimits({
-          maxWorkspaces: planData?.max_workspaces ?? null,
-          maxTotalProjects: baseProjects !== null ? baseProjects + bonusProjects : null,
-          maxTotalMembers: baseMembers !== null ? baseMembers + bonusMembers : null,
-          maxStorageMb: baseStorage !== null ? baseStorage + bonusStorageMb : null,
-          maxMeetingDurationMinutes: planData?.max_meeting_duration_minutes ?? null,
-          maxActivityLogDays: planData?.max_activity_log_days ?? null,
-          canExportData: planData?.can_export_data ?? false,
-          bonusProjects,
-          bonusMembers,
-          bonusStorageMb,
-          baseTotalProjects: baseProjects,
-          baseTotalMembers: baseMembers,
-          baseStorageMb: baseStorage,
-          isLoading: false,
+        setBonuses({
+          projects: addonData?.bonus_projects ?? 0,
+          members: addonData?.bonus_members ?? 0,
+          storageMb: addonData?.bonus_storage_mb ?? 0,
         });
+        setPlanData(data);
+        setIsLoading(false);
       } catch (err) {
         console.warn('Error fetching plan limits:', err);
-        setLimits(prev => ({ ...prev, isLoading: false }));
+        setIsLoading(false);
       }
     };
 
     fetchLimits();
   }, [activeWorkspace?.id]);
 
-  return limits;
+  // ─── Derived values (backward compatible) ─────────────────────────
+  const baseProjects = getQuotaFromPlan(planData, 'workspace:limit_projects');
+  const baseMembers = getQuotaFromPlan(planData, 'workspace:limit_members');
+  const baseStorage = getQuotaFromPlan(planData, 'workspace:limit_storage_mb');
+
+  // ─── Unified getQuota (includes addon bonus) ──────────────────────
+  const getQuota = (key: QuotaKey): number | null => {
+    const base = getQuotaFromPlan(planData, key);
+    // Apply addon bonus for eligible keys
+    if (key === 'workspace:limit_projects') return effectiveQuota(base, bonuses.projects);
+    if (key === 'workspace:limit_members') return effectiveQuota(base, bonuses.members);
+    if (key === 'workspace:limit_storage_mb') return effectiveQuota(base, bonuses.storageMb);
+    return base;
+  };
+
+  const hasFeature = (key: FeatureKey): boolean => hasFeatureInPlan(planData, key);
+
+  return {
+    maxWorkspaces: getQuotaFromPlan(planData, 'workspace:limit_count'),
+    maxTotalProjects: effectiveQuota(baseProjects, bonuses.projects),
+    maxTotalMembers: effectiveQuota(baseMembers, bonuses.members),
+    maxStorageMb: effectiveQuota(baseStorage, bonuses.storageMb),
+    maxMeetingDurationMinutes: getQuotaFromPlan(planData, 'workspace:limit_meeting_min'),
+    maxActivityLogDays: getQuotaFromPlan(planData, 'workspace:limit_log_days'),
+    canExportData: hasFeatureInPlan(planData, 'workspace:feature_export'),
+    bonusProjects: bonuses.projects,
+    bonusMembers: bonuses.members,
+    bonusStorageMb: bonuses.storageMb,
+    baseTotalProjects: baseProjects,
+    baseTotalMembers: baseMembers,
+    baseStorageMb: baseStorage,
+    isLoading,
+    getQuota,
+    hasFeature,
+  };
 }
 
 /**
@@ -118,6 +134,5 @@ export function usePlanLimits(): PlanLimits {
  * If limit is null → UNLIMITED → always returns false (not exceeded).
  */
 export function isLimitExceeded(current: number, limit: number | null): boolean {
-  if (limit === null) return false;
-  return current >= limit;
+  return _isQuotaExceeded(current, limit);
 }
