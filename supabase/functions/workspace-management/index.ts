@@ -492,7 +492,7 @@ serve(async (req: Request) => {
             group_id: invite.group_id,
             user_id: callerId,
             role: invite.role_granted, // project_member, project_guest, etc.
-            is_guest: true,
+            is_guest: invite.role_granted === 'project_guest',
           });
 
         if (addErr) return err(addErr.message);

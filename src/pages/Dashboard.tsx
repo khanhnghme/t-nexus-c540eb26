@@ -299,6 +299,7 @@ export default function Dashboard() {
       toast.success(accept ? (t?.acceptedInvite || 'Invitation accepted') : (t?.declinedInvite || 'Invitation declined'));
       setPendingInvitations(prev => prev.filter(p => p.id !== invitation.id));
       if (accept) {
+        await refreshWorkspaces();
         fetchDashboardData();
         fetchProjectStats();
       }
