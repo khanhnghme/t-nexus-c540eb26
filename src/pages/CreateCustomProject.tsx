@@ -77,6 +77,11 @@ export default function CreateCustomProject() {
         .eq("id", selectedWorkspaceId)
         .single();
 
+      // Auto-generate join code
+      const joinChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let autoJoinCode = '';
+      for (let i = 0; i < 6; i++) autoJoinCode += joinChars.charAt(Math.floor(Math.random() * joinChars.length));
+
       const { data: newGroup, error: groupError } = await supabase
         .from("groups")
         .insert({
@@ -87,6 +92,8 @@ export default function CreateCustomProject() {
           project_mode: "custom",
           slug: "",
           idempotency_key: idempotencyKeyRef.current,
+          allow_join_by_code: true,
+          join_code: autoJoinCode,
         })
         .select()
         .single();
