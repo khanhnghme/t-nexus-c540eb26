@@ -1,61 +1,51 @@
 
 
-## Lỗi: Login thất bại vì RLS chặn truy vấn profiles trước khi đăng nhập
+## Nâng cấp: Hiển thị thông tin người dùng khi nhập đúng email trong form mời workspace
 
-### Nguyên nhân gốc
+### Mục tiêu
 
-Khi login, code gọi `supabase.from('profiles').select('is_approved, full_name').eq('email', loginEmail)` **trước** khi user đăng nhập. Lúc này request dùng anon key (chưa xác thực).
+Khi mời thành viên vào workspace, sau khi nhập **chính xác toàn bộ email**, hệ thống sẽ hiển thị preview thông tin người dùng (tên, avatar). Không hỗ trợ tìm kiếm theo tên, MSSV hay bất kỳ trường nào khác — chỉ email chính xác.
 
-Các RLS policy trên bảng `profiles` chỉ cho phép SELECT khi:
-- `is_approved = true OR id = auth.uid() OR is_admin(auth.uid())` — nhưng `auth.uid()` = NULL vì chưa đăng nhập
-- Policy này **có** cho phép đọc `is_approved = true` records... nhưng cần kiểm tra lại vì network request trả về `[]`.
+### Thay đổi
 
-Thực tế: Policy `Users can view all approved profiles` có `qual = (is_approved = true) OR (id = auth.uid()) OR is_admin(auth.uid())` — đáng ra phải trả về profile có `is_approved = true`. Tuy nhiên, policy này dùng `to authenticated` (chỉ áp dụng cho role `authenticated`, không áp dụng cho role `anon`).
-
-### Giải pháp
-
-Thêm 1 RLS policy cho phép **anon** role SELECT cột `is_approved, full_name` trên bảng `profiles` khi filter theo `email`. Cụ thể:
-
-**Database Migration:**
-```sql
-CREATE POLICY "Anon can check profile approval by email"
-ON public.profiles
-FOR SELECT
-TO anon
-USING (true);
-```
-
-Tuy nhiên, để không lộ toàn bộ dữ liệu profile cho anon, cách tốt hơn là **tạo một database function** `SECURITY DEFINER` để kiểm tra:
+#### 1. Database — Tạo function `lookup_user_by_email` (SECURITY DEFINER)
 
 ```sql
-CREATE OR REPLACE FUNCTION public.check_profile_login(p_email text)
-RETURNS json
-LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  result json;
-BEGIN
-  SELECT json_build_object('is_approved', is_approved, 'full_name', full_name)
-  INTO result
-  FROM public.profiles
-  WHERE email = p_email;
-  
-  RETURN result;
-END;
+CREATE FUNCTION public.lookup_user_by_email(p_email text)
+RETURNS json SECURITY DEFINER AS $$
+  SELECT json_build_object(
+    'id', id, 'full_name', full_name, 'avatar_url', avatar_url, 'email', email
+  )
+  FROM public.profiles WHERE email = p_email;
 $$;
 ```
 
-Sau đó cập nhật `MemberAuthForm.tsx` để gọi `supabase.rpc('check_profile_login', { p_email: loginEmail })` thay vì query trực tiếp bảng profiles.
+Function chỉ trả về 4 trường không nhạy cảm. Chỉ người đã đăng nhập (authenticated) mới gọi được — sẽ thêm check `auth.uid() IS NOT NULL` trong function body.
 
-### Các bước triển khai
+#### 2. `src/pages/WorkspaceMembers.tsx` — Thêm user preview
 
-1. **Database migration** — Tạo function `check_profile_login` (SECURITY DEFINER, bypass RLS)
-2. **MemberAuthForm.tsx** — Thay đổi query `profiles` bằng `supabase.rpc('check_profile_login', ...)` tại phần login (khoảng line 292-296) và phần forgot password nếu cũng query tương tự
+- Thêm state `previewUser` và debounce logic
+- Khi email input thay đổi: validate format email hợp lệ → gọi `supabase.rpc('lookup_user_by_email', { p_email })` 
+- Hiển thị card preview (avatar + tên + email) bên dưới input khi tìm thấy
+- Nếu không tìm thấy → hiển thị nhẹ "Người dùng chưa có tài khoản — lời mời sẽ được gửi qua email"
+- Debounce 500ms để tránh spam API
+
+#### 3. `src/components/ProjectGuestInviteDialog.tsx` — Áp dụng tương tự
+
+- Cùng logic preview khi nhập email mời khách vào dự án
 
 ### File thay đổi
-- `supabase/migrations/` — migration mới
-- `src/components/MemberAuthForm.tsx` — 1-2 chỗ thay query
+
+| File | Thay đổi |
+|------|----------|
+| `supabase/migrations/` | Tạo function `lookup_user_by_email` |
+| `src/pages/WorkspaceMembers.tsx` | Thêm preview user sau input email |
+| `src/components/ProjectGuestInviteDialog.tsx` | Thêm preview user sau input email |
+
+### Bảo mật
+
+- Function yêu cầu `auth.uid() IS NOT NULL` — chỉ user đã đăng nhập mới tra cứu được
+- Không trả về dữ liệu nhạy cảm (chỉ full_name, avatar_url, email)
+- Không hỗ trợ tìm kiếm mờ (LIKE/ILIKE) — chỉ exact match
+- Rate limiting tự nhiên qua debounce 500ms phía client
 
