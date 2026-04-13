@@ -1408,6 +1408,19 @@ export default function MemberManagementCard({
                       className="h-11 pl-10 border-2 border-primary/30 focus-visible:border-primary focus-visible:ring-primary/20 bg-primary/5 placeholder:text-muted-foreground/70 font-medium"
                     />
                   </div>
+                  <button
+                    type="button"
+                    className="w-full flex items-center gap-2 p-2.5 rounded-lg border border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors text-left"
+                    onClick={() => {
+                      setIsAddDialogOpen(false);
+                      navSetCurrentTab('settings');
+                    }}
+                  >
+                    <span className="text-base">💡</span>
+                    <span className="text-xs text-foreground">
+                      Thành viên có thể tự tham gia bằng <span className="font-semibold">QR</span> hoặc <span className="font-semibold">nhập mã</span> — <span className="text-primary font-medium underline underline-offset-2">xem tại Cài đặt</span>
+                    </span>
+                  </button>
                   <div className="mt-2">
                     {previewUser && !isAlreadyInProject && (
                       <div
