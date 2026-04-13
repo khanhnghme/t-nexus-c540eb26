@@ -290,10 +290,7 @@ export function MemberAuthForm() {
 
       // Check approval
       const { data: profileData } = await supabase
-        .from('profiles')
-        .select('is_approved, full_name')
-        .eq('email', loginEmail)
-        .maybeSingle();
+        .rpc('check_profile_login', { p_email: loginEmail });
 
       if (profileData && !profileData.is_approved) {
         setIsLoading(false);
