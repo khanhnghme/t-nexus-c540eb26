@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useWorkspaceMembers } from '@/hooks/useWorkspaceMembers';
 import { useToast } from '@/hooks/use-toast';
 import { Users, UserPlus, Mail, Loader2, Ghost } from 'lucide-react';
+import { useEmailLookup } from '@/hooks/useEmailLookup';
+import EmailUserPreview from '@/components/EmailUserPreview';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

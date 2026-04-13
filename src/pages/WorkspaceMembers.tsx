@@ -3,6 +3,8 @@ import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useWorkspaceMembers, type WorkspaceMemberInfo } from '@/hooks/useWorkspaceMembers';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
+import { useEmailLookup } from '@/hooks/useEmailLookup';
+import EmailUserPreview from '@/components/EmailUserPreview';
 import { Users, UserPlus, Crown, Shield, User, MoreHorizontal, Trash2, ArrowUpDown, Mail, Loader2, CheckSquare, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
