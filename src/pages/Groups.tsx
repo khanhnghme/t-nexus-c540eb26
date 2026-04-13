@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { fixStorageUrl } from '@/lib/urlUtils';
 import { Link, useNavigate } from 'react-router-dom';
@@ -44,6 +44,8 @@ import {
   MessageSquare,
   ImagePlus,
   Palette,
+  ListChecks,
+  Filter,
 } from 'lucide-react';
 import type { Group, GroupMember } from '@/types/database';
 import UserAvatar from '@/components/UserAvatar';
