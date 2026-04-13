@@ -4,6 +4,7 @@ import EmailUserPreview from '@/components/EmailUserPreview';
 import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 import leaveGroupIllustration from '@/assets/leave-group-illustration.png';
 import { useNavigate } from 'react-router-dom';
+import { useNavigation } from '@/contexts/NavigationContext';
 import { deleteWithUndo } from '@/lib/deleteWithUndo';
 import { logActivity } from '@/lib/activityLogger';
 import { notifyProjectInvitation } from '@/lib/notifications';
