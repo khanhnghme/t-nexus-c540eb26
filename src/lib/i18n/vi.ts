@@ -1527,6 +1527,8 @@ export const vi: Translations = {
       memberSeats: 'Suất thành viên (unique)',
       memberSeatsNote: '1 người tham gia nhiều WS = 1 suất',
       storage: 'Dung lượng',
+      aiMessages: 'Tin nhắn AI',
+      aiMessagesNote: 'Dùng chung cho tất cả thành viên workspace',
       detailByWorkspace: 'Chi tiết theo Workspace',
       noWorkspaceOwned: 'Bạn chưa sở hữu workspace nào',
       projectsLabel: 'dự án',
