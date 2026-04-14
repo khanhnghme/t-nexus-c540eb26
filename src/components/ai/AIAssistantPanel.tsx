@@ -27,10 +27,6 @@ interface AIAssistantPanelProps {
 }
 
 const MAX_MESSAGE_WORDS = 100;
-const QUESTIONS_PER_PROJECT = 10;
-
-const getUsageKey = (userId: string) => `ai_usage_${userId}_${new Date().toDateString()}`;
-const getProjectCountKey = (userId: string) => `ai_project_count_${userId}`;
 
 const countWords = (text: string): number => {
   return text.trim().split(/\s+/).filter(word => word.length > 0).length;
@@ -47,42 +43,42 @@ export default function AIAssistantPanel({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [questionsToday, setQuestionsToday] = useState(0);
-  const [projectCount, setProjectCount] = useState(1);
+  const [maxQuestions, setMaxQuestions] = useState<number | null>(5);
+  const [usageLoading, setUsageLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { user, profile } = useAuth();
   const { toast } = useToast();
 
-  const maxQuestions = QUESTIONS_PER_PROJECT * projectCount;
-
   useEffect(() => {
-    const loadData = async () => {
-      if (!user?.id) return;
+    const loadUsage = async () => {
+      if (!user?.id) { setUsageLoading(false); return; }
 
-      const usageKey = getUsageKey(user.id);
-      const stored = localStorage.getItem(usageKey);
-      setQuestionsToday(stored ? parseInt(stored, 10) : 0);
-
+      const today = new Date().toISOString().slice(0, 10);
       try {
-        const { count, error } = await supabase
-          .from('group_members')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
+        // Fetch usage and plan limit in parallel
+        const [usageRes, profileRes] = await Promise.all([
+          supabase.from('ai_daily_usage').select('message_count').eq('user_id', user.id).eq('usage_date', today).maybeSingle(),
+          supabase.from('profiles').select('user_plan').eq('id', user.id).single(),
+        ]);
 
-        if (!error && count !== null) {
-          setProjectCount(Math.max(1, count));
-          localStorage.setItem(getProjectCountKey(user.id), count.toString());
-        } else {
-          const cached = localStorage.getItem(getProjectCountKey(user.id));
-          if (cached) setProjectCount(Math.max(1, parseInt(cached, 10)));
-        }
+        setQuestionsToday(usageRes.data?.message_count ?? 0);
+
+        const userPlan = (profileRes.data as any)?.user_plan || 'plan_free';
+        const { data: limitData } = await supabase
+          .from('plan_limits')
+          .select('max_ai_messages_per_day')
+          .eq('plan', userPlan as any)
+          .maybeSingle();
+
+        setMaxQuestions((limitData as any)?.max_ai_messages_per_day ?? 5);
       } catch {
-        const cached = localStorage.getItem(getProjectCountKey(user.id));
-        if (cached) setProjectCount(Math.max(1, parseInt(cached, 10)));
+        // fallback defaults
       }
+      setUsageLoading(false);
     };
 
-    if (isOpen) loadData();
+    if (isOpen) loadUsage();
   }, [user?.id, isOpen]);
 
   const isUserScrollingUp = useRef(false);
@@ -120,12 +116,7 @@ export default function AIAssistantPanel({
   }, [isOpen]);
 
   const incrementUsage = () => {
-    if (user?.id) {
-      const usageKey = getUsageKey(user.id);
-      const newCount = questionsToday + 1;
-      localStorage.setItem(usageKey, newCount.toString());
-      setQuestionsToday(newCount);
-    }
+    setQuestionsToday(prev => prev + 1);
   };
 
   const sendMessage = async (messageText: string) => {
@@ -142,10 +133,10 @@ export default function AIAssistantPanel({
       return;
     }
 
-    if (questionsToday >= maxQuestions) {
+    if (maxQuestions !== null && questionsToday >= maxQuestions) {
       toast({
         title: 'Đã hết lượt hỏi hôm nay',
-        description: `Bạn đã sử dụng ${maxQuestions} câu hỏi (${projectCount} project × ${QUESTIONS_PER_PROJECT} lượt). Vui lòng quay lại ngày mai.`,
+        description: `Bạn đã sử dụng hết ${maxQuestions} lượt hỏi AI. Vui lòng quay lại ngày mai hoặc nâng cấp gói.`,
         variant: 'destructive',
       });
       return;
@@ -305,10 +296,11 @@ export default function AIAssistantPanel({
     setError(null);
   };
 
-  const remainingQuestions = maxQuestions - questionsToday;
+  const isUnlimited = maxQuestions === null;
+  const remainingQuestions = isUnlimited ? Infinity : maxQuestions - questionsToday;
   const wordCount = countWords(input);
   const isOverLimit = wordCount > MAX_MESSAGE_WORDS;
-  const usagePercent = Math.min(100, (questionsToday / maxQuestions) * 100);
+  const usagePercent = isUnlimited ? 0 : Math.min(100, (questionsToday / maxQuestions) * 100);
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -368,18 +360,24 @@ export default function AIAssistantPanel({
             )}
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
-              <div 
-                className={cn(
-                  "h-full rounded-full transition-all duration-500",
-                  usagePercent > 80 ? "bg-destructive" : "bg-primary"
-                )}
-                style={{ width: `${usagePercent}%` }}
-              />
-            </div>
-            <span className="text-[10px] text-muted-foreground tabular-nums">
-              {remainingQuestions}/{maxQuestions}
-            </span>
+            {isUnlimited ? (
+              <span className="text-[10px] text-muted-foreground">∞ Unlimited</span>
+            ) : (
+              <>
+                <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className={cn(
+                      "h-full rounded-full transition-all duration-500",
+                      usagePercent > 80 ? "bg-destructive" : "bg-primary"
+                    )}
+                    style={{ width: `${usagePercent}%` }}
+                  />
+                </div>
+                <span className="text-[10px] text-muted-foreground tabular-nums">
+                  {remainingQuestions}/{maxQuestions}
+                </span>
+              </>
+            )}
           </div>
         </div>
 

@@ -293,6 +293,7 @@ export const en = {
           'Max upload 5 MB / file',
           'Total 5 unique seats (shared across all WSs, free)',
           'Meetings up to 15 min',
+          'AI Assistant: 5 messages/day',
         ],
         features: [
           'Basic task management',
@@ -312,6 +313,7 @@ export const en = {
           'Total 15 unique seats (shared across all WSs, free)',
           'Meetings up to 60 min',
           'Activity logs (30 days)',
+          'AI Assistant: 20 messages/day',
         ],
         features: [
           'Unlock Plus features for all members',
@@ -332,6 +334,7 @@ export const en = {
           'Total 50 unique seats (shared across all WSs, free)',
           'Unlimited meeting time',
           'Unlimited activity logs',
+          'AI Assistant: 50 messages/day',
         ],
         features: [
           'Unlock Pro features for all members',
@@ -352,6 +355,7 @@ export const en = {
           'Total 200 unique seats (shared across all WSs, free)',
           'Unlimited meeting time',
           'Unlimited activity logs',
+          'Unlimited AI Assistant',
         ],
         features: [
           'Unlock Business features for all members',
@@ -371,6 +375,7 @@ export const en = {
           'Max upload 5 GB / file',
           'Unlimited unique seats',
           'Unlimited meeting time',
+          'Unlimited AI Assistant',
         ],
         features: [
           'Enterprise-grade security',
@@ -414,6 +419,7 @@ export const en = {
         rows: [
           { label: 'Meeting duration', free: '15 min', plus: '60 min', pro: 'Unlimited', business: 'Unlimited', enterprise: 'Unlimited' },
           { label: 'Activity logs', free: false, plus: '30 days', pro: 'Unlimited', business: 'Unlimited', enterprise: 'Unlimited' },
+          { label: 'AI Assistant', free: '5/day', plus: '20/day', pro: '50/day', business: 'Unlimited', enterprise: 'Unlimited' },
         ],
       },
       {
