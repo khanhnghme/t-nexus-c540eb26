@@ -14,6 +14,14 @@ export default function Login() {
 
   if (authLoading) return null;
 
+  // Prefetch Dashboard chunk while user is on login page
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      import('../pages/Dashboard');
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
   const isBlockedByMaintenance = maintenanceMode && !isAdmin;
   const hasRememberFlag = localStorage.getItem('t-nexus_remember_login') === 'true';
   const isSignupOtpFlow = sessionStorage.getItem('t-nexus_signup_otp_flow') === 'true';
