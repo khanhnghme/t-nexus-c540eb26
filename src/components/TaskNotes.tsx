@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -792,12 +791,12 @@ export default function TaskNotes({ taskId, className = '', compact = false }: T
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction 
+            <Button 
               onClick={handleDeleteVersion}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Xóa
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

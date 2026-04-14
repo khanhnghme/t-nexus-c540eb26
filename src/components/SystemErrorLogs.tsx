@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -312,13 +311,13 @@ export default function SystemErrorLogs() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isClearing}>Hủy</AlertDialogCancel>
-            <AlertDialogAction
+            <Button
               onClick={handleClearAll}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={isClearing}
             >
               {isClearing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Xóa tất cả'}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -9,7 +9,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -397,13 +396,13 @@ export default function MessageItem({ message, isOwn, showAvatar = true, showNam
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>{comm.cancel}</AlertDialogCancel>
-            <AlertDialogAction
+            <Button
               onClick={handleDelete}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? comm.deleting : comm.delete}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

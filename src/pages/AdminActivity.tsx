@@ -25,7 +25,6 @@ import {
 } from '@/components/ui/table';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -401,12 +400,12 @@ export default function AdminActivity() {
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
-                                  <AlertDialogAction 
+                                  <Button 
                                     onClick={() => handleDeleteSingleLog(log.id)}
                                     className="bg-destructive hover:bg-destructive/90"
                                   >
                                     {t.delete}
-                                  </AlertDialogAction>
+                                  </Button>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
                             </AlertDialog>
