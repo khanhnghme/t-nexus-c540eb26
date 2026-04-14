@@ -207,10 +207,10 @@ function AppRoutes() {
         <Route path="/s/:shareToken" element={<ForceLightMode><PublicProjectView /></ForceLightMode>} />
         <Route path="/s/:shareToken/t/:taskSlug/f/:fileIndex" element={<ForceLightMode><FilePreview /></ForceLightMode>} />
         <Route path="/public/project/:shareToken" element={<ForceLightMode><PublicProjectView /></ForceLightMode>} />
-        <Route path="/share/:token/page/:pageSlug" element={<ForceLightMode><Suspense fallback={null}><PublicCanvasPage /></Suspense></ForceLightMode>} />
-        <Route path="/share/:token/page" element={<ForceLightMode><Suspense fallback={null}><PublicCanvasPage /></Suspense></ForceLightMode>} />
+        <Route path="/share/:token/page/:pageSlug" element={<ForceLightMode><PublicCanvasPage /></ForceLightMode>} />
+        <Route path="/share/:token/page" element={<ForceLightMode><PublicCanvasPage /></ForceLightMode>} />
         <Route path="/reset-password" element={<ForceLightMode><ResetPassword /></ForceLightMode>} />
-        <Route path="/ui-preview" element={<ForceLightMode><Suspense fallback={null}><UIPreview /></Suspense></ForceLightMode>} />
+        <Route path="/ui-preview" element={<ForceLightMode><UIPreview /></ForceLightMode>} />
         <Route path="/join" element={<JoinProject />} />
         {/* ═══ Invoice summary — accessible without login (handles own auth guard) ═══ */}
         <Route path="/checkout/summary/:orderCode" element={<CheckoutSummary />} />
@@ -234,7 +234,7 @@ function AppRoutes() {
         {/* ═══ Protected routes with persistent DashboardLayout ═══ */}
         <Route element={<ProtectedLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/ai-assistant" element={<Suspense fallback={null}><AIAssistant /></Suspense>} />
+          <Route path="/ai-assistant" element={<AIAssistant />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/groups" element={<Groups />} />

@@ -21,7 +21,7 @@ interface TaskCardProps {
   showLink?: boolean;
 }
 
-export function TaskCard({ task, groupId, groupSlug, wsShortId, showLink = true }: TaskCardProps) {
+function TaskCardInner({ task, groupId, groupSlug, wsShortId, showLink = true }: TaskCardProps) {
   // Handle extended deadline
   const hasExtension = !!(task as any).extended_deadline;
   const effectiveDeadline = hasExtension ? (task as any).extended_deadline : task.deadline;
@@ -187,3 +187,5 @@ export function TaskCard({ task, groupId, groupSlug, wsShortId, showLink = true 
 
   return content;
 }
+
+export const TaskCard = React.memo(TaskCardInner);
