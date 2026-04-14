@@ -56,19 +56,23 @@ export default function AIAssistantPanel({
 
       const today = new Date().toISOString().slice(0, 10);
       try {
-        // Fetch usage and plan limit in parallel
-        const [usageRes, profileRes] = await Promise.all([
-          supabase.from('ai_daily_usage').select('message_count').eq('user_id', user.id).eq('usage_date', today).maybeSingle(),
-          supabase.from('profiles').select('user_plan').eq('id', user.id).single(),
+        // Find workspace owner for shared pool quota
+        const { data: ownerId } = await supabase.rpc('get_user_workspace_owner', { _user_id: user.id });
+        const effectiveOwnerId = ownerId || user.id;
+
+        // Fetch aggregate usage across owner's workspaces + owner's plan
+        const [usageRes, ownerProfileRes] = await Promise.all([
+          supabase.rpc('get_owner_ai_usage_today', { _owner_id: effectiveOwnerId, _date: today }),
+          supabase.from('profiles').select('user_plan').eq('id', effectiveOwnerId).single(),
         ]);
 
-        setQuestionsToday(usageRes.data?.message_count ?? 0);
+        setQuestionsToday(typeof usageRes.data === 'number' ? usageRes.data : 0);
 
-        const userPlan = (profileRes.data as any)?.user_plan || 'plan_free';
+        const ownerPlan = (ownerProfileRes.data as any)?.user_plan || 'plan_free';
         const { data: limitData } = await supabase
           .from('plan_limits')
           .select('max_ai_messages_per_day')
-          .eq('plan', userPlan as any)
+          .eq('plan', ownerPlan as any)
           .maybeSingle();
 
         setMaxQuestions((limitData as any)?.max_ai_messages_per_day ?? 5);

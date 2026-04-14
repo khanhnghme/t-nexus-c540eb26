@@ -3370,6 +3370,11 @@ export type Database = {
           bonus_storage_mb: number
         }[]
       }
+      get_owner_ai_usage_today: {
+        Args: { _date: string; _owner_id: string }
+        Returns: number
+      }
+      get_user_workspace_owner: { Args: { _user_id: string }; Returns: string }
       get_workspace_plan: { Args: { _workspace_id: string }; Returns: string }
       get_workspace_role: {
         Args: { _user_id: string; _workspace_id: string }
