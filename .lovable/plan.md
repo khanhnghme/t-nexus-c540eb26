@@ -1,52 +1,56 @@
 
 
-## Plan: Fix 3 vấn đề 🟡 MEDIUM — Tối ưu hiệu năng
+## Plan: Fix 3 vấn đề 🟢 LOW — Tối ưu hiệu năng (cuối cùng)
 
-### MEDIUM #5: Realtime subscription chỉ re-fetch data liên quan
+### LOW #8: Image optimization — lazy loading cho avatars
 
-**Vấn đề:** `GroupDetail.tsx` dòng 219-235 — khi `group_members` thay đổi, gọi lại `fetchGroupData()` toàn bộ (stages, tasks, meetings, members...). Mỗi member join/leave → 7+ queries chạy lại.
+**Vấn đề:** `UserAvatar` component dùng `AvatarImage` (từ Radix) không có `loading="lazy"`. Mỗi trang Dashboard, GroupDetail, MemberManagement hiển thị hàng chục avatar → tất cả load đồng thời.
 
-**Giải pháp:** Tách `fetchGroupData` thành các hàm nhỏ:
-- `fetchMembers()` — chỉ query members + profiles
-- `fetchTasks()` — chỉ query tasks + assignments
-- `fetchMeetings()` — chỉ query meetings
+**Giải pháp:**
+- Thêm prop `loading="lazy"` vào `<AvatarImage>` trong `src/components/UserAvatar.tsx`
+- Kiểm tra `src/components/ui/avatar.tsx` — nếu Radix `AvatarImage` không forward `loading` prop, thêm spread props hoặc custom attribute
 
-Realtime callback chỉ gọi `fetchMembers()` thay vì `fetchGroupData()`. Các chỗ khác (thêm task, xóa stage...) vẫn gọi hàm tương ứng thay vì toàn bộ.
-
-**File:** `src/pages/GroupDetail.tsx`
-**Impact:** Giảm ~80% API calls khi có realtime update
+**File:** `src/components/UserAvatar.tsx`, `src/components/ui/avatar.tsx`
+**Impact:** Giảm bandwidth + requests đồng thời khi load trang có nhiều avatar
 
 ---
 
-### MEDIUM #6: Dynamic import cho heavy dependencies
+### LOW #9: Prefetch critical routes từ Login
 
-**Vấn đề:** `jspdf`, `xlsx`, `recharts` import tĩnh trong các lib/component files. Dù pages đã lazy-loaded, các file lib như `activityLogPdf.ts`, `projectEvidencePdf.ts`, `canvasExport.ts` vẫn import `jsPDF` ở top-level. `ExcelMemberImport.tsx` import `xlsx` trực tiếp. `chart.tsx` import `recharts` trực tiếp.
+**Vấn đề:** Khi user ở trang Login, chunk `/dashboard` chưa được tải. Sau login → phải đợi download chunk → delay.
 
 **Giải pháp:**
-- `src/lib/activityLogPdf.ts` — đổi sang `const jsPDF = (await import('jspdf')).default` bên trong function
-- `src/lib/projectEvidencePdf.ts` — tương tự
-- `src/lib/canvasExport.ts` — tương tự  
-- `src/components/ExcelMemberImport.tsx` — đổi `import * as XLSX from 'xlsx'` sang dynamic import khi user click upload
-- `src/components/ui/chart.tsx` — giữ nguyên vì recharts đã nằm trong lazy-loaded pages
+- Trong `src/pages/Login.tsx`, thêm `useEffect` prefetch Dashboard chunk:
+```tsx
+useEffect(() => {
+  const timer = setTimeout(() => {
+    import('../pages/Dashboard');
+  }, 2000); // prefetch sau 2s idle
+  return () => clearTimeout(timer);
+}, []);
+```
+- Áp dụng tương tự ở `Landing.tsx` — prefetch Login chunk
 
-**Files:** 4 files (3 lib + 1 component)
-**Impact:** Loại bỏ jspdf (~300KB) và xlsx (~200KB) khỏi các chunk không cần thiết
+**Files:** `src/pages/Login.tsx`, `src/pages/Landing.tsx`
+**Impact:** Giảm perceived load time sau login ~30-50%
 
 ---
 
-### MEDIUM #7: Virtualized list cho TaskListView
+### LOW #10: Migrate Dashboard sang React Query
 
-**Vấn đề:** `TaskListView.tsx` (1756 dòng) render toàn bộ tasks vào DOM. Project có 100+ tasks sẽ tạo hàng trăm DOM nodes không cần thiết.
+**Vấn đề:** `Dashboard.tsx` (1087 dòng) dùng hoàn toàn `useState` + `useEffect` cho data fetching. Không có caching, stale time, hay background refetch. Mỗi lần navigate lại Dashboard → fetch lại toàn bộ.
 
 **Giải pháp:**
-- Cài `@tanstack/react-virtual`
-- Wrap danh sách tasks trong mỗi stage bằng `useVirtualizer` khi count > 30
-- Khi ≤30 tasks, render bình thường (tránh overhead cho list nhỏ)
-- Áp dụng tương tự cho `MemberManagementCard` member list
+- Tạo custom hooks dùng `@tanstack/react-query` (đã có trong project):
+  - `useDashboardData(userId)` — fetch projects, members, stats
+  - `usePendingInvitations(userId)` — fetch pending invitations
+  - `usePendingApprovals(userId)` — fetch pending approvals
+- Config `staleTime: 30_000` (30s) để tránh re-fetch khi navigate back
+- Config `refetchOnWindowFocus: true` để cập nhật khi user quay lại tab
+- Giữ logic `Promise.all` đã tối ưu từ phase trước, chỉ wrap vào `useQuery`
 
-**Files:** `src/components/TaskListView.tsx`, `src/components/MemberManagementCard.tsx`
-**Dependencies mới:** `@tanstack/react-virtual`
-**Impact:** Giảm ~90% DOM nodes cho list dài
+**Files:** `src/pages/Dashboard.tsx` (refactor), tạo mới `src/hooks/useDashboardData.ts`
+**Impact:** Cache data 30s, tránh re-fetch khi navigate back, background refresh
 
 ---
 
@@ -54,9 +58,9 @@ Realtime callback chỉ gọi `fetchMembers()` thay vì `fetchGroupData()`. Các
 
 | # | Task | Files | Impact |
 |---|------|-------|--------|
-| 5 | Selective realtime re-fetch | `GroupDetail.tsx` | API calls -80% on updates |
-| 6 | Dynamic import heavy deps | 4 files (3 lib + 1 component) | Chunk size -500KB |
-| 7 | Virtualized lists | 2 component files + dependency | DOM nodes -90% |
+| 8 | Image lazy loading | 2 files (avatar components) | Bandwidth giảm |
+| 9 | Prefetch critical chunks | 2 files (Login, Landing) | Post-login load -30% |
+| 10 | React Query cho Dashboard | 2 files (Dashboard + new hook) | Cache + no re-fetch |
 
-**Tổng: ~7 files thay đổi. 1 dependency mới (`@tanstack/react-virtual`). Backward compatible 100%.**
+**Tổng: ~6 files thay đổi (1 file mới). Không thêm dependencies (React Query đã có). Backward compatible 100%.**
 
