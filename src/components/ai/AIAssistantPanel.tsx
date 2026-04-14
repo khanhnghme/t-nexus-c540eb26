@@ -140,8 +140,8 @@ export default function AIAssistantPanel({
 
     if (maxQuestions !== null && questionsToday >= maxQuestions) {
       toast({
-        title: 'Đã hết lượt hỏi hôm nay',
-        description: `Bạn đã sử dụng hết ${maxQuestions} lượt hỏi AI. Vui lòng quay lại ngày mai hoặc nâng cấp gói.`,
+        title: 'Đã hết lượt hỏi tháng này',
+        description: `Bạn đã sử dụng hết ${maxQuestions} lượt hỏi AI tháng này. Vui lòng quay lại tháng sau hoặc nâng cấp gói.`,
         variant: 'destructive',
       });
       return;
