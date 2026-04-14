@@ -538,7 +538,7 @@ export default function Notifications() {
             {hasMore && (
               <div className="flex justify-center py-4 border-t border-border/30">
                 <Button variant="ghost" size="sm" onClick={() => fetchNotifications(true)} disabled={loadingMore} className="gap-1.5">
-                  {loadingMore ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
+                  {loadingMore ? <Spinner size="sm" /> : <Clock className="w-3.5 h-3.5" />}
                   {t.loadMore}
                 </Button>
               </div>
