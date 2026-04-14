@@ -1910,6 +1910,13 @@ html.no-animations [data-state="active"][role="tabpanel"] {
     z-index: 51;
     height: 48px;
     padding: 0 12px;
+    background: var(--_sb-bg);
+    border-bottom: 1px solid var(--_sb-border-strong);
+  }
+
+  /* Push sidebar content below the fixed logo cell */
+  .dashboard-grid.mobile-sidebar-open .grid-cell-sidebar {
+    padding-top: 48px;
   }
 
   /* Hide topbar by default on mobile, show only when project nav exists */
