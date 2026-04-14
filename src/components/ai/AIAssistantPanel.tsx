@@ -76,7 +76,7 @@ export default function AIAssistantPanel({
           .eq('plan', ownerPlan as any)
           .maybeSingle();
 
-        setMaxQuestions((limitData as any)?.max_ai_messages_per_month ?? 30);
+        setMaxQuestions((limitData as any)?.max_ai_messages_per_month ?? 20);
       } catch {
         // fallback defaults
       }

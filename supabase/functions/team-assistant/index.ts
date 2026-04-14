@@ -581,7 +581,7 @@ serve(async (req) => {
       .eq('plan', ownerPlan)
       .maybeSingle();
 
-    const maxMessages = planLimitData?.max_ai_messages_per_month ?? 30; // default 30
+    const maxMessages = planLimitData?.max_ai_messages_per_month ?? 20; // default 20
 
     // Get total usage across all members in owner's workspaces for current month
     const { data: totalUsage } = await supabase.rpc('get_owner_ai_usage_month', { 
