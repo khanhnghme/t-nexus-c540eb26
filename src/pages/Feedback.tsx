@@ -39,9 +39,12 @@ import {
   MessageSquareText,
   Filter,
   MessageSquarePlus,
-  ImagePlus,
+  Paperclip,
   X,
   Mail,
+  FileText,
+  Image as ImageIcon,
+  Download,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
