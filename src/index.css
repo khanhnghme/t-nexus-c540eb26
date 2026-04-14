@@ -1958,6 +1958,80 @@ html.no-animations [data-state="active"][role="tabpanel"] {
     box-shadow: 8px 0 32px rgba(0, 0, 0, 0.4);
   }
 
+  /* Force expanded sidebar style on mobile when open, even if sidebar-collapsed is set */
+  .dashboard-grid.mobile-sidebar-open.sidebar-collapsed .grid-cell-sidebar {
+    width: 280px;
+  }
+
+  .dashboard-grid.mobile-sidebar-open.sidebar-collapsed .sidebar-nav-item .nav-label {
+    display: inline;
+  }
+
+  .dashboard-grid.mobile-sidebar-open.sidebar-collapsed .sidebar-nav-item {
+    justify-content: flex-start;
+    padding: 7px 10px;
+  }
+
+  .dashboard-grid.mobile-sidebar-open.sidebar-collapsed .sidebar-nav-scroll {
+    padding: 4px 8px;
+  }
+
+  .dashboard-grid.mobile-sidebar-open.sidebar-collapsed .sidebar-section-label {
+    visibility: visible;
+    height: auto;
+  }
+
+  .dashboard-grid.mobile-sidebar-open.sidebar-collapsed .sidebar-nav-item .nav-kbd {
+    display: none;
+  }
+
+  .dashboard-grid.mobile-sidebar-open.sidebar-collapsed .sidebar-user-profile {
+    justify-content: flex-start;
+  }
+
+  .dashboard-grid.mobile-sidebar-open.sidebar-collapsed .sidebar-user-profile .user-info {
+    display: flex;
+  }
+
+  .dashboard-grid.mobile-sidebar-open.sidebar-collapsed .sidebar-user-profile .user-chevron {
+    display: block;
+  }
+
+  .dashboard-grid.mobile-sidebar-open.sidebar-collapsed .sidebar-bottom {
+    padding: 8px 8px 10px;
+  }
+
+  .dashboard-grid.mobile-sidebar-open.sidebar-collapsed .sidebar-nav-separator {
+    margin: 8px 10px;
+  }
+
+  .dashboard-grid.mobile-sidebar-open.sidebar-collapsed .ws-switcher-compact:not(.ws-switcher-collapsed) {
+    display: flex;
+  }
+
+  .dashboard-grid.mobile-sidebar-open.sidebar-collapsed .ws-switcher-compact.ws-switcher-collapsed {
+    display: none;
+  }
+
+  .dashboard-grid.mobile-sidebar-open.sidebar-collapsed .grid-cell-logo {
+    justify-content: flex-start;
+    padding: 0 12px;
+  }
+
+  .dashboard-grid.mobile-sidebar-open.sidebar-collapsed .grid-cell-logo .sidebar-logo-text {
+    display: flex;
+  }
+
+  /* Collapsed tree overrides for mobile open */
+  .dashboard-grid.mobile-sidebar-open.sidebar-collapsed .tree-children,
+  .dashboard-grid.mobile-sidebar-open.sidebar-collapsed .tree-guest-hint {
+    display: block;
+  }
+
+  .dashboard-grid.mobile-sidebar-open.sidebar-collapsed .workspace-switcher-info {
+    display: flex;
+  }
+
   .grid-cell-content {
     padding-top: 48px;
     min-height: 100vh;
