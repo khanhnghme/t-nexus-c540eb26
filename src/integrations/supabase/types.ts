@@ -628,6 +628,7 @@ export type Database = {
       feedbacks: {
         Row: {
           admin_response: string | null
+          attachments: Json | null
           content: string
           created_at: string
           group_id: string | null
@@ -644,6 +645,7 @@ export type Database = {
         }
         Insert: {
           admin_response?: string | null
+          attachments?: Json | null
           content: string
           created_at?: string
           group_id?: string | null
@@ -660,6 +662,7 @@ export type Database = {
         }
         Update: {
           admin_response?: string | null
+          attachments?: Json | null
           content?: string
           created_at?: string
           group_id?: string | null
