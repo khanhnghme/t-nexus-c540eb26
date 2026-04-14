@@ -123,8 +123,10 @@ export default function FeedbackPage() {
   const [adminStatus, setAdminStatus] = useState<FeedbackStatus>('reviewed');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Image preview
+  // File/image preview
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  // Detail dialog
+  const [viewingFeedback, setViewingFeedback] = useState<FeedbackItem | null>(null);
 
   useEffect(() => {
     fetchFeedbacks();
