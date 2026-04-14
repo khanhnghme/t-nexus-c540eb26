@@ -173,9 +173,7 @@ export default function FeedbackPage() {
     if (fileInputRef.current) fileInputRef.current.value = '';
 
     for (const file of files) {
-      if (!file.type.startsWith('image/')) {
-        toast({ title: 'Lỗi', description: `"${file.name}" không phải ảnh`, variant: 'destructive' });
-        return;
+      // No file type restriction - allow all files
       }
       if (file.size > MAX_FILE_SIZE_BYTES) {
         toast({ title: 'Lỗi', description: `"${file.name}" vượt quá ${MAX_FILE_SIZE_MB}MB`, variant: 'destructive' });
@@ -186,7 +184,7 @@ export default function FeedbackPage() {
     setAttachedFiles(prev => {
       const combined = [...prev, ...files];
       if (combined.length > MAX_FILES) {
-        toast({ title: 'Lỗi', description: `Tối đa ${MAX_FILES} ảnh`, variant: 'destructive' });
+        toast({ title: 'Lỗi', description: `Tối đa ${MAX_FILES} file`, variant: 'destructive' });
         return prev;
       }
       return combined;
@@ -504,43 +502,51 @@ export default function FeedbackPage() {
 
               {/* Image upload */}
               <div className="space-y-2">
-                <Label>Ảnh đính kèm <span className="text-muted-foreground text-xs">(tối đa {MAX_FILES} ảnh, {MAX_FILE_SIZE_MB}MB/ảnh)</span></Label>
+                <Label>File đính kèm <span className="text-muted-foreground text-xs">(tối đa {MAX_FILES} file, {MAX_FILE_SIZE_MB}MB/file)</span></Label>
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
                   multiple
                   className="hidden"
                   onChange={handleFileSelect}
                 />
                 <div className="flex flex-wrap gap-2 items-start">
-                  {attachedFiles.map((file, i) => (
-                    <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border group">
-                      <img
-                        src={URL.createObjectURL(file)}
-                        alt={file.name}
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeFile(i)}
-                        className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                      <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[9px] px-1 truncate">
-                        {file.name}
+                  {attachedFiles.map((file, i) => {
+                    const isImage = file.type.startsWith('image/');
+                    return (
+                      <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border group">
+                        {isImage ? (
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={file.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center bg-muted/50 p-1">
+                            <FileText className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeFile(i)}
+                          className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[9px] px-1 truncate">
+                          {file.name}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {attachedFiles.length < MAX_FILES && (
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       className="w-20 h-20 rounded-lg border-2 border-dashed border-border hover:border-primary transition-colors flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary"
                     >
-                      <ImagePlus className="w-5 h-5" />
-                      <span className="text-[10px]">Thêm ảnh</span>
+                      <Paperclip className="w-5 h-5" />
+                      <span className="text-[10px]">Thêm file</span>
                     </button>
                   )}
                 </div>
