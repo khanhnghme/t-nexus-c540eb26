@@ -727,6 +727,7 @@ export const en = {
       servicePlan: 'Service Plan',
       billing: 'Billing',
       search: 'Search',
+      aiAssistant: 'AI Assistant',
     },
     search: {
       title: 'Search',
