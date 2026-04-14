@@ -1,7 +1,6 @@
 import "@blocknote/core/fonts/inter.css";
 import { useCreateBlockNote, SuggestionMenuController, getDefaultReactSlashMenuItems } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/shadcn";
-import {
 import { useTheme } from "next-themes";
 import { BlockNoteSchema, defaultBlockSpecs, filterSuggestionItems, combineByGroup } from "@blocknote/core";
 import { en as bnEnLocale } from "@blocknote/core/locales";
