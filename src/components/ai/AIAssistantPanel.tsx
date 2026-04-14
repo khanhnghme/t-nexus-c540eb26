@@ -27,10 +27,6 @@ interface AIAssistantPanelProps {
 }
 
 const MAX_MESSAGE_WORDS = 100;
-const QUESTIONS_PER_PROJECT = 10;
-
-const getUsageKey = (userId: string) => `ai_usage_${userId}_${new Date().toDateString()}`;
-const getProjectCountKey = (userId: string) => `ai_project_count_${userId}`;
 
 const countWords = (text: string): number => {
   return text.trim().split(/\s+/).filter(word => word.length > 0).length;
@@ -47,7 +43,8 @@ export default function AIAssistantPanel({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [questionsToday, setQuestionsToday] = useState(0);
-  const [projectCount, setProjectCount] = useState(1);
+  const [maxQuestions, setMaxQuestions] = useState(5);
+  const [usageLoading, setUsageLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { user, profile } = useAuth();
