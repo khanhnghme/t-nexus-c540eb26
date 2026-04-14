@@ -881,21 +881,44 @@ export default function Dashboard() {
                 <CardDescription>{t?.projectsYouJoined || 'Projects you are participating in'}</CardDescription>
               </div>
               <div className="flex items-center gap-2">
-                <ToggleGroup type="single" value={filter} onValueChange={handleFilterChange} className="bg-transparent flex-wrap sm:flex-nowrap gap-1">
+                {/* Mobile/Tablet: single compact select */}
+                <select
+                  value={`${filter}|${modeFilter}`}
+                  onChange={(e) => {
+                    const [f, m] = e.target.value.split('|') as [DashboardFilter, ProjectModeFilter];
+                    handleFilterChange(f);
+                    setModeFilter(m);
+                  }}
+                  className="lg:hidden h-8 text-xs rounded-full border border-border bg-background px-3 pr-7 text-foreground appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23888%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_8px_center] focus:outline-none focus:ring-2 focus:ring-primary/50"
+                >
+                  <option value="active|all">{t?.active || 'Active'} ({activeCount})</option>
+                  <option value="active|basic">{t?.active || 'Active'} · Basic</option>
+                  <option value="active|custom">{t?.active || 'Active'} · Custom</option>
+                  {pendingCount > 0 && (
+                    <option value="pending|all">{t?.pendingApproval || 'Pending'} ({pendingCount})</option>
+                  )}
+                  <option value="hidden|all">{t?.hidden || 'Hidden'} ({hiddenCount})</option>
+                  <option value="all|all">{t?.all || 'All'} ({groups.length})</option>
+                  <option value="all|basic">{t?.all || 'All'} · Basic</option>
+                  <option value="all|custom">{t?.all || 'All'} · Custom</option>
+                </select>
+
+                {/* Desktop: original toggle groups */}
+                <ToggleGroup type="single" value={filter} onValueChange={handleFilterChange} className="bg-transparent gap-1 hidden lg:flex">
                   <ToggleGroupItem value="active" className="text-xs px-3 sm:px-3.5 py-1.5 h-8 rounded-full border border-transparent data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=off]:bg-muted/50 data-[state=off]:text-muted-foreground hover:data-[state=off]:bg-muted gap-1.5 transition-all">
-                    <Layers className="w-3 h-3 hidden sm:block" />
+                    <Layers className="w-3 h-3" />
                     {t?.active || 'Active'}
                     <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 min-w-[16px] justify-center bg-muted-foreground/15 text-foreground">{activeCount}</Badge>
                   </ToggleGroupItem>
                   {pendingCount > 0 && (
                     <ToggleGroupItem value="pending" className="text-xs px-3 sm:px-3.5 py-1.5 h-8 rounded-full border border-transparent data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=off]:bg-muted/50 data-[state=off]:text-muted-foreground hover:data-[state=off]:bg-muted gap-1.5 transition-all">
-                      <Clock className="w-3 h-3 hidden sm:block" />
+                      <Clock className="w-3 h-3" />
                       {t?.pendingApproval || 'Pending'}
                       <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 min-w-[16px] justify-center bg-warning/20 text-warning">{pendingCount}</Badge>
                     </ToggleGroupItem>
                   )}
                   <ToggleGroupItem value="hidden" className="text-xs px-3 sm:px-3.5 py-1.5 h-8 rounded-full border border-transparent data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=off]:bg-muted/50 data-[state=off]:text-muted-foreground hover:data-[state=off]:bg-muted gap-1.5 transition-all">
-                    <EyeOff className="w-3 h-3 hidden sm:block" />
+                    <EyeOff className="w-3 h-3" />
                     {t?.hidden || 'Hidden'}
                     <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 min-w-[16px] justify-center bg-muted-foreground/15 text-foreground">{hiddenCount}</Badge>
                   </ToggleGroupItem>
@@ -904,8 +927,8 @@ export default function Dashboard() {
                     <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 min-w-[16px] justify-center bg-muted-foreground/15 text-foreground">{groups.length}</Badge>
                   </ToggleGroupItem>
                 </ToggleGroup>
-                <div className="w-px h-6 bg-border hidden sm:block" />
-                <ToggleGroup type="single" value={modeFilter} onValueChange={(v) => v && setModeFilter(v as ProjectModeFilter)} className="bg-transparent gap-1">
+                <div className="w-px h-6 bg-border hidden lg:block" />
+                <ToggleGroup type="single" value={modeFilter} onValueChange={(v) => v && setModeFilter(v as ProjectModeFilter)} className="bg-transparent gap-1 hidden lg:flex">
                   <ToggleGroupItem value="all" className="text-xs px-2.5 py-1.5 h-8 rounded-full border border-transparent data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=off]:bg-muted/50 data-[state=off]:text-muted-foreground hover:data-[state=off]:bg-muted transition-all">
                     {locale === 'vi' ? 'Tất cả' : 'All'}
                   </ToggleGroupItem>
