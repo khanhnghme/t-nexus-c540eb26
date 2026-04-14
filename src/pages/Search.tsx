@@ -87,8 +87,8 @@ export default function SearchPage() {
         // Resources
         supabase
           .from('project_resources')
-          .select('id, file_name, group_id, groups!inner(slug, workspace_id, project_mode)')
-          .ilike('file_name', q)
+          .select('id, name, group_id, groups!inner(slug, workspace_id, project_mode)')
+          .ilike('name', q)
           .limit(20),
         // Meetings
         supabase
@@ -165,7 +165,7 @@ export default function SearchPage() {
         all.push({
           id: r.id,
           type: 'resources',
-          title: r.file_name,
+          title: r.name,
           href,
           icon: FileText,
         });
