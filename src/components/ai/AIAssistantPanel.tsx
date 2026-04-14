@@ -116,12 +116,7 @@ export default function AIAssistantPanel({
   }, [isOpen]);
 
   const incrementUsage = () => {
-    if (user?.id) {
-      const usageKey = getUsageKey(user.id);
-      const newCount = questionsToday + 1;
-      localStorage.setItem(usageKey, newCount.toString());
-      setQuestionsToday(newCount);
-    }
+    setQuestionsToday(prev => prev + 1);
   };
 
   const sendMessage = async (messageText: string) => {
@@ -138,10 +133,10 @@ export default function AIAssistantPanel({
       return;
     }
 
-    if (questionsToday >= maxQuestions) {
+    if (maxQuestions !== null && questionsToday >= maxQuestions) {
       toast({
         title: 'Đã hết lượt hỏi hôm nay',
-        description: `Bạn đã sử dụng ${maxQuestions} câu hỏi (${projectCount} project × ${QUESTIONS_PER_PROJECT} lượt). Vui lòng quay lại ngày mai.`,
+        description: `Bạn đã sử dụng hết ${maxQuestions} lượt hỏi AI. Vui lòng quay lại ngày mai hoặc nâng cấp gói.`,
         variant: 'destructive',
       });
       return;
