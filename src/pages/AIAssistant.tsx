@@ -219,7 +219,7 @@ export default function AIAssistant() {
   const usagePercent = isUnlimited ? 0 : Math.min(100, (questionsToday / maxQuestions) * 100);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-56px)] max-w-4xl mx-auto">
+    <div className="flex flex-col h-[calc(100dvh-56px)] max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b bg-background">
         <div className="flex items-center gap-2.5">
@@ -319,7 +319,7 @@ export default function AIAssistant() {
       </ScrollArea>
 
       {/* Input */}
-      <div className="border-t p-3 bg-background">
+      <div className="border-t border-border/60 px-3 py-2 bg-background/95 backdrop-blur-sm pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         <form onSubmit={handleSubmit} className="flex gap-2 items-end">
           <div className="flex-1 relative">
             <Textarea
@@ -329,7 +329,7 @@ export default function AIAssistant() {
               onKeyDown={handleKeyDown}
               placeholder={remainingQuestions <= 0 ? "Đã hết lượt hỏi tháng này..." : "Nhập câu hỏi..."}
               disabled={isLoading || remainingQuestions <= 0}
-              className={cn("min-h-[44px] max-h-[120px] resize-none pr-14 text-sm rounded-xl", isOverLimit && "border-destructive focus-visible:ring-destructive")}
+              className={cn("min-h-[42px] max-h-[120px] resize-none pr-14 text-sm rounded-xl border-border/50 bg-muted/30 focus:bg-background transition-colors", isOverLimit && "border-destructive focus-visible:ring-destructive")}
               rows={1}
             />
             {input.trim() && (
@@ -338,12 +338,12 @@ export default function AIAssistant() {
               </span>
             )}
           </div>
-          <Button type="submit" size="icon" disabled={!input.trim() || isLoading || isOverLimit || remainingQuestions <= 0} className="shrink-0 h-11 w-11 rounded-xl">
+          <Button type="submit" size="icon" disabled={!input.trim() || isLoading || isOverLimit || remainingQuestions <= 0} className="shrink-0 h-[42px] w-[42px] rounded-xl">
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
         </form>
         {remainingQuestions <= 0 && (
-          <p className="text-[10px] text-muted-foreground text-center mt-2">Bạn đã hết lượt hỏi tháng này. Quay lại tháng sau nhé!</p>
+          <p className="text-[10px] text-muted-foreground text-center mt-1.5">Bạn đã hết lượt hỏi tháng này. Quay lại tháng sau nhé!</p>
         )}
       </div>
 
