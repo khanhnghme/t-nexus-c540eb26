@@ -34,7 +34,7 @@ const QUOTA_COLUMN_MAP: Record<QuotaKey, string> = {
   'workspace:limit_file_size_mb': 'max_file_size_mb',
   'workspace:limit_meeting_min': 'max_meeting_duration_minutes',
   'workspace:limit_log_days': 'max_activity_log_days',
-  'workspace:limit_ai_messages': 'max_ai_messages_per_day',
+  'workspace:limit_ai_messages': 'max_ai_messages_per_month',
 };
 
 // ─── Column mapping: plan_limits table → FeatureKey ────────────────────────────
