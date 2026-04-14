@@ -654,8 +654,10 @@ export default function ServicePlan() {
                 {wsUsages.map(ws => {
                   const totalProjectsAll = wsUsages.reduce((s, w) => s + w.projectCount, 0);
                   const totalStorageAll = wsUsages.reduce((s, w) => s + w.storageMb, 0);
+                  const totalAiAll = wsUsages.reduce((s, w) => s + w.aiUsage, 0);
                   const projectContribPct = totalProjectsAll > 0 ? Math.round((ws.projectCount / totalProjectsAll) * 100) : 0;
                   const storageContribPct = totalStorageAll > 0 ? Math.round((ws.storageMb / totalStorageAll) * 100) : 0;
+                  const aiContribPct = totalAiAll > 0 ? Math.round((ws.aiUsage / totalAiAll) * 100) : 0;
                   const formatStorage = (mb: number) => mb >= 1000 ? `${(mb / 1000).toFixed(1)} GB` : `${mb} MB`;
 
                   const projPct = ws.maxProjects ? (ws.projectCount / ws.maxProjects) * 100 : 0;
@@ -722,6 +724,18 @@ export default function ServicePlan() {
                               value={ws.maxStorageMb > 0 ? Math.min(100, storagePct) : 0}
                               className={`h-1.5 ${storageOver ? '[&>div]:bg-red-500' : storageWarn ? '[&>div]:bg-amber-500' : ''}`}
                             />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-muted-foreground flex items-center gap-1.5">
+                                <Bot className="w-3 h-3" /> {t.aiMessages}
+                              </span>
+                              <span className="font-medium tabular-nums">
+                                {ws.aiUsage} {t.aiMessagesUnit || 'lượt'}
+                                {totalAiAll > 0 && <span className="text-muted-foreground ml-1">({aiContribPct}%)</span>}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </CardContent>
