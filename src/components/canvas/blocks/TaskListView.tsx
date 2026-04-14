@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -32,7 +32,7 @@ interface TaskListViewProps {
   handlers: TaskHandlers;
 }
 
-export function TaskListView({ tasks, editable, groupId, newTitle, setNewTitle, adding, handlers }: TaskListViewProps) {
+function TaskListViewInner({ tasks, editable, groupId, newTitle, setNewTitle, adding, handlers }: TaskListViewProps) {
   const isMobile = useIsMobile();
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const [editingTitleValue, setEditingTitleValue] = useState("");
@@ -256,3 +256,5 @@ export function TaskListView({ tasks, editable, groupId, newTitle, setNewTitle, 
     </>
   );
 }
+
+export const TaskListView = React.memo(TaskListViewInner);
