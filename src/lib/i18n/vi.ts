@@ -3028,11 +3028,11 @@ export const vi: Translations = {
   },
 
   servicePlanFeatures: {
-    plan_free: ['1 Workspace', 'Tổng 5 dự án', 'Tổng 5 suất thành viên (unique)', '500 MB tổng lưu trữ', 'Upload 5 MB/file'],
-    plan_plus: ['5 Workspaces', 'Tổng 15 dự án', 'Tổng 15 suất thành viên (unique)', '10 GB tổng lưu trữ', 'Upload 100 MB/file'],
-    plan_pro: ['20 Workspaces', 'Tổng 50 dự án', 'Tổng 50 suất thành viên (unique)', '50 GB tổng lưu trữ', 'Upload 5 GB/file'],
-    plan_business: ['50 Workspaces', 'Tổng 500 dự án', 'Tổng 200 suất thành viên (unique)', '200 GB tổng lưu trữ', 'Upload 5 GB/file'],
-    plan_custom: ['Không giới hạn', 'Không giới hạn dự án', 'Không giới hạn suất thành viên', 'Không giới hạn lưu trữ', 'Upload 5 GB/file'],
+    plan_free: ['1 Workspace', 'Tổng 5 dự án', 'Tổng 5 suất thành viên (unique)', '500 MB tổng lưu trữ', 'Upload 5 MB/file', 'Trợ lý AI: 5 lượt/ngày'],
+    plan_plus: ['5 Workspaces', 'Tổng 15 dự án', 'Tổng 15 suất thành viên (unique)', '10 GB tổng lưu trữ', 'Upload 100 MB/file', 'Trợ lý AI: 20 lượt/ngày'],
+    plan_pro: ['20 Workspaces', 'Tổng 50 dự án', 'Tổng 50 suất thành viên (unique)', '50 GB tổng lưu trữ', 'Upload 5 GB/file', 'Trợ lý AI: 50 lượt/ngày'],
+    plan_business: ['50 Workspaces', 'Tổng 500 dự án', 'Tổng 200 suất thành viên (unique)', '200 GB tổng lưu trữ', 'Upload 5 GB/file', 'Trợ lý AI: 150 lượt/ngày'],
+    plan_custom: ['Không giới hạn', 'Không giới hạn dự án', 'Không giới hạn suất thành viên', 'Không giới hạn lưu trữ', 'Upload 5 GB/file', 'Trợ lý AI: Không giới hạn'],
   },
 
   servicePlanFullFeatures: {
@@ -3045,6 +3045,7 @@ export const vi: Translations = {
       'Quản lý task cơ bản',
       'Chat nhóm',
       'Họp tối đa 15 phút',
+      'Trợ lý AI: 5 lượt/ngày',
       'Standard Email Support',
     ],
     plan_plus: [
@@ -3058,6 +3059,7 @@ export const vi: Translations = {
       'Nhật ký hoạt động (30 ngày)',
       'Chấm điểm thành viên',
       'Xuất dữ liệu đầy đủ',
+      'Trợ lý AI: 20 lượt/ngày',
       'Có thể mua thêm add-on',
     ],
     plan_pro: [
@@ -3073,6 +3075,7 @@ export const vi: Translations = {
       'Quản lý giai đoạn (Stage)',
       'Hệ thống điểm nâng cao',
       'Priority Support (24h-48h)',
+      'Trợ lý AI: 50 lượt/ngày',
       'Add-on đi kèm, giảm 10%',
     ],
     plan_business: [
@@ -3086,6 +3089,7 @@ export const vi: Translations = {
       'Họp không giới hạn',
       'Quản trị hệ thống',
       'Express Support (cùng ngày)',
+      'Trợ lý AI: 150 lượt/ngày',
       'Add-on đi kèm, giảm 20%',
     ],
     plan_custom: [
@@ -3097,6 +3101,7 @@ export const vi: Translations = {
       'Mở khóa tất cả tính năng cho mọi thành viên',
       'Hỗ trợ 24/7 chuyên dụng',
       'Triển khai riêng',
+      'Trợ lý AI: Không giới hạn',
       'SLA cam kết',
     ],
   },
@@ -3119,6 +3124,7 @@ export const vi: Translations = {
       { category: 'Công cụ & Tính năng', icon: 'sparkles', items: [
         { label: 'Quản lý task cơ bản', value: '✓' },
         { label: 'Chat nhóm', value: '✓' },
+        { label: 'Trợ lý AI', value: '5/ngày' },
         { label: 'Chấm điểm thành viên', value: '—' },
         { label: 'Xuất dữ liệu đầy đủ', value: '—' },
         { label: 'Add-ons', value: '—' },
@@ -3144,6 +3150,7 @@ export const vi: Translations = {
       { category: 'Công cụ & Tính năng', icon: 'sparkles', items: [
         { label: 'Quản lý task cơ bản', value: '✓' },
         { label: 'Chat nhóm', value: '✓' },
+        { label: 'Trợ lý AI', value: '20/ngày' },
         { label: 'Chấm điểm thành viên', value: '✓' },
         { label: 'Xuất dữ liệu đầy đủ', value: '✓' },
         { label: 'Add-ons', value: 'Có thể mua' },
@@ -3168,6 +3175,7 @@ export const vi: Translations = {
       ]},
       { category: 'Công cụ & Tính năng', icon: 'sparkles', items: [
         { label: 'Tất cả tính năng Plus', value: '✓' },
+        { label: 'Trợ lý AI', value: '50/ngày' },
         { label: 'Quản lý giai đoạn', value: '✓' },
         { label: 'Điểm nâng cao', value: '✓' },
         { label: 'Add-ons', value: 'Đi kèm, giảm 10%' },
@@ -3192,6 +3200,7 @@ export const vi: Translations = {
       ]},
       { category: 'Công cụ & Tính năng', icon: 'sparkles', items: [
         { label: 'Tất cả tính năng Pro', value: '✓' },
+        { label: 'Trợ lý AI', value: '150/ngày' },
         { label: 'Quản trị hệ thống', value: '✓' },
         { label: 'Add-ons', value: 'Đi kèm, giảm 20%' },
       ]},
@@ -3215,6 +3224,7 @@ export const vi: Translations = {
       ]},
       { category: 'Công cụ & Tính năng', icon: 'sparkles', items: [
         { label: 'Tất cả tính năng Business', value: '✓' },
+        { label: 'Trợ lý AI', value: 'Không giới hạn' },
         { label: 'Triển khai riêng', value: '✓' },
         { label: 'SLA cam kết', value: '✓' },
       ]},
