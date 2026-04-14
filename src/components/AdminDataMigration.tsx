@@ -593,9 +593,9 @@ export default function AdminDataMigration() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleImport} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <Button onClick={handleImport} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Xóa tất cả & Nhập dữ liệu
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

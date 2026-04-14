@@ -319,9 +319,9 @@ export default function AdminActivity() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDeleteByDateRange} className="bg-destructive hover:bg-destructive/90">
+                      <Button onClick={handleDeleteByDateRange} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
                         {t.delete}
-                      </AlertDialogAction>
+                      </Button>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>

@@ -1702,9 +1702,9 @@ export default function MemberManagementCard({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isBulkProcessing}>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleBulkChangeRole} disabled={isBulkProcessing}>
+            <Button onClick={handleBulkChangeRole} disabled={isBulkProcessing}>
               {isBulkProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Xác nhận'}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

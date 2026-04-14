@@ -200,10 +200,10 @@ export default function ConnectedServicesCard() {
             <AlertDialogCancel disabled={disconnecting}>
               {isVi ? 'Hủy' : 'Cancel'}
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleDisconnect} disabled={disconnecting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <Button onClick={handleDisconnect} disabled={disconnecting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               {disconnecting && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
               {isVi ? 'Xác nhận' : 'Confirm'}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

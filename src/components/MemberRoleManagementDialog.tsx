@@ -319,10 +319,10 @@ export default function MemberRoleManagementDialog({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={actionLoading}>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDemote} disabled={actionLoading} className="bg-destructive hover:bg-destructive/90">
+            <Button onClick={handleDemote} disabled={actionLoading} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
               {actionLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Xác nhận hạ quyền
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

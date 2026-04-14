@@ -2869,9 +2869,9 @@ export default function AdminBackupRestore() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Tiếp tục</AlertDialogCancel>
-            <AlertDialogAction onClick={handleCancelConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <Button onClick={handleCancelConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Hủy quá trình
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

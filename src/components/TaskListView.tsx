@@ -1701,9 +1701,9 @@ export default function TaskListView({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isBulkProcessing}>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleBulkStatusChange} disabled={isBulkProcessing}>
+            <Button onClick={handleBulkStatusChange} disabled={isBulkProcessing}>
               {isBulkProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Xác nhận'}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
