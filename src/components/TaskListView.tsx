@@ -736,6 +736,8 @@ export default function TaskListView({
   const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set(stages.map(s => s.id)));
   const [filterStage, setFilterStage] = useState<string>('all');
   const [showHidden, setShowHidden] = useState(false);
+  const TASK_RENDER_LIMIT = 30;
+  const [fullyExpandedStages, setFullyExpandedStages] = useState<Set<string>>(new Set());
   const [taskFilters, setTaskFilters] = useState<TaskFiltersType>(defaultTaskFilters);
 
   // Auto-collapse completed stages - per user preference in localStorage
