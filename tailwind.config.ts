@@ -13,6 +13,22 @@ export default {
       },
     },
     extend: {
+      spacing: {
+        '4.5': '1.125rem',
+        '13': '3.25rem',
+        '15': '3.75rem',
+        '18': '4.5rem',
+      },
+      fontSize: {
+        '2xs': ['0.625rem', { lineHeight: '0.875rem' }],
+        'heading-1': ['1.875rem', { lineHeight: '2.25rem', letterSpacing: '-0.02em', fontWeight: '700' }],
+        'heading-2': ['1.5rem', { lineHeight: '2rem', letterSpacing: '-0.01em', fontWeight: '600' }],
+        'heading-3': ['1.25rem', { lineHeight: '1.75rem', letterSpacing: '-0.01em', fontWeight: '600' }],
+        'heading-4': ['1.125rem', { lineHeight: '1.5rem', fontWeight: '600' }],
+        'body': ['0.875rem', { lineHeight: '1.375rem' }],
+        'body-sm': ['0.8125rem', { lineHeight: '1.25rem' }],
+        'caption': ['0.75rem', { lineHeight: '1rem' }],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -84,6 +100,7 @@ export default {
         sm: "calc(var(--radius) - 4px)",
         xl: "calc(var(--radius) + 4px)",
         "2xl": "calc(var(--radius) + 8px)",
+        "3xl": "calc(var(--radius) + 12px)",
       },
       fontFamily: {
         sans: ["NotionInter", "Inter", "ui-sans-serif", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Helvetica", "Arial", "sans-serif"],
@@ -163,6 +180,23 @@ export default {
       boxShadow: {
         'card': '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
         'card-lg': '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+        'elevated': '0 4px 12px -2px rgb(0 0 0 / 0.08), 0 0 0 1px rgb(0 0 0 / 0.04)',
+        'dropdown': 'var(--notion-shadow-popup)',
+        'modal': '0 24px 48px -12px rgb(0 0 0 / 0.18), 0 0 0 1px rgb(0 0 0 / 0.05)',
+        'button': '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+        'inset': 'inset 0 2px 4px 0 rgb(0 0 0 / 0.06)',
+      },
+      transitionDuration: {
+        'micro': '100ms',
+        'fast': '150ms',
+        'normal': '200ms',
+        'smooth': '300ms',
+        'slow': '500ms',
+      },
+      transitionTimingFunction: {
+        'ease-spring': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+        'ease-smooth': 'cubic-bezier(0.25, 0.1, 0.25, 1)',
+        'ease-out-expo': 'cubic-bezier(0.16, 1, 0.3, 1)',
       },
     },
   },

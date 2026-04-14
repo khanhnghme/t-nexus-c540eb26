@@ -129,6 +129,12 @@
 
     --radius: 0.375rem;
 
+    /* Layout spacing tokens */
+    --space-page: 1.5rem;
+    --space-section: 1.25rem;
+    --space-element: 0.75rem;
+    --space-inline: 0.5rem;
+
     /* Sidebar — aligned with landing */
     --sidebar-background: 220 16% 96%;
     --sidebar-foreground: 220 24% 12%;
