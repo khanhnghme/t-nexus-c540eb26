@@ -19,7 +19,7 @@ import {
   Crown, Zap, Building2, FolderKanban, HardDrive,
   ArrowRight, Loader2, Infinity, Receipt,
   Check, Users, Shield, Sparkles, BarChart3, Package, AlertTriangle, RefreshCw,
-  Video, Minus, CalendarDays, CreditCard, ArrowDown, ArrowUp,
+  Video, Minus, CalendarDays, CreditCard, ArrowDown, ArrowUp, Bot,
 } from 'lucide-react';
 import { getPlanLabel } from '@/lib/planConfig';
 import { ConnectedToolsTailwind, shouldShowIntegrations } from '@/components/ConnectedToolsBadge';
@@ -61,6 +61,8 @@ export default function ServicePlan() {
   const [wsUsages, setWsUsages] = useState<WorkspaceUsage[]>([]);
   const [planLimits, setPlanLimits] = useState<PlanLimitsData | null>(null);
   const [uniqueMemberCount, setUniqueMemberCount] = useState(0);
+  const [aiUsage, setAiUsage] = useState(0);
+  const [aiLimit, setAiLimit] = useState<number | null>(null);
   // billingHistory state removed — now in BillingHistory page
 
   // newAddons state removed — selection now in AddonCheckout
@@ -139,6 +141,15 @@ export default function ServicePlan() {
 
       setWsUsages(usages);
       setUniqueMemberCount(uniqueMemberIds.size);
+
+      // Fetch AI usage
+      const today = new Date().toISOString().slice(0, 10);
+      const [aiUsageRes, aiLimitRes] = await Promise.all([
+        supabase.rpc('get_owner_ai_usage_today', { _owner_id: user.id, _date: today }),
+        supabase.from('plan_limits').select('max_ai_messages_per_day').eq('plan', plan as any).maybeSingle(),
+      ]);
+      setAiUsage(Number(aiUsageRes.data) || 0);
+      setAiLimit(aiLimitRes.data?.max_ai_messages_per_day ?? null);
     } catch (err) {
       console.warn('Error fetching service plan data:', err);
     } finally {
@@ -501,7 +512,7 @@ export default function ServicePlan() {
               {t.usageOverview}
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {(() => {
                 const totalStorage = wsUsages.reduce((s, w) => s + w.storageMb, 0);
 
@@ -554,7 +565,18 @@ export default function ServicePlan() {
                     bonus: accountLimits.bonusStorageMb,
                     suffix: 'MB',
                     iconColor: 'text-orange-500',
-                    formatMax: (v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)} GB` : `${v} MB`,
+                     formatMax: (v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)} GB` : `${v} MB`,
+                  },
+                  {
+                    label: t.aiMessages,
+                    icon: <Bot className="w-4 h-4" />,
+                    current: aiUsage,
+                    max: aiLimit,
+                    baseMax: aiLimit,
+                    bonus: 0,
+                    suffix: '/day',
+                    iconColor: 'text-purple-500',
+                    note: t.aiMessagesNote,
                   },
                 ];
 
