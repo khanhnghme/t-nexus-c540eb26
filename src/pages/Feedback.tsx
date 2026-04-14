@@ -173,8 +173,6 @@ export default function FeedbackPage() {
     if (fileInputRef.current) fileInputRef.current.value = '';
 
     for (const file of files) {
-      // No file type restriction - allow all files
-      }
       if (file.size > MAX_FILE_SIZE_BYTES) {
         toast({ title: 'Lỗi', description: `"${file.name}" vượt quá ${MAX_FILE_SIZE_MB}MB`, variant: 'destructive' });
         return;
