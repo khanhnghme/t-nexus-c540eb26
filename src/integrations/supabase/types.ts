@@ -1744,7 +1744,7 @@ export type Database = {
           created_at: string
           id: string
           max_activity_log_days: number | null
-          max_ai_messages_per_day: number | null
+          max_ai_messages_per_month: number | null
           max_file_size_mb: number
           max_meeting_duration_minutes: number | null
           max_members_per_workspace: number
@@ -1759,7 +1759,7 @@ export type Database = {
           created_at?: string
           id?: string
           max_activity_log_days?: number | null
-          max_ai_messages_per_day?: number | null
+          max_ai_messages_per_month?: number | null
           max_file_size_mb?: number
           max_meeting_duration_minutes?: number | null
           max_members_per_workspace?: number
@@ -1774,7 +1774,7 @@ export type Database = {
           created_at?: string
           id?: string
           max_activity_log_days?: number | null
-          max_ai_messages_per_day?: number | null
+          max_ai_messages_per_month?: number | null
           max_file_size_mb?: number
           max_meeting_duration_minutes?: number | null
           max_members_per_workspace?: number
@@ -3370,11 +3370,23 @@ export type Database = {
           bonus_storage_mb: number
         }[]
       }
+      get_owner_ai_usage_month: {
+        Args: { _month_end: string; _month_start: string; _owner_id: string }
+        Returns: number
+      }
       get_owner_ai_usage_today: {
         Args: { _date: string; _owner_id: string }
         Returns: number
       }
       get_user_workspace_owner: { Args: { _user_id: string }; Returns: string }
+      get_workspace_ai_usage_month: {
+        Args: {
+          _month_end: string
+          _month_start: string
+          _workspace_id: string
+        }
+        Returns: number
+      }
       get_workspace_ai_usage_today: {
         Args: { _date: string; _workspace_id: string }
         Returns: number

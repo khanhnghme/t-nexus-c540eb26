@@ -546,8 +546,10 @@ serve(async (req) => {
       });
     }
 
-    // ─── Check AI daily usage limit (shared pool per workspace owner) ─
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    // ─── Check AI monthly usage limit (shared pool per workspace owner) ─
+    const now = new Date();
+    const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    const monthEnd = now.toISOString().slice(0, 10);
 
     // Get user's profile
     const { data: profileData } = await supabase
@@ -575,16 +577,17 @@ serve(async (req) => {
 
     const { data: planLimitData } = await supabase
       .from('plan_limits')
-      .select('max_ai_messages_per_day')
+      .select('max_ai_messages_per_month')
       .eq('plan', ownerPlan)
       .maybeSingle();
 
-    const maxMessages = planLimitData?.max_ai_messages_per_day ?? 5; // default 5
+    const maxMessages = planLimitData?.max_ai_messages_per_month ?? 30; // default 30
 
-    // Get total usage across all members in owner's workspaces
-    const { data: totalUsage } = await supabase.rpc('get_owner_ai_usage_today', { 
+    // Get total usage across all members in owner's workspaces for current month
+    const { data: totalUsage } = await supabase.rpc('get_owner_ai_usage_month', { 
       _owner_id: effectiveOwnerId, 
-      _date: today 
+      _month_start: monthStart,
+      _month_end: monthEnd,
     });
 
     const currentCount = totalUsage ?? 0;
@@ -592,7 +595,7 @@ serve(async (req) => {
     // Check limit (null = unlimited)
     if (maxMessages !== null && currentCount >= maxMessages) {
       return new Response(JSON.stringify({ 
-        error: `Nhóm của bạn đã sử dụng hết ${maxMessages} lượt hỏi AI hôm nay. Vui lòng quay lại ngày mai hoặc nâng cấp gói.`,
+        error: `Nhóm của bạn đã sử dụng hết ${maxMessages} lượt hỏi AI tháng này. Vui lòng quay lại tháng sau hoặc nâng cấp gói.`,
         code: "AI_LIMIT_EXCEEDED",
         usage: { used: currentCount, max: maxMessages }
       }), {

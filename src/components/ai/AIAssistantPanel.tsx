@@ -56,14 +56,14 @@ export default function AIAssistantPanel({
     const loadUsage = async () => {
       if (!user?.id) { setUsageLoading(false); return; }
 
-      const today = new Date().toISOString().slice(0, 10);
+      const now = new Date();
+      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+      const monthEnd = now.toISOString().slice(0, 10);
       try {
-        // Use active workspace owner for shared pool quota
         const effectiveOwnerId = activeWorkspace?.owner_id || user.id;
 
-        // Fetch aggregate usage across owner's workspaces + owner's plan
         const [usageRes, ownerProfileRes] = await Promise.all([
-          supabase.rpc('get_owner_ai_usage_today', { _owner_id: effectiveOwnerId, _date: today }),
+          supabase.rpc('get_owner_ai_usage_month', { _owner_id: effectiveOwnerId, _month_start: monthStart, _month_end: monthEnd }),
           supabase.from('profiles').select('user_plan').eq('id', effectiveOwnerId).single(),
         ]);
 
@@ -72,11 +72,11 @@ export default function AIAssistantPanel({
         const ownerPlan = (ownerProfileRes.data as any)?.user_plan || 'plan_free';
         const { data: limitData } = await supabase
           .from('plan_limits')
-          .select('max_ai_messages_per_day')
+          .select('max_ai_messages_per_month')
           .eq('plan', ownerPlan as any)
           .maybeSingle();
 
-        setMaxQuestions((limitData as any)?.max_ai_messages_per_day ?? 5);
+        setMaxQuestions((limitData as any)?.max_ai_messages_per_month ?? 30);
       } catch {
         // fallback defaults
       }
@@ -140,8 +140,8 @@ export default function AIAssistantPanel({
 
     if (maxQuestions !== null && questionsToday >= maxQuestions) {
       toast({
-        title: 'Đã hết lượt hỏi hôm nay',
-        description: `Bạn đã sử dụng hết ${maxQuestions} lượt hỏi AI. Vui lòng quay lại ngày mai hoặc nâng cấp gói.`,
+        title: 'Đã hết lượt hỏi tháng này',
+        description: `Bạn đã sử dụng hết ${maxQuestions} lượt hỏi AI tháng này. Vui lòng quay lại tháng sau hoặc nâng cấp gói.`,
         variant: 'destructive',
       });
       return;

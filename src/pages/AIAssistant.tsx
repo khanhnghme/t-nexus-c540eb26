@@ -39,20 +39,21 @@ export default function AIAssistant() {
   useEffect(() => {
     const loadUsage = async () => {
       if (!user?.id) { setUsageLoading(false); return; }
-      const today = new Date().toISOString().slice(0, 10);
+      const now = new Date();
+      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+      const monthEnd = now.toISOString().slice(0, 10);
       try {
-        // Use active workspace owner for shared pool quota
         const effectiveOwnerId = activeWorkspace?.owner_id || user.id;
         const [usageRes, ownerProfileRes] = await Promise.all([
-          supabase.rpc('get_owner_ai_usage_today', { _owner_id: effectiveOwnerId, _date: today }),
+          supabase.rpc('get_owner_ai_usage_month', { _owner_id: effectiveOwnerId, _month_start: monthStart, _month_end: monthEnd }),
           supabase.from('profiles').select('user_plan').eq('id', effectiveOwnerId).single(),
         ]);
         setQuestionsToday(typeof usageRes.data === 'number' ? usageRes.data : 0);
         const ownerPlan = (ownerProfileRes.data as any)?.user_plan || 'plan_free';
         const { data: limitData } = await supabase
-          .from('plan_limits').select('max_ai_messages_per_day')
+          .from('plan_limits').select('max_ai_messages_per_month')
           .eq('plan', ownerPlan as any).maybeSingle();
-        setMaxQuestions((limitData as any)?.max_ai_messages_per_day ?? 5);
+        setMaxQuestions((limitData as any)?.max_ai_messages_per_month ?? 30);
       } catch { /* fallback */ }
       setUsageLoading(false);
     };
@@ -94,7 +95,7 @@ export default function AIAssistant() {
       return;
     }
     if (maxQuestions !== null && questionsToday >= maxQuestions) {
-      toast({ title: 'Đã hết lượt hỏi hôm nay', description: `Đã sử dụng hết ${maxQuestions} lượt. Quay lại ngày mai hoặc nâng cấp gói.`, variant: 'destructive' });
+      toast({ title: 'Đã hết lượt hỏi tháng này', description: `Đã sử dụng hết ${maxQuestions} lượt tháng này. Quay lại tháng sau hoặc nâng cấp gói.`, variant: 'destructive' });
       return;
     }
 
@@ -326,7 +327,7 @@ export default function AIAssistant() {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={remainingQuestions <= 0 ? "Đã hết lượt hỏi hôm nay..." : "Nhập câu hỏi..."}
+              placeholder={remainingQuestions <= 0 ? "Đã hết lượt hỏi tháng này..." : "Nhập câu hỏi..."}
               disabled={isLoading || remainingQuestions <= 0}
               className={cn("min-h-[44px] max-h-[120px] resize-none pr-14 text-sm rounded-xl", isOverLimit && "border-destructive focus-visible:ring-destructive")}
               rows={1}
@@ -342,7 +343,7 @@ export default function AIAssistant() {
           </Button>
         </form>
         {remainingQuestions <= 0 && (
-          <p className="text-[10px] text-muted-foreground text-center mt-2">Bạn đã hết lượt hỏi. Quay lại ngày mai nhé!</p>
+          <p className="text-[10px] text-muted-foreground text-center mt-2">Bạn đã hết lượt hỏi tháng này. Quay lại tháng sau nhé!</p>
         )}
       </div>
 
