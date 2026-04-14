@@ -85,10 +85,10 @@ export default function DashboardProjectCard({ group, isHidden, isPending, onTog
   return (
     <Wrapper
       {...(wrapperProps as any)}
-      className={`group relative block rounded-2xl overflow-hidden bg-card border border-border transition-all duration-150 ease-in-out ${
+      className={`group relative block rounded-2xl overflow-hidden bg-card border border-border transition-all duration-fast ease-in-out ${
         isPending
           ? 'opacity-60 cursor-default'
-          : 'hover:shadow-md hover:border-border'
+          : 'hover-lift hover:border-border'
       } ${isHidden ? 'opacity-60' : ''}`}
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-muted">
