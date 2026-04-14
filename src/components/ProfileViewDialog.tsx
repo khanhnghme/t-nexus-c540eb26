@@ -221,7 +221,7 @@ export default function ProfileViewDialog({
     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
   });
 
-  const presenceStatus = isConnected ? getPresenceStatus(profile.id) : undefined;
+  const presenceStatus = presenceStatusProp;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -244,7 +244,7 @@ export default function ProfileViewDialog({
                     name={profile.full_name}
                     size="xl"
                     className="border-4 border-background shadow-xl ring-2 ring-primary/20 w-24 h-24"
-                    showPresence={isConnected}
+                    showPresence={!!presenceStatus}
                     presenceStatus={presenceStatus}
                   />
                 </div>
