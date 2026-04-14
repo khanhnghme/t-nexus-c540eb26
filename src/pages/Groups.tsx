@@ -31,7 +31,7 @@ import {
   Plus,
   Users,
   ArrowRight,
-  Loader2,
+  // Loader2 replaced by Spinner
   Crown,
   UserPlus,
   X,

@@ -34,7 +34,7 @@ import {
   FolderKanban,
   ArrowRight,
   Plus,
-  Loader2,
+  // Loader2 replaced by Spinner
   Sparkles,
   Shield,
   Star,

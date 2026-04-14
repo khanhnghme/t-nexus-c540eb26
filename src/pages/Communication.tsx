@@ -17,7 +17,7 @@ import {
   ChevronLeft,
   AtSign,
   FolderKanban,
-  Loader2,
+  // Loader2 replaced by Spinner
   ExternalLink,
   Users,
   Clock,
