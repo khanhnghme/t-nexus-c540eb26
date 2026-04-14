@@ -294,6 +294,7 @@ export const vi: Translations = {
           'Upload tối đa 5 MB / file',
           'Tổng 5 suất thành viên (unique seat, dùng chung cho tất cả WS)',
           'Họp tối đa 15 phút',
+          'Trợ lý AI: 5 lượt/ngày',
         ],
         features: [
           'Quản lý task cơ bản',
@@ -313,6 +314,7 @@ export const vi: Translations = {
           'Tổng 15 suất thành viên (unique seat, dùng chung cho tất cả WS)',
           'Họp tối đa 60 phút',
           'Nhật ký hoạt động (30 ngày)',
+          'Trợ lý AI: 20 lượt/ngày',
         ],
         features: [
           'Mở khóa tính năng Plus cho mọi thành viên',
@@ -333,6 +335,7 @@ export const vi: Translations = {
           'Tổng 50 suất thành viên (unique seat, dùng chung cho tất cả WS)',
           'Họp không giới hạn',
           'Nhật ký hoạt động không giới hạn',
+          'Trợ lý AI: 50 lượt/ngày',
         ],
         features: [
           'Mở khóa tính năng Pro cho mọi thành viên',
@@ -353,6 +356,7 @@ export const vi: Translations = {
           'Tổng 200 suất thành viên (unique seat, dùng chung cho tất cả WS)',
           'Họp không giới hạn',
           'Nhật ký hoạt động không giới hạn',
+          'Trợ lý AI không giới hạn',
         ],
         features: [
           'Mở khóa tính năng Business cho mọi thành viên',
@@ -372,6 +376,7 @@ export const vi: Translations = {
           'Upload tối đa 5 GB / file',
           'Suất thành viên không giới hạn',
           'Họp không giới hạn',
+          'Trợ lý AI không giới hạn',
         ],
         features: [
           'Bảo mật cấp doanh nghiệp',
