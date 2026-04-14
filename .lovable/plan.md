@@ -1,34 +1,32 @@
 
 
-## Plan: Đổi trang Góp ý thành Contact Form riêng tư + Admin lọc theo plan
+## Plan: Thêm upload ảnh vào góp ý + email support
 
-### Tổng quan
-Viết lại toàn bộ `src/pages/Feedback.tsx` thành giao diện đơn giản:
-- **User thường**: Chỉ thấy form gửi góp ý (tiêu đề, loại, nội dung) + danh sách góp ý **của chính mình** kèm trạng thái và phản hồi từ admin
-- **Admin/Owner**: Thấy tất cả góp ý từ mọi user, có thể lọc theo **gói plan** (Free/Plus/Pro/Business), trạng thái (pending/reviewed/resolved), và phản hồi trực tiếp
+### Yêu cầu từ user
+- Không dùng bucket `system-assets`, cần tạo bucket riêng
+- Tối đa 5MB/file
+- Thêm email support
 
-### Chi tiết kỹ thuật
+### Bucket cần tạo
+Bạn cần tạo **1 bucket mới**: `feedback-attachments` (public)
 
-**File: `src/pages/Feedback.tsx`** — viết lại hoàn toàn
+Sau khi bạn tạo xong bucket, mình sẽ:
 
-1. **Giao diện User**:
-   - Form gửi: Tiêu đề, Loại (bug/suggestion/other), Nội dung — gửi vào bảng `feedbacks` (đã có)
-   - Danh sách góp ý của mình: hiển thị trạng thái (pending/reviewed/resolved), phản hồi admin nếu có
-   - Không hiển thị góp ý của người khác
+### Thay đổi
 
-2. **Giao diện Admin/Owner**:
-   - Tab "Tất cả góp ý": danh sách tất cả feedback
-   - Bộ lọc: theo **plan** (user_plan từ profiles), theo **trạng thái** (status), theo **loại** (type)
-   - Mỗi góp ý hiển thị thông tin user + plan badge
-   - Admin có thể phản hồi (cập nhật `admin_response`, `responded_at`, `responded_by`) và đổi trạng thái
-   - Tab "Log lỗi" giữ nguyên cho admin
+**1. Migration**: Thêm cột `attachments jsonb DEFAULT '[]'` vào bảng `feedbacks`
 
-3. **Xóa hoàn toàn**: reactions, comments, reply, expand — không dùng nữa (bảng DB giữ nguyên, chỉ xóa khỏi UI)
+**2. Cập nhật R2 config**:
+- Thêm `feedback-attachments` vào `ALLOWED_BUCKETS` và `BUCKET_URL_KEYS` trong `supabase/functions/r2-storage/index.ts`
+- Thêm vào `ALL_BUCKETS` trong `src/lib/r2Storage.ts`
+- Bạn cần set secret `R2_URL_FEEDBACK_ATTACHMENTS` với public URL của bucket
 
-4. **Query data**: Join `feedbacks` với `profiles` để lấy `user_plan`, hiển thị badge plan bên cạnh tên user
+**3. Sửa `src/pages/Feedback.tsx`**:
+- Thêm UI chọn ảnh (chỉ image/*, max 5MB/file, tối đa 3 ảnh)
+- Preview thumbnails + xóa từng ảnh
+- Upload lên R2 bucket `feedback-attachments` path `{userId}/{timestamp}-{filename}`
+- Hiển thị ảnh đính kèm trong danh sách góp ý (cả user và admin)
+- Thêm thông tin email support `support@t-nexus.io.vn` với icon Mail
 
-### Không cần migration
-Bảng `feedbacks` đã có sẵn các cột cần thiết: `status`, `type`, `priority`, `admin_response`, `responded_at`, `responded_by`. RLS đã cho phép admin xem tất cả, user xem của mình.
-
-### Tổng: 1 file viết lại
+### Tổng: 1 migration + 3 file sửa + 1 secret mới (`R2_URL_FEEDBACK_ATTACHMENTS`)
 
