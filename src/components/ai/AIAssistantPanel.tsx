@@ -43,7 +43,7 @@ export default function AIAssistantPanel({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [questionsToday, setQuestionsToday] = useState(0);
-  const [maxQuestions, setMaxQuestions] = useState(5);
+  const [maxQuestions, setMaxQuestions] = useState<number | null>(5);
   const [usageLoading, setUsageLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
