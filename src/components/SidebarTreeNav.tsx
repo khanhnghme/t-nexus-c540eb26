@@ -24,6 +24,7 @@ import {
   Shield,
   Plus,
   LayoutGrid,
+  Sparkles,
   ChevronsUpDown,
   Check,
   FolderOpen,
@@ -175,6 +176,7 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
         {isAvailable && activeWorkspace && !isGuest && (
           <>
             <TreeItemCollapsed icon={LayoutGrid} label={t?.overview || 'Overview'} href="/workspace/settings" active={isPathActive('/workspace/settings')} />
+            <TreeItemCollapsed icon={Sparkles} label={t?.aiAssistant || 'AI Assistant'} href="/ai-assistant" active={isPathActive('/ai-assistant')} />
             <TreeItemCollapsed icon={Users} label={t?.members || 'Members'} href="/workspace/members" active={isPathActive('/workspace/members')} />
           </>
         )}
@@ -233,6 +235,10 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
               <Link to="/workspace/settings" className={cn('sidebar-nav-item', isPathActive('/workspace/settings') && 'active')}>
                 <LayoutGrid className="nav-icon" strokeWidth={1.8} />
                 <span className="nav-label">{t?.overview || 'Overview'}</span>
+              </Link>
+              <Link to="/ai-assistant" className={cn('sidebar-nav-item', isPathActive('/ai-assistant') && 'active')}>
+                <Sparkles className="nav-icon" strokeWidth={1.8} />
+                <span className="nav-label">{t?.aiAssistant || 'AI Assistant'}</span>
               </Link>
               <Link to="/workspace/members" className={cn('sidebar-nav-item', isPathActive('/workspace/members') && 'active')}>
                 <Users className="nav-icon" strokeWidth={1.8} />

@@ -78,6 +78,7 @@ import SearchPage from "./pages/Search";
 
 const CreateCustomProject = React.lazy(() => import("./pages/CreateCustomProject"));
 const PublicCanvasPage = React.lazy(() => import("./pages/PublicCanvasPage"));
+const AIAssistant = React.lazy(() => import("./pages/AIAssistant"));
 
 const queryClient = new QueryClient();
 
@@ -212,6 +213,7 @@ function AppRoutes() {
         {/* ═══ Protected routes with persistent DashboardLayout ═══ */}
         <Route element={<ProtectedLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/ai-assistant" element={<Suspense fallback={null}><AIAssistant /></Suspense>} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/groups" element={<Groups />} />
