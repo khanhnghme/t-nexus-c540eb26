@@ -1,6 +1,5 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
+import type jsPDFType from 'jspdf';
 import type { Group, GroupMember, Task, Stage } from '@/types/database';
 import ettLogoImage from '@/assets/t-nexus-text.png';
 

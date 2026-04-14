@@ -1,4 +1,4 @@
-import jsPDF from "jspdf";
+import type jsPDFType from "jspdf";
 
 // Use `any` for blocks since our custom block types (taskList, memberList, etc.)
 // are not part of BlockNote's default Block type union.

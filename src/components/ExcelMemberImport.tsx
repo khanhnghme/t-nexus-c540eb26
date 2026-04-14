@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Loader2, Upload, FileSpreadsheet, AlertTriangle, CheckCircle2, XCircle, ArrowRight, ArrowLeft, Table2 } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import type * as XLSXType from 'xlsx';
 
 export type ExcelImportAction = 'add' | 'remove';
 

@@ -216,7 +216,51 @@ export default function GroupDetail() {
 
   useEffect(() => { if (routeId && user) fetchGroupData(); }, [routeId, user]);
 
-  // Realtime subscription on group_members for auto-refresh when members change
+  // Selective re-fetch functions — avoid fetching everything on partial changes
+  const fetchMembersOnly = useCallback(async () => {
+    if (!group?.id || !user) return;
+    try {
+      const { data: membersData } = await supabase.from('group_members').select('*').eq('group_id', group.id);
+      if (membersData) {
+        const userIds = membersData.map(m => m.user_id);
+        const { data: profilesData } = await supabase.from('profiles').select('*').in('id', userIds);
+        const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+        setMembers(membersData.map(m => ({ ...m, profiles: profilesMap.get(m.user_id) })) as GroupMember[]);
+        const myMembership = membersData.find(m => m.user_id === user?.id);
+        setIsLeaderInGroup(myMembership?.role === 'project_basic:admin' || myMembership?.role === 'project_basic:owner' || isAdmin);
+      }
+    } catch (e) { console.error('fetchMembersOnly error', e); }
+  }, [group?.id, user, isAdmin]);
+
+  const fetchStagesOnly = useCallback(async () => {
+    if (!group?.id) return;
+    const { data } = await supabase.from('stages').select('*').eq('group_id', group.id).order('order_index');
+    if (data) setStages(data);
+  }, [group?.id]);
+
+  const fetchTasksOnly = useCallback(async () => {
+    if (!group?.id) return;
+    const { data: tasksData } = await supabase.from('tasks').select('*').eq('group_id', group.id).order('created_at', { ascending: false });
+    if (tasksData) {
+      const taskIds = tasksData.map(t => t.id);
+      if (taskIds.length > 0) {
+        const { data: assignmentsData } = await supabase.from('task_assignments').select('*').in('task_id', taskIds);
+        const assigneeIds = [...new Set(assignmentsData?.map(a => a.user_id) || [])];
+        const { data: assigneeProfiles } = assigneeIds.length > 0
+          ? await supabase.from('profiles').select('*').in('id', assigneeIds)
+          : { data: [] };
+        const profilesMap = new Map((assigneeProfiles || []).map(p => [p.id, p] as const));
+        setTasks(tasksData.map(task => ({
+          ...task,
+          task_assignments: assignmentsData?.filter(a => a.task_id === task.id).map(a => ({ ...a, profiles: profilesMap.get(a.user_id) })) || [],
+        })) as Task[]);
+      } else {
+        setTasks([]);
+      }
+    }
+  }, [group?.id]);
+
+  // Realtime subscription on group_members — only re-fetch members
   useEffect(() => {
     const gId = group?.id;
     if (!gId) return;
@@ -228,11 +272,11 @@ export default function GroupDetail() {
         table: 'group_members',
         filter: `group_id=eq.${gId}`,
       }, () => {
-        fetchGroupData();
+        fetchMembersOnly();
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [group?.id]);
+  }, [group?.id, fetchMembersOnly]);
 
   const fetchGroupData = async () => {
     if (!routeId) return;

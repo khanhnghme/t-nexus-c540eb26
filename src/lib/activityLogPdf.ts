@@ -1,6 +1,5 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
+import type jsPDFType from 'jspdf';
 import ettLogoUrl from '@/assets/t-nexus-text.png';
 
 // ETT Brand Colors
