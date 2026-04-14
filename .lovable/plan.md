@@ -1,29 +1,23 @@
 
 
-## Plan: Cập nhật hạn mức AI theo gói + UI
+## Plan: Thêm hạn mức AI vào tất cả UI hiển thị tính năng gói
 
-### Tóm tắt
-- Free: 5, Plus: 20, Pro: 50, Business: **150** (giảm từ 200), Enterprise: giữ unlimited
-- Cập nhật DB `plan_limits` + tất cả UI liên quan
+### Vấn đề
+Hạn mức AI (Free: 5, Plus: 20, Pro: 50, Business: 150, Enterprise: Unlimited) đã đúng ở trang Pricing (`quotas` + `planComparison`) nhưng **thiếu** ở 3 nơi trong i18n:
 
-### Chi tiết
+1. **`servicePlanFeatures`** — danh sách compact trên trang Thông tin cá nhân
+2. **`servicePlanFullFeatures`** — danh sách chi tiết trên trang Gói dịch vụ
+3. **`servicePlanFeatureGroups`** — bảng phân nhóm trên trang Gói dịch vụ (category "Tools & Features")
 
-**1. Cập nhật DB `plan_limits` (dùng insert tool)**
-```sql
-UPDATE plan_limits SET max_ai_messages_per_day = 5 WHERE plan = 'plan_free';
-UPDATE plan_limits SET max_ai_messages_per_day = 20 WHERE plan = 'plan_plus';
-UPDATE plan_limits SET max_ai_messages_per_day = 50 WHERE plan = 'plan_pro';
-UPDATE plan_limits SET max_ai_messages_per_day = 150 WHERE plan = 'plan_business';
--- plan_custom (Enterprise) giữ NULL = unlimited
-```
+### Thay đổi (2 files)
 
-**2. Cập nhật `src/lib/i18n/en.ts`**
-- Business quotas (line 358): `'Unlimited AI Assistant'` → `'AI Assistant: 150 messages/day'`
-- Comparison table (line 422): `business: 'Unlimited'` → `business: '150/day'`
+**`src/lib/i18n/en.ts`**
+- `servicePlanFeatures`: Thêm item AI vào mỗi gói (`'AI Assistant: 5/day'`, `'20/day'`, `'50/day'`, `'150/day'`, `'Unlimited'`)
+- `servicePlanFullFeatures`: Thêm dòng AI tương ứng vào mỗi gói
+- `servicePlanFeatureGroups`: Thêm `{ label: 'AI Assistant', value: '5/day' }` vào category "Tools & Features" cho mỗi gói
 
-**3. Cập nhật `src/lib/i18n/vi.ts`**
-- Business quotas (line 359): `'Trợ lý AI không giới hạn'` → `'Trợ lý AI: 150 lượt/ngày'`
-- Comparison table (line 424): `business: 'Không giới hạn'` → `business: '150/ngày'`
+**`src/lib/i18n/vi.ts`**
+- Tương tự với text tiếng Việt (`'Trợ lý AI: 5 lượt/ngày'`, v.v.)
 
-### Tổng: 1 data update + 2 files sửa
+### Tổng: 2 files sửa, chỉ i18n
 
