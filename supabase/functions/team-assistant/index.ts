@@ -546,41 +546,53 @@ serve(async (req) => {
       });
     }
 
-    // ─── Check AI daily usage limit ──────────────────────────────────
+    // ─── Check AI daily usage limit (shared pool per workspace owner) ─
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
-    // Get user's plan and limit
+    // Get user's profile
     const { data: profileData } = await supabase
       .from('profiles')
       .select('full_name, user_plan')
       .eq('id', userId)
       .single();
 
-    const userPlan = profileData?.user_plan || 'plan_free';
     let userName = profileData?.full_name || userEmail || "Người dùng";
+
+    // Find workspace owner for this user (shared quota pool)
+    const { data: ownerId } = await supabase.rpc('get_user_workspace_owner', { _user_id: userId });
+    const effectiveOwnerId = ownerId || userId;
+
+    // Get owner's plan and limit
+    let ownerPlan = profileData?.user_plan || 'plan_free';
+    if (effectiveOwnerId !== userId) {
+      const { data: ownerProfile } = await supabase
+        .from('profiles')
+        .select('user_plan')
+        .eq('id', effectiveOwnerId)
+        .single();
+      ownerPlan = ownerProfile?.user_plan || 'plan_free';
+    }
 
     const { data: planLimitData } = await supabase
       .from('plan_limits')
       .select('max_ai_messages_per_day')
-      .eq('plan', userPlan)
+      .eq('plan', ownerPlan)
       .maybeSingle();
 
     const maxMessages = planLimitData?.max_ai_messages_per_day ?? 5; // default 5
 
-    // Get today's usage
-    const { data: usageRow } = await supabase
-      .from('ai_daily_usage')
-      .select('message_count')
-      .eq('user_id', userId)
-      .eq('usage_date', today)
-      .maybeSingle();
+    // Get total usage across all members in owner's workspaces
+    const { data: totalUsage } = await supabase.rpc('get_owner_ai_usage_today', { 
+      _owner_id: effectiveOwnerId, 
+      _date: today 
+    });
 
-    const currentCount = usageRow?.message_count ?? 0;
+    const currentCount = totalUsage ?? 0;
 
     // Check limit (null = unlimited)
     if (maxMessages !== null && currentCount >= maxMessages) {
       return new Response(JSON.stringify({ 
-        error: `Bạn đã sử dụng hết ${maxMessages} lượt hỏi AI hôm nay. Vui lòng quay lại ngày mai hoặc nâng cấp gói.`,
+        error: `Nhóm của bạn đã sử dụng hết ${maxMessages} lượt hỏi AI hôm nay. Vui lòng quay lại ngày mai hoặc nâng cấp gói.`,
         code: "AI_LIMIT_EXCEEDED",
         usage: { used: currentCount, max: maxMessages }
       }), {
