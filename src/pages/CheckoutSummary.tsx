@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import tNexusText from '@/assets/t-nexus-text.png';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { CheckCircle2, XCircle, Clock, Ban, Loader2, ArrowRight, RotateCcw, Receipt, Printer, CreditCard, Calendar, Hash, ShieldAlert, LogIn } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
