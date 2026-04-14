@@ -40,6 +40,7 @@ import {
   Filter,
   MessageSquarePlus,
   Paperclip,
+  ChevronRight,
   X,
   Mail,
   FileText,
