@@ -1,32 +1,57 @@
 
 
-## Plan: Thêm upload ảnh vào góp ý + email support
+## Plan: Fix màu chữ trong Canvas Editor
 
-### Yêu cầu từ user
-- Không dùng bucket `system-assets`, cần tạo bucket riêng
-- Tối đa 5MB/file
-- Thêm email support
+### Nguyên nhân
+BlockNote v0.47 (package `@blocknote/shadcn`) sử dụng component `DropdownMenuContent` nội bộ **không có Portal** — nghĩa là dropdown (bao gồm color picker) render ngay trong DOM tại vị trí của nút bấm. Khi có parent element có `overflow: hidden` (ví dụ layout container), dropdown bị cắt/ẩn hoàn toàn → người dùng bấm nút "A" (Colors) nhưng không thấy gì.
 
-### Bucket cần tạo
-Bạn cần tạo **1 bucket mới**: `feedback-attachments` (public)
+Project's own `DropdownMenuContent` (trong `src/components/ui/dropdown-menu.tsx`) đã dùng `DropdownMenuPrimitive.Portal` đúng cách → dropdown hiển thị đúng ở root DOM.
 
-Sau khi bạn tạo xong bucket, mình sẽ:
+### Giải pháp
+Truyền prop `shadCNComponents` vào `BlockNoteView` để override DropdownMenu components, sử dụng components từ `src/components/ui/dropdown-menu.tsx` (có Portal).
 
 ### Thay đổi
 
-**1. Migration**: Thêm cột `attachments jsonb DEFAULT '[]'` vào bảng `feedbacks`
+**File: `src/components/canvas/CanvasEditor.tsx`**
+1. Import các DropdownMenu components từ `@/components/ui/dropdown-menu`
+2. Tạo object `shadCNComponents` override cho `DropdownMenu` 
+3. Truyền `shadCNComponents` prop vào `<BlockNoteView>`
 
-**2. Cập nhật R2 config**:
-- Thêm `feedback-attachments` vào `ALLOWED_BUCKETS` và `BUCKET_URL_KEYS` trong `supabase/functions/r2-storage/index.ts`
-- Thêm vào `ALL_BUCKETS` trong `src/lib/r2Storage.ts`
-- Bạn cần set secret `R2_URL_FEEDBACK_ATTACHMENTS` với public URL của bucket
+```tsx
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-**3. Sửa `src/pages/Feedback.tsx`**:
-- Thêm UI chọn ảnh (chỉ image/*, max 5MB/file, tối đa 3 ảnh)
-- Preview thumbnails + xóa từng ảnh
-- Upload lên R2 bucket `feedback-attachments` path `{userId}/{timestamp}-{filename}`
-- Hiển thị ảnh đính kèm trong danh sách góp ý (cả user và admin)
-- Thêm thông tin email support `support@t-nexus.io.vn` với icon Mail
+const shadCNComponents = {
+  DropdownMenu: {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuCheckboxItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
+    DropdownMenuTrigger,
+  },
+};
 
-### Tổng: 1 migration + 3 file sửa + 1 secret mới (`R2_URL_FEEDBACK_ATTACHMENTS`)
+// In BlockNoteView:
+<BlockNoteView
+  shadCNComponents={shadCNComponents}
+  ...
+/>
+```
+
+Tổng: **1 file** sửa (`CanvasEditor.tsx`)
 
