@@ -74,6 +74,7 @@ import AdminLayout from "./components/layout/AdminLayout";
 import AdminBilling from "./pages/AdminBilling";
 import AdminUserBilling from "./pages/AdminUserBilling";
 import JoinProject from "./pages/JoinProject";
+import SearchPage from "./pages/Search";
 
 const CreateCustomProject = React.lazy(() => import("./pages/CreateCustomProject"));
 const PublicCanvasPage = React.lazy(() => import("./pages/PublicCanvasPage"));
@@ -211,6 +212,7 @@ function AppRoutes() {
         {/* ═══ Protected routes with persistent DashboardLayout ═══ */}
         <Route element={<ProtectedLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/search" element={<SearchPage />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/groups" element={<Groups />} />
           {/* New URL format: /pr/ws-{wsShortId}/{projectSlug} */}
