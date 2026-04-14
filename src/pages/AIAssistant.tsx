@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, Loader2, Sparkles, AlertCircle, Trash2 } from 'lucide-react';
+import { Send, Sparkles, AlertCircle, Trash2 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
@@ -323,7 +324,7 @@ export default function AIAssistant() {
       </main>
 
       {/* Input */}
-      <div className="shrink-0 border-t border-border/60 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div className="shrink-0 border-t border-border/60 px-5 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
         <div className="max-w-2xl mx-auto">
           <form onSubmit={handleSubmit}>
             <div className={cn(
@@ -339,10 +340,10 @@ export default function AIAssistant() {
                 onKeyDown={handleKeyDown}
                 placeholder={remainingQuestions <= 0 ? "Đã hết lượt hỏi tháng này..." : "Nhập câu hỏi..."}
                 disabled={isLoading || remainingQuestions <= 0}
-                className="w-full resize-none border-0 bg-transparent px-4 py-3 pr-14 text-sm placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[48px] max-h-[120px]"
-                rows={1}
+                className="w-full resize-none border-0 bg-transparent px-4 py-3.5 pr-14 text-sm placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[56px] max-h-[140px]"
+                rows={2}
               />
-              <div className="absolute right-2 bottom-2 flex items-center gap-2">
+              <div className="absolute right-2 bottom-2.5 flex items-center gap-2">
                 {input.trim() && (
                   <span className={cn("text-[10px] tabular-nums", isOverLimit ? "text-destructive font-semibold" : "text-muted-foreground")}>
                     {wordCount}/{MAX_MESSAGE_WORDS}
@@ -353,7 +354,7 @@ export default function AIAssistant() {
                   disabled={!input.trim() || isLoading || isOverLimit || remainingQuestions <= 0}
                   className="p-2 rounded-lg bg-foreground text-background hover:bg-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
-                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  {isLoading ? <Spinner size="sm" className="text-background" /> : <Send className="h-4 w-4" />}
                 </button>
               </div>
             </div>
