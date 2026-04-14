@@ -30,6 +30,7 @@ import {
   Bell,
   Zap,
   CreditCard,
+  Search,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -161,6 +162,9 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
         {/* Dashboard */}
         <TreeItemCollapsed icon={Home} label={t?.home || 'Home'} href="/dashboard" active={isPathActive('/dashboard')} />
 
+        {/* Search */}
+        <TreeItemCollapsed icon={Search} label={t?.search || 'Search'} href="/search" active={isPathActive('/search')} />
+
         {/* Notifications */}
         <TreeItemCollapsed icon={Bell} label={t?.notifications || 'Notifications'} href="/notifications" active={isPathActive('/notifications')} />
 
@@ -209,6 +213,12 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
           <Link to="/dashboard" className={cn('sidebar-nav-item', isPathActive('/dashboard') && 'active')}>
             <Home className="nav-icon" strokeWidth={1.8} />
             <span className="nav-label">{t?.home || 'Home'}</span>
+          </Link>
+
+          {/* Search */}
+          <Link to="/search" className={cn('sidebar-nav-item', isPathActive('/search') && 'active')}>
+            <Search className="nav-icon" strokeWidth={1.8} />
+            <span className="nav-label">{t?.search || 'Search'}</span>
           </Link>
 
           {/* Notifications */}
@@ -279,6 +289,10 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
           <Link to="/dashboard" className={cn('sidebar-nav-item', isPathActive('/dashboard') && 'active')}>
             <Home className="nav-icon" strokeWidth={1.8} />
             <span className="nav-label">{t?.home || 'Home'}</span>
+          </Link>
+          <Link to="/search" className={cn('sidebar-nav-item', isPathActive('/search') && 'active')}>
+            <Search className="nav-icon" strokeWidth={1.8} />
+            <span className="nav-label">{t?.search || 'Search'}</span>
           </Link>
           <Link to="/notifications" className={cn('sidebar-nav-item', isPathActive('/notifications') && 'active')}>
             <Bell className="nav-icon" strokeWidth={1.8} />
