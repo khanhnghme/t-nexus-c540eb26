@@ -1,52 +1,64 @@
 
 
-## Plan: Upgrade shadcn/ui Components lên Style v4 New-York (Tailwind v3 compatible)
+## Plan: Tích hợp đầy đủ shadcn/ui Components — 4 Phases
 
-### Nguyên tắc
+### Hiện trạng
 
-Lấy style mới nhất từ shadcn/ui v4 (new-york) nhưng giữ nguyên:
-- `forwardRef` pattern (vì project dùng React 18, không phải React 19)
-- Import từ `@radix-ui/*` (vì project chưa dùng unified `radix-ui` package)
-- Tailwind v3 syntax (thay `shadow-xs` → `shadow-sm`, thay `ring-[3px]` → `ring-2`, etc.)
-- Giữ custom tokens đã có (shadow-dropdown, duration-fast, etc.)
+Project đã có **42/52 components** từ danh sách yêu cầu. Cần thêm **10 components mới** + trang demo.
 
-### Batch 1: Core Primitives (8 files)
+### Components đã có (không cần cài lại)
+accordion, alert, alert-dialog, aspect-ratio, avatar, badge, breadcrumb, button, calendar, card, carousel, chart, checkbox, collapsible, command, context-menu, dialog, drawer, dropdown-menu, form, hover-card, input, input-otp, label, menubar, navigation-menu, pagination, popover, progress, radio-group, resizable, scroll-area, select, separator, sheet, sidebar, skeleton, slider, sonner, switch, table, tabs, textarea, toast, toggle, toggle-group, tooltip
 
-| File | Thay đổi chính |
-|------|----------------|
-| `button.tsx` | Thêm size `xs`, `icon-xs`, `icon-sm`, `icon-lg`; cập nhật focus ring sang `ring-ring/50`; thêm `aria-invalid` styles; dark mode refinements cho destructive/outline/ghost |
-| `badge.tsx` | Thêm variant `ghost` + `link`; hỗ trợ `asChild` prop; cập nhật focus ring; thêm `[a&]:hover` pattern |
-| `input.tsx` | Thêm `aria-invalid:border-destructive aria-invalid:ring-destructive/20`; dark mode input styles |
-| `checkbox.tsx` | Cập nhật focus ring, thêm `aria-invalid` support, transition cho check icon |
-| `switch.tsx` | Thêm `size` prop (`sm` / `default`); cập nhật focus ring |
-| `select.tsx` | Thêm `size` prop cho trigger (`sm` / `default`); chuẩn hóa focus ring |
-| `tabs.tsx` | Thêm `variant` prop cho TabsList (`default` / `line`); hỗ trợ `orientation` prop |
-| `card.tsx` | Thêm `CardAction` component; cập nhật layout dùng grid cho header; thêm `data-slot` |
+### Components cần thêm mới
 
-### Batch 2: Overlay & Feedback (5 files)
+| Component | Mô tả |
+|-----------|-------|
+| `spinner.tsx` | Loading spinner animation |
+| `kbd.tsx` | Keyboard shortcut badge |
+| `typography.tsx` | Heading/paragraph/code typography primitives |
+| `native-select.tsx` | Native HTML select với styling |
+| `button-group.tsx` | Group nhiều button liền nhau |
+| `input-group.tsx` | Input với prefix/suffix addon |
+| `field.tsx` | Form field wrapper (label + input + error) |
+| `combobox.tsx` | Searchable select (dùng Command + Popover) |
+| `date-picker.tsx` | Date picker (dùng Calendar + Popover) |
+| `data-table.tsx` | Table với sorting/filtering (dùng @tanstack/react-table) |
 
-| File | Thay đổi chính |
-|------|----------------|
-| `dialog.tsx` | Thêm `showCloseButton` prop; cập nhật overlay + content classes theo v4 |
-| `sheet.tsx` | Cập nhật overlay style; chuẩn hóa close button |
-| `tooltip.tsx` | Cập nhật sang arrow-based tooltip (v4 pattern); `sideOffset=0` default |
-| `alert.tsx` | Chuyển sang grid layout (`grid-cols-[0_1fr]`); cải thiện icon alignment |
-| `drawer.tsx` | Cập nhật handle + overlay styles |
+---
 
-### Batch 3: Navigation & Layout (4 files)
+### Phase 1: Utility Components (4 files mới)
+- `spinner.tsx` — SVG spinner với size variants
+- `kbd.tsx` — Keyboard key display component
+- `typography.tsx` — H1-H4, P, Code, Blockquote, Lead
+- `native-select.tsx` — Styled native `<select>`
 
-| File | Thay đổi chính |
-|------|----------------|
-| `accordion.tsx` | Bỏ `hover:underline` default trên trigger; cập nhật padding |
-| `popover.tsx` | Cập nhật shadow + animation timing |
-| `separator.tsx` | Cập nhật classes cho consistency |
-| `scroll-area.tsx` | Scrollbar thon hơn |
+### Phase 2: Composite Form Components (3 files mới)
+- `button-group.tsx` — Flex container cho grouped buttons
+- `input-group.tsx` — Input với prefix/suffix slots
+- `field.tsx` — Label + control + description + error wrapper
 
-### Tổng: 17 files sửa
+### Phase 3: Complex Interactive Components (3 files mới)
+- `combobox.tsx` — Searchable dropdown (Command + Popover)
+- `date-picker.tsx` — Date selection (Calendar + Popover)
+- `data-table.tsx` — Full-featured data table (cài thêm `@tanstack/react-table`)
 
-Chỉ thay đổi styling classes + thêm props/variants mới. Hoàn toàn backward compatible — tất cả code cũ dùng component vẫn hoạt động bình thường.
+### Phase 4: Demo Page
+- Tạo `/ui-preview` page hiển thị toàn bộ components theo nhóm
+- Thêm route vào `App.tsx`
+
+---
+
+### Dependencies cần cài thêm
+- `@tanstack/react-table` (cho data-table)
+
+### Files thay đổi tổng hợp
+
+| Loại | Files |
+|------|-------|
+| **Mới** | 10 component files + 1 demo page |
+| **Sửa** | `App.tsx` (thêm route), `package.json` (thêm dependency) |
 
 ### Rủi ro
-- **Thấp** — giữ nguyên API cũ, chỉ thêm props mới
-- Cần verify dark mode sau khi update
+- **Thấp** — tất cả component mới, không ảnh hưởng code cũ
+- Các composite component (combobox, date-picker) dùng lại component đã có
 
