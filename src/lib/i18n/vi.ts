@@ -715,6 +715,7 @@ export const vi: Translations = {
       servicePlan: 'Gói dịch vụ',
       billing: 'Thanh toán',
       search: 'Tìm kiếm',
+      aiAssistant: 'Trợ lý AI',
     },
     search: {
       title: 'Tìm kiếm',

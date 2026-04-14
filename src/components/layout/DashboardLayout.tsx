@@ -51,7 +51,7 @@ import { cn } from '@/lib/utils';
 import tNexusTextWhite from '@/assets/t-nexus-text-white.png';
 import UserChangePasswordDialog from '@/components/UserChangePasswordDialog';
 import AvatarUpload from '@/components/AvatarUpload';
-import AIAssistantButton from '@/components/ai/AIAssistantButton';
+
 import { useActivityTracker } from '@/hooks/useActivityTracker';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
@@ -541,12 +541,6 @@ export default function DashboardLayout({
         </DialogContent>
       </Dialog>
 
-      {/* AI Assistant */}
-      <AIAssistantButton
-        projectId={projectId}
-        projectName={projectName}
-        zaloLink={zaloLink}
-      />
     </>
   );
 }
