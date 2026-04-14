@@ -1,32 +1,37 @@
 
 
-## Plan: Xóa toàn bộ google-mode khỏi CSS
+## Plan: Fix AI Assistant bug + Redesign input area
 
-### Phạm vi thay đổi
+### Bug gốc (chặn gửi tin nhắn)
 
-Chỉ **1 file**: `src/index.css` — không có file JS/TS nào tham chiếu đến google-mode.
+**File**: `supabase/functions/team-assistant/index.ts`, line 739 và 745
 
-### Các block CSS cần xóa
+Biến `today` không được khai báo. Cả `try` và `catch` đều reference `today`, gây ReferenceError, rơi vào outer catch → trả 500 error cho client.
 
-1. **Lines 214-258**: `html.google-mode { ... }` — Light mode tokens (CellphoneS-inspired)
-2. **Lines 357-399**: `html.google-mode.dark { ... }` — Dark mode tokens
-3. **Lines 496-504**: `html:not(.google-mode)` border-radius overrides — xóa luôn vì không còn cần phân biệt mode
-4. **Lines 507-594**: Tất cả rules `html.google-mode` — typography, glass-effect, card enhancements, focus ring, scrollbar
+```
+// Line 739 — today KHÔNG TỒN TẠI
+await supabase.rpc('increment_ai_usage', { _user_id: userId, _date: today });
+// Line 745 — cũng dùng today
+{ user_id: userId, usage_date: today, ... }
+```
 
-### Chi tiết kỹ thuật
+**Fix**: Thêm `const today = monthEnd;` (hoặc `now.toISOString().slice(0, 10)`) sau line 552, trước khi sử dụng.
 
-| Dòng | Nội dung | Hành động |
-|------|----------|-----------|
-| 214-258 | `html.google-mode` light tokens | Xóa |
-| 357-399 | `html.google-mode.dark` dark tokens | Xóa |
-| 496-504 | `html:not(.google-mode)` radius rules | Xóa (hoặc giữ logic radius nhưng bỏ selector `.not(.google-mode)`) |
-| 507-594 | `html.google-mode` typography, cards, scrollbar | Xóa |
+### Redesign input area
 
-### Lưu ý về border-radius overrides (lines 496-504)
+**File**: `src/pages/AIAssistant.tsx`
 
-Block `html:not(.google-mode)` hiện đang áp dụng `border-radius: 1rem` và `1.25rem` cho các phần tử `rounded-xl`/`rounded-2xl` khi **không** ở google-mode. Sau khi xóa google-mode, nếu muốn giữ style này thì chuyển thành rule không có selector điều kiện. Nếu không cần thì xóa luôn (Tailwind classes sẽ tự quản lý radius).
+- Thay `h-[calc(100vh-56px)]` thành tính toán chính xác hơn, đảm bảo input area nằm sát bottom
+- Input area: thêm `pb-safe` padding cho mobile, giảm padding bottom
+- Cải thiện visual: border-top rõ hơn, input field gọn hơn
+
+### Files thay đổi
+
+| File | Thay đổi |
+|------|----------|
+| `supabase/functions/team-assistant/index.ts` | Thêm `const today = monthEnd;` sau line 552 |
+| `src/pages/AIAssistant.tsx` | Redesign input area layout |
 
 ### Rủi ro
-- **Rất thấp** — không có code JS/TS nào toggle class `google-mode`
-- Hệ thống chỉ còn light (`:root`) và dark (`.dark`) như mong muốn
+- **Rất thấp** — fix 1 dòng biến + chỉnh CSS layout
 
