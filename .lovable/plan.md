@@ -1,58 +1,80 @@
+<final-text>## Plan: Fix triệt để lỗi đứng web khi đóng popup trên toàn hệ thống
 
+### Kết quả kiểm tra
+Mình đã xác định còn 2 nhóm lỗi chính:
 
-## Plan: Fix UI freeze khi đóng popup/dialog toàn hệ thống + Fix build error
+1. **Còn sót nhiều `AlertDialogAction` gắn với handler xóa/cập nhật/import/disconnect**
+   - Search hiện vẫn ra nhiều điểm còn lại ở:
+     - `src/components/TaskListView.tsx`
+     - `src/components/TaskNotes.tsx`
+     - `src/components/KanbanBoard.tsx`
+     - `src/components/StageManagement.tsx`
+     - `src/components/ProjectActivityLog.tsx`
+     - `src/components/SystemErrorLogs.tsx`
+     - `src/components/communication/MessageItem.tsx`
+     - `src/components/canvas/CanvasSidebar.tsx`
+     - `src/components/notifications/GmailConnect.tsx`
+     - `src/components/ExcelMemberImport.tsx`
+     - `src/pages/AdminActivity.tsx`
+     - `src/pages/MemberManagement.tsx`
+     - `src/pages/WorkspaceSettings.tsx`
+   - Đây vẫn là đúng pattern đã từng gây freeze: `AlertDialogAction` tự close, trong khi handler còn đổi state/xóa dữ liệu/rerender.
 
-### 2 vấn đề cần sửa
+2. **Trang dự án còn lỗi nested popup trong `ResourceTagTextarea`**
+   - `src/components/ResourceTagTextarea.tsx` đang mở `Dialog` bên trong dialog task.
+   - File này hiện có:
+     - `onPointerDownOutside={(e) => e.stopPropagation()}`
+     - `onInteractOutside={(e) => e.stopPropagation()}`
+   - Với popup lồng popup, cách này rất dễ làm dismiss layer/focus trap bị kẹt sau khi đóng.
+   - Console hiện cũng đang báo warning từ `ResourceTagTextarea`, nên đây là điểm cần sửa cùng lúc.
 
-**Vấn đề 1 — UI freeze khi đóng dialog**
+### Cách sửa
+1. **Quét và thay toàn bộ confirm action không an toàn**
+   - Đổi các `AlertDialogAction` đang gọi handler stateful/async sang `Button`.
+   - Chỉ đóng dialog bằng state sau khi flow xử lý hoàn tất.
+   - Chuẩn hóa `onOpenChange` để chỉ reset state khi `open === false`.
 
-Nguyên nhân gốc: Radix UI `AlertDialogAction` tự động đóng dialog ngay khi click. Khi kết hợp với async handler (gọi API, update state), xảy ra xung đột:
-1. Radix đóng dialog → unmount component
-2. Async handler hoàn thành → cố update state trên component đã unmount
-3. React báo lỗi / UI đứng hoàn toàn
+2. **Sửa popup lồng trong trang dự án**
+   - `src/components/ResourceTagTextarea.tsx`
+     - bỏ `stopPropagation()` ở các handler outside interaction
+     - chuyển inner picker sang flow an toàn cho dialog lồng:
+       - ưu tiên `modal={false}` cho popup con hoặc đổi sang panel/popover nội bộ nếu cần
+       - thêm `onCloseAutoFocus={(e) => e.preventDefault()}` rồi tự focus lại textarea
+     - giữ logic restore cursor nhưng tránh race với focus restore của Radix
+   - Kiểm tra cả nơi dùng:
+     - `src/components/TaskEditDialog.tsx`
+     - `src/pages/GroupDetail.tsx`
 
-Giải pháp: Thay tất cả `AlertDialogAction` có async onClick bằng `Button` thường. `Button` không tự đóng dialog, cho phép code kiểm soát thời điểm đóng.
+3. **Dọn warning ref/focus**
+   - Xử lý luôn warning “Function components cannot be given refs” trong nhánh `ResourceTagTextarea` để tránh lỗi focus trap âm thầm khi popup mở/đóng.
 
-**Vấn đề 2 — Build error email-i18n.ts**
+4. **Smoke test toàn hệ thống**
+   - Trang dự án: tạo task, sửa task, mở picker tài nguyên, đóng bằng X / click ngoài / ESC / Hủy / Xác nhận
+   - Task & notes: xóa task, xóa note, đổi stage
+   - Canvas: xóa page
+   - Member/admin/workspace: xóa, bulk action, import, disconnect, delete workspace
+   - Xác nhận không còn overlay bị kẹt hoặc web mất khả năng click
 
-`EmailTexts` type dùng literal types từ `texts['vi']`, không tương thích với `texts['en']`. Fix: đổi return type thành union hoặc dùng interface thay vì `as const` literal.
+### File dự kiến chỉnh
+- `src/components/ResourceTagTextarea.tsx`
+- `src/components/TaskEditDialog.tsx`
+- `src/pages/GroupDetail.tsx`
+- `src/components/TaskListView.tsx`
+- `src/components/TaskNotes.tsx`
+- `src/components/KanbanBoard.tsx`
+- `src/components/StageManagement.tsx`
+- `src/components/ProjectActivityLog.tsx`
+- `src/components/SystemErrorLogs.tsx`
+- `src/components/communication/MessageItem.tsx`
+- `src/components/canvas/CanvasSidebar.tsx`
+- `src/components/notifications/GmailConnect.tsx`
+- `src/components/ExcelMemberImport.tsx`
+- `src/pages/AdminActivity.tsx`
+- `src/pages/MemberManagement.tsx`
+- `src/pages/WorkspaceSettings.tsx`
 
-### Files cần sửa (Vấn đề 1) — 12+ files
-
-Thay `AlertDialogAction onClick={handleXxx}` → `Button onClick={handleXxx}` trong:
-
-1. `src/components/ProjectResources.tsx` — 3 chỗ (handleDelete, handleDeleteFolder, handleBatchDelete)
-2. `src/components/MemberRoleManagementDialog.tsx` — handleDemote
-3. `src/components/MemberManagementCard.tsx` — handleBulkChangeRole
-4. `src/components/TaskListView.tsx` — 3 chỗ (handleDeleteTask, handleBulkDelete, handleBulkStatusChange)
-5. `src/components/ProjectActivityLog.tsx` — 2 chỗ (handleDeleteAll, handleDeleteSelected)
-6. `src/components/SystemErrorLogs.tsx` — handleClearAll
-7. `src/components/communication/MessageItem.tsx` — handleDelete
-8. `src/components/settings/ConnectedServicesCard.tsx` — handleDisconnect
-9. `src/pages/GroupDetail.tsx` — handleDeleteStage, handleDeleteGroup
-10. `src/pages/MemberManagement.tsx` — handleDeleteMember
-11. `src/pages/AdminActivity.tsx` — handleDeleteByDateRange
-12. `src/pages/AdminSystem.tsx` — handleSaveMaintenance
-13. `src/components/AdminDataMigration.tsx` — handleImport
-14. `src/components/canvas/CanvasSidebar.tsx` — nếu có async handler
-15. `src/components/TaskSubmissionDialog.tsx` — nếu có async handler
-
-Mỗi chỗ sửa theo pattern:
-```tsx
-// TRƯỚC (lỗi)
-<AlertDialogAction onClick={handleAsync}>Xác nhận</AlertDialogAction>
-
-// SAU (fix)
-<Button onClick={handleAsync}>Xác nhận</Button>
-```
-
-### File cần sửa (Vấn đề 2)
-
-`supabase/functions/_shared/email-i18n.ts` — line 220-223:
-```ts
-export type EmailTexts = (typeof texts)['vi'] | (typeof texts)['en'];
-// hoặc dùng Record<string, ...> thay vì literal
-```
-
-### Tổng: ~16 files sửa, không thêm file mới
-
+### Kết quả mong đợi
+- Đóng popup bằng X, Hủy, click ngoài hoặc sau khi xác nhận sẽ không còn treo web
+- Không còn lớp overlay/focus trap bị kẹt
+- Popup trong trang dự án ổn định kể cả popup lồng popup
+- Console không còn warning liên quan `ResourceTagTextarea` khi mở popup task</final-text>
