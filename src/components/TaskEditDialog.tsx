@@ -25,14 +25,14 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   Loader2, AlertTriangle, Eye, Calendar, Users, FileText, 
-  Layers, Edit, Clock, HardDrive, CalendarPlus, ArrowRight,
+  Layers, Edit, Clock, CalendarPlus, ArrowRight,
   CheckCircle2, X, Plus
 } from 'lucide-react';
 import type { Task, Stage, GroupMember, TaskStatus, SubmissionMethod } from '@/types/database';
 import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 import { formatDeadlineVN, formatDeadlineShortVN, isDeadlineOverdue, parseLocalDateTime } from '@/lib/datetime';
 import { DeadlineHourPicker } from './DeadlineHourPicker';
-import { formatFileSizeMB } from './FileSizeLimitSelector';
+
 import { notifyTaskUpdated, notifyTaskAssigneesChanged } from '@/lib/notifications';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
