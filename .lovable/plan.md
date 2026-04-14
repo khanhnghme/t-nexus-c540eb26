@@ -1,42 +1,36 @@
 
 
-## Plan: Chuyển logic AI usage sang tính theo tổng workspace owner
+## Plan: Chuyển AI Assistant sang trang riêng + link sidebar dưới Tổng quan
 
-### Thay đổi logic
-Hiện tại: Đếm lượt AI **theo từng user riêng lẻ** → Mới: Đếm **tổng lượt sử dụng của TẤT CẢ thành viên** thuộc các workspace mà owner sở hữu, so sánh với giới hạn plan của owner đó.
-
-Ví dụ: Owner gói Business (200 lượt/ngày) có 2 workspace, tổng 10 thành viên → cả 10 người chia sẻ 200 lượt/ngày.
+### Tóm tắt
+1. Tạo trang `/ai-assistant` riêng biệt (full-page chat, tái sử dụng logic từ `AIAssistantPanel.tsx`)
+2. Thêm link "Trợ lý AI" vào sidebar ngay dưới "Tổng quan" (Overview), cả expanded và collapsed mode
+3. Xóa floating `AIAssistantButton` khỏi `DashboardLayout.tsx`
+4. Giữ nguyên logic tính usage theo owner pool (đã implement)
 
 ### Chi tiết kỹ thuật
 
-**1. Migration: Tạo DB function `get_owner_ai_usage_today`**
-```sql
--- Tính tổng lượt AI hôm nay của tất cả thành viên thuộc workspace của owner
-CREATE FUNCTION get_owner_ai_usage_today(_owner_id uuid, _date date)
-RETURNS integer
-```
-Logic: Lấy tất cả user_id thuộc workspace mà owner sở hữu (owner + workspace_members) → SUM message_count từ `ai_daily_usage` cho ngày _date.
+**1. Tạo `src/pages/AIAssistant.tsx`**
+- Full-page layout: sidebar trái hiển thị usage bar (owner pool: `get_owner_ai_usage_today`), main area là giao diện chat
+- Tái sử dụng toàn bộ logic từ `AIAssistantPanel.tsx`: messages state, send handler, markdown rendering, word limit, usage tracking
+- Bỏ Sheet/drawer wrapper → render trực tiếp trong page content
+- Hiển thị thanh usage: "Đã dùng X / Y lượt (toàn workspace)" dựa trên owner pool
 
-**2. Migration: Tạo DB function `get_user_workspace_owner`**
-```sql
--- Tìm owner_id của workspace mà user đang thuộc
-CREATE FUNCTION get_user_workspace_owner(_user_id uuid)
-RETURNS uuid
-```
-Logic: Nếu user là owner workspace → trả chính họ. Nếu là member → trả owner_id của workspace đầu tiên.
+**2. Cập nhật `src/components/SidebarTreeNav.tsx`**
+- Import icon `Sparkles` từ lucide-react
+- **Expanded mode** (~line 236, sau Overview): Thêm link `/ai-assistant` với icon Sparkles
+- **Collapsed mode** (~line 177, sau Overview): Thêm `TreeItemCollapsed` cho `/ai-assistant`
 
-**3. Cập nhật `plan_limits` data**
-- `plan_business`: `max_ai_messages_per_day = 200`
-- `plan_custom`: `max_ai_messages_per_day = 200`
+**3. Cập nhật `src/App.tsx`**
+- Lazy import `AIAssistant` page
+- Thêm route `/ai-assistant` trong protected layout (cạnh `/dashboard`)
 
-**4. Edge Function `team-assistant/index.ts`**
-- Thay logic check limit: Tìm owner_id từ user → lấy plan của owner → đếm tổng usage toàn workspace → so sánh với limit
-- Vẫn ghi usage vào `ai_daily_usage` theo user_id gốc (để biết ai dùng bao nhiêu)
+**4. Cập nhật `src/components/layout/DashboardLayout.tsx`**
+- Xóa import `AIAssistantButton` (line 54)
+- Xóa render `<AIAssistantButton ... />` (line 545-549)
 
-**5. Frontend `AIAssistantPanel.tsx`**
-- Cập nhật logic fetch usage: Thay vì chỉ query usage riêng user, gọi RPC `get_owner_ai_usage_today` để lấy tổng
-- Lấy plan limit từ owner's plan thay vì user's plan
-- Hiển thị `tổng đã dùng / giới hạn owner`
+**5. Cập nhật i18n (`en.ts`, `vi.ts`)**
+- Sidebar: `aiAssistant: 'AI Assistant'` / `aiAssistant: 'Trợ lý AI'`
 
-### Tổng: 1 migration (2 functions) + 1 data update + 2 files code
+### Tổng: 1 file mới + 4 files sửa
 
