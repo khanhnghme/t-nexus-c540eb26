@@ -1182,7 +1182,7 @@ export default function MemberManagement() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isBulkProcessing}>Hủy</AlertDialogCancel>
-            <AlertDialogAction
+            <Button
               onClick={() => {
                 if (bulkAction === 'delete') handleBulkDelete();
                 else if (bulkAction === 'suspend') handleBulkSuspend();
@@ -1192,7 +1192,7 @@ export default function MemberManagement() {
               disabled={isBulkProcessing}
             >
               {isBulkProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Xác nhận'}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

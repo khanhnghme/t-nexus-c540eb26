@@ -200,7 +200,7 @@ export default function StageManagement({ stage, taskCount, onUpdate }: StageMan
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction
+            <Button
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={isProcessing}
@@ -210,7 +210,7 @@ export default function StageManagement({ stage, taskCount, onUpdate }: StageMan
               ) : (
                 'Xóa giai đoạn'
               )}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

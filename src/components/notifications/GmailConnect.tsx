@@ -73,12 +73,12 @@ export default function GmailConnect({ isConnected, isChecking, connectedEmail, 
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>{g.cancel || 'Hủy'}</AlertDialogCancel>
-              <AlertDialogAction
+              <Button
                 onClick={() => { onDisconnect(); setShowConfirm(false); }}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 {g.confirmDisconnect || 'Ngắt kết nối'}
-              </AlertDialogAction>
+              </Button>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

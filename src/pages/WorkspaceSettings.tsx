@@ -324,13 +324,13 @@ export default function WorkspaceSettings() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>{tc.cancel}</AlertDialogCancel>
-                      <AlertDialogAction
+                      <Button
                         onClick={handleDelete}
                         disabled={!deleteNameMatches || isDeleting}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
                       >
                         {isDeleting ? tc.deleting : tw.deletePermanently}
-                      </AlertDialogAction>
+                      </Button>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>

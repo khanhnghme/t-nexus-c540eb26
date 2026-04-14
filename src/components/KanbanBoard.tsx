@@ -474,7 +474,7 @@ export default function KanbanBoard({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Hủy</AlertDialogCancel>
-            <AlertDialogAction
+            <Button
               onClick={handleDeleteTask}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={isDeleting}
@@ -484,7 +484,7 @@ export default function KanbanBoard({
               ) : (
                 'Xóa task'
               )}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -281,12 +281,12 @@ export default function CanvasSidebar({
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Hủy</AlertDialogCancel>
-                                <AlertDialogAction
+                                <Button
                                   onClick={() => onDeletePage(page.id)}
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                 >
                                   Xóa
-                                </AlertDialogAction>
+                                </Button>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>

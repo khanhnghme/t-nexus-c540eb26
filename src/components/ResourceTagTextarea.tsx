@@ -518,12 +518,11 @@ export default function ResourceTagTextarea({
         </Button>
       </div>
 
-      <Dialog open={pickerOpen} onOpenChange={(open) => { if (!open) handleClosePicker(); }}>
+      <Dialog open={pickerOpen} onOpenChange={(open) => { if (!open) handleClosePicker(); }} modal={false}>
         <DialogContent
           className="sm:max-w-2xl w-[95vw] max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden"
           style={{ height: 'min(85vh, 520px)' }}
-          onPointerDownOutside={(e) => e.stopPropagation()}
-          onInteractOutside={(e) => e.stopPropagation()}
+          onCloseAutoFocus={(e) => e.preventDefault()}
         >
           <DialogHeader className="px-5 pt-5 pb-3 shrink-0">
             <DialogTitle className="text-base flex items-center gap-2.5 min-w-0">

@@ -619,13 +619,13 @@ export default function ProjectActivityLog({ groupId, groupName = 'Project', isL
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Hủy</AlertDialogCancel>
-            <AlertDialogAction
+            <Button
               onClick={handleDeleteAll}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? 'Đang xóa...' : `Xóa ${logs.length} mục`}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -645,13 +645,13 @@ export default function ProjectActivityLog({ groupId, groupName = 'Project', isL
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Hủy</AlertDialogCancel>
-            <AlertDialogAction
+            <Button
               onClick={handleDeleteSelected}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? 'Đang xóa...' : `Xóa ${selectedIds.size} mục`}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

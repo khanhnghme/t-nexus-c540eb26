@@ -507,12 +507,12 @@ export default function ExcelMemberImport({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction
+            <Button
               onClick={handleExecute}
               className={action === 'remove' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
             >
               Xác nhận {actionLabel.toLowerCase()}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
