@@ -3101,11 +3101,11 @@ export const en = {
   },
 
   servicePlanFeatures: {
-    plan_free: ['1 Workspace', '5 total projects', '5 total unique seats', '500 MB total storage', 'Upload 5 MB/file'],
-    plan_plus: ['5 Workspaces', '15 total projects', '15 total unique seats', '10 GB total storage', 'Upload 100 MB/file'],
-    plan_pro: ['20 Workspaces', '50 total projects', '50 total unique seats', '50 GB total storage', 'Upload 5 GB/file'],
-    plan_business: ['50 Workspaces', '500 total projects', '200 total unique seats', '200 GB total storage', 'Upload 5 GB/file'],
-    plan_custom: ['Unlimited', 'Unlimited projects', 'Unlimited seats', 'Unlimited storage', 'Upload 5 GB/file'],
+    plan_free: ['1 Workspace', '5 total projects', '5 total unique seats', '500 MB total storage', 'Upload 5 MB/file', 'AI Assistant: 5/day'],
+    plan_plus: ['5 Workspaces', '15 total projects', '15 total unique seats', '10 GB total storage', 'Upload 100 MB/file', 'AI Assistant: 20/day'],
+    plan_pro: ['20 Workspaces', '50 total projects', '50 total unique seats', '50 GB total storage', 'Upload 5 GB/file', 'AI Assistant: 50/day'],
+    plan_business: ['50 Workspaces', '500 total projects', '200 total unique seats', '200 GB total storage', 'Upload 5 GB/file', 'AI Assistant: 150/day'],
+    plan_custom: ['Unlimited', 'Unlimited projects', 'Unlimited seats', 'Unlimited storage', 'Upload 5 GB/file', 'AI Assistant: Unlimited'],
   },
 
   servicePlanFullFeatures: {
@@ -3118,6 +3118,7 @@ export const en = {
       'Basic task management',
       'Group chat',
       'Meetings up to 15 minutes',
+      'AI Assistant: 5 messages/day',
       'Standard Email Support',
     ],
     plan_plus: [
@@ -3131,6 +3132,7 @@ export const en = {
       'Activity log (30 days)',
       'Member scoring',
       'Full data export',
+      'AI Assistant: 20 messages/day',
       'Add-ons available',
     ],
     plan_pro: [
@@ -3146,6 +3148,7 @@ export const en = {
       'Stage management',
       'Advanced scoring system',
       'Priority Support (24h-48h)',
+      'AI Assistant: 50 messages/day',
       'Bundled add-ons, 10% off',
     ],
     plan_business: [
@@ -3159,6 +3162,7 @@ export const en = {
       'Unlimited meetings',
       'System administration',
       'Express Support (same day)',
+      'AI Assistant: 150 messages/day',
       'Bundled add-ons, 20% off',
     ],
     plan_custom: [
@@ -3170,6 +3174,7 @@ export const en = {
       'Unlock all features for all members',
       'Dedicated 24/7 support',
       'Private deployment',
+      'AI Assistant: Unlimited',
       'SLA commitment',
     ],
   },
@@ -3192,6 +3197,7 @@ export const en = {
       { category: 'Tools & Features', icon: 'sparkles', items: [
         { label: 'Basic task management', value: '✓' },
         { label: 'Group chat', value: '✓' },
+        { label: 'AI Assistant', value: '5/day' },
         { label: 'Member scoring', value: '—' },
         { label: 'Full data export', value: '—' },
         { label: 'Add-ons', value: '—' },
@@ -3217,6 +3223,7 @@ export const en = {
       { category: 'Tools & Features', icon: 'sparkles', items: [
         { label: 'Basic task management', value: '✓' },
         { label: 'Group chat', value: '✓' },
+        { label: 'AI Assistant', value: '20/day' },
         { label: 'Member scoring', value: '✓' },
         { label: 'Full data export', value: '✓' },
         { label: 'Add-ons', value: 'Available' },
@@ -3241,6 +3248,7 @@ export const en = {
       ]},
       { category: 'Tools & Features', icon: 'sparkles', items: [
         { label: 'All Plus features', value: '✓' },
+        { label: 'AI Assistant', value: '50/day' },
         { label: 'Stage management', value: '✓' },
         { label: 'Advanced scoring', value: '✓' },
         { label: 'Add-ons', value: 'Bundled, 10% off' },
@@ -3265,6 +3273,7 @@ export const en = {
       ]},
       { category: 'Tools & Features', icon: 'sparkles', items: [
         { label: 'All Pro features', value: '✓' },
+        { label: 'AI Assistant', value: '150/day' },
         { label: 'System administration', value: '✓' },
         { label: 'Add-ons', value: 'Bundled, 20% off' },
       ]},
@@ -3288,6 +3297,7 @@ export const en = {
       ]},
       { category: 'Tools & Features', icon: 'sparkles', items: [
         { label: 'All Business features', value: '✓' },
+        { label: 'AI Assistant', value: 'Unlimited' },
         { label: 'Private deployment', value: '✓' },
         { label: 'SLA commitment', value: '✓' },
       ]},
