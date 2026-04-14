@@ -151,7 +151,7 @@ export default function TopBar() {
             </span>
           )}
         </div>
-        <span>{navT[tab.labelKey] || tab.labelKey}</span>
+        <span className="hidden lg:inline">{navT[tab.labelKey] || tab.labelKey}</span>
         {tab.id === 'members' && projectNavProps && (
           <span className={cn(
             "px-1 py-0 text-[10px] font-semibold rounded-full min-w-[16px] text-center leading-tight",
