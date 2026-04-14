@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
+import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { fixStorageUrl } from '@/lib/urlUtils';
 import { Link, useNavigate } from 'react-router-dom';
@@ -480,7 +481,7 @@ export default function Groups() {
     return (
       <>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <Spinner size="lg" className="text-primary" />
         </div>
       </>
     );
@@ -752,7 +753,7 @@ export default function Groups() {
                             className="pl-9 h-11 border-2 border-primary/30 focus-visible:border-primary focus-visible:ring-primary/20 bg-primary/5 placeholder:text-muted-foreground/70 font-medium"
                           />
                           {isSearching && (
-                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-primary" />
+                            <Spinner size="sm" className="absolute right-3 top-1/2 -translate-y-1/2 text-primary" />
                           )}
                         </div>
 
@@ -839,7 +840,7 @@ export default function Groups() {
                       <Button onClick={handleCreateGroup} disabled={isCreating || !newGroupName.trim()}>
                         {isCreating ? (
                           <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            <Spinner size="sm" className="mr-2" />
                             {g.creating}
                           </>
                         ) : (
