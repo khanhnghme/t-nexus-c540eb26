@@ -26,13 +26,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { 
   Loader2, AlertTriangle, Eye, Calendar, Users, FileText, 
   Layers, Edit, Clock, HardDrive, CalendarPlus, ArrowRight,
-  CheckCircle2, X, Plus, Send
+  CheckCircle2, X, Plus
 } from 'lucide-react';
 import type { Task, Stage, GroupMember, TaskStatus, SubmissionMethod } from '@/types/database';
 import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 import { formatDeadlineVN, formatDeadlineShortVN, isDeadlineOverdue, parseLocalDateTime } from '@/lib/datetime';
 import { DeadlineHourPicker } from './DeadlineHourPicker';
-import FileSizeLimitSelector, { formatFileSizeMB } from './FileSizeLimitSelector';
+import { formatFileSizeMB } from './FileSizeLimitSelector';
 import { notifyTaskUpdated, notifyTaskAssigneesChanged } from '@/lib/notifications';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -300,7 +300,7 @@ export default function TaskEditDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] w-[1280px] h-[720px] max-h-[90vh] p-0 overflow-hidden flex flex-col">
+      <DialogContent className="max-w-[95vw] w-[1280px] h-[720px] max-h-[90vh] p-0 overflow-hidden flex flex-col" onCloseAutoFocus={(e) => e.preventDefault()}>
         {/* Header */}
         <DialogHeader className="px-5 py-3 border-b bg-muted/30 shrink-0">
           <div className="flex items-center justify-between gap-3">
@@ -352,7 +352,7 @@ export default function TaskEditDialog({
               </div>
 
               {/* Config row: all fields inline */}
-              <div className="grid grid-cols-[1fr_1.2fr_1fr_1fr] gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-[11px] font-medium mb-1 block flex items-center gap-1 text-warning">
                     <Layers className="w-3 h-3" /> Giai đoạn
@@ -380,35 +380,6 @@ export default function TaskEditDialog({
                     <div className={`p-1.5 rounded border text-xs ${originalDeadlineOverdue && !hasExtension ? 'bg-destructive/10 border-destructive/30 text-destructive' : 'bg-muted/50'}`}>
                       {task?.deadline ? formatDeadlineShortVN(task.deadline) : '—'}
                     </div>
-                  )}
-                </div>
-                <div>
-                  <Label className="text-[11px] font-medium mb-1 block flex items-center gap-1">
-                    <Send className="w-3 h-3" /> Cách nộp
-                  </Label>
-                  {canEditDetails ? (
-                    <Select value={submissionMethod} onValueChange={(v) => setSubmissionMethod(v as SubmissionMethod)}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="both">Cả hai cách</SelectItem>
-                        <SelectItem value="file_only">Chỉ tải file</SelectItem>
-                        <SelectItem value="link_only">Chỉ dán link</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <div className="p-1.5 rounded bg-muted/50 border text-xs">
-                      {submissionMethod === 'both' ? 'Cả hai' : submissionMethod === 'file_only' ? 'Tải file' : 'Dán link'}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <Label className="text-[11px] font-medium mb-1 block flex items-center gap-1 text-muted-foreground">
-                    <HardDrive className="w-3 h-3" /> Giới hạn
-                  </Label>
-                  {canEditDetails ? (
-                    <FileSizeLimitSelector value={maxFileSize} onChange={setMaxFileSize} />
-                  ) : (
-                    <div className="p-1.5 rounded bg-muted/50 border text-xs">{formatFileSizeMB(maxFileSize)}</div>
                   )}
                 </div>
               </div>
