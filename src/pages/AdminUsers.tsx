@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, memo, useCallback } from 'react';
 import { deleteWithUndo } from '@/lib/deleteWithUndo';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
