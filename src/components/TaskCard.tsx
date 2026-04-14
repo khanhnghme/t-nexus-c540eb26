@@ -71,7 +71,7 @@ export function TaskCard({ task, groupId, groupSlug, wsShortId, showLink = true 
     name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 
   const content = (
-    <Card className={`group hover:shadow-card-lg transition-all duration-200 border-border/50 hover:border-primary/20 ${
+    <Card className={`group hover:shadow-card-lg press-effect transition-all duration-fast border-border/50 hover:border-primary/20 ${
       taskIsOverdue ? 'border-destructive/30 bg-destructive/5' : ''
     }`}>
       <CardContent className="p-4">

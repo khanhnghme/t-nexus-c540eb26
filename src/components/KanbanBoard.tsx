@@ -220,7 +220,7 @@ export default function KanbanBoard({
           <div
             ref={provided.innerRef}
             {...provided.draggableProps}
-            className={`mb-3 ${snapshot.isDragging ? 'opacity-70' : ''}`}
+            className={`mb-3 transition-transform duration-fast ${snapshot.isDragging ? 'shadow-elevated scale-[1.02] rotate-[1deg] z-50' : ''}`}
           >
             <Card className="hover:shadow-md transition-shadow bg-card">
               <CardContent className="p-4">
