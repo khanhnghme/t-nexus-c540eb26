@@ -360,18 +360,24 @@ export default function AIAssistantPanel({
             )}
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
-              <div 
-                className={cn(
-                  "h-full rounded-full transition-all duration-500",
-                  usagePercent > 80 ? "bg-destructive" : "bg-primary"
-                )}
-                style={{ width: `${usagePercent}%` }}
-              />
-            </div>
-            <span className="text-[10px] text-muted-foreground tabular-nums">
-              {remainingQuestions}/{maxQuestions}
-            </span>
+            {isUnlimited ? (
+              <span className="text-[10px] text-muted-foreground">∞ Unlimited</span>
+            ) : (
+              <>
+                <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className={cn(
+                      "h-full rounded-full transition-all duration-500",
+                      usagePercent > 80 ? "bg-destructive" : "bg-primary"
+                    )}
+                    style={{ width: `${usagePercent}%` }}
+                  />
+                </div>
+                <span className="text-[10px] text-muted-foreground tabular-nums">
+                  {remainingQuestions}/{maxQuestions}
+                </span>
+              </>
+            )}
           </div>
         </div>
 
