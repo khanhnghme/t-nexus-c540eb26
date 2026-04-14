@@ -1,64 +1,83 @@
 
 
-## Plan: Tích hợp đầy đủ shadcn/ui Components — 4 Phases
+## Plan: Fix 4 vấn đề 🔴 HIGH — Tối ưu hiệu năng
 
-### Hiện trạng
+### HIGH #1: Code Splitting toàn bộ pages trong App.tsx
 
-Project đã có **42/52 components** từ danh sách yêu cầu. Cần thêm **10 components mới** + trang demo.
+**Vấn đề:** 50+ pages import trực tiếp → initial bundle rất lớn. Chỉ 4 page dùng `React.lazy`.
 
-### Components đã có (không cần cài lại)
-accordion, alert, alert-dialog, aspect-ratio, avatar, badge, breadcrumb, button, calendar, card, carousel, chart, checkbox, collapsible, command, context-menu, dialog, drawer, dropdown-menu, form, hover-card, input, input-otp, label, menubar, navigation-menu, pagination, popover, progress, radio-group, resizable, scroll-area, select, separator, sheet, sidebar, skeleton, slider, sonner, switch, table, tabs, textarea, toast, toggle, toggle-group, tooltip
+**Giải pháp:** Chuyển tất cả page imports (trừ Landing) sang `React.lazy()`. Giữ `Landing` static vì là trang đầu tiên user thấy.
 
-### Components cần thêm mới
+- Auth pages (7): Login, Register, Auth, ForgotPassword, VerifyOtp, ResetPasswordNew, PasswordSuccess
+- Protected pages (14): Dashboard, Groups, GroupDetail, Communication, Calendar, Feedback, PersonalInfo, AccountSettings, Notifications, Tips, Onboarding, SearchPage, ServicePlan, BillingHistory
+- Admin pages (7): AdminActivity, AdminBackup, AdminSystem, AdminBilling, AdminUserBilling, MemberManagement, Utilities
+- Checkout pages (6): Checkout, CheckoutPayment, AddonCheckout, AddonCheckoutPayment, PaymentResult, CheckoutSummary
+- Public pages (5): PublicProjectView, PublicProfile, PublicTaskPreview, FilePreview, ResetPassword
+- Workspace pages (4): WorkspaceSettings, WorkspaceMembers, CreateWorkspace, Upgrade
+- Misc (5): Pricing, PricingDocs, Privacy, Terms, Guide, DownloadPage, NotFound
 
-| Component | Mô tả |
-|-----------|-------|
-| `spinner.tsx` | Loading spinner animation |
-| `kbd.tsx` | Keyboard shortcut badge |
-| `typography.tsx` | Heading/paragraph/code typography primitives |
-| `native-select.tsx` | Native HTML select với styling |
-| `button-group.tsx` | Group nhiều button liền nhau |
-| `input-group.tsx` | Input với prefix/suffix addon |
-| `field.tsx` | Form field wrapper (label + input + error) |
-| `combobox.tsx` | Searchable select (dùng Command + Popover) |
-| `date-picker.tsx` | Date picker (dùng Calendar + Popover) |
-| `data-table.tsx` | Table với sorting/filtering (dùng @tanstack/react-table) |
+**File:** `src/App.tsx`
+**Impact:** Bundle giảm ~60-70%
 
 ---
 
-### Phase 1: Utility Components (4 files mới)
-- `spinner.tsx` — SVG spinner với size variants
-- `kbd.tsx` — Keyboard key display component
-- `typography.tsx` — H1-H4, P, Code, Blockquote, Lead
-- `native-select.tsx` — Styled native `<select>`
+### HIGH #2: Song song hóa queries trong GroupDetail
 
-### Phase 2: Composite Form Components (3 files mới)
-- `button-group.tsx` — Flex container cho grouped buttons
-- `input-group.tsx` — Input với prefix/suffix slots
-- `field.tsx` — Label + control + description + error wrapper
+**Vấn đề:** `fetchGroupData()` chạy tuần tự 7 queries nối tiếp nhau.
 
-### Phase 3: Complex Interactive Components (3 files mới)
-- `combobox.tsx` — Searchable dropdown (Command + Popover)
-- `date-picker.tsx` — Date selection (Calendar + Popover)
-- `data-table.tsx` — Full-featured data table (cài thêm `@tanstack/react-table`)
+**Giải pháp:** Sau khi fetch group, chạy song song:
 
-### Phase 4: Demo Page
-- Tạo `/ui-preview` page hiển thị toàn bộ components theo nhóm
-- Thêm route vào `App.tsx`
+```text
+Step 1: group (1 query)
+Step 2: Promise.all([stages, members+profiles])
+Step 3: Access check (cần members data)
+Step 4: Promise.all([tasks+assignments+profiles, meetings])
+```
+
+**File:** `src/pages/GroupDetail.tsx` — refactor `fetchGroupData()` (lines 237-344)
+**Impact:** Từ 7 queries tuần tự → 3 bước song song, giảm ~40% thời gian load
 
 ---
 
-### Dependencies cần cài thêm
-- `@tanstack/react-table` (cho data-table)
+### HIGH #3: Gộp + tối ưu Dashboard queries
 
-### Files thay đổi tổng hợp
+**Vấn đề:** Dashboard mount gọi 6 API functions riêng lẻ. `fetchProjectStats` query `groups` + `group_members` trùng với `fetchDashboardData`.
 
-| Loại | Files |
-|------|-------|
-| **Mới** | 10 component files + 1 demo page |
-| **Sửa** | `App.tsx` (thêm route), `package.json` (thêm dependency) |
+**Giải pháp:**
+1. Xóa `fetchProjectStats`, tính `ownedProjectCount`/`joinedProjectCount` từ data đã có trong `fetchDashboardData`
+2. Chạy song song 5 fetch functions còn lại bằng `Promise.all`
 
-### Rủi ro
-- **Thấp** — tất cả component mới, không ảnh hưởng code cũ
-- Các composite component (combobox, date-picker) dùng lại component đã có
+**File:** `src/pages/Dashboard.tsx`
+**Impact:** Giảm 2 API calls trùng lặp + chạy song song
+
+---
+
+### HIGH #4: React.memo cho list item components
+
+**Vấn đề:** 0 components dùng `React.memo`. Mỗi state change → re-render toàn bộ list.
+
+**Giải pháp:** Wrap `React.memo` cho 5 components:
+
+| Component | File |
+|-----------|------|
+| DashboardProjectCard | `src/components/dashboard/DashboardProjectCard.tsx` |
+| TaskCard | `src/components/TaskCard.tsx` |
+| TaskListView | `src/components/TaskListView.tsx` |
+| MemberManagementCard | `src/components/MemberManagementCard.tsx` |
+| MessageItem | `src/components/communication/MessageItem.tsx` |
+
+**Impact:** Giảm ~70% re-render không cần thiết
+
+---
+
+### Tổng kết
+
+| # | Task | Files | Impact |
+|---|------|-------|--------|
+| 1 | Code splitting toàn bộ pages | `App.tsx` | Bundle -60% |
+| 2 | Song song hóa GroupDetail queries | `GroupDetail.tsx` | Load -40% |
+| 3 | Gộp Dashboard queries | `Dashboard.tsx` | API calls -30% |
+| 4 | React.memo list items | 5 component files | Re-render -70% |
+
+**Tổng: ~7 files thay đổi. Không thêm dependencies. Backward compatible 100%.**
 
