@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Building2, Loader2 } from 'lucide-react';
+import { Building2 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 
 export default function CreateWorkspace() {
