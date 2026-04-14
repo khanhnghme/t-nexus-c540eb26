@@ -9,6 +9,7 @@ const corsHeaders = {
 const ALLOWED_BUCKETS = [
   'avatars', 'task-submissions', 'appeal-attachments', 'task-note-attachments',
   'group-images', 'project-resources', 'system-assets', 'profile-achievements',
+  'feedback-attachments',
 ]
 
 const BUCKET_URL_KEYS: Record<string, string> = {
@@ -21,6 +22,7 @@ const BUCKET_URL_KEYS: Record<string, string> = {
   'system-assets': 'R2_URL_SYSTEM_ASSETS',
   'profile-achievements': 'R2_URL_PROFILE_ACHIEVEMENTS',
   'invoices': 'R2_URL_INVOICES',
+  'feedback-attachments': 'R2_URL_FEEDBACK_ATTACHMENTS',
 }
 
 function getR2Config() {

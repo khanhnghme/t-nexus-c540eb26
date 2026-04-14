@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +26,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import UserAvatar from '@/components/UserAvatar';
 import SystemErrorLogs from '@/components/SystemErrorLogs';
+import { r2Storage } from '@/lib/r2Storage';
+import { normalizeStorageUrl } from '@/lib/r2Storage';
 import {
   Send,
   Loader2,
@@ -37,6 +39,9 @@ import {
   MessageSquareText,
   Filter,
   MessageSquarePlus,
+  ImagePlus,
+  X,
+  Mail,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -56,6 +61,7 @@ interface FeedbackItem {
   responded_at: string | null;
   responded_by: string | null;
   created_at: string;
+  attachments?: string[];
   // joined from profiles
   user_name?: string;
   user_avatar_url?: string | null;
@@ -84,9 +90,14 @@ const PLAN_LABELS: Record<string, { label: string; color: string }> = {
   plan_custom: { label: 'Custom', color: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' },
 };
 
+const MAX_FILES = 3;
+const MAX_FILE_SIZE_MB = 5;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
 export default function FeedbackPage() {
   const { user, profile, isAdmin } = useAuth();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -95,6 +106,7 @@ export default function FeedbackPage() {
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
   const [newType, setNewType] = useState<FeedbackType>('suggestion');
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [isCreating, setIsCreating] = useState(false);
 
   // Admin filters
@@ -107,6 +119,9 @@ export default function FeedbackPage() {
   const [adminResponse, setAdminResponse] = useState('');
   const [adminStatus, setAdminStatus] = useState<FeedbackStatus>('reviewed');
   const [isSaving, setIsSaving] = useState(false);
+
+  // Image preview
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchFeedbacks();
@@ -134,6 +149,7 @@ export default function FeedbackPage() {
 
         setFeedbacks(data.map(f => ({
           ...f,
+          attachments: Array.isArray(f.attachments) ? f.attachments as string[] : [],
           user_name: profileMap.get(f.user_id)?.full_name || 'Unknown',
           user_avatar_url: profileMap.get(f.user_id)?.avatar_url || null,
           user_plan: profileMap.get(f.user_id)?.user_plan || 'plan_free',
@@ -149,6 +165,60 @@ export default function FeedbackPage() {
     }
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) {
+        toast({ title: 'Lỗi', description: `"${file.name}" không phải ảnh`, variant: 'destructive' });
+        return;
+      }
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        toast({ title: 'Lỗi', description: `"${file.name}" vượt quá ${MAX_FILE_SIZE_MB}MB`, variant: 'destructive' });
+        return;
+      }
+    }
+
+    setAttachedFiles(prev => {
+      const combined = [...prev, ...files];
+      if (combined.length > MAX_FILES) {
+        toast({ title: 'Lỗi', description: `Tối đa ${MAX_FILES} ảnh`, variant: 'destructive' });
+        return prev;
+      }
+      return combined;
+    });
+  };
+
+  const removeFile = (index: number) => {
+    setAttachedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadAttachments = async (): Promise<string[]> => {
+    if (attachedFiles.length === 0) return [];
+    const urls: string[] = [];
+
+    for (const file of attachedFiles) {
+      const timestamp = Date.now();
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `${user!.id}/${timestamp}-${safeName}`;
+
+      const { data, error } = await r2Storage.from('feedback-attachments').upload(path, file, {
+        contentType: file.type,
+        upsert: false,
+      });
+
+      if (error) {
+        throw new Error(`Upload thất bại: ${(error as any).message}`);
+      }
+
+      const { data: urlData } = r2Storage.from('feedback-attachments').getPublicUrl(path);
+      urls.push(urlData.publicUrl);
+    }
+
+    return urls;
+  };
+
   const handleCreate = async () => {
     if (!newTitle.trim() || !newContent.trim()) {
       toast({ title: 'Lỗi', description: 'Vui lòng nhập tiêu đề và nội dung', variant: 'destructive' });
@@ -156,17 +226,21 @@ export default function FeedbackPage() {
     }
     setIsCreating(true);
     try {
+      const attachmentUrls = await uploadAttachments();
+
       const { error } = await supabase.from('feedbacks').insert([{
         user_id: user!.id,
         title: newTitle.trim(),
         content: newContent.trim(),
         type: newType,
+        attachments: attachmentUrls,
       }]);
       if (error) throw error;
       toast({ title: 'Thành công', description: 'Góp ý đã được gửi đến quản trị viên' });
       setNewTitle('');
       setNewContent('');
       setNewType('suggestion');
+      setAttachedFiles([]);
       fetchFeedbacks();
     } catch (error: any) {
       toast({ title: 'Lỗi', description: error.message || 'Không thể gửi góp ý', variant: 'destructive' });
@@ -241,6 +315,31 @@ export default function FeedbackPage() {
     );
   };
 
+  const AttachmentImages = ({ urls }: { urls?: string[] }) => {
+    if (!urls || urls.length === 0) return null;
+    return (
+      <div className="flex flex-wrap gap-2 mt-2">
+        {urls.map((url, i) => {
+          const normalizedUrl = normalizeStorageUrl(url) || url;
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setPreviewImage(normalizedUrl)}
+              className="relative w-20 h-20 rounded-lg overflow-hidden border border-border hover:border-primary transition-colors"
+            >
+              <img
+                src={normalizedUrl}
+                alt={`Ảnh đính kèm ${i + 1}`}
+                className="w-full h-full object-cover"
+              />
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
   const FeedbackCard = ({ fb, showUser }: { fb: FeedbackItem; showUser?: boolean }) => {
     const typeConfig = TYPE_LABELS[fb.type] || TYPE_LABELS.other;
     return (
@@ -279,6 +378,9 @@ export default function FeedbackPage() {
           <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
             {fb.content}
           </p>
+
+          {/* Attachments */}
+          <AttachmentImages urls={fb.attachments} />
 
           {/* Time */}
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -320,6 +422,13 @@ export default function FeedbackPage() {
         <p className="text-muted-foreground mt-1">
           Gửi góp ý riêng tư đến quản trị viên về hệ thống và quy trình làm việc
         </p>
+        <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+          <Mail className="w-4 h-4" />
+          <span>Hoặc liên hệ qua email: </span>
+          <a href="mailto:support@t-nexus.io.vn" className="text-primary hover:underline font-medium">
+            support@t-nexus.io.vn
+          </a>
+        </div>
       </div>
 
       <Tabs defaultValue="submit" className="space-y-4">
@@ -388,6 +497,50 @@ export default function FeedbackPage() {
                   className="min-h-[150px]"
                   maxLength={5000}
                 />
+              </div>
+
+              {/* Image upload */}
+              <div className="space-y-2">
+                <Label>Ảnh đính kèm <span className="text-muted-foreground text-xs">(tối đa {MAX_FILES} ảnh, {MAX_FILE_SIZE_MB}MB/ảnh)</span></Label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+                <div className="flex flex-wrap gap-2 items-start">
+                  {attachedFiles.map((file, i) => (
+                    <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border group">
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt={file.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeFile(i)}
+                        className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[9px] px-1 truncate">
+                        {file.name}
+                      </div>
+                    </div>
+                  ))}
+                  {attachedFiles.length < MAX_FILES && (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-20 h-20 rounded-lg border-2 border-dashed border-border hover:border-primary transition-colors flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary"
+                    >
+                      <ImagePlus className="w-5 h-5" />
+                      <span className="text-[10px]">Thêm ảnh</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center justify-between pt-2">
@@ -504,6 +657,10 @@ export default function FeedbackPage() {
             </DialogDescription>
           </DialogHeader>
 
+          {respondingTo?.attachments && respondingTo.attachments.length > 0 && (
+            <AttachmentImages urls={respondingTo.attachments} />
+          )}
+
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label>Trạng thái</Label>
@@ -538,6 +695,15 @@ export default function FeedbackPage() {
               Lưu phản hồi
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image preview dialog */}
+      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+        <DialogContent className="max-w-3xl p-2">
+          {previewImage && (
+            <img src={previewImage} alt="Preview" className="w-full h-auto max-h-[80vh] object-contain rounded" />
+          )}
         </DialogContent>
       </Dialog>
     </div>
