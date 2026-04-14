@@ -397,15 +397,15 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
           onChangeCover={onChangeCover}
         />
         <div ref={editorContainerRef} className={`px-6 pb-8 ${!editable ? "view-mode" : ""}`}>
-           <BlockNoteView
-389:             editor={editor}
-390:             editable={editable}
-391:             onChange={handleChange}
-392:             theme={resolvedTheme === "dark" ? "dark" : "light"}
-393:             sideMenu={editable}
-394:             formattingToolbar={editable}
-395:             slashMenu={false}
-396:             shadCNComponents={{
+          <BlockNoteView
+            editor={editor}
+            editable={editable}
+            onChange={handleChange}
+            theme={resolvedTheme === "dark" ? "dark" : "light"}
+            sideMenu={editable}
+            formattingToolbar={editable}
+            slashMenu={false}
+            shadCNComponents={{
               DropdownMenu: {
                 DropdownMenu,
                 DropdownMenuContent,
@@ -419,7 +419,7 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
                 DropdownMenuTrigger,
               },
             }}
-           >
+          >
             {editable && (
               <SuggestionMenuController
                 triggerCharacter="/"
