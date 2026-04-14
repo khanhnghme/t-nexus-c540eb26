@@ -2490,4 +2490,19 @@ html.no-animations [data-state="active"][role="tabpanel"] {
     border-left: none;
     padding-left: 0;
   }
+
+/* BlockNote formatting toolbar - ensure color picker dropdown is not clipped */
+.bn-formatting-toolbar {
+  overflow: visible !important;
+}
+
+.bn-formatting-toolbar [data-radix-popper-content-wrapper] {
+  z-index: 9999 !important;
+}
+
+/* Ensure the toolbar's parent tippy/floating container allows overflow */
+[data-tippy-root],
+.tippy-box,
+.tippy-content {
+  overflow: visible !important;
 }
