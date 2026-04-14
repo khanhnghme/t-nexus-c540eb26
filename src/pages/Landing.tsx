@@ -328,6 +328,14 @@ export default function Landing() {
   const tc = t.common;
   const tn = t.nav;
 
+  // Prefetch Login chunk while user is on landing page
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      import('../pages/Login');
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Safety redirect: if authenticated user lands on landing page, send to dashboard
   useEffect(() => {
     if (!authLoading && user && profile?.is_approved) {
