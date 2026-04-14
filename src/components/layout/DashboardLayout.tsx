@@ -326,7 +326,7 @@ export default function DashboardLayout({
   const { theme, setTheme } = useTheme();
   const { locale } = useLanguage();
   const isDark = theme === 'dark';
-  const { sidebarCollapsed, toggleSidebar } = useDashboardLayoutContext();
+  const { sidebarCollapsed, toggleSidebar, projectNavProps, projectInfo } = useDashboardLayoutContext();
 
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -377,16 +377,38 @@ export default function DashboardLayout({
 
       {/* Mobile top bar */}
       <div className="dashboard-mobile-topbar">
-        <button
-          onClick={() => setIsMobileOpen(true)}
-          className="flex items-center justify-center w-10 h-10 rounded-lg"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
-        <Link to="/dashboard" className="flex items-center gap-2">
-          <img src={tNexusTextWhite} alt="T-Nexus" className="h-4 w-auto mobile-logo-text" />
-        </Link>
-        <div className="flex items-center gap-1" />
+        {projectNavProps ? (
+          <>
+            <button
+              onClick={() => navigate('/groups')}
+              className="flex items-center justify-center w-10 h-10 rounded-lg"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <span className="text-sm font-medium truncate max-w-[200px]">
+              {projectInfo.projectName || '...'}
+            </span>
+            <button
+              onClick={() => setIsMobileOpen(true)}
+              className="flex items-center justify-center w-10 h-10 rounded-lg"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={() => setIsMobileOpen(true)}
+              className="flex items-center justify-center w-10 h-10 rounded-lg"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <Link to="/dashboard" className="flex items-center gap-2">
+              <img src={tNexusTextWhite} alt="T-Nexus" className="h-4 w-auto mobile-logo-text" />
+            </Link>
+            <div className="flex items-center gap-1" />
+          </>
+        )}
       </div>
 
       {/* ===== GRID LAYOUT ===== */}
@@ -394,7 +416,8 @@ export default function DashboardLayout({
         <div className={cn(
           'dashboard-grid',
           sidebarCollapsed && 'sidebar-collapsed',
-          isMobileOpen && 'mobile-sidebar-open'
+          isMobileOpen && 'mobile-sidebar-open',
+          !!projectNavProps && 'has-project-nav'
         )}>
           {/* Cell 1: Top-left — Workspace Switcher or Admin Back */}
           <div className="grid-cell-logo">
