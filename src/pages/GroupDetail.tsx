@@ -330,7 +330,7 @@ export default function GroupDetail() {
           const { data: assigneeProfiles } = assigneeIds.length > 0
             ? await supabase.from('profiles').select('*').in('id', assigneeIds)
             : { data: [] };
-          const profilesMap = new Map(assigneeProfiles?.map(p => [p.id, p]) || []);
+          const profilesMap = new Map((assigneeProfiles || []).map(p => [p.id, p] as const));
           setTasks(tasksRes.data.map(task => ({
             ...task,
             task_assignments: assignmentsData?.filter(a => a.task_id === task.id).map(a => ({ ...a, profiles: profilesMap.get(a.user_id) })) || [],
