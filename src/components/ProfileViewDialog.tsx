@@ -68,13 +68,13 @@ export default function ProfileViewDialog({
   role = 'project_basic:member' as any,
   isGroupCreator = false,
   groupId,
+  presenceStatus: presenceStatusProp,
 }: ProfileViewDialogProps) {
   const [tasks, setTasks] = useState<TaskInfo[]>([]);
   const [submissions, setSubmissions] = useState<SubmissionInfo[]>([]);
   const [activities, setActivities] = useState<ActivityInfo[]>([]);
   const [scores, setScores] = useState<ScoreInfo[]>([]);
   const [loading, setLoading] = useState(false);
-  const { getPresenceStatus, isConnected } = useUserPresence('system-global');
 
   useEffect(() => {
     if (open && profile && groupId) {
