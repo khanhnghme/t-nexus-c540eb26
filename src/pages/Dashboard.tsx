@@ -190,27 +190,7 @@ export default function Dashboard() {
   }, [user]);
 
 
-  const fetchPendingApprovals = async () => {
-    if (!user) return;
-    try {
-      const { data } = await supabase
-        .from('pending_approvals')
-        .select('group_id')
-        .eq('user_id', user.id)
-        .eq('status', 'pending');
-
-      if (data && data.length > 0) {
-        const groupIds = data.map(d => d.group_id);
-        const { data: groupsData } = await supabase
-          .from('groups')
-          .select('*')
-          .in('id', groupIds);
-        setPendingApprovalGroups(groupsData || []);
-      } else {
-        setPendingApprovalGroups([]);
-      }
-    } catch (e) { console.error(e); }
-  };
+  // fetchPendingApprovals now handled by usePendingApprovals hook
 
   const fetchPendingInvitations = async () => {
     if (!user) return;
