@@ -217,8 +217,8 @@ const texts = {
   },
 } as const;
 
-export type EmailTexts = typeof texts['vi'];
+export type EmailTexts = (typeof texts)['vi'] | (typeof texts)['en'];
 
-export function getEmailTexts(locale: EmailLocale = 'vi'): EmailTexts {
+export function getEmailTexts(locale: EmailLocale = 'vi'): (typeof texts)['vi'] | (typeof texts)['en'] {
   return texts[locale] ?? texts.vi;
 }

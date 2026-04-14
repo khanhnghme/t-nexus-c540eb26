@@ -405,7 +405,7 @@ export default function MeetingRoom({ meeting, members, isLeader, groupId, onBac
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Hủy</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleStartMeeting}>Bắt đầu</AlertDialogAction>
+                  <Button onClick={handleStartMeeting}>Bắt đầu</Button>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -427,7 +427,7 @@ export default function MeetingRoom({ meeting, members, isLeader, groupId, onBac
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Hủy</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleEndMeeting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Kết thúc</AlertDialogAction>
+                  <Button onClick={handleEndMeeting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Kết thúc</Button>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>

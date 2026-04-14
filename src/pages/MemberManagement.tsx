@@ -1140,9 +1140,9 @@ export default function MemberManagement() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isCreating}>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteMember} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isCreating}>
+            <Button onClick={handleDeleteMember} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isCreating}>
               {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Xóa tài khoản'}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

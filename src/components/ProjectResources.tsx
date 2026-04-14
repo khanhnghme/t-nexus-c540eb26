@@ -1107,9 +1107,9 @@ export default function ProjectResources({ groupId, isLeader }: ProjectResources
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isDeleting}>
+            <Button onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isDeleting}>
               {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Xóa'}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -1123,9 +1123,9 @@ export default function ProjectResources({ groupId, isLeader }: ProjectResources
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteFolder} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isDeleting}>
+            <Button onClick={handleDeleteFolder} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isDeleting}>
               {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Xóa'}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -1174,9 +1174,9 @@ export default function ProjectResources({ groupId, isLeader }: ProjectResources
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isBatchProcessing}>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleBatchDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isBatchProcessing}>
+            <Button onClick={handleBatchDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isBatchProcessing}>
               {isBatchProcessing ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Đang xóa...</> : `Xóa ${selectedIds.size} tài nguyên`}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

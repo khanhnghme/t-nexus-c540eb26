@@ -967,9 +967,9 @@ export default function AdminSystem() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setMaintenanceEnabled(origMaintenanceEnabled)}>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSaveMaintenance} disabled={saving}>
+            <Button onClick={handleSaveMaintenance} disabled={saving}>
               {saving ? 'Đang lưu...' : 'Xác nhận'}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
