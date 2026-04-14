@@ -1504,71 +1504,66 @@ export default function TaskListView({
                       </div>
                     ) : (
                       <Droppable droppableId={stage.id} type="TASK">
-                        {(provided, snapshot) => (
+                        {(provided, snapshot) => {
+                          const showAll = fullyExpandedStages.has(stage.id) || stageTasks.length <= TASK_RENDER_LIMIT;
+                          const visibleTasks = showAll ? stageTasks : stageTasks.slice(0, TASK_RENDER_LIMIT);
+                          return (
                           <div
                             ref={provided.innerRef}
                             {...provided.droppableProps}
                             className={`space-y-2 min-h-[40px] rounded-lg transition-colors ${snapshot.isDraggingOver ? 'bg-primary/5' : ''}`}
                           >
-                            {(() => {
-                              const INITIAL_RENDER_LIMIT = 30;
-                              const [showAll, setShowAll] = useState(stageTasks.length <= INITIAL_RENDER_LIMIT);
-                              const visibleTasks = showAll ? stageTasks : stageTasks.slice(0, INITIAL_RENDER_LIMIT);
-                              return (
-                                <>
-                                  {visibleTasks.map((task, index) => (
-                                    <Draggable key={task.id} draggableId={task.id} index={index} isDragDisabled={!isLeaderInGroup || isMultiSelectMode}>
-                                      {(dragProvided, dragSnapshot) => (
-                                        <div
-                                          ref={dragProvided.innerRef}
-                                          {...dragProvided.draggableProps}
-                                          style={dragProvided.draggableProps.style}
-                                          className={dragSnapshot.isDragging ? 'opacity-90 shadow-lg rounded-lg' : ''}
-                                        >
-                                          <TaskRow
-                                            task={task}
-                                            taskCode={getTaskCode(task, stages, stageIndex, index)}
-                                            stageColor={stageColor}
-                                            isLeaderInGroup={isLeaderInGroup}
-                                            isAssignee={isUserAssignee(task)}
-                                            groupId={groupId}
-                                            groupSlug={groupSlug}
-                                            onEditTask={onEditTask}
-                                            openSubmissionDialog={openSubmissionDialog}
-                                            openDetailDialog={openDetailDialog}
-                                            setTaskToDelete={setTaskToDelete}
-                                            onScoreTask={isLeaderInGroup ? openScoringDialog : undefined}
-                                            onToggleHidden={isLeaderInGroup ? handleToggleTaskHidden : undefined}
-                                            onQuickStatusChange={isLeaderInGroup ? handleQuickStatusChange : undefined}
-                                            isMultiSelectMode={isMultiSelectMode}
-                                            isSelected={selectedTaskIds.has(task.id)}
-                                            onToggleSelect={toggleTaskSelect}
-                                            meeting={meetingsByTaskId[task.id]}
-                                            onJoinMeeting={handleJoinMeeting}
-                                            dragHandleProps={dragProvided.dragHandleProps}
-                                            isExpandedMobile={expandedMobileTaskId === task.id}
-                                            onToggleMobileExpand={toggleMobileExpand}
-                                          />
-                                        </div>
-                                      )}
-                                    </Draggable>
-                                  ))}
-                                  {!showAll && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="w-full text-xs text-muted-foreground"
-                                      onClick={() => setShowAll(true)}
-                                    >
-                                      Hiện thêm {stageTasks.length - INITIAL_RENDER_LIMIT} task còn lại
-                                    </Button>
-                                  )}
-                                </>
-                              );
-                            })()}
+                            {visibleTasks.map((task, index) => (
+                              <Draggable key={task.id} draggableId={task.id} index={index} isDragDisabled={!isLeaderInGroup || isMultiSelectMode}>
+                                {(dragProvided, dragSnapshot) => (
+                                  <div
+                                    ref={dragProvided.innerRef}
+                                    {...dragProvided.draggableProps}
+                                    style={dragProvided.draggableProps.style}
+                                    className={dragSnapshot.isDragging ? 'opacity-90 shadow-lg rounded-lg' : ''}
+                                  >
+                                    <TaskRow
+                                      task={task}
+                                      taskCode={getTaskCode(task, stages, stageIndex, index)}
+                                      stageColor={stageColor}
+                                      isLeaderInGroup={isLeaderInGroup}
+                                      isAssignee={isUserAssignee(task)}
+                                      groupId={groupId}
+                                      groupSlug={groupSlug}
+                                      onEditTask={onEditTask}
+                                      openSubmissionDialog={openSubmissionDialog}
+                                      openDetailDialog={openDetailDialog}
+                                      setTaskToDelete={setTaskToDelete}
+                                      onScoreTask={isLeaderInGroup ? openScoringDialog : undefined}
+                                      onToggleHidden={isLeaderInGroup ? handleToggleTaskHidden : undefined}
+                                      onQuickStatusChange={isLeaderInGroup ? handleQuickStatusChange : undefined}
+                                      isMultiSelectMode={isMultiSelectMode}
+                                      isSelected={selectedTaskIds.has(task.id)}
+                                      onToggleSelect={toggleTaskSelect}
+                                      meeting={meetingsByTaskId[task.id]}
+                                      onJoinMeeting={handleJoinMeeting}
+                                      dragHandleProps={dragProvided.dragHandleProps}
+                                      isExpandedMobile={expandedMobileTaskId === task.id}
+                                      onToggleMobileExpand={toggleMobileExpand}
+                                    />
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))}
+                            {!showAll && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full text-xs text-muted-foreground"
+                                onClick={() => setFullyExpandedStages(prev => new Set([...prev, stage.id]))}
+                              >
+                                Hiện thêm {stageTasks.length - TASK_RENDER_LIMIT} task còn lại
+                              </Button>
+                            )}
                             {provided.placeholder}
                           </div>
-                        )}
+                          );
+                        }}
                       </Droppable>
                     )}
                     {isLeaderInGroup && (
