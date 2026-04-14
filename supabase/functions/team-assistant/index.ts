@@ -550,6 +550,7 @@ serve(async (req) => {
     const now = new Date();
     const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
     const monthEnd = now.toISOString().slice(0, 10);
+    const today = monthEnd;
 
     // Get user's profile
     const { data: profileData } = await supabase
