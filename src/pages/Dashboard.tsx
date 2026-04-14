@@ -26,7 +26,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import UserPresenceIndicator from '@/components/UserPresenceIndicator';
 import { Navigate } from 'react-router-dom';
-
+import { useDashboardData, useHiddenProjects, usePendingApprovals, useVideoSettings } from '@/hooks/useDashboardData';
 
 import { getSystemRoleLabel } from '@/lib/roleLabels';
 import JoinByCodeDialog from '@/components/JoinByCodeDialog';
