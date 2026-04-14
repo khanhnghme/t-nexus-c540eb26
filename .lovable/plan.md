@@ -1,36 +1,29 @@
 
 
-## Plan: Chuyển AI Assistant sang trang riêng + link sidebar dưới Tổng quan
+## Plan: Cập nhật hạn mức AI theo gói + UI
 
 ### Tóm tắt
-1. Tạo trang `/ai-assistant` riêng biệt (full-page chat, tái sử dụng logic từ `AIAssistantPanel.tsx`)
-2. Thêm link "Trợ lý AI" vào sidebar ngay dưới "Tổng quan" (Overview), cả expanded và collapsed mode
-3. Xóa floating `AIAssistantButton` khỏi `DashboardLayout.tsx`
-4. Giữ nguyên logic tính usage theo owner pool (đã implement)
+- Free: 5, Plus: 20, Pro: 50, Business: **150** (giảm từ 200), Enterprise: giữ unlimited
+- Cập nhật DB `plan_limits` + tất cả UI liên quan
 
-### Chi tiết kỹ thuật
+### Chi tiết
 
-**1. Tạo `src/pages/AIAssistant.tsx`**
-- Full-page layout: sidebar trái hiển thị usage bar (owner pool: `get_owner_ai_usage_today`), main area là giao diện chat
-- Tái sử dụng toàn bộ logic từ `AIAssistantPanel.tsx`: messages state, send handler, markdown rendering, word limit, usage tracking
-- Bỏ Sheet/drawer wrapper → render trực tiếp trong page content
-- Hiển thị thanh usage: "Đã dùng X / Y lượt (toàn workspace)" dựa trên owner pool
+**1. Cập nhật DB `plan_limits` (dùng insert tool)**
+```sql
+UPDATE plan_limits SET max_ai_messages_per_day = 5 WHERE plan = 'plan_free';
+UPDATE plan_limits SET max_ai_messages_per_day = 20 WHERE plan = 'plan_plus';
+UPDATE plan_limits SET max_ai_messages_per_day = 50 WHERE plan = 'plan_pro';
+UPDATE plan_limits SET max_ai_messages_per_day = 150 WHERE plan = 'plan_business';
+-- plan_custom (Enterprise) giữ NULL = unlimited
+```
 
-**2. Cập nhật `src/components/SidebarTreeNav.tsx`**
-- Import icon `Sparkles` từ lucide-react
-- **Expanded mode** (~line 236, sau Overview): Thêm link `/ai-assistant` với icon Sparkles
-- **Collapsed mode** (~line 177, sau Overview): Thêm `TreeItemCollapsed` cho `/ai-assistant`
+**2. Cập nhật `src/lib/i18n/en.ts`**
+- Business quotas (line 358): `'Unlimited AI Assistant'` → `'AI Assistant: 150 messages/day'`
+- Comparison table (line 422): `business: 'Unlimited'` → `business: '150/day'`
 
-**3. Cập nhật `src/App.tsx`**
-- Lazy import `AIAssistant` page
-- Thêm route `/ai-assistant` trong protected layout (cạnh `/dashboard`)
+**3. Cập nhật `src/lib/i18n/vi.ts`**
+- Business quotas (line 359): `'Trợ lý AI không giới hạn'` → `'Trợ lý AI: 150 lượt/ngày'`
+- Comparison table (line 424): `business: 'Không giới hạn'` → `business: '150/ngày'`
 
-**4. Cập nhật `src/components/layout/DashboardLayout.tsx`**
-- Xóa import `AIAssistantButton` (line 54)
-- Xóa render `<AIAssistantButton ... />` (line 545-549)
-
-**5. Cập nhật i18n (`en.ts`, `vi.ts`)**
-- Sidebar: `aiAssistant: 'AI Assistant'` / `aiAssistant: 'Trợ lý AI'`
-
-### Tổng: 1 file mới + 4 files sửa
+### Tổng: 1 data update + 2 files sửa
 
