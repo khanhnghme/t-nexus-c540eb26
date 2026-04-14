@@ -284,7 +284,7 @@ export default function Dashboard() {
       setPendingInvitations(prev => prev.filter(p => p.id !== invitation.id));
       if (accept) {
         await refreshWorkspaces();
-        fetchDashboardData();
+        refreshDashboard();
       }
     } catch (error: any) {
       toast.error(error.message || (t?.errorOccurred || 'An error occurred'));
@@ -343,7 +343,7 @@ export default function Dashboard() {
       setPendingWsInvites(prev => prev.filter(p => p.id !== invite.id));
       if (accept) {
         await refreshWorkspaces();
-        fetchDashboardData();
+        refreshDashboard();
       }
     } catch (error: any) {
       toast.error(error.message || (t?.errorOccurred || 'An error occurred'));
@@ -623,7 +623,7 @@ export default function Dashboard() {
         <JoinByCodeDialog
           open={showJoinDialog}
           onOpenChange={setShowJoinDialog}
-          onJoined={() => { fetchDashboardData(); fetchPendingApprovals(); }}
+          onJoined={() => { refreshDashboard(); }}
         />
 
         {/* Invitation Dialog — 16:9 split layout */}
