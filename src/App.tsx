@@ -79,6 +79,7 @@ import SearchPage from "./pages/Search";
 const CreateCustomProject = React.lazy(() => import("./pages/CreateCustomProject"));
 const PublicCanvasPage = React.lazy(() => import("./pages/PublicCanvasPage"));
 const AIAssistant = React.lazy(() => import("./pages/AIAssistant"));
+const UIPreview = React.lazy(() => import("./pages/UIPreview"));
 
 const queryClient = new QueryClient();
 
