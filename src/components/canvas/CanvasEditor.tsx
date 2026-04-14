@@ -393,20 +393,6 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
             sideMenu={editable}
             formattingToolbar={editable}
             slashMenu={false}
-            shadCNComponents={{
-              DropdownMenu: {
-                DropdownMenu: BNDropdownMenu as any,
-                DropdownMenuContent: BNDropdownMenuContent as any,
-                DropdownMenuItem: BNDropdownMenuItem as any,
-                DropdownMenuCheckboxItem: BNDropdownMenuCheckboxItem as any,
-                DropdownMenuLabel: BNDropdownMenuLabel as any,
-                DropdownMenuSeparator: BNDropdownMenuSeparator as any,
-                DropdownMenuSub: BNDropdownMenuSub as any,
-                DropdownMenuSubContent: BNDropdownMenuSubContent as any,
-                DropdownMenuSubTrigger: BNDropdownMenuSubTrigger as any,
-                DropdownMenuTrigger: BNDropdownMenuTrigger as any,
-              },
-            }}
           >
             {editable && (
               <SuggestionMenuController
