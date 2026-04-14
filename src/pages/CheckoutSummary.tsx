@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import tNexusText from '@/assets/t-nexus-text.png';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { CheckCircle2, XCircle, Clock, Ban, Loader2, ArrowRight, RotateCcw, Receipt, Printer, CreditCard, Calendar, Hash, ShieldAlert, LogIn } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
@@ -138,7 +139,7 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
           <p className="text-xs font-mono font-semibold text-gray-700 mt-1">{invoiceNumber}</p>
         </div>
         <div className="text-right -mt-1">
-          <img src="/src/assets/t-nexus-text.png" alt="T-Nexus" style={{ width: 100, height: 'auto' }} className="ml-auto mb-1" />
+          <img src={tNexusText} alt="T-Nexus" style={{ width: 100, height: 'auto' }} className="ml-auto mb-1" />
           <p className="text-[10px] text-gray-400 mt-0.5">
             {isVi ? 'Dịch vụ quản lý dự án số' : 'Digital Project Management Service'}
           </p>
