@@ -161,6 +161,35 @@ export default {
           from: { opacity: "0", transform: "scale(0.9)" },
           to: { opacity: "1", transform: "scale(1)" },
         },
+        "slide-up": {
+          from: { opacity: "0", transform: "translateY(8px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "slide-down": {
+          from: { opacity: "0", transform: "translateY(-8px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "pulse-soft": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.7" },
+        },
+        "bounce-in": {
+          "0%": { transform: "scale(0)", opacity: "0" },
+          "50%": { transform: "scale(1.15)" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
+        "spin-slow": {
+          from: { transform: "rotate(0deg)" },
+          to: { transform: "rotate(360deg)" },
+        },
+        "progress-bar": {
+          from: { transform: "translateX(-100%)" },
+          to: { transform: "translateX(100%)" },
+        },
+        "skeleton-wave": {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -176,6 +205,13 @@ export default {
         "float": "float 3s ease-in-out infinite",
         "shimmer": "shimmer 2s linear infinite",
         "lightbox-in": "lightbox-in 0.3s ease-out forwards",
+        "slide-up": "slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        "slide-down": "slide-down 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        "pulse-soft": "pulse-soft 2s ease-in-out infinite",
+        "bounce-in": "bounce-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
+        "spin-slow": "spin-slow 2s linear infinite",
+        "progress-bar": "progress-bar 1.5s ease-in-out infinite",
+        "skeleton-wave": "skeleton-wave 1.8s ease-in-out infinite",
       },
       boxShadow: {
         'card': '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',

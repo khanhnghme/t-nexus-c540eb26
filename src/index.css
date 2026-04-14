@@ -462,6 +462,35 @@
   .gentle-animation {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
+
+  /* Micro-interaction utilities */
+  .hover-lift {
+    @apply transition-all duration-smooth ease-out;
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px -2px rgb(0 0 0 / 0.1);
+  }
+
+  .hover-glow {
+    @apply transition-shadow duration-smooth;
+  }
+  .hover-glow:hover {
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.12);
+  }
+
+  .press-effect {
+    @apply transition-transform duration-micro;
+  }
+  .press-effect:active {
+    transform: scale(0.97);
+  }
+
+  /* Staggered appear delays */
+  .appear-delay-1 { animation-delay: 50ms; }
+  .appear-delay-2 { animation-delay: 100ms; }
+  .appear-delay-3 { animation-delay: 150ms; }
+  .appear-delay-4 { animation-delay: 200ms; }
 }
 
 /* Default mode (non-google-mode) — UEH branding enhancements */
