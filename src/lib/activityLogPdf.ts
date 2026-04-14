@@ -98,7 +98,7 @@ const removeVietnameseDiacritics = (str: string): string => {
 };
 
 // Add UEH Header with actual logo
-const addUEHHeader = async (doc: jsPDF, pageWidth: number): Promise<number> => {
+const addUEHHeader = async (doc: InstanceType<typeof import('jspdf').default>, pageWidth: number): Promise<number> => {
   try {
     const logo = await loadImageAsBase64(ettLogoUrl);
     const logoWidth = 45;
@@ -142,6 +142,8 @@ const addUEHHeader = async (doc: jsPDF, pageWidth: number): Promise<number> => {
 };
 
 export const exportActivityLogToPdf = async ({ projectName, logs, dateFrom, dateTo, filters }: ExportOptions) => {
+  const { default: jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   
