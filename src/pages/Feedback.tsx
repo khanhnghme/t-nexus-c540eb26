@@ -316,25 +316,58 @@ export default function FeedbackPage() {
     );
   };
 
-  const AttachmentImages = ({ urls }: { urls?: string[] }) => {
+  const isImageUrl = (url: string) => {
+    const ext = url.split('?')[0].split('.').pop()?.toLowerCase() || '';
+    return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(ext);
+  };
+
+  const getFileNameFromUrl = (url: string) => {
+    const path = url.split('?')[0];
+    const segments = path.split('/');
+    const raw = segments[segments.length - 1] || 'file';
+    // Remove timestamp prefix like "1234567890-"
+    return raw.replace(/^\d+-/, '');
+  };
+
+  const Attachments = ({ urls }: { urls?: string[] }) => {
     if (!urls || urls.length === 0) return null;
     return (
       <div className="flex flex-wrap gap-2 mt-2">
         {urls.map((url, i) => {
           const normalizedUrl = normalizeStorageUrl(url) || url;
+          const isImg = isImageUrl(normalizedUrl);
+          const fileName = getFileNameFromUrl(normalizedUrl);
+
+          if (isImg) {
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setPreviewImage(normalizedUrl)}
+                className="relative w-20 h-20 rounded-lg overflow-hidden border border-border hover:border-primary transition-colors"
+              >
+                <img
+                  src={normalizedUrl}
+                  alt={`Đính kèm ${i + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </button>
+            );
+          }
+
           return (
-            <button
+            <a
               key={i}
-              type="button"
-              onClick={() => setPreviewImage(normalizedUrl)}
-              className="relative w-20 h-20 rounded-lg overflow-hidden border border-border hover:border-primary transition-colors"
+              href={normalizedUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border hover:border-primary transition-colors bg-muted/30 text-xs max-w-[200px]"
+              title={fileName}
             >
-              <img
-                src={normalizedUrl}
-                alt={`Ảnh đính kèm ${i + 1}`}
-                className="w-full h-full object-cover"
-              />
-            </button>
+              <FileText className="w-4 h-4 shrink-0 text-muted-foreground" />
+              <span className="truncate">{fileName}</span>
+              <Download className="w-3 h-3 shrink-0 text-muted-foreground" />
+            </a>
           );
         })}
       </div>
