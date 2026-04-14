@@ -1552,6 +1552,7 @@ export const en = {
       storage: 'Storage',
       aiMessages: 'AI Messages',
       aiMessagesNote: 'Shared across all workspace members',
+      aiMessagesUnit: 'messages',
       detailByWorkspace: 'Detail by Workspace',
       noWorkspaceOwned: "You don't own any workspace",
       projectsLabel: 'projects',
