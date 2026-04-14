@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FileText, Users, Calendar, Globe, EyeOff, Eye, Clock, Palette } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -53,7 +53,7 @@ function NameCover({ name }: { name: string }) {
   );
 }
 
-export default function DashboardProjectCard({ group, isHidden, isPending, onToggleHide }: DashboardProjectCardProps) {
+function DashboardProjectCardInner({ group, isHidden, isPending, onToggleHide }: DashboardProjectCardProps) {
   const [imgError, setImgError] = useState(false);
   const { activeWorkspace } = useWorkspace();
 
@@ -186,3 +186,5 @@ export default function DashboardProjectCard({ group, isHidden, isPending, onTog
     </Wrapper>
   );
 }
+
+export default React.memo(DashboardProjectCardInner);

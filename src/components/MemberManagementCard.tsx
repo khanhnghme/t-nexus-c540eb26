@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useEmailLookup } from '@/hooks/useEmailLookup';
 import EmailUserPreview from '@/components/EmailUserPreview';
 import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
@@ -89,7 +89,7 @@ interface MemberManagementCardProps {
   onRefresh: () => void;
 }
 
-export default function MemberManagementCard({
+function MemberManagementCardInner({
   members,
   isLeaderInGroup,
   isGroupCreator,
@@ -1990,3 +1990,5 @@ export default function MemberManagementCard({
     </>
   );
 }
+
+export default React.memo(MemberManagementCardInner);

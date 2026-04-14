@@ -269,10 +269,15 @@ export default function GroupDetail() {
       // Check if current user is the group creator (Trưởng nhóm) - set early, outside membersData check
       setIsGroupCreator(groupData.created_by === user?.id || isAdmin);
 
-      const { data: stagesData } = await supabase.from('stages').select('*').eq('group_id', resolvedGroupId).order('order_index');
-      if (stagesData) setStages(stagesData);
+      // ── Step 2: Parallel fetch stages + members ──
+      const [stagesRes, membersRes] = await Promise.all([
+        supabase.from('stages').select('*').eq('group_id', resolvedGroupId).order('order_index'),
+        supabase.from('group_members').select('*').eq('group_id', resolvedGroupId),
+      ]);
 
-      const { data: membersData } = await supabase.from('group_members').select('*').eq('group_id', resolvedGroupId);
+      if (stagesRes.data) setStages(stagesRes.data);
+
+      const membersData = membersRes.data;
       if (membersData) {
         const userIds = membersData.map(m => m.user_id);
         const { data: profilesData } = await supabase.from('profiles').select('*').in('id', userIds);
@@ -289,7 +294,6 @@ export default function GroupDetail() {
           if (visibility === 'public_link' && groupData.is_public) {
             // public_link → allow read-only view
           } else if (visibility === 'workspace_public' && groupData.workspace_id) {
-            // Check if user is a workspace member
             const { data: wsMember } = await supabase
               .from('workspace_members')
               .select('user_id')
@@ -301,41 +305,42 @@ export default function GroupDetail() {
               return;
             }
           } else {
-            // private or no match → deny
             setIsAccessDenied(true);
             return;
           }
         }
       } else {
-        // No members data returned (RLS blocked) and not admin → deny
         if (!isAdmin) {
           setIsAccessDenied(true);
           return;
         }
       }
 
-      const { data: tasksData } = await supabase.from('tasks').select('*').eq('group_id', resolvedGroupId).order('created_at', { ascending: false });
-      if (tasksData) {
-        const taskIds = tasksData.map(t => t.id);
-        const { data: assignmentsData } = await supabase.from('task_assignments').select('*').in('task_id', taskIds);
-        const assigneeIds = [...new Set(assignmentsData?.map(a => a.user_id) || [])];
-        const { data: assigneeProfiles } = await supabase.from('profiles').select('*').in('id', assigneeIds);
-        const profilesMap = new Map(assigneeProfiles?.map(p => [p.id, p]) || []);
-        setTasks(tasksData.map(task => ({
-          ...task,
-          task_assignments: assignmentsData?.filter(a => a.task_id === task.id).map(a => ({ ...a, profiles: profilesMap.get(a.user_id) })) || [],
-        })) as Task[]);
+      // ── Step 3: Parallel fetch tasks + meetings ──
+      const [tasksRes, activeMeetingsRes] = await Promise.all([
+        supabase.from('tasks').select('*').eq('group_id', resolvedGroupId).order('created_at', { ascending: false }),
+        supabase.from('meetings').select('id').eq('group_id', resolvedGroupId).eq('status', 'in_progress').limit(1),
+      ]);
+
+      if (tasksRes.data) {
+        const taskIds = tasksRes.data.map(t => t.id);
+        if (taskIds.length > 0) {
+          const { data: assignmentsData } = await supabase.from('task_assignments').select('*').in('task_id', taskIds);
+          const assigneeIds = [...new Set(assignmentsData?.map(a => a.user_id) || [])];
+          const { data: assigneeProfiles } = assigneeIds.length > 0
+            ? await supabase.from('profiles').select('*').in('id', assigneeIds)
+            : { data: [] };
+          const profilesMap = new Map((assigneeProfiles || []).map(p => [p.id, p] as const));
+          setTasks(tasksRes.data.map(task => ({
+            ...task,
+            task_assignments: assignmentsData?.filter(a => a.task_id === task.id).map(a => ({ ...a, profiles: profilesMap.get(a.user_id) })) || [],
+          })) as Task[]);
+        } else {
+          setTasks([]);
+        }
       }
 
-
-      // Check for active meetings (in_progress status)
-      const { data: activeMeetings } = await supabase
-        .from('meetings')
-        .select('id')
-        .eq('group_id', resolvedGroupId)
-        .eq('status', 'in_progress')
-        .limit(1);
-      setHasActiveMeeting((activeMeetings?.length ?? 0) > 0);
+      setHasActiveMeeting((activeMeetingsRes.data?.length ?? 0) > 0);
     } catch (error: any) {
       toast({ title: tc.error, description: gd.cannotLoadInfo, variant: 'destructive' });
     } finally {

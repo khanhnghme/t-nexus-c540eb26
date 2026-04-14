@@ -1,4 +1,4 @@
-import React, { useState, Suspense } from "react";
+import React, { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,60 +22,78 @@ import { LegacyProjectRedirect, LegacyTaskRedirect, LegacyPageRedirect, LegacyFi
 
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import CheckoutLayoutWrapper from "@/components/layout/CheckoutLayoutWrapper";
-import Landing from "./pages/Landing";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Auth from "./pages/Auth";
-import ForgotPassword from "./pages/ForgotPassword";
-import VerifyOtp from "./pages/VerifyOtp";
-import ResetPasswordNew from "./pages/ResetPasswordNew";
-import PasswordSuccess from "./pages/PasswordSuccess";
-import Dashboard from "./pages/Dashboard";
-import Groups from "./pages/Groups";
-import GroupDetail from "./pages/GroupDetail";
-import MemberManagement from "./pages/MemberManagement";
-import Feedback from "./pages/Feedback";
-import NotFound from "./pages/NotFound";
-import AdminActivity from "./pages/AdminActivity";
-import AdminBackup from "./pages/AdminBackup";
-import AdminSystem from "./pages/AdminSystem";
-import Communication from "./pages/Communication";
-import PublicProjectView from "./pages/PublicProjectView";
-import FilePreview from "./pages/FilePreview";
-import PersonalInfo from "./pages/PersonalInfo";
-import AccountSettings from "./pages/AccountSettings";
-import ResetPassword from "./pages/ResetPassword";
-import Utilities from "./pages/Utilities";
-import PublicProfile from "./pages/PublicProfile";
-import PublicTaskPreview from "./pages/PublicTaskPreview";
-import CalendarPage from "./pages/Calendar";
-import Tips from "./pages/Tips";
-import DownloadPage from "./pages/Download";
-import Pricing from "./pages/Pricing";
-import PricingDocs from "./pages/PricingDocs";
-import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";
-import Guide from "./pages/Guide";
-import WorkspaceSettings from "./pages/WorkspaceSettings";
-import WorkspaceMembers from "./pages/WorkspaceMembers";
-import CreateWorkspace from "./pages/CreateWorkspace";
-import Notifications from "./pages/Notifications";
-import Upgrade from "./pages/Upgrade";
-import Checkout from "./pages/Checkout";
-import Onboarding from "./pages/Onboarding";
-import PaymentResult from "./pages/PaymentResult";
-import ServicePlan from "./pages/ServicePlan";
-import BillingHistory from "./pages/BillingHistory";
-import AddonCheckout from "./pages/AddonCheckout";
-import CheckoutPayment from "./pages/CheckoutPayment";
-import AddonCheckoutPayment from "./pages/AddonCheckoutPayment";
-import CheckoutSummary from "./pages/CheckoutSummary";
 import AdminLayout from "./components/layout/AdminLayout";
-import AdminBilling from "./pages/AdminBilling";
-import AdminUserBilling from "./pages/AdminUserBilling";
-import JoinProject from "./pages/JoinProject";
-import SearchPage from "./pages/Search";
 
+// Only Landing is statically imported (first page users see)
+import Landing from "./pages/Landing";
+
+// ═══ Lazy-loaded pages ═══
+// Auth
+const Login = React.lazy(() => import("./pages/Login"));
+const Register = React.lazy(() => import("./pages/Register"));
+const Auth = React.lazy(() => import("./pages/Auth"));
+const ForgotPassword = React.lazy(() => import("./pages/ForgotPassword"));
+const VerifyOtp = React.lazy(() => import("./pages/VerifyOtp"));
+const ResetPasswordNew = React.lazy(() => import("./pages/ResetPasswordNew"));
+const PasswordSuccess = React.lazy(() => import("./pages/PasswordSuccess"));
+const ResetPassword = React.lazy(() => import("./pages/ResetPassword"));
+
+// Protected
+const Dashboard = React.lazy(() => import("./pages/Dashboard"));
+const Groups = React.lazy(() => import("./pages/Groups"));
+const GroupDetail = React.lazy(() => import("./pages/GroupDetail"));
+const Communication = React.lazy(() => import("./pages/Communication"));
+const CalendarPage = React.lazy(() => import("./pages/Calendar"));
+const Feedback = React.lazy(() => import("./pages/Feedback"));
+const PersonalInfo = React.lazy(() => import("./pages/PersonalInfo"));
+const AccountSettings = React.lazy(() => import("./pages/AccountSettings"));
+const Notifications = React.lazy(() => import("./pages/Notifications"));
+const Tips = React.lazy(() => import("./pages/Tips"));
+const Onboarding = React.lazy(() => import("./pages/Onboarding"));
+const SearchPage = React.lazy(() => import("./pages/Search"));
+const ServicePlan = React.lazy(() => import("./pages/ServicePlan"));
+const BillingHistory = React.lazy(() => import("./pages/BillingHistory"));
+const JoinProject = React.lazy(() => import("./pages/JoinProject"));
+
+// Admin
+const AdminActivity = React.lazy(() => import("./pages/AdminActivity"));
+const AdminBackup = React.lazy(() => import("./pages/AdminBackup"));
+const AdminSystem = React.lazy(() => import("./pages/AdminSystem"));
+const AdminBilling = React.lazy(() => import("./pages/AdminBilling"));
+const AdminUserBilling = React.lazy(() => import("./pages/AdminUserBilling"));
+const MemberManagement = React.lazy(() => import("./pages/MemberManagement"));
+const Utilities = React.lazy(() => import("./pages/Utilities"));
+
+// Checkout
+const Checkout = React.lazy(() => import("./pages/Checkout"));
+const CheckoutPayment = React.lazy(() => import("./pages/CheckoutPayment"));
+const AddonCheckout = React.lazy(() => import("./pages/AddonCheckout"));
+const AddonCheckoutPayment = React.lazy(() => import("./pages/AddonCheckoutPayment"));
+const PaymentResult = React.lazy(() => import("./pages/PaymentResult"));
+const CheckoutSummary = React.lazy(() => import("./pages/CheckoutSummary"));
+
+// Public
+const PublicProjectView = React.lazy(() => import("./pages/PublicProjectView"));
+const PublicProfile = React.lazy(() => import("./pages/PublicProfile"));
+const PublicTaskPreview = React.lazy(() => import("./pages/PublicTaskPreview"));
+const FilePreview = React.lazy(() => import("./pages/FilePreview"));
+
+// Workspace
+const WorkspaceSettings = React.lazy(() => import("./pages/WorkspaceSettings"));
+const WorkspaceMembers = React.lazy(() => import("./pages/WorkspaceMembers"));
+const CreateWorkspace = React.lazy(() => import("./pages/CreateWorkspace"));
+const Upgrade = React.lazy(() => import("./pages/Upgrade"));
+
+// Misc
+const Pricing = React.lazy(() => import("./pages/Pricing"));
+const PricingDocs = React.lazy(() => import("./pages/PricingDocs"));
+const Privacy = React.lazy(() => import("./pages/Privacy"));
+const Terms = React.lazy(() => import("./pages/Terms"));
+const Guide = React.lazy(() => import("./pages/Guide"));
+const DownloadPage = React.lazy(() => import("./pages/Download"));
+const NotFound = React.lazy(() => import("./pages/NotFound"));
+
+// Heavy pages (already lazy)
 const CreateCustomProject = React.lazy(() => import("./pages/CreateCustomProject"));
 const PublicCanvasPage = React.lazy(() => import("./pages/PublicCanvasPage"));
 const AIAssistant = React.lazy(() => import("./pages/AIAssistant"));
@@ -147,6 +165,7 @@ function AppRoutes() {
   return (
     <LanguageProvider>
     <PageTransition>
+      <Suspense fallback={null}>
       <Routes>
         {/* ═══ Localized public routes — EN (root) ═══ */}
         <Route path="/" element={<ForceLightMode><Landing /></ForceLightMode>} />
@@ -188,10 +207,10 @@ function AppRoutes() {
         <Route path="/s/:shareToken" element={<ForceLightMode><PublicProjectView /></ForceLightMode>} />
         <Route path="/s/:shareToken/t/:taskSlug/f/:fileIndex" element={<ForceLightMode><FilePreview /></ForceLightMode>} />
         <Route path="/public/project/:shareToken" element={<ForceLightMode><PublicProjectView /></ForceLightMode>} />
-        <Route path="/share/:token/page/:pageSlug" element={<ForceLightMode><Suspense fallback={null}><PublicCanvasPage /></Suspense></ForceLightMode>} />
-        <Route path="/share/:token/page" element={<ForceLightMode><Suspense fallback={null}><PublicCanvasPage /></Suspense></ForceLightMode>} />
+        <Route path="/share/:token/page/:pageSlug" element={<ForceLightMode><PublicCanvasPage /></ForceLightMode>} />
+        <Route path="/share/:token/page" element={<ForceLightMode><PublicCanvasPage /></ForceLightMode>} />
         <Route path="/reset-password" element={<ForceLightMode><ResetPassword /></ForceLightMode>} />
-        <Route path="/ui-preview" element={<ForceLightMode><Suspense fallback={null}><UIPreview /></Suspense></ForceLightMode>} />
+        <Route path="/ui-preview" element={<ForceLightMode><UIPreview /></ForceLightMode>} />
         <Route path="/join" element={<JoinProject />} />
         {/* ═══ Invoice summary — accessible without login (handles own auth guard) ═══ */}
         <Route path="/checkout/summary/:orderCode" element={<CheckoutSummary />} />
@@ -215,7 +234,7 @@ function AppRoutes() {
         {/* ═══ Protected routes with persistent DashboardLayout ═══ */}
         <Route element={<ProtectedLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/ai-assistant" element={<Suspense fallback={null}><AIAssistant /></Suspense>} />
+          <Route path="/ai-assistant" element={<AIAssistant />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/groups" element={<Groups />} />
@@ -260,6 +279,7 @@ function AppRoutes() {
 
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </Suspense>
     </PageTransition>
     </LanguageProvider>
   );
