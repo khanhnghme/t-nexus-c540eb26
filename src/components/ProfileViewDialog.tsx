@@ -58,6 +58,7 @@ interface ProfileViewDialogProps {
   role?: ProjectRole;
   isGroupCreator?: boolean;
   groupId?: string;
+  presenceStatus?: PresenceStatus;
 }
 
 export default function ProfileViewDialog({
