@@ -116,21 +116,27 @@ export default function Dashboard() {
   const t = translations.app?.dashboard;
   
 
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  // React Query hooks for data fetching with caching
+  const { data: dashboardResult, isLoading } = useDashboardData(user?.id, activeWorkspace?.id, wsAvailable);
+  const { data: hiddenProjectIds = new Set<string>() } = useHiddenProjects(user?.id);
+  const { data: pendingApprovalGroups = [] } = usePendingApprovals(user?.id);
+  const { data: videoSettings } = useVideoSettings();
+
+  const groups = dashboardResult?.groups || [];
+  const ownedProjectCount = dashboardResult?.ownedProjectCount || 0;
+  const joinedProjectCount = dashboardResult?.joinedProjectCount || 0;
+  const videoEnabled = videoSettings?.enabled || false;
+  const videoOpacity = videoSettings?.opacity || 0.2;
+  const videoUrl = videoSettings?.url || '';
+
   const [showJoinDialog, setShowJoinDialog] = useState(false);
   const [showInvitationDialog, setShowInvitationDialog] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [processingInvitation, setProcessingInvitation] = useState<string | null>(null);
   const [pendingWsInvites, setPendingWsInvites] = useState<PendingWorkspaceInvite[]>([]);
   const [inviteTab, setInviteTab] = useState<'all' | 'project' | 'workspace'>('all');
-  const [videoOpacity, setVideoOpacity] = useState(0);
-  const [videoUrl, setVideoUrl] = useState('');
-  const [videoEnabled, setVideoEnabled] = useState(false);
-  const [ownedProjectCount, setOwnedProjectCount] = useState(0);
-  const [joinedProjectCount, setJoinedProjectCount] = useState(0);
-  const [hiddenProjectIds, setHiddenProjectIds] = useState<Set<string>>(new Set());
-  const [pendingApprovalGroups, setPendingApprovalGroups] = useState<Group[]>([]);
   const [modeFilter, setModeFilter] = useState<ProjectModeFilter>('all');
   
   const [filter, setFilter] = useState<DashboardFilter>(() => {
