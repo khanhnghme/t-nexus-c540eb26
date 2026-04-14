@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, Loader2, Sparkles, AlertCircle, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -30,7 +29,8 @@ export default function AIAssistant() {
   const [questionsToday, setQuestionsToday] = useState(0);
   const [maxQuestions, setMaxQuestions] = useState<number | null>(5);
   const [usageLoading, setUsageLoading] = useState(true);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { user, profile } = useAuth();
   const { activeWorkspace } = useWorkspace();
@@ -63,7 +63,7 @@ export default function AIAssistant() {
   const isUserScrollingUp = useRef(false);
 
   useEffect(() => {
-    const el = scrollRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLDivElement | null;
+    const el = chatContainerRef.current;
     if (!el) return;
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = el;
@@ -74,10 +74,8 @@ export default function AIAssistant() {
   }, []);
 
   useEffect(() => {
-    const el = scrollRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLDivElement | null;
-    if (!el) return;
     if (!isUserScrollingUp.current) {
-      requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
 
@@ -219,69 +217,74 @@ export default function AIAssistant() {
   const usagePercent = isUnlimited ? 0 : Math.min(100, (questionsToday / maxQuestions) * 100);
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-56px)] max-w-4xl mx-auto">
+    <div className="flex flex-col h-[calc(100dvh-56px)] bg-background">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b bg-background">
-        <div className="flex items-center gap-2.5">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={tNexusTextLogo} alt="AI" className="object-contain p-1 bg-white rounded-full" />
-            <AvatarFallback className="bg-muted"><Sparkles className="h-4 w-4 text-muted-foreground" /></AvatarFallback>
+      <header className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-border/60">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-9 w-9">
+            <AvatarImage src={tNexusTextLogo} alt="AI" className="object-contain p-1.5 bg-white rounded-full" />
+            <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">T</AvatarFallback>
           </Avatar>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold">T-Nexus AI</span>
-            <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" /> Online
-            </span>
+          <div>
+            <p className="text-sm font-semibold text-foreground">T-Nexus AI</p>
+            <div className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span className="text-[11px] text-muted-foreground">Online</span>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {/* Usage */}
           {isUnlimited ? (
             <span className="text-[11px] text-muted-foreground">∞ Unlimited</span>
           ) : (
             <div className="flex items-center gap-2">
               <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
-                <div className={cn("h-full rounded-full transition-all duration-500", usagePercent > 80 ? "bg-destructive" : "bg-primary")} style={{ width: `${usagePercent}%` }} />
+                <div
+                  className={cn("h-full rounded-full transition-all duration-500", usagePercent > 80 ? "bg-destructive" : "bg-foreground")}
+                  style={{ width: `${usagePercent}%` }}
+                />
               </div>
               <span className="text-[11px] text-muted-foreground tabular-nums">{questionsToday}/{maxQuestions}</span>
             </div>
           )}
           {messages.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={handleClearChat} className="text-muted-foreground hover:text-foreground h-8 px-2 gap-1.5">
-              <Trash2 className="h-3.5 w-3.5" />
-              <span className="text-xs hidden sm:inline">Xóa</span>
-            </Button>
+            <button
+              onClick={handleClearChat}
+              className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
           )}
         </div>
-      </div>
+      </header>
 
       {/* Messages */}
-      <ScrollArea ref={scrollRef} className="flex-1 px-4 py-4">
+      <main ref={chatContainerRef} className="flex-1 overflow-y-auto">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full py-20">
+          <div className="flex flex-col items-center justify-center h-full">
             <Avatar className="h-14 w-14 mb-4">
               <AvatarImage src={tNexusTextLogo} alt="AI" className="object-contain p-2 bg-white rounded-full" />
-              <AvatarFallback className="bg-muted"><Sparkles className="h-6 w-6 text-muted-foreground" /></AvatarFallback>
+              <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">T</AvatarFallback>
             </Avatar>
             <p className="text-sm text-muted-foreground">Hỏi bất cứ điều gì về công việc của bạn</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="max-w-2xl mx-auto px-5 py-8 space-y-6">
             {messages.map((message, idx) => (
-              <div key={idx} className={cn("flex gap-2.5 animate-fade-in", message.role === 'user' ? 'flex-row-reverse' : 'flex-row')}>
+              <div key={idx} className={cn("flex gap-3 animate-fade-in", message.role === 'user' ? 'flex-row-reverse' : 'flex-row')}>
                 {message.role === 'assistant' ? (
-                  <Avatar className="h-7 w-7 shrink-0 mt-1">
+                  <Avatar className="h-7 w-7 shrink-0 mt-0.5">
                     <AvatarImage src={tNexusTextLogo} alt="AI" className="object-contain p-1 bg-white rounded-full" />
-                    <AvatarFallback className="bg-muted"><Sparkles className="h-3.5 w-3.5 text-muted-foreground" /></AvatarFallback>
+                    <AvatarFallback className="bg-muted text-muted-foreground text-[10px] font-semibold">T</AvatarFallback>
                   </Avatar>
                 ) : (
-                  <UserAvatar src={profile?.avatar_url} name={profile?.full_name} size="sm" className="shrink-0 mt-1" />
+                  <UserAvatar src={profile?.avatar_url} name={profile?.full_name} size="sm" className="shrink-0 mt-0.5" />
                 )}
                 <div className={cn(
-                  "max-w-[82%] text-sm leading-relaxed",
+                  "max-w-[75%] text-sm leading-relaxed",
                   message.role === 'user'
-                    ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-2.5'
-                    : 'bg-muted/40 rounded-2xl rounded-bl-md px-4 py-3'
+                    ? 'bg-foreground text-background rounded-2xl rounded-br-sm px-4 py-2.5'
+                    : 'flex-1 text-muted-foreground'
                 )}>
                   {message.content ? (
                     message.role === 'assistant' ? (
@@ -301,9 +304,9 @@ export default function AIAssistant() {
                     )
                   ) : (
                     <div className="flex items-center gap-1.5 py-1">
-                      <span className="w-2 h-2 rounded-full ai-typing-dot bg-foreground/30" style={{ animationDelay: '0ms' }} />
-                      <span className="w-2 h-2 rounded-full ai-typing-dot bg-foreground/30" style={{ animationDelay: '200ms' }} />
-                      <span className="w-2 h-2 rounded-full ai-typing-dot bg-foreground/30" style={{ animationDelay: '400ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full ai-typing-dot bg-muted-foreground/40" style={{ animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full ai-typing-dot bg-muted-foreground/40" style={{ animationDelay: '200ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full ai-typing-dot bg-muted-foreground/40" style={{ animationDelay: '400ms' }} />
                     </div>
                   )}
                 </div>
@@ -314,43 +317,57 @@ export default function AIAssistant() {
                 <AlertCircle className="h-4 w-4 shrink-0" /><span>{error}</span>
               </div>
             )}
+            <div ref={messagesEndRef} />
           </div>
         )}
-      </ScrollArea>
+      </main>
 
       {/* Input */}
-      <div className="border-t border-border/60 px-3 py-2 bg-background/95 backdrop-blur-sm pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-        <form onSubmit={handleSubmit} className="flex gap-2 items-end">
-          <div className="flex-1 relative">
-            <Textarea
-              ref={textareaRef}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={remainingQuestions <= 0 ? "Đã hết lượt hỏi tháng này..." : "Nhập câu hỏi..."}
-              disabled={isLoading || remainingQuestions <= 0}
-              className={cn("min-h-[42px] max-h-[120px] resize-none pr-14 text-sm rounded-xl border-border/50 bg-muted/30 focus:bg-background transition-colors", isOverLimit && "border-destructive focus-visible:ring-destructive")}
-              rows={1}
-            />
-            {input.trim() && (
-              <span className={cn("absolute right-3 bottom-2 text-[10px] tabular-nums", isOverLimit ? "text-destructive font-semibold" : "text-muted-foreground")}>
-                {wordCount}/{MAX_MESSAGE_WORDS}
-              </span>
-            )}
-          </div>
-          <Button type="submit" size="icon" disabled={!input.trim() || isLoading || isOverLimit || remainingQuestions <= 0} className="shrink-0 h-[42px] w-[42px] rounded-xl">
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          </Button>
-        </form>
-        {remainingQuestions <= 0 && (
-          <p className="text-[10px] text-muted-foreground text-center mt-1.5">Bạn đã hết lượt hỏi tháng này. Quay lại tháng sau nhé!</p>
-        )}
+      <div className="shrink-0 border-t border-border/60 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="max-w-2xl mx-auto">
+          <form onSubmit={handleSubmit}>
+            <div className={cn(
+              "relative border rounded-xl transition-all",
+              isOverLimit
+                ? "border-destructive"
+                : "border-border/80 bg-muted/30 focus-within:bg-background focus-within:border-border focus-within:shadow-sm"
+            )}>
+              <Textarea
+                ref={textareaRef}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={remainingQuestions <= 0 ? "Đã hết lượt hỏi tháng này..." : "Nhập câu hỏi..."}
+                disabled={isLoading || remainingQuestions <= 0}
+                className="w-full resize-none border-0 bg-transparent px-4 py-3 pr-14 text-sm placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[48px] max-h-[120px]"
+                rows={1}
+              />
+              <div className="absolute right-2 bottom-2 flex items-center gap-2">
+                {input.trim() && (
+                  <span className={cn("text-[10px] tabular-nums", isOverLimit ? "text-destructive font-semibold" : "text-muted-foreground")}>
+                    {wordCount}/{MAX_MESSAGE_WORDS}
+                  </span>
+                )}
+                <button
+                  type="submit"
+                  disabled={!input.trim() || isLoading || isOverLimit || remainingQuestions <= 0}
+                  className="p-2 rounded-lg bg-foreground text-background hover:bg-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+          </form>
+          {remainingQuestions <= 0 && (
+            <p className="text-[10px] text-muted-foreground text-center mt-2">Bạn đã hết lượt hỏi tháng này. Quay lại tháng sau nhé!</p>
+          )}
+        </div>
       </div>
 
       <style>{`
         @keyframes ai-typing-wave {
           0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
-          30% { transform: translateY(-6px); opacity: 1; }
+          30% { transform: translateY(-4px); opacity: 1; }
         }
         .ai-typing-dot { animation: ai-typing-wave 1.4s ease-in-out infinite; }
       `}</style>
