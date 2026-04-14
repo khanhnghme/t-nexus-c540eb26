@@ -1,42 +1,57 @@
 
 
-## Plan: Thêm trang Tìm kiếm toàn diện (Global Search)
+## Plan: Giới hạn lượt nhắn tin AI phía server (5 lượt/ngày mặc định)
 
-Tạo trang `/search` riêng biệt với khả năng tìm kiếm "siêu chi tiết" xuyên suốt toàn bộ dữ liệu trong hệ thống, đặt ngay dưới mục "Trang chủ" trên thanh điều hướng.
+Hiện tại việc đếm lượt dùng AI chỉ lưu ở **localStorage** (dễ bypass). Cần chuyển sang đếm phía server với bảng DB chuyên dụng, mặc định 5 lượt/ngày, dùng model rẻ nhất.
 
-### Tính năng tìm kiếm
+### Thay đổi
 
-- **Dự án**: tìm theo tên, mô tả, mã lớp
-- **Nhiệm vụ (Tasks)**: tìm theo tiêu đề, mô tả, trạng thái
-- **Thành viên**: tìm theo tên, email
-- **Tài nguyên (Resources)**: tìm theo tên file
-- **Lịch & Cuộc họp**: tìm theo tiêu đề
-- **Feedback**: tìm theo tiêu đề, nội dung
+**1. Migration: Tạo bảng `ai_daily_usage` + cột `max_ai_messages_per_day` trong `plan_limits`**
 
-Kết quả được phân loại theo tab, có highlight từ khóa, click để đi thẳng đến trang chi tiết.
+```sql
+-- Bảng đếm lượt dùng AI theo ngày
+CREATE TABLE public.ai_daily_usage (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  usage_date date NOT NULL DEFAULT CURRENT_DATE,
+  message_count integer NOT NULL DEFAULT 0,
+  updated_at timestamptz DEFAULT now(),
+  UNIQUE(user_id, usage_date)
+);
+ALTER TABLE public.ai_daily_usage ENABLE ROW LEVEL SECURITY;
 
-### Chi tiết kỹ thuật
+-- RLS: user chỉ đọc/ghi bản thân
+CREATE POLICY "Users read own usage" ON public.ai_daily_usage
+  FOR SELECT TO authenticated USING (user_id = auth.uid());
 
-**1. Tạo file `src/pages/Search.tsx`**
-- Input tìm kiếm lớn ở đầu trang (autofocus)
-- Debounce 300ms trước khi query
-- Tabs phân loại: Tất cả / Dự án / Nhiệm vụ / Thành viên / Tài nguyên / Cuộc họp / Feedback
-- Mỗi tab query Supabase bằng `.ilike()` hoặc `.textSearch()` trên các bảng tương ứng
-- Hiển thị kết quả dạng card nhỏ, có icon + highlight keyword + link navigate
-- Empty state khi chưa nhập hoặc không có kết quả
-- Loading skeleton khi đang tìm
+-- Thêm cột giới hạn vào plan_limits (mặc định 5)
+ALTER TABLE public.plan_limits ADD COLUMN IF NOT EXISTS max_ai_messages_per_day integer DEFAULT 5;
+```
 
-**2. Cập nhật `src/App.tsx`**
-- Import `Search` page
-- Thêm route `/search` trong protected layout (cạnh `/dashboard`)
+Sau đó cập nhật giá trị cho từng plan (ví dụ Free=5, Plus=20, Pro=50, Business/Custom=null tức unlimited).
 
-**3. Cập nhật `src/components/SidebarTreeNav.tsx`**
-- Thêm link `/search` với icon `Search` ngay dưới Home (cả expanded và collapsed mode)
+**2. Edge Function `team-assistant/index.ts`**
+- Sau khi xác thực user, query `ai_daily_usage` cho ngày hôm nay
+- Query `plan_limits` để lấy `max_ai_messages_per_day` theo plan của user
+- Nếu `message_count >= max` → trả 429 với thông báo hết lượt
+- Sau khi gọi AI thành công → UPSERT tăng `message_count`
+- Đổi model sang `google/gemini-2.5-flash-lite` (model rẻ nhất)
 
-**4. Cập nhật i18n** (`src/lib/i18n/en.ts` + `vi.ts`)
-- EN: `search: 'Search'` trong sidebar
-- VI: `search: 'Tìm kiếm'` trong sidebar  
-- Thêm section translations cho trang Search (placeholder, tab labels, empty states)
+**3. Frontend `AIAssistantPanel.tsx`**
+- Bỏ logic localStorage đếm lượt cũ
+- Thay bằng query `ai_daily_usage` từ Supabase để lấy số lượt đã dùng hôm nay
+- Query `plan_limits` để lấy giới hạn max theo plan
+- Hiển thị `remaining/max` trên thanh usage bar
+- Xử lý error 429 từ server hiển thị toast "Hết lượt"
 
-### Tổng cộng: 4 files thay đổi + 1 file mới
+**4. Cập nhật `workspaceQuota.ts`**
+- Thêm quota key `workspace:limit_ai_messages` vào `QuotaKey` type và `QUOTA_COLUMN_MAP`
+
+**5. i18n (`en.ts`, `vi.ts`)**
+- Thêm label cho giới hạn AI messages trong bảng tính năng gói cước
+
+### Model sử dụng
+Chuyển từ `google/gemini-3-flash-preview` → `google/gemini-2.5-flash-lite` (rẻ nhất, phù hợp cho trợ lý tra cứu đơn giản).
+
+### Tổng: 1 migration + 1 data update + 3 files code + 1 deploy
 
