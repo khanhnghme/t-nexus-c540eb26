@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -10,6 +11,14 @@ import LanguageToggle from '@/components/LanguageToggle';
 export default function Login() {
   const { user, profile, roles, isLoading: authLoading, signOut, maintenanceMode, isAdmin } = useAuth();
   const { translations: t, localizedPath: lp } = useLanguage();
+
+  // Prefetch Dashboard chunk while user is on login page
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      import('../pages/Dashboard');
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   if (authLoading) return null;
 

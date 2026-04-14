@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Spinner } from '@/components/ui/spinner';
 
 import { Link } from 'react-router-dom';
@@ -25,7 +26,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import UserPresenceIndicator from '@/components/UserPresenceIndicator';
 import { Navigate } from 'react-router-dom';
-
+import { useDashboardData, useHiddenProjects, usePendingApprovals, useVideoSettings } from '@/hooks/useDashboardData';
 
 import { getSystemRoleLabel } from '@/lib/roleLabels';
 import JoinByCodeDialog from '@/components/JoinByCodeDialog';
@@ -115,21 +116,27 @@ export default function Dashboard() {
   const t = translations.app?.dashboard;
   
 
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  // React Query hooks for data fetching with caching
+  const { data: dashboardResult, isLoading } = useDashboardData(user?.id, activeWorkspace?.id, wsAvailable);
+  const { data: hiddenProjectIds = new Set<string>() } = useHiddenProjects(user?.id);
+  const { data: pendingApprovalGroups = [] } = usePendingApprovals(user?.id);
+  const { data: videoSettings } = useVideoSettings();
+
+  const groups = dashboardResult?.groups || [];
+  const ownedProjectCount = dashboardResult?.ownedProjectCount || 0;
+  const joinedProjectCount = dashboardResult?.joinedProjectCount || 0;
+  const videoEnabled = videoSettings?.enabled || false;
+  const videoOpacity = videoSettings?.opacity || 0.2;
+  const videoUrl = videoSettings?.url || '';
+
   const [showJoinDialog, setShowJoinDialog] = useState(false);
   const [showInvitationDialog, setShowInvitationDialog] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [processingInvitation, setProcessingInvitation] = useState<string | null>(null);
   const [pendingWsInvites, setPendingWsInvites] = useState<PendingWorkspaceInvite[]>([]);
   const [inviteTab, setInviteTab] = useState<'all' | 'project' | 'workspace'>('all');
-  const [videoOpacity, setVideoOpacity] = useState(0);
-  const [videoUrl, setVideoUrl] = useState('');
-  const [videoEnabled, setVideoEnabled] = useState(false);
-  const [ownedProjectCount, setOwnedProjectCount] = useState(0);
-  const [joinedProjectCount, setJoinedProjectCount] = useState(0);
-  const [hiddenProjectIds, setHiddenProjectIds] = useState<Set<string>>(new Set());
-  const [pendingApprovalGroups, setPendingApprovalGroups] = useState<Group[]>([]);
   const [modeFilter, setModeFilter] = useState<ProjectModeFilter>('all');
   
   const [filter, setFilter] = useState<DashboardFilter>(() => {
@@ -139,23 +146,6 @@ export default function Dashboard() {
     return 'active';
   });
   const { isConnected } = useUserPresence('system-global');
-
-  useEffect(() => {
-    const fetchVideoSettings = async () => {
-      const { data } = await supabase
-        .from('system_settings')
-        .select('value')
-        .eq('key', 'dashboard_video_bg')
-        .maybeSingle();
-      if (data?.value) {
-        const val = data.value as { enabled?: boolean; dashboard_opacity?: number; opacity?: number; url?: string };
-        setVideoEnabled(val.enabled ?? false);
-        setVideoOpacity(val.dashboard_opacity ?? val.opacity ?? 0.2);
-        setVideoUrl(val.url ?? '');
-      }
-    };
-    fetchVideoSettings();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (user?.id) {
@@ -168,16 +158,9 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user) {
-      // Run all independent fetches in parallel
-      Promise.all([
-        fetchDashboardData(),
-        fetchHiddenProjects(),
-        fetchPendingInvitations(),
-        fetchPendingApprovals(),
-        fetchPendingWsInvites(),
-      ]);
-    } else {
-      setIsLoading(false);
+      // Invitations and workspace invites still use local state (not yet migrated)
+      fetchPendingInvitations();
+      fetchPendingWsInvites();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, activeWorkspace?.id]);
@@ -195,7 +178,7 @@ export default function Dashboard() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'pending_approvals', filter: `user_id=eq.${user.id}` },
-        () => { fetchPendingApprovals(); }
+        () => { queryClient.invalidateQueries({ queryKey: ['pending-approvals', user.id] }); }
       )
       .on(
         'postgres_changes',
@@ -207,27 +190,7 @@ export default function Dashboard() {
   }, [user]);
 
 
-  const fetchPendingApprovals = async () => {
-    if (!user) return;
-    try {
-      const { data } = await supabase
-        .from('pending_approvals')
-        .select('group_id')
-        .eq('user_id', user.id)
-        .eq('status', 'pending');
-
-      if (data && data.length > 0) {
-        const groupIds = data.map(d => d.group_id);
-        const { data: groupsData } = await supabase
-          .from('groups')
-          .select('*')
-          .in('id', groupIds);
-        setPendingApprovalGroups(groupsData || []);
-      } else {
-        setPendingApprovalGroups([]);
-      }
-    } catch (e) { console.error(e); }
-  };
+  // fetchPendingApprovals now handled by usePendingApprovals hook
 
   const fetchPendingInvitations = async () => {
     if (!user) return;
@@ -321,7 +284,7 @@ export default function Dashboard() {
       setPendingInvitations(prev => prev.filter(p => p.id !== invitation.id));
       if (accept) {
         await refreshWorkspaces();
-        fetchDashboardData();
+        refreshDashboard();
       }
     } catch (error: any) {
       toast.error(error.message || (t?.errorOccurred || 'An error occurred'));
@@ -380,7 +343,7 @@ export default function Dashboard() {
       setPendingWsInvites(prev => prev.filter(p => p.id !== invite.id));
       if (accept) {
         await refreshWorkspaces();
-        fetchDashboardData();
+        refreshDashboard();
       }
     } catch (error: any) {
       toast.error(error.message || (t?.errorOccurred || 'An error occurred'));
@@ -391,14 +354,7 @@ export default function Dashboard() {
 
   // fetchProjectStats removed — stats computed from fetchDashboardData results
 
-  const fetchHiddenProjects = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from('hidden_projects')
-      .select('group_id')
-      .eq('user_id', user.id);
-    setHiddenProjectIds(new Set(data?.map(d => d.group_id) || []));
-  };
+  // fetchHiddenProjects now handled by useHiddenProjects hook
 
   const handleFilterChange = (value: string) => {
     if (!value) return;
@@ -414,11 +370,10 @@ export default function Dashboard() {
     const isCurrentlyHidden = hiddenProjectIds.has(groupId);
     if (isCurrentlyHidden) {
       await supabase.from('hidden_projects').delete().eq('user_id', user.id).eq('group_id', groupId);
-      setHiddenProjectIds(prev => { const next = new Set(prev); next.delete(groupId); return next; });
     } else {
       await supabase.from('hidden_projects').insert({ user_id: user.id, group_id: groupId });
-      setHiddenProjectIds(prev => new Set(prev).add(groupId));
     }
+    queryClient.invalidateQueries({ queryKey: ['hidden-projects', user.id] });
   };
 
   // Permission: workspace_owner, workspace_admin, or system_admin can create projects
@@ -450,48 +405,10 @@ export default function Dashboard() {
   const hiddenCount = groups.filter(g => hiddenProjectIds.has(g.id)).length;
   const pendingCount = pendingApprovalGroups.length;
 
-  const fetchDashboardData = async () => {
-    try {
-      const { data: memberData, error: memberError } = await supabase
-        .from('group_members')
-        .select('group_id')
-        .eq('user_id', user!.id);
-
-      if (memberError) throw memberError;
-
-      const groupIds = memberData?.map((m) => m.group_id) || [];
-
-      if (groupIds.length === 0) {
-        setGroups([]);
-        return;
-      }
-
-      let query = supabase
-        .from('groups')
-        .select('*')
-        .in('id', groupIds)
-        .order('created_at', { ascending: false });
-
-      // Filter by active workspace if available
-      if (wsAvailable && activeWorkspace?.id) {
-        query = query.eq('workspace_id', activeWorkspace.id);
-      }
-
-      const { data: groupsData, error: groupsError } = await query;
-
-      if (groupsError) throw groupsError;
-
-      const allGroups = groupsData || [];
-      setGroups(allGroups);
-      // Compute stats from data we already have (no extra queries)
-      setOwnedProjectCount(allGroups.filter(g => g.created_by === user!.id).length);
-      setJoinedProjectCount(memberData?.length || 0);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const refreshDashboard = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['dashboard-data', user?.id] });
+    queryClient.invalidateQueries({ queryKey: ['pending-approvals', user?.id] });
+  }, [queryClient, user?.id]);
 
   const getRoleBadge = () => {
     if (isAdmin) return (
@@ -706,7 +623,7 @@ export default function Dashboard() {
         <JoinByCodeDialog
           open={showJoinDialog}
           onOpenChange={setShowJoinDialog}
-          onJoined={() => { fetchDashboardData(); fetchPendingApprovals(); }}
+          onJoined={() => { refreshDashboard(); }}
         />
 
         {/* Invitation Dialog — 16:9 split layout */}
