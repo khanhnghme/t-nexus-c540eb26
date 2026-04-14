@@ -1550,6 +1550,8 @@ export const en = {
       memberSeats: 'Member seats (unique)',
       memberSeatsNote: '1 person joining multiple WSs = 1 seat',
       storage: 'Storage',
+      aiMessages: 'AI Messages',
+      aiMessagesNote: 'Shared across all workspace members',
       detailByWorkspace: 'Detail by Workspace',
       noWorkspaceOwned: "You don't own any workspace",
       projectsLabel: 'projects',
