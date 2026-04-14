@@ -358,8 +358,8 @@ export default function MultiFileUploadSubmission({
     }
   };
 
-  const handlePreviewFile = (file: UploadedFile) => {
-    const { data } = r2Storage.from('task-submissions').getPublicUrl(file.file_path);
+  const handlePreviewFile = async (file: UploadedFile) => {
+    const { data } = await r2Storage.from('task-submissions').getPublicUrlAsync(file.file_path);
     const clickedIndex = uploadedFiles.findIndex(f => f.file_path === file.file_path);
     openFilePreview(data.publicUrl, file.file_name, {
       siblingFiles: uploadedFiles,

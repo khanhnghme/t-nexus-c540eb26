@@ -160,8 +160,8 @@ export default function SubmissionHistoryPopup({
     }
   };
 
-  const handleViewFile = (filePath: string, fileName: string, fileSize: number, allFiles?: any[]) => {
-    const { data } = r2Storage.from('task-submissions').getPublicUrl(filePath);
+  const handleViewFile = async (filePath: string, fileName: string, fileSize: number, allFiles?: any[]) => {
+    const { data } = await r2Storage.from('task-submissions').getPublicUrlAsync(filePath);
     if (allFiles && allFiles.length > 0) {
       const siblingFiles = allFiles.filter((f: any) => f.file_path).map((f: any) => ({
         file_path: f.file_path,

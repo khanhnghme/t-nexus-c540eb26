@@ -119,7 +119,7 @@ export default function SubmissionButton({
     storage_name: i.storage_name,
   }));
 
-  const handleOpenItem = (item: SubmissionItem, e?: React.MouseEvent) => {
+  const handleOpenItem = async (item: SubmissionItem, e?: React.MouseEvent) => {
     if (onStopPropagation && e) {
       e.stopPropagation();
     }
@@ -128,7 +128,7 @@ export default function SubmissionButton({
       window.open(item.url, '_blank', 'noopener,noreferrer');
     } else if (item.type === 'file' && item.file_path) {
       const clickedIndex = siblingFiles.findIndex(f => f.file_path === item.file_path);
-      const { data } = r2Storage.from('task-submissions').getPublicUrl(item.file_path);
+      const { data } = await r2Storage.from('task-submissions').getPublicUrlAsync(item.file_path);
       openFilePreview(data.publicUrl, item.file_name || 'file', {
         siblingFiles,
         activeIndex: clickedIndex >= 0 ? clickedIndex : 0,

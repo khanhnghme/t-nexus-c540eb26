@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useFilePreview } from '@/contexts/FilePreviewContext';
-import { r2Storage, normalizeStorageUrl } from '@/lib/r2Storage';
+import { r2Storage, normalizeStorageUrl, ensureR2Initialized } from '@/lib/r2Storage';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   File, 
@@ -192,14 +192,16 @@ export default function ResourceLinkRenderer({ content, className, nameMaxWidth 
             const { data } = await supabase.from('project_resources').select('file_path, storage_name, name').eq('id', resId).maybeSingle();
             if (data?.file_path) {
               const storageName = data.storage_name || 'project-resources';
-              fileUrl = r2Storage.from(storageName).getPublicUrl(data.file_path).data.publicUrl;
+              const result = await r2Storage.from(storageName).getPublicUrlAsync(data.file_path);
+              fileUrl = result.data.publicUrl;
               fileName = data.name || displayName;
             }
           } else if (m.url.startsWith('sub:')) {
             const subId = m.url.slice('sub:'.length);
             const { data } = await supabase.from('submission_history').select('file_path, file_name').eq('id', subId).maybeSingle();
             if (data?.file_path) {
-              fileUrl = r2Storage.from('task-submissions').getPublicUrl(data.file_path).data.publicUrl;
+              const result = await r2Storage.from('task-submissions').getPublicUrlAsync(data.file_path);
+              fileUrl = result.data.publicUrl;
               fileName = data.file_name || displayName;
             }
           } else {

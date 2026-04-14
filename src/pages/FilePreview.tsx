@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
-import { r2Storage, initR2Storage } from '@/lib/r2Storage';
+import { r2Storage, initR2Storage, ensureR2Initialized } from '@/lib/r2Storage';
 import { 
   Download, 
   ArrowLeft, 
@@ -475,6 +475,7 @@ export default function FilePreview() {
     
     setIsDownloadingAll(true);
     try {
+      await ensureR2Initialized();
       const zip = new JSZip();
       
       for (const file of taskFiles) {

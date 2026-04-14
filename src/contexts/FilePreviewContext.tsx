@@ -10,7 +10,7 @@ import {
   File, FileSpreadsheet, Presentation, Image as ImageIcon, 
   FolderDown, Loader2, ExternalLink, Music
 } from 'lucide-react';
-import { r2Storage } from '@/lib/r2Storage';
+import { r2Storage, ensureR2Initialized } from '@/lib/r2Storage';
 import JSZip from 'jszip';
 import ettLogo from '@/assets/t-nexus-text-white.png';
 
@@ -177,11 +177,11 @@ export function FilePreviewProvider({ children }: { children: React.ReactNode })
     setActiveIndex(0);
   }, []);
 
-  const navigateToFile = useCallback((index: number) => {
+  const navigateToFile = useCallback(async (index: number) => {
     if (index < 0 || index >= siblingFiles.length) return;
     const file = siblingFiles[index];
     const bucket = file.storage_name || 'task-submissions';
-    const { data } = r2Storage.from(bucket).getPublicUrl(file.file_path);
+    const { data } = await r2Storage.from(bucket).getPublicUrlAsync(file.file_path);
     setPreviewUrl(data.publicUrl);
     setPreviewFileName(file.file_name);
     setActiveIndex(index);
@@ -212,6 +212,7 @@ export function FilePreviewProvider({ children }: { children: React.ReactNode })
     if (siblingFiles.length === 0) return;
     setIsDownloadingAll(true);
     try {
+      await ensureR2Initialized();
       const zip = new JSZip();
       for (const file of siblingFiles) {
         const bucket = file.storage_name || 'task-submissions';

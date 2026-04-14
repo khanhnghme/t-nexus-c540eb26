@@ -18,7 +18,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Checkbox } from '@/components/ui/checkbox';
 import ResourceUploadDialog from '@/components/ResourceUploadDialog';
 import { supabase } from '@/integrations/supabase/client';
-import { r2Storage } from '@/lib/r2Storage';
+import { r2Storage, ensureR2Initialized } from '@/lib/r2Storage';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Upload, File, FileText, Image as ImageIcon, Video, Music, Archive,
@@ -575,13 +575,13 @@ export default function ProjectResources({ groupId, isLeader }: ProjectResources
     }
   };
 
-  const handlePreview = (resource: ProjectResource, contextResources?: ProjectResource[]) => {
+  const handlePreview = async (resource: ProjectResource, contextResources?: ProjectResource[]) => {
     if (isSelectionMode) return;
     if (resource.resource_type === 'link' && resource.link_url) {
       window.open(resource.link_url, '_blank');
     } else if (resource.file_path) {
       const storageName = resource.storage_name || 'project-resources';
-      const { data } = r2Storage.from(storageName).getPublicUrl(resource.file_path);
+      const { data } = await r2Storage.from(storageName).getPublicUrlAsync(resource.file_path);
       
       // Build siblingFiles from context resources (same folder)
       const fileResources = (contextResources || resources).filter(r => r.resource_type !== 'link' && r.file_path);

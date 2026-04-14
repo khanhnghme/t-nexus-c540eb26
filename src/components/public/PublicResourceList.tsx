@@ -155,7 +155,7 @@ export default function PublicResourceList({ groupId }: PublicResourceListProps)
     }
   };
 
-  const handlePreview = (resource: ProjectResource) => {
+  const handlePreview = async (resource: ProjectResource) => {
     // If it's a link resource, open directly in new tab
     if (resource.resource_type === 'link' && resource.link_url) {
       window.open(resource.link_url, '_blank', 'noopener,noreferrer');
@@ -164,7 +164,7 @@ export default function PublicResourceList({ groupId }: PublicResourceListProps)
     // Otherwise open file preview
     if (resource.file_path) {
       const storageName = (resource as any).storage_name || 'project-resources';
-      const { data } = r2Storage.from(storageName).getPublicUrl(resource.file_path);
+      const { data } = await r2Storage.from(storageName).getPublicUrlAsync(resource.file_path);
       
       // Build siblingFiles from all file resources
       const fileResources = resources.filter(r => r.resource_type !== 'link' && r.file_path);

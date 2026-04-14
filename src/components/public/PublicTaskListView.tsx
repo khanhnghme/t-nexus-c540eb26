@@ -135,11 +135,11 @@ export default function PublicTaskListView({ stages, tasks, groupId }: PublicTas
     }
   };
 
-  const handleOpenItem = (item: any, taskId?: string, e?: React.MouseEvent) => {
+  const handleOpenItem = async (item: any, taskId?: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     
     if (item.type === 'file' && item.file_path) {
-      const { data } = r2Storage.from('task-submissions').getPublicUrl(item.file_path);
+      const { data } = await r2Storage.from('task-submissions').getPublicUrlAsync(item.file_path);
       // Build siblings from all file items in the same submission
       const allItems = item._allItems || [];
       const fileItems = allItems.filter((i: any) => i.type === 'file' && i.file_path);

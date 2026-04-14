@@ -5,6 +5,7 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 // Cache bucket URL map fetched from edge function
 let cachedBucketUrls: Record<string, string> | null = null;
 let initPromise: Promise<void> | null = null;
+let initResolved = false;
 
 async function fetchBucketUrls(): Promise<Record<string, string>> {
   if (cachedBucketUrls) return cachedBucketUrls;
@@ -27,10 +28,21 @@ function getBucketUrlSync(bucket: string): string {
   return cachedBucketUrls?.[bucket] || '';
 }
 
+/**
+ * Ensure R2 bucket URLs are loaded. Await this before using synchronous
+ * getPublicUrl() in rendering flows to avoid stale Supabase fallback URLs.
+ */
+export async function ensureR2Initialized(): Promise<void> {
+  if (initResolved) return;
+  await initR2Storage();
+}
+
 // Prefetch bucket URLs when user is authenticated
 export function initR2Storage(): Promise<void> {
   if (!initPromise) {
-    initPromise = fetchBucketUrls().then(() => {}).catch(() => {});
+    initPromise = fetchBucketUrls()
+      .then(() => { initResolved = true; })
+      .catch(() => { initResolved = true; });
   }
   return initPromise;
 }
@@ -106,11 +118,41 @@ export const r2Storage = {
       },
 
       getPublicUrl(path: string) {
+        // If the path is already a full URL, return it directly
+        if (path.startsWith('http://') || path.startsWith('https://')) {
+          return { data: { publicUrl: path } };
+        }
         const base = getBucketUrlSync(bucket);
         if (base) {
-          return { data: { publicUrl: `${base}/${path}` } };
+          const cleanPath = path.replace(/^\//, ''); // Remove leading slash if any
+          return { data: { publicUrl: `${base}/${cleanPath}` } };
         }
-        // Fallback to Supabase storage URL (for old files)
+        // If R2 URLs haven't loaded yet, construct a Supabase-style URL as a
+        // temporary fallback. This avoids calling supabase.storage.from() for
+        // buckets that no longer exist in Supabase (migrated to R2), which
+        // would produce URLs that return "Bucket not found".
+        // We keep the Supabase URL pattern so normalizeStorageUrl() can later
+        // rewrite it once R2 URLs are available.
+        return supabase.storage.from(bucket).getPublicUrl(path);
+      },
+
+      /**
+       * Async version that ensures R2 bucket URLs are loaded first.
+       * Use this to guarantee an R2 public URL instead of a stale Supabase
+       * fallback that would return "Bucket not found".
+       */
+      async getPublicUrlAsync(path: string) {
+        // If the path is already a full URL, return it directly
+        if (path.startsWith('http://') || path.startsWith('https://')) {
+          return { data: { publicUrl: path } };
+        }
+        await ensureR2Initialized();
+        const base = getBucketUrlSync(bucket);
+        if (base) {
+          const cleanPath = path.replace(/^\//, ''); // Remove leading slash if any
+          return { data: { publicUrl: `${base}/${cleanPath}` } };
+        }
+        // Final fallback (R2 env vars may be empty)
         return supabase.storage.from(bucket).getPublicUrl(path);
       },
 
@@ -181,12 +223,24 @@ export const r2Storage = {
  * Get public URL for a file - works with both old Supabase URLs and new R2 URLs
  */
 export function getR2FilePublicUrl(bucket: string, path: string): string {
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
   const base = getBucketUrlSync(bucket);
   if (base) {
-    return `${base}/${path}`;
+    const cleanPath = path.replace(/^\//, '');
+    return `${base}/${cleanPath}`;
   }
   const { data } = supabase.storage.from(bucket).getPublicUrl(path);
   return data.publicUrl;
+}
+
+/**
+ * Async version – ensures R2 URLs are loaded before constructing the URL.
+ */
+export async function getR2FilePublicUrlAsync(bucket: string, path: string): Promise<string> {
+  await ensureR2Initialized();
+  return getR2FilePublicUrl(bucket, path);
 }
 
 /**
