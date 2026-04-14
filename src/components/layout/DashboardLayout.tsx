@@ -471,7 +471,7 @@ export default function DashboardLayout({
             {/* Bottom section */}
             <div className="sidebar-bottom">
               {!location.pathname.startsWith('/admin') && (
-                <UpgradeBox collapsed={sidebarCollapsed} />
+                <UpgradeBox collapsed={isMobileOpen ? false : sidebarCollapsed} />
               )}
 
               {/* User profile */}
