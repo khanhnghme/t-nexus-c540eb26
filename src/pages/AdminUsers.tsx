@@ -809,6 +809,7 @@ export default function AdminUsers() {
         onOpenChange={setProfileDialogOpen}
         profile={selectedProfile}
         role={selectedProfile ? (profiles.find(p => p.id === selectedProfile.id) ? 'project_basic:member' : 'project_basic:member') : 'project_basic:member'}
+        presenceStatus={selectedProfile ? getPresenceStatus(selectedProfile.id) : undefined}
       />
 
       {/* Password View Dialog */}
