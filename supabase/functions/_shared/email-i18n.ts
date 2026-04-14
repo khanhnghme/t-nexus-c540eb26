@@ -96,6 +96,7 @@ const texts = {
     pdfDiscountCode: (code: string) => `Mã giảm giá (${code})`,
     pdfWelcomeDiscount: 'Ưu đãi chào mừng',
     pdfAddonSavings: (rate?: number) => `Tiết kiệm add-on${rate ? ` (${rate}%)` : ''}`,
+    pdfTax: 'Thuế VAT (0%)',
     pdfTotal: 'TỔNG CỘNG',
     pdfNotes: 'Ghi chú',
     pdfNote1: 'Thanh toán được xử lý qua cổng PayPal quốc tế.',

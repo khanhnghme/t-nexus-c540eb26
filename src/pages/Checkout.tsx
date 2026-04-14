@@ -591,6 +591,11 @@ export default function Checkout() {
 
                 <Separator />
 
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>{isVi ? 'Thuế VAT (0%)' : 'Tax / VAT (0%)'}</span>
+                  <span>$0.00</span>
+                </div>
+
                 {/* Total */}
                 <div className="flex justify-between font-bold text-lg">
                   <span>{t?.total || 'Total'}</span>
