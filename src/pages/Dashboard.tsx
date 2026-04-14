@@ -322,7 +322,6 @@ export default function Dashboard() {
       if (accept) {
         await refreshWorkspaces();
         fetchDashboardData();
-        fetchProjectStats();
       }
     } catch (error: any) {
       toast.error(error.message || (t?.errorOccurred || 'An error occurred'));
@@ -482,7 +481,11 @@ export default function Dashboard() {
 
       if (groupsError) throw groupsError;
 
-      setGroups(groupsData || []);
+      const allGroups = groupsData || [];
+      setGroups(allGroups);
+      // Compute stats from data we already have (no extra queries)
+      setOwnedProjectCount(allGroups.filter(g => g.created_by === user!.id).length);
+      setJoinedProjectCount(memberData?.length || 0);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
