@@ -1,40 +1,30 @@
 
 
-## Plan: Giảm hạn mức AI credits/tháng
+## Plan: Fix dialog freeze + xóa phương thức nộp & giới hạn file khỏi TaskEditDialog
 
-### Hạn mức mới
-| Gói | Cũ | Mới |
-|-----|-----|-----|
-| Free | 30 | **20** |
-| Plus | 100 | **60** |
-| Pro | 250 | **150** |
-| Business | 500 | **300** |
-| Enterprise | NULL | NULL (giữ nguyên) |
+### Vấn đề 1: Web bị đứng khi chọn giai đoạn trong dialog
+Nguyên nhân: Radix Select bên trong Radix Dialog tạo xung đột focus trap. Khi Select đóng lại, Dialog cố gắng bắt focus nhưng Select portal cũng đang xử lý — gây đứng.
+
+**Fix**: Thêm `modal={false}` vào tất cả `<Select>` trong TaskEditDialog (giai đoạn, cách nộp) để tránh xung đột focus. Đồng thời thêm `onCloseAutoFocus={(e) => e.preventDefault()}` vào DialogContent.
+
+### Vấn đề 2: Xóa phương thức nộp & giới hạn file
+Xóa 2 cột "Cách nộp" và "Giới hạn" khỏi form chỉnh sửa task.
 
 ### Chi tiết kỹ thuật
 
-**1. Migration: UPDATE `plan_limits`**
-```sql
-UPDATE plan_limits SET max_ai_messages_per_month = 20 WHERE plan = 'plan_free';
-UPDATE plan_limits SET max_ai_messages_per_month = 60 WHERE plan = 'plan_plus';
-UPDATE plan_limits SET max_ai_messages_per_month = 150 WHERE plan = 'plan_pro';
-UPDATE plan_limits SET max_ai_messages_per_month = 300 WHERE plan = 'plan_business';
-```
+**File: `src/components/TaskEditDialog.tsx`**
 
-**2. Edge function `team-assistant/index.ts`**
-- Đổi fallback default từ `30` → `20`
+1. **Fix freeze**: Thêm `onCloseAutoFocus={(e) => e.preventDefault()}` vào `<DialogContent>` (line 303)
 
-**3. Frontend fallback**
-- `AIAssistant.tsx`: fallback `30` → `20`
-- `AIAssistantPanel.tsx`: fallback `30` → `20`
+2. **Xóa UI**: Xóa 2 cột cuối trong grid config row (lines 385-413) — "Cách nộp" (Select submission method) và "Giới hạn" (FileSizeLimitSelector)
 
-**4. i18n `en.ts` — tất cả các chỗ hiển thị số**
-- `30/month` → `20/month`, `100/month` → `60/month`, `250/month` → `150/month`, `500/month` → `300/month`
-- `30 messages/month` → `20 messages/month`, tương tự cho các gói khác
-- Áp dụng cho: `quotas`, `planComparison`, `servicePlanFeatures`, `servicePlanFullFeatures`, `servicePlanFeatureGroups`
+3. **Đổi grid**: `grid-cols-[1fr_1.2fr_1fr_1fr]` → `grid-cols-2` (chỉ còn Giai đoạn + Deadline)
 
-**5. i18n `vi.ts` — tương tự**
-- `30 lượt/tháng` → `20 lượt/tháng`, `100/tháng` → `60/tháng`, `250/tháng` → `150/tháng`, `500/tháng` → `300/tháng`
+4. **Giữ nguyên state & logic save**: `submissionMethod` và `maxFileSize` vẫn giữ trong state và gửi khi save (giữ backward compatibility), chỉ xóa khỏi UI
 
-### Tổng: 1 migration + 1 edge function + 4 files sửa
+5. **Xóa import không dùng**: `Send` icon, `FileSizeLimitSelector` import (nếu không dùng ở chỗ khác)
+
+6. **Xóa phần read-only display** cho 2 field đó (lines 398-412)
+
+### Tổng: 1 file sửa
 
