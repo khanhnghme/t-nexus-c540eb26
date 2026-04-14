@@ -165,6 +165,7 @@ function AppRoutes() {
   return (
     <LanguageProvider>
     <PageTransition>
+      <Suspense fallback={null}>
       <Routes>
         {/* ═══ Localized public routes — EN (root) ═══ */}
         <Route path="/" element={<ForceLightMode><Landing /></ForceLightMode>} />
