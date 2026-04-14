@@ -5,8 +5,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   BookOpen, LayoutDashboard, FolderKanban, ClipboardCheck, Calendar,
-  MessageSquare, UserCircle, Lightbulb, Users, Shield, FolderArchive,
-  Wrench, BarChart3, Share2, Video, Layers, FileUp, User, Crown, Lock,
+  MessageSquare, UserCircle, Lightbulb, Users,
+  BarChart3, Share2, Video, Layers, FileUp, User, Crown,
   List, CheckCircle2, Info, ArrowRight
 } from 'lucide-react';
 
@@ -24,10 +24,6 @@ const tip11 = '/tips/tip-11.jpg';
 const tip12 = '/tips/tip-12.jpg';
 const tip13 = '/tips/tip-13.jpg';
 const tip14 = '/tips/tip-14.jpg';
-const tip15 = '/tips/tip-15.jpg';
-const tip16 = '/tips/tip-16.jpg';
-const tip17 = '/tips/tip-17.jpg';
-const tip18 = '/tips/tip-18.jpg';
 
 interface ChapterItem {
   id: string;
