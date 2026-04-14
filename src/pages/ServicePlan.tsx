@@ -120,11 +120,13 @@ export default function ServicePlan() {
         });
       }
 
-      const today = new Date().toISOString().slice(0, 10);
+      const now = new Date();
+      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+      const monthEnd = now.toISOString().slice(0, 10);
       const detailPromises = ownedWs.map(async (ws) => {
         const [storageRes, aiRes] = await Promise.all([
           supabase.rpc('get_workspace_storage_usage', { _workspace_id: ws.id }),
-          supabase.rpc('get_workspace_ai_usage_today', { _workspace_id: ws.id, _date: today }),
+          supabase.rpc('get_workspace_ai_usage_month', { _workspace_id: ws.id, _month_start: monthStart, _month_end: monthEnd }),
         ]);
         return {
           wsId: ws.id,
@@ -158,11 +160,11 @@ export default function ServicePlan() {
 
       // Fetch aggregate AI usage for the account summary card
       const [aiUsageRes, aiLimitRes] = await Promise.all([
-        supabase.rpc('get_owner_ai_usage_today', { _owner_id: user.id, _date: today }),
-        supabase.from('plan_limits').select('max_ai_messages_per_day').eq('plan', plan as any).maybeSingle(),
+        supabase.rpc('get_owner_ai_usage_month', { _owner_id: user.id, _month_start: monthStart, _month_end: monthEnd }),
+        supabase.from('plan_limits').select('max_ai_messages_per_month').eq('plan', plan as any).maybeSingle(),
       ]);
       setAiUsage(Number(aiUsageRes.data) || 0);
-      setAiLimit(aiLimitRes.data?.max_ai_messages_per_day ?? null);
+      setAiLimit((aiLimitRes.data as any)?.max_ai_messages_per_month ?? null);
     } catch (err) {
       console.warn('Error fetching service plan data:', err);
     } finally {
@@ -587,7 +589,7 @@ export default function ServicePlan() {
                     max: aiLimit,
                     baseMax: aiLimit,
                     bonus: 0,
-                    suffix: '/day',
+                    suffix: '/month',
                     iconColor: 'text-purple-500',
                     note: t.aiMessagesNote,
                   },
