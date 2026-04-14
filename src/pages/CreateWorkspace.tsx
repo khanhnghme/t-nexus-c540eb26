@@ -107,7 +107,7 @@ export default function CreateWorkspace() {
                 {cw.cancelBtn}
               </Button>
               <Button type="submit" className="flex-1" disabled={isSubmitting || !name.trim()}>
-                {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {isSubmitting && <Spinner size="sm" className="mr-2" />}
                 {cw.createBtn}
               </Button>
             </div>
