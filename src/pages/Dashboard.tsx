@@ -354,14 +354,7 @@ export default function Dashboard() {
 
   // fetchProjectStats removed — stats computed from fetchDashboardData results
 
-  const fetchHiddenProjects = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from('hidden_projects')
-      .select('group_id')
-      .eq('user_id', user.id);
-    setHiddenProjectIds(new Set(data?.map(d => d.group_id) || []));
-  };
+  // fetchHiddenProjects now handled by useHiddenProjects hook
 
   const handleFilterChange = (value: string) => {
     if (!value) return;
@@ -377,11 +370,10 @@ export default function Dashboard() {
     const isCurrentlyHidden = hiddenProjectIds.has(groupId);
     if (isCurrentlyHidden) {
       await supabase.from('hidden_projects').delete().eq('user_id', user.id).eq('group_id', groupId);
-      setHiddenProjectIds(prev => { const next = new Set(prev); next.delete(groupId); return next; });
     } else {
       await supabase.from('hidden_projects').insert({ user_id: user.id, group_id: groupId });
-      setHiddenProjectIds(prev => new Set(prev).add(groupId));
     }
+    queryClient.invalidateQueries({ queryKey: ['hidden-projects', user.id] });
   };
 
   // Permission: workspace_owner, workspace_admin, or system_admin can create projects
