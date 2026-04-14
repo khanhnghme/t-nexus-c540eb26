@@ -149,7 +149,7 @@ export default function GroupDetail() {
     if (error) {
       toast({ title: tc.error, description: error.message, variant: 'destructive' });
     } else {
-      fetchGroupData();
+      setGroup(prev => prev ? { ...prev, name: trimmed } : prev);
       logActivity({ userId: user?.id || '', userName: profile?.full_name || '', groupId: group.id, action: 'project_renamed', actionType: 'setting', description: `Đổi tên dự án thành "${trimmed}"` });
     }
   }, [group, user?.id, profile?.full_name, toast, tc.error]);
@@ -409,7 +409,7 @@ export default function GroupDetail() {
       setIsStageDialogOpen(false);
       setNewStageName('');
       setNewStageDescription('');
-      fetchGroupData();
+      fetchStagesOnly();
     } catch (error: any) {
       toast({ title: tc.error, description: error.message, variant: 'destructive' });
     } finally {
@@ -476,7 +476,7 @@ export default function GroupDetail() {
       setNewTaskDeadline('');
       setNewTaskAssignees([]);
       setNewTaskStageId('');
-      fetchGroupData();
+      fetchTasksOnly();
     } catch (error: any) {
       toast({ title: tc.error, description: error.message, variant: 'destructive' });
     } finally {
@@ -505,7 +505,7 @@ export default function GroupDetail() {
         description: `${newHiddenStatus ? 'Ẩn' : 'Hiện'} giai đoạn "${stage.name}"`,
         groupId: group!.id,
       });
-      fetchGroupData();
+      fetchStagesOnly();
     } catch (error: any) {
       toast({
         title: tc.error,
@@ -559,10 +559,10 @@ export default function GroupDetail() {
           description: `Xóa giai đoạn "${stageRef.name}"`,
           groupId: group!.id,
         });
-        fetchGroupData();
+        await Promise.all([fetchStagesOnly(), fetchTasksOnly()]);
       },
       onUndo: () => {
-        fetchGroupData();
+        Promise.all([fetchStagesOnly(), fetchTasksOnly()]);
       },
     });
   };
