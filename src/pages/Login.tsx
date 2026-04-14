@@ -12,8 +12,6 @@ export default function Login() {
   const { user, profile, roles, isLoading: authLoading, signOut, maintenanceMode, isAdmin } = useAuth();
   const { translations: t, localizedPath: lp } = useLanguage();
 
-  if (authLoading) return null;
-
   // Prefetch Dashboard chunk while user is on login page
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -21,6 +19,8 @@ export default function Login() {
     }, 2000);
     return () => clearTimeout(timer);
   }, []);
+
+  if (authLoading) return null;
 
   const isBlockedByMaintenance = maintenanceMode && !isAdmin;
   const hasRememberFlag = localStorage.getItem('t-nexus_remember_login') === 'true';
