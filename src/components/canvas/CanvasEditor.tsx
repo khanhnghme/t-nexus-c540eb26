@@ -407,16 +407,16 @@ const CanvasEditor = forwardRef<CanvasEditorHandle, CanvasEditorProps>(function 
             slashMenu={false}
             shadCNComponents={{
               DropdownMenu: {
-                DropdownMenu: DropdownMenu as any,
-                DropdownMenuContent: DropdownMenuContent as any,
-                DropdownMenuItem: DropdownMenuItem as any,
-                DropdownMenuCheckboxItem: DropdownMenuCheckboxItem as any,
-                DropdownMenuLabel: DropdownMenuLabel as any,
-                DropdownMenuSeparator: DropdownMenuSeparator as any,
-                DropdownMenuSub: DropdownMenuSub as any,
-                DropdownMenuSubContent: DropdownMenuSubContent as any,
-                DropdownMenuSubTrigger: DropdownMenuSubTrigger as any,
-                DropdownMenuTrigger: DropdownMenuTrigger as any,
+                DropdownMenu: BNDropdownMenu as any,
+                DropdownMenuContent: BNDropdownMenuContent as any,
+                DropdownMenuItem: BNDropdownMenuItem as any,
+                DropdownMenuCheckboxItem: BNDropdownMenuCheckboxItem as any,
+                DropdownMenuLabel: BNDropdownMenuLabel as any,
+                DropdownMenuSeparator: BNDropdownMenuSeparator as any,
+                DropdownMenuSub: BNDropdownMenuSub as any,
+                DropdownMenuSubContent: BNDropdownMenuSubContent as any,
+                DropdownMenuSubTrigger: BNDropdownMenuSubTrigger as any,
+                DropdownMenuTrigger: BNDropdownMenuTrigger as any,
               },
             }}
           >
