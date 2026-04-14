@@ -3384,6 +3384,10 @@ export type Database = {
         Args: { _role: string; _user_id: string }
         Returns: boolean
       }
+      increment_ai_usage: {
+        Args: { _date: string; _user_id: string }
+        Returns: undefined
+      }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_group_leader: {
         Args: { _group_id: string; _user_id: string }
