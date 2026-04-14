@@ -421,6 +421,7 @@ export const vi: Translations = {
         rows: [
           { label: 'Thời lượng họp', free: '15 phút', plus: '60 phút', pro: 'Không giới hạn', business: 'Không giới hạn', enterprise: 'Không giới hạn' },
           { label: 'Nhật ký hoạt động', free: false, plus: '30 ngày', pro: 'Không giới hạn', business: 'Không giới hạn', enterprise: 'Không giới hạn' },
+          { label: 'Trợ lý AI', free: '5/ngày', plus: '20/ngày', pro: '50/ngày', business: 'Không giới hạn', enterprise: 'Không giới hạn' },
         ],
       },
       {
