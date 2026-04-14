@@ -85,6 +85,30 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_daily_usage: {
+        Row: {
+          id: string
+          message_count: number
+          updated_at: string | null
+          usage_date: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          message_count?: number
+          updated_at?: string | null
+          usage_date?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          message_count?: number
+          updated_at?: string | null
+          usage_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_releases: {
         Row: {
           created_at: string
@@ -1720,6 +1744,7 @@ export type Database = {
           created_at: string
           id: string
           max_activity_log_days: number | null
+          max_ai_messages_per_day: number | null
           max_file_size_mb: number
           max_meeting_duration_minutes: number | null
           max_members_per_workspace: number
@@ -1734,6 +1759,7 @@ export type Database = {
           created_at?: string
           id?: string
           max_activity_log_days?: number | null
+          max_ai_messages_per_day?: number | null
           max_file_size_mb?: number
           max_meeting_duration_minutes?: number | null
           max_members_per_workspace?: number
@@ -1748,6 +1774,7 @@ export type Database = {
           created_at?: string
           id?: string
           max_activity_log_days?: number | null
+          max_ai_messages_per_day?: number | null
           max_file_size_mb?: number
           max_meeting_duration_minutes?: number | null
           max_members_per_workspace?: number
