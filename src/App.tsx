@@ -191,6 +191,7 @@ function AppRoutes() {
         <Route path="/share/:token/page/:pageSlug" element={<ForceLightMode><Suspense fallback={null}><PublicCanvasPage /></Suspense></ForceLightMode>} />
         <Route path="/share/:token/page" element={<ForceLightMode><Suspense fallback={null}><PublicCanvasPage /></Suspense></ForceLightMode>} />
         <Route path="/reset-password" element={<ForceLightMode><ResetPassword /></ForceLightMode>} />
+        <Route path="/ui-preview" element={<ForceLightMode><Suspense fallback={null}><UIPreview /></Suspense></ForceLightMode>} />
         <Route path="/join" element={<JoinProject />} />
         {/* ═══ Invoice summary — accessible without login (handles own auth guard) ═══ */}
         <Route path="/checkout/summary/:orderCode" element={<CheckoutSummary />} />
