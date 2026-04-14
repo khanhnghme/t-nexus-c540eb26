@@ -296,10 +296,11 @@ export default function AIAssistantPanel({
     setError(null);
   };
 
-  const remainingQuestions = maxQuestions - questionsToday;
+  const isUnlimited = maxQuestions === null;
+  const remainingQuestions = isUnlimited ? Infinity : maxQuestions - questionsToday;
   const wordCount = countWords(input);
   const isOverLimit = wordCount > MAX_MESSAGE_WORDS;
-  const usagePercent = Math.min(100, (questionsToday / maxQuestions) * 100);
+  const usagePercent = isUnlimited ? 0 : Math.min(100, (questionsToday / maxQuestions) * 100);
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
