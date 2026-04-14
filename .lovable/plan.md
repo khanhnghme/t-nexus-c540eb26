@@ -1,66 +1,81 @@
 
 
-## Plan: Fix 3 vấn đề 🟢 LOW — Tối ưu hiệu năng (cuối cùng)
+## Plan: Fix mobile navigation cho điện thoại
 
-### LOW #8: Image optimization — lazy loading cho avatars
+### Vấn đề phát hiện
 
-**Vấn đề:** `UserAvatar` component dùng `AvatarImage` (từ Radix) không có `loading="lazy"`. Mỗi trang Dashboard, GroupDetail, MemberManagement hiển thị hàng chục avatar → tất cả load đồng thời.
-
-**Giải pháp:**
-- Thêm prop `loading="lazy"` vào `<AvatarImage>` trong `src/components/UserAvatar.tsx`
-- Kiểm tra `src/components/ui/avatar.tsx` — nếu Radix `AvatarImage` không forward `loading` prop, thêm spread props hoặc custom attribute
-
-**File:** `src/components/UserAvatar.tsx`, `src/components/ui/avatar.tsx`
-**Impact:** Giảm bandwidth + requests đồng thời khi load trang có nhiều avatar
+Trên mobile (<768px), CSS hiện tại ẩn hoàn toàn `grid-cell-topbar` (chứa project tab navigation) và `grid-cell-logo`. Khi vào dự án, user không thể chuyển giữa các tab (Overview, Tasks, Members...) vì thanh tabs bị ẩn.
 
 ---
 
-### LOW #9: Prefetch critical routes từ Login
+### Giải pháp: 3 thay đổi
 
-**Vấn đề:** Khi user ở trang Login, chunk `/dashboard` chưa được tải. Sau login → phải đợi download chunk → delay.
+#### 1. Hiển thị project tabs trên mobile dưới dạng thanh cuộn ngang
 
-**Giải pháp:**
-- Trong `src/pages/Login.tsx`, thêm `useEffect` prefetch Dashboard chunk:
-```tsx
-useEffect(() => {
-  const timer = setTimeout(() => {
-    import('../pages/Dashboard');
-  }, 2000); // prefetch sau 2s idle
-  return () => clearTimeout(timer);
-}, []);
+**File:** `src/index.css` (lines 1900-1903)
+
+Thay vì ẩn `grid-cell-topbar` trên mobile, chỉ ẩn khi KHÔNG ở trong project. Khi ở project page, hiển thị topbar ngay dưới mobile top bar với scroll ngang cho các tabs.
+
+- Bỏ `display: none` cho `grid-cell-topbar` trên mobile
+- Thêm style cho topbar mobile: fixed position dưới mobile top bar (top: 48px), full width, scroll ngang
+- Topbar chỉ hiện khi có project nav (class điều kiện từ JS)
+
+#### 2. Cập nhật DashboardLayout để thêm class nhận biết project mode trên mobile
+
+**File:** `src/components/layout/DashboardLayout.tsx`
+
+- Thêm class `has-project-nav` vào `dashboard-grid` khi `projectNavProps` tồn tại
+- Cập nhật `grid-cell-content` padding-top khi có project nav bar (48px topbar + 44px tabs = 92px)
+
+#### 3. Cải thiện mobile top bar — thêm nút back + tên project khi đang ở trong dự án
+
+**File:** `src/components/layout/DashboardLayout.tsx`
+
+- Khi đang ở project (có `projectNavProps`), mobile top bar hiển thị: nút Back + tên project (thay vì logo)
+- Giữ hamburger menu cho các trang khác
+
+#### 4. CSS responsive cho project tabs trên mobile
+
+**File:** `src/index.css`
+
+```css
+@media (max-width: 767px) {
+  /* Khi có project nav, hiện topbar dưới dạng sticky bar */
+  .dashboard-grid.has-project-nav .grid-cell-topbar {
+    display: flex;
+    position: fixed;
+    top: 48px; /* dưới mobile topbar */
+    left: 0;
+    right: 0;
+    z-index: 40;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    height: 44px;
+  }
+  
+  /* Tăng padding-top content khi có project nav */
+  .dashboard-grid.has-project-nav .grid-cell-content {
+    padding-top: 96px; /* 48 + 44 + 4 */
+  }
+  
+  /* Ẩn phần không cần thiết trên mobile topbar */
+  .dashboard-grid.has-project-nav .grid-cell-topbar .topbar-logo,
+  .dashboard-grid.has-project-nav .grid-cell-topbar .topbar-theme-toggle {
+    display: none;
+  }
+}
 ```
-- Áp dụng tương tự ở `Landing.tsx` — prefetch Login chunk
-
-**Files:** `src/pages/Login.tsx`, `src/pages/Landing.tsx`
-**Impact:** Giảm perceived load time sau login ~30-50%
-
----
-
-### LOW #10: Migrate Dashboard sang React Query
-
-**Vấn đề:** `Dashboard.tsx` (1087 dòng) dùng hoàn toàn `useState` + `useEffect` cho data fetching. Không có caching, stale time, hay background refetch. Mỗi lần navigate lại Dashboard → fetch lại toàn bộ.
-
-**Giải pháp:**
-- Tạo custom hooks dùng `@tanstack/react-query` (đã có trong project):
-  - `useDashboardData(userId)` — fetch projects, members, stats
-  - `usePendingInvitations(userId)` — fetch pending invitations
-  - `usePendingApprovals(userId)` — fetch pending approvals
-- Config `staleTime: 30_000` (30s) để tránh re-fetch khi navigate back
-- Config `refetchOnWindowFocus: true` để cập nhật khi user quay lại tab
-- Giữ logic `Promise.all` đã tối ưu từ phase trước, chỉ wrap vào `useQuery`
-
-**Files:** `src/pages/Dashboard.tsx` (refactor), tạo mới `src/hooks/useDashboardData.ts`
-**Impact:** Cache data 30s, tránh re-fetch khi navigate back, background refresh
 
 ---
 
 ### Tổng kết
 
-| # | Task | Files | Impact |
-|---|------|-------|--------|
-| 8 | Image lazy loading | 2 files (avatar components) | Bandwidth giảm |
-| 9 | Prefetch critical chunks | 2 files (Login, Landing) | Post-login load -30% |
-| 10 | React Query cho Dashboard | 2 files (Dashboard + new hook) | Cache + no re-fetch |
+| # | Thay đổi | File |
+|---|----------|------|
+| 1 | CSS mobile cho project tabs | `src/index.css` |
+| 2 | Thêm class `has-project-nav` | `src/components/layout/DashboardLayout.tsx` |
+| 3 | Mobile topbar hiện back + tên project | `src/components/layout/DashboardLayout.tsx` |
+| 4 | TopBar ẩn elements thừa trên mobile | `src/components/layout/TopBar.tsx` |
 
-**Tổng: ~6 files thay đổi (1 file mới). Không thêm dependencies (React Query đã có). Backward compatible 100%.**
+**Tổng: 3 files. Không thêm dependencies. Backward compatible.**
 
