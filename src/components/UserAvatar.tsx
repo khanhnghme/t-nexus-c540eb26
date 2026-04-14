@@ -73,6 +73,7 @@ export default function UserAvatar({
             src={normalizedSrc} 
             alt={name || 'User avatar'} 
             className="object-cover"
+            loading="lazy"
           />
         )}
         <AvatarFallback 
