@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, memo, useCallback } from 'react';
 import { deleteWithUndo } from '@/lib/deleteWithUndo';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -809,6 +809,7 @@ export default function AdminUsers() {
         onOpenChange={setProfileDialogOpen}
         profile={selectedProfile}
         role={selectedProfile ? (profiles.find(p => p.id === selectedProfile.id) ? 'project_basic:member' : 'project_basic:member') : 'project_basic:member'}
+        presenceStatus={selectedProfile ? getPresenceStatus(selectedProfile.id) : undefined}
       />
 
       {/* Password View Dialog */}

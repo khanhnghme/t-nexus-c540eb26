@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import UserAvatar from '@/components/UserAvatar';
 import UserPresenceIndicator from '@/components/UserPresenceIndicator';
-import { useUserPresence } from '@/hooks/useUserPresence';
+import type { PresenceStatus } from '@/hooks/useUserPresence';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   User, Mail, GraduationCap, BookOpen, Phone, Sparkles, FileText,
@@ -58,6 +58,7 @@ interface ProfileViewDialogProps {
   role?: ProjectRole;
   isGroupCreator?: boolean;
   groupId?: string;
+  presenceStatus?: PresenceStatus;
 }
 
 export default function ProfileViewDialog({
@@ -67,13 +68,13 @@ export default function ProfileViewDialog({
   role = 'project_basic:member' as any,
   isGroupCreator = false,
   groupId,
+  presenceStatus: presenceStatusProp,
 }: ProfileViewDialogProps) {
   const [tasks, setTasks] = useState<TaskInfo[]>([]);
   const [submissions, setSubmissions] = useState<SubmissionInfo[]>([]);
   const [activities, setActivities] = useState<ActivityInfo[]>([]);
   const [scores, setScores] = useState<ScoreInfo[]>([]);
   const [loading, setLoading] = useState(false);
-  const { getPresenceStatus, isConnected } = useUserPresence('system-global');
 
   useEffect(() => {
     if (open && profile && groupId) {
@@ -220,7 +221,7 @@ export default function ProfileViewDialog({
     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
   });
 
-  const presenceStatus = isConnected ? getPresenceStatus(profile.id) : undefined;
+  const presenceStatus = presenceStatusProp;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -243,7 +244,7 @@ export default function ProfileViewDialog({
                     name={profile.full_name}
                     size="xl"
                     className="border-4 border-background shadow-xl ring-2 ring-primary/20 w-24 h-24"
-                    showPresence={isConnected}
+                    showPresence={!!presenceStatus}
                     presenceStatus={presenceStatus}
                   />
                 </div>
