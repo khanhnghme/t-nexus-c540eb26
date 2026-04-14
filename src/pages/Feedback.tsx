@@ -661,6 +661,72 @@ export default function FeedbackPage() {
         )}
       </Tabs>
 
+      {/* Feedback detail dialog */}
+      <Dialog open={!!viewingFeedback} onOpenChange={(open) => !open && setViewingFeedback(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto" onCloseAutoFocus={e => e.preventDefault()}>
+          {viewingFeedback && (() => {
+            const fb = viewingFeedback;
+            const typeConfig = TYPE_LABELS[fb.type] || TYPE_LABELS.other;
+            return (
+              <>
+                <DialogHeader>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant="outline" className={`text-xs ${typeConfig.color}`}>
+                      {typeConfig.label}
+                    </Badge>
+                    <StatusBadge status={fb.status} />
+                  </div>
+                  <DialogTitle className="text-base">{fb.title}</DialogTitle>
+                  <DialogDescription className="flex items-center gap-2">
+                    {fb.user_name && (
+                      <span className="flex items-center gap-1.5">
+                        <UserAvatar src={fb.user_avatar_url} name={fb.user_name} size="sm" />
+                        <span>{fb.user_name}</span>
+                        {fb.user_plan && <PlanBadge plan={fb.user_plan} />}
+                      </span>
+                    )}
+                    <span>· {formatTime(fb.created_at)}</span>
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4 py-2">
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{fb.content}</p>
+
+                  <Attachments urls={fb.attachments} />
+
+                  {fb.admin_response && (
+                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-1">
+                      <p className="text-xs font-medium text-primary">Phản hồi từ quản trị viên</p>
+                      <p className="text-sm whitespace-pre-wrap">{fb.admin_response}</p>
+                      {fb.responded_at && (
+                        <p className="text-xs text-muted-foreground">{formatTime(fb.responded_at)}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {isAdmin && (
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => {
+                        setViewingFeedback(null);
+                        openRespondDialog(fb);
+                      }}
+                    >
+                      <MessageSquareText className="w-3.5 h-3.5" />
+                      {fb.admin_response ? 'Sửa phản hồi' : 'Phản hồi'}
+                    </Button>
+                  </DialogFooter>
+                )}
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
       {/* Admin respond dialog */}
       <Dialog open={!!respondingTo} onOpenChange={(open) => !open && setRespondingTo(null)}>
         <DialogContent className="max-w-lg" onCloseAutoFocus={e => e.preventDefault()}>
