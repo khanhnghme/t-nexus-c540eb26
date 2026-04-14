@@ -356,7 +356,7 @@ export const vi: Translations = {
           'Tổng 200 suất thành viên (unique seat, dùng chung cho tất cả WS)',
           'Họp không giới hạn',
           'Nhật ký hoạt động không giới hạn',
-          'Trợ lý AI không giới hạn',
+          'Trợ lý AI: 150 lượt/ngày',
         ],
         features: [
           'Mở khóa tính năng Business cho mọi thành viên',
@@ -421,7 +421,7 @@ export const vi: Translations = {
         rows: [
           { label: 'Thời lượng họp', free: '15 phút', plus: '60 phút', pro: 'Không giới hạn', business: 'Không giới hạn', enterprise: 'Không giới hạn' },
           { label: 'Nhật ký hoạt động', free: false, plus: '30 ngày', pro: 'Không giới hạn', business: 'Không giới hạn', enterprise: 'Không giới hạn' },
-          { label: 'Trợ lý AI', free: '5/ngày', plus: '20/ngày', pro: '50/ngày', business: 'Không giới hạn', enterprise: 'Không giới hạn' },
+          { label: 'Trợ lý AI', free: '5/ngày', plus: '20/ngày', pro: '50/ngày', business: '150/ngày', enterprise: 'Không giới hạn' },
         ],
       },
       {

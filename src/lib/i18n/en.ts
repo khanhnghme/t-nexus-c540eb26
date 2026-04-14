@@ -355,7 +355,7 @@ export const en = {
           'Total 200 unique seats (shared across all WSs, free)',
           'Unlimited meeting time',
           'Unlimited activity logs',
-          'Unlimited AI Assistant',
+          'AI Assistant: 150 messages/day',
         ],
         features: [
           'Unlock Business features for all members',
@@ -419,7 +419,7 @@ export const en = {
         rows: [
           { label: 'Meeting duration', free: '15 min', plus: '60 min', pro: 'Unlimited', business: 'Unlimited', enterprise: 'Unlimited' },
           { label: 'Activity logs', free: false, plus: '30 days', pro: 'Unlimited', business: 'Unlimited', enterprise: 'Unlimited' },
-          { label: 'AI Assistant', free: '5/day', plus: '20/day', pro: '50/day', business: 'Unlimited', enterprise: 'Unlimited' },
+          { label: 'AI Assistant', free: '5/day', plus: '20/day', pro: '50/day', business: '150/day', enterprise: 'Unlimited' },
         ],
       },
       {
