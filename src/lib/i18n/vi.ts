@@ -1529,7 +1529,6 @@ export const vi: Translations = {
       storage: 'Dung lượng',
       aiMessages: 'Tin nhắn AI',
       aiMessagesNote: 'Dùng chung cho tất cả thành viên workspace',
-      aiMessagesUnit: 'lượt',
       detailByWorkspace: 'Chi tiết theo Workspace',
       noWorkspaceOwned: 'Bạn chưa sở hữu workspace nào',
       projectsLabel: 'dự án',

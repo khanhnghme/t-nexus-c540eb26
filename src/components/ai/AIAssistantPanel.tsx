@@ -7,7 +7,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, Loader2, Sparkles, AlertCircle, FolderKanban, Globe, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import tNexusTextLogo from '@/assets/t-nexus-text.png';
@@ -49,7 +48,6 @@ export default function AIAssistantPanel({
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { user, profile } = useAuth();
-  const { activeWorkspace } = useWorkspace();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -58,8 +56,9 @@ export default function AIAssistantPanel({
 
       const today = new Date().toISOString().slice(0, 10);
       try {
-        // Use active workspace owner for shared pool quota
-        const effectiveOwnerId = activeWorkspace?.owner_id || user.id;
+        // Find workspace owner for shared pool quota
+        const { data: ownerId } = await supabase.rpc('get_user_workspace_owner', { _user_id: user.id });
+        const effectiveOwnerId = ownerId || user.id;
 
         // Fetch aggregate usage across owner's workspaces + owner's plan
         const [usageRes, ownerProfileRes] = await Promise.all([
@@ -84,7 +83,7 @@ export default function AIAssistantPanel({
     };
 
     if (isOpen) loadUsage();
-  }, [user?.id, isOpen, activeWorkspace?.id]);
+  }, [user?.id, isOpen]);
 
   const isUserScrollingUp = useRef(false);
   const lastScrollHeight = useRef(0);

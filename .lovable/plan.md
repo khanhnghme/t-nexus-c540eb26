@@ -1,46 +1,23 @@
 
 
-## Plan: Fix AI usage tính theo active workspace + thêm AI vào workspace detail
+## Plan: Thêm hạn mức AI vào tất cả UI hiển thị tính năng gói
 
 ### Vấn đề
+Hạn mức AI (Free: 5, Plus: 20, Pro: 50, Business: 150, Enterprise: Unlimited) đã đúng ở trang Pricing (`quotas` + `planComparison`) nhưng **thiếu** ở 3 nơi trong i18n:
 
-1. **AIAssistant.tsx** gọi `get_user_workspace_owner` — hàm này trả về owner của workspace **đầu tiên** chứ không phải workspace **đang active**. Nếu user đang ở workspace của người khác nhưng bản thân cũng sở hữu workspace → hàm trả về chính họ thay vì owner workspace đang active.
+1. **`servicePlanFeatures`** — danh sách compact trên trang Thông tin cá nhân
+2. **`servicePlanFullFeatures`** — danh sách chi tiết trên trang Gói dịch vụ
+3. **`servicePlanFeatureGroups`** — bảng phân nhóm trên trang Gói dịch vụ (category "Tools & Features")
 
-2. **ServicePlan.tsx** phần "Chi tiết theo Workspace" chưa có dòng AI usage cho từng workspace.
+### Thay đổi (2 files)
 
-### Giải pháp
+**`src/lib/i18n/en.ts`**
+- `servicePlanFeatures`: Thêm item AI vào mỗi gói (`'AI Assistant: 5/day'`, `'20/day'`, `'50/day'`, `'150/day'`, `'Unlimited'`)
+- `servicePlanFullFeatures`: Thêm dòng AI tương ứng vào mỗi gói
+- `servicePlanFeatureGroups`: Thêm `{ label: 'AI Assistant', value: '5/day' }` vào category "Tools & Features" cho mỗi gói
 
-**1. Migration: Tạo RPC `get_workspace_ai_usage_today`**
-- Đếm tổng `ai_daily_usage.message_count` của tất cả thành viên thuộc 1 workspace cụ thể trong ngày
-- Dùng cho cả 2 mục đích: hiển thị per-workspace ở ServicePlan + lấy usage đúng workspace đang active ở AIAssistant
+**`src/lib/i18n/vi.ts`**
+- Tương tự với text tiếng Việt (`'Trợ lý AI: 5 lượt/ngày'`, v.v.)
 
-```sql
-CREATE OR REPLACE FUNCTION public.get_workspace_ai_usage_today(_workspace_id uuid, _date date)
-RETURNS integer LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS $$
-  SELECT COALESCE(SUM(adu.message_count), 0)::integer
-  FROM ai_daily_usage adu
-  WHERE adu.usage_date = _date
-    AND adu.user_id IN (
-      SELECT wm.user_id FROM workspace_members wm WHERE wm.workspace_id = _workspace_id
-    )
-$$;
-```
-
-**2. Fix `src/pages/AIAssistant.tsx`**
-- Import `useWorkspace` → lấy `activeWorkspace`
-- Thay logic cũ (`get_user_workspace_owner` → fallback user.id`) bằng:
-  - Dùng `activeWorkspace.owner_id` trực tiếp làm owner
-  - Gọi `get_owner_ai_usage_today` với owner_id của active workspace
-  - Lấy plan limit từ profile của owner đó
-- Thêm `activeWorkspace?.id` vào dependency của useEffect
-
-**3. Fix `src/components/ai/AIAssistantPanel.tsx`** (nếu còn dùng)
-- Áp dụng logic tương tự như AIAssistant.tsx
-
-**4. Cập nhật `src/pages/ServicePlan.tsx`**
-- Trong `WorkspaceUsage` interface: thêm `aiUsage: number`
-- Trong `fetchUsages`: gọi `get_workspace_ai_usage_today` cho từng workspace owned
-- Trong workspace detail card: thêm dòng hiển thị AI usage (icon Bot, `X lượt`, tỷ lệ % contribution)
-
-### Tổng: 1 migration + 3 files sửa
+### Tổng: 2 files sửa, chỉ i18n
 

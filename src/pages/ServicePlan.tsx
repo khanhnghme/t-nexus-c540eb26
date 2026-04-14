@@ -35,7 +35,6 @@ interface WorkspaceUsage {
   maxStorageMb: number;
   memberCount: number;
   maxMembers: number | null;
-  aiUsage: number;
 }
 
 interface PlanLimitsData {
@@ -120,25 +119,13 @@ export default function ServicePlan() {
         });
       }
 
-      const today = new Date().toISOString().slice(0, 10);
-      const detailPromises = ownedWs.map(async (ws) => {
-        const [storageRes, aiRes] = await Promise.all([
-          supabase.rpc('get_workspace_storage_usage', { _workspace_id: ws.id }),
-          supabase.rpc('get_workspace_ai_usage_today', { _workspace_id: ws.id, _date: today }),
-        ]);
-        return {
-          wsId: ws.id,
-          storageMb: Math.round(Number(storageRes.data) || 0),
-          aiUsage: Number(aiRes.data) || 0,
-        };
+      const storagePromises = ownedWs.map(async (ws) => {
+        const { data } = await supabase.rpc('get_workspace_storage_usage', { _workspace_id: ws.id });
+        return { wsId: ws.id, storageMb: Math.round(Number(data) || 0) };
       });
-      const detailResults = await Promise.all(detailPromises);
+      const storageResults = await Promise.all(storagePromises);
       const storageMap: Record<string, number> = {};
-      const aiUsageMap: Record<string, number> = {};
-      detailResults.forEach(r => {
-        storageMap[r.wsId] = r.storageMb;
-        aiUsageMap[r.wsId] = r.aiUsage;
-      });
+      storageResults.forEach(r => { storageMap[r.wsId] = r.storageMb; });
 
       const usages: WorkspaceUsage[] = ownedWs.map(ws => ({
         id: ws.id,
@@ -150,13 +137,13 @@ export default function ServicePlan() {
         maxStorageMb: maxStorage,
         memberCount: memberCountMap[ws.id] || 0,
         maxMembers,
-        aiUsage: aiUsageMap[ws.id] || 0,
       }));
 
       setWsUsages(usages);
       setUniqueMemberCount(uniqueMemberIds.size);
 
-      // Fetch aggregate AI usage for the account summary card
+      // Fetch AI usage
+      const today = new Date().toISOString().slice(0, 10);
       const [aiUsageRes, aiLimitRes] = await Promise.all([
         supabase.rpc('get_owner_ai_usage_today', { _owner_id: user.id, _date: today }),
         supabase.from('plan_limits').select('max_ai_messages_per_day').eq('plan', plan as any).maybeSingle(),
@@ -654,10 +641,8 @@ export default function ServicePlan() {
                 {wsUsages.map(ws => {
                   const totalProjectsAll = wsUsages.reduce((s, w) => s + w.projectCount, 0);
                   const totalStorageAll = wsUsages.reduce((s, w) => s + w.storageMb, 0);
-                  const totalAiAll = wsUsages.reduce((s, w) => s + w.aiUsage, 0);
                   const projectContribPct = totalProjectsAll > 0 ? Math.round((ws.projectCount / totalProjectsAll) * 100) : 0;
                   const storageContribPct = totalStorageAll > 0 ? Math.round((ws.storageMb / totalStorageAll) * 100) : 0;
-                  const aiContribPct = totalAiAll > 0 ? Math.round((ws.aiUsage / totalAiAll) * 100) : 0;
                   const formatStorage = (mb: number) => mb >= 1000 ? `${(mb / 1000).toFixed(1)} GB` : `${mb} MB`;
 
                   const projPct = ws.maxProjects ? (ws.projectCount / ws.maxProjects) * 100 : 0;
@@ -724,18 +709,6 @@ export default function ServicePlan() {
                               value={ws.maxStorageMb > 0 ? Math.min(100, storagePct) : 0}
                               className={`h-1.5 ${storageOver ? '[&>div]:bg-red-500' : storageWarn ? '[&>div]:bg-amber-500' : ''}`}
                             />
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground flex items-center gap-1.5">
-                                <Bot className="w-3 h-3" /> {t.aiMessages}
-                              </span>
-                              <span className="font-medium tabular-nums">
-                                {ws.aiUsage} {t.aiMessagesUnit || 'lượt'}
-                                {totalAiAll > 0 && <span className="text-muted-foreground ml-1">({aiContribPct}%)</span>}
-                              </span>
-                            </div>
                           </div>
                         </div>
                       </CardContent>
