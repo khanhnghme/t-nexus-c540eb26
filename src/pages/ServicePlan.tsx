@@ -35,6 +35,7 @@ interface WorkspaceUsage {
   maxStorageMb: number;
   memberCount: number;
   maxMembers: number | null;
+  aiUsage: number;
 }
 
 interface PlanLimitsData {
@@ -119,13 +120,25 @@ export default function ServicePlan() {
         });
       }
 
-      const storagePromises = ownedWs.map(async (ws) => {
-        const { data } = await supabase.rpc('get_workspace_storage_usage', { _workspace_id: ws.id });
-        return { wsId: ws.id, storageMb: Math.round(Number(data) || 0) };
+      const today = new Date().toISOString().slice(0, 10);
+      const detailPromises = ownedWs.map(async (ws) => {
+        const [storageRes, aiRes] = await Promise.all([
+          supabase.rpc('get_workspace_storage_usage', { _workspace_id: ws.id }),
+          supabase.rpc('get_workspace_ai_usage_today', { _workspace_id: ws.id, _date: today }),
+        ]);
+        return {
+          wsId: ws.id,
+          storageMb: Math.round(Number(storageRes.data) || 0),
+          aiUsage: Number(aiRes.data) || 0,
+        };
       });
-      const storageResults = await Promise.all(storagePromises);
+      const detailResults = await Promise.all(detailPromises);
       const storageMap: Record<string, number> = {};
-      storageResults.forEach(r => { storageMap[r.wsId] = r.storageMb; });
+      const aiUsageMap: Record<string, number> = {};
+      detailResults.forEach(r => {
+        storageMap[r.wsId] = r.storageMb;
+        aiUsageMap[r.wsId] = r.aiUsage;
+      });
 
       const usages: WorkspaceUsage[] = ownedWs.map(ws => ({
         id: ws.id,
@@ -137,6 +150,7 @@ export default function ServicePlan() {
         maxStorageMb: maxStorage,
         memberCount: memberCountMap[ws.id] || 0,
         maxMembers,
+        aiUsage: aiUsageMap[ws.id] || 0,
       }));
 
       setWsUsages(usages);
