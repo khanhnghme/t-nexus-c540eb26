@@ -68,7 +68,7 @@ interface MessageItemProps {
   onReply?: (message: Message) => void;
 }
 
-export default function MessageItem({ message, isOwn, showAvatar = true, showName = true, members = [], groupId, onTaskClick, onDelete, onReply }: MessageItemProps) {
+function MessageItemInner({ message, isOwn, showAvatar = true, showName = true, members = [], groupId, onTaskClick, onDelete, onReply }: MessageItemProps) {
   const { user, isAdmin } = useAuth();
   const { locale, translations: { app: { communication: comm } } } = useLanguage();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -427,3 +427,5 @@ export default function MessageItem({ message, isOwn, showAvatar = true, showNam
     </>
   );
 }
+
+export default React.memo(MessageItemInner);
