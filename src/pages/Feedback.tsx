@@ -377,41 +377,64 @@ export default function FeedbackPage() {
 
   const FeedbackRow = ({ fb, showUser }: { fb: FeedbackItem; showUser?: boolean }) => {
     const typeConfig = TYPE_LABELS[fb.type] || TYPE_LABELS.other;
+    const statusConfig = STATUS_CONFIG[fb.status] || STATUS_CONFIG.pending;
+    const StatusIcon = statusConfig.icon;
     return (
       <button
         type="button"
         onClick={() => setViewingFeedback(fb)}
-        className="w-full text-left px-4 py-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors flex items-center gap-3"
+        className="w-full text-left group"
       >
-        {showUser && (
-          <UserAvatar src={fb.user_avatar_url} name={fb.user_name} size="sm" />
-        )}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${typeConfig.color}`}>
-              {typeConfig.label}
-            </Badge>
-            <span className="font-medium text-sm truncate">{fb.title}</span>
-          </div>
-          <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
-            {showUser && <span className="truncate max-w-[120px]">{fb.user_name}</span>}
-            <span>·</span>
-            <span>{formatTime(fb.created_at)}</span>
-            {fb.attachments && fb.attachments.length > 0 && (
-              <>
-                <span>·</span>
-                <Paperclip className="w-3 h-3" />
-                <span>{fb.attachments.length}</span>
-              </>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <StatusBadge status={fb.status} />
-          {fb.admin_response && (
-            <MessageSquareText className="w-3.5 h-3.5 text-primary" />
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border/60 bg-card hover:border-primary/30 hover:shadow-sm transition-all">
+          {/* Status indicator dot */}
+          <div className={`w-2 h-2 rounded-full shrink-0 ${
+            fb.status === 'pending' ? 'bg-warning' : 
+            fb.status === 'reviewed' ? 'bg-primary' : 'bg-emerald-500'
+          }`} />
+
+          {showUser && (
+            <UserAvatar src={fb.user_avatar_url} name={fb.user_name} size="sm" />
           )}
-          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+
+          <div className="flex-1 min-w-0 space-y-0.5">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-sm truncate group-hover:text-primary transition-colors">{fb.title}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Badge variant="outline" className={`text-[10px] leading-none px-1.5 py-0.5 ${typeConfig.color}`}>
+                {typeConfig.label}
+              </Badge>
+              {showUser && (
+                <>
+                  <span className="truncate max-w-[100px]">{fb.user_name}</span>
+                  {fb.user_plan && <PlanBadge plan={fb.user_plan} />}
+                  <span className="text-border">·</span>
+                </>
+              )}
+              <Clock className="w-3 h-3" />
+              <span>{formatTime(fb.created_at)}</span>
+              {fb.attachments && fb.attachments.length > 0 && (
+                <span className="flex items-center gap-0.5 text-muted-foreground">
+                  <Paperclip className="w-3 h-3" />
+                  {fb.attachments.length}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {fb.admin_response && (
+              <div className="flex items-center gap-1 text-xs text-primary bg-primary/10 rounded-full px-2 py-0.5">
+                <MessageSquareText className="w-3 h-3" />
+                <span className="hidden sm:inline">Đã phản hồi</span>
+              </div>
+            )}
+            <Badge variant="outline" className={`text-[10px] ${statusConfig.color} border-current/20`}>
+              <StatusIcon className="w-3 h-3 mr-1" />
+              {statusConfig.label}
+            </Badge>
+            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          </div>
         </div>
       </button>
     );
