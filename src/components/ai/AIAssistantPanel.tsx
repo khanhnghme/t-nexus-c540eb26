@@ -50,36 +50,35 @@ export default function AIAssistantPanel({
   const { user, profile } = useAuth();
   const { toast } = useToast();
 
-  const maxQuestions = QUESTIONS_PER_PROJECT * projectCount;
-
   useEffect(() => {
-    const loadData = async () => {
-      if (!user?.id) return;
+    const loadUsage = async () => {
+      if (!user?.id) { setUsageLoading(false); return; }
 
-      const usageKey = getUsageKey(user.id);
-      const stored = localStorage.getItem(usageKey);
-      setQuestionsToday(stored ? parseInt(stored, 10) : 0);
-
+      const today = new Date().toISOString().slice(0, 10);
       try {
-        const { count, error } = await supabase
-          .from('group_members')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
+        // Fetch usage and plan limit in parallel
+        const [usageRes, profileRes] = await Promise.all([
+          supabase.from('ai_daily_usage').select('message_count').eq('user_id', user.id).eq('usage_date', today).maybeSingle(),
+          supabase.from('profiles').select('user_plan').eq('id', user.id).single(),
+        ]);
 
-        if (!error && count !== null) {
-          setProjectCount(Math.max(1, count));
-          localStorage.setItem(getProjectCountKey(user.id), count.toString());
-        } else {
-          const cached = localStorage.getItem(getProjectCountKey(user.id));
-          if (cached) setProjectCount(Math.max(1, parseInt(cached, 10)));
-        }
+        setQuestionsToday(usageRes.data?.message_count ?? 0);
+
+        const userPlan = (profileRes.data as any)?.user_plan || 'plan_free';
+        const { data: limitData } = await supabase
+          .from('plan_limits')
+          .select('max_ai_messages_per_day')
+          .eq('plan', userPlan as any)
+          .maybeSingle();
+
+        setMaxQuestions((limitData as any)?.max_ai_messages_per_day ?? 5);
       } catch {
-        const cached = localStorage.getItem(getProjectCountKey(user.id));
-        if (cached) setProjectCount(Math.max(1, parseInt(cached, 10)));
+        // fallback defaults
       }
+      setUsageLoading(false);
     };
 
-    if (isOpen) loadData();
+    if (isOpen) loadUsage();
   }, [user?.id, isOpen]);
 
   const isUserScrollingUp = useRef(false);
