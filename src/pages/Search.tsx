@@ -86,7 +86,7 @@ export default function SearchPage() {
           .limit(20),
         // Resources
         supabase
-          .from('resources')
+          .from('project_resources')
           .select('id, file_name, group_id, groups!inner(slug, workspace_id, project_mode)')
           .ilike('file_name', q)
           .limit(20),
