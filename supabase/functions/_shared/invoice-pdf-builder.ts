@@ -371,6 +371,11 @@ export async function buildInvoicePdf(params: InvoicePdfParams): Promise<Uint8Ar
     y -= 14;
   }
 
+  // Tax
+  drawText(t.pdfTax, colEnd - 60, y, { size: 8, color: gray500, align: "right" });
+  drawText("$0.00", colEnd, y, { size: 8, color: gray500, align: "right" });
+  y -= 14;
+
   // Total
   page.drawLine({ start: { x: margin, y }, end: { x: pageW - margin, y }, thickness: 0.8, color: gray700 });
   y -= 16;

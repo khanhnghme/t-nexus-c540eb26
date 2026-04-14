@@ -411,6 +411,10 @@ export default function CheckoutPayment() {
                 <span>-${couponDiscount.toFixed(2)}</span>
               </div>
             )}
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>{isVi ? 'Thuế VAT (0%)' : 'Tax / VAT (0%)'}</span>
+              <span>$0.00</span>
+            </div>
             <Separator />
             <div className="flex justify-between font-bold text-lg pt-1">
               <span>{t?.total || 'Total'}</span>

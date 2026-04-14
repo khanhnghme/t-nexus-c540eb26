@@ -289,6 +289,10 @@ function PrintableInvoice({ order, profile, isVi }: { order: any; profile: any; 
             </tr>
           )}
 
+          <tr>
+            <td colSpan={4} className="py-1 text-right text-gray-500">{isVi ? 'Thuế VAT (0%)' : 'Tax / VAT (0%)'}</td>
+            <td className="py-1 text-right tabular-nums text-gray-500">$0.00</td>
+          </tr>
           <tr className="border-t-2 border-gray-400">
             <td colSpan={4} className="py-3 text-right font-bold text-base">{isVi ? 'TỔNG CỘNG' : 'TOTAL'}</td>
             <td className="py-3 text-right font-bold text-lg tabular-nums">${(order.total_amount || 0).toFixed(2)} USD</td>
@@ -756,6 +760,11 @@ export default function CheckoutSummary() {
                 <span>-${pricing.couponDiscount.toFixed(2)}</span>
               </div>
             )}
+
+            <div className="flex justify-between items-center py-1 text-sm text-muted-foreground">
+              <span>{isVi ? 'Thuế VAT (0%)' : 'Tax / VAT (0%)'}</span>
+              <span>$0.00</span>
+            </div>
 
             <Separator />
 

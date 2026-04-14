@@ -125,6 +125,10 @@ export const InvoiceTemplate = forwardRef<HTMLDivElement, InvoiceTemplateProps>(
                 <td className="py-3 text-right tabular-nums">-{welcomeDiscount?.toLocaleString()} {payment.currency}</td>
               </tr>
             )}
+            <tr className="border-b border-gray-100 text-gray-500">
+              <td className="py-3">Tax / VAT (0%)</td>
+              <td className="py-3 text-right tabular-nums">$0.00</td>
+            </tr>
           </tbody>
           <tfoot>
             <tr className="border-t-2 border-gray-300">
