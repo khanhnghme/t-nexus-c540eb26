@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import UserAvatar from '@/components/UserAvatar';
 import UserPresenceIndicator from '@/components/UserPresenceIndicator';
-import { useUserPresence, type PresenceStatus } from '@/hooks/useUserPresence';
+import type { PresenceStatus } from '@/hooks/useUserPresence';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   User, Mail, GraduationCap, BookOpen, Phone, Sparkles, FileText,
