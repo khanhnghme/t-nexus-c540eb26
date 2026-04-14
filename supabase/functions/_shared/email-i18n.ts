@@ -201,6 +201,7 @@ const texts = {
     pdfDiscountCode: (code: string) => `Coupon (${code})`,
     pdfWelcomeDiscount: 'Welcome discount',
     pdfAddonSavings: (rate?: number) => `Add-on savings${rate ? ` (${rate}%)` : ''}`,
+    pdfTax: 'Tax / VAT (0%)',
     pdfTotal: 'TOTAL',
     pdfNotes: 'Notes',
     pdfNote1: 'Payment processed via PayPal international gateway.',
