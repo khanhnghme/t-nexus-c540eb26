@@ -148,23 +148,6 @@ export default function Dashboard() {
   const { isConnected } = useUserPresence('system-global');
 
   useEffect(() => {
-    const fetchVideoSettings = async () => {
-      const { data } = await supabase
-        .from('system_settings')
-        .select('value')
-        .eq('key', 'dashboard_video_bg')
-        .maybeSingle();
-      if (data?.value) {
-        const val = data.value as { enabled?: boolean; dashboard_opacity?: number; opacity?: number; url?: string };
-        setVideoEnabled(val.enabled ?? false);
-        setVideoOpacity(val.dashboard_opacity ?? val.opacity ?? 0.2);
-        setVideoUrl(val.url ?? '');
-      }
-    };
-    fetchVideoSettings();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
     if (user?.id) {
       const saved = localStorage.getItem(`dashboard_filter_${user.id}`) as DashboardFilter;
       if (saved && ['all', 'active', 'hidden', 'pending'].includes(saved)) {
@@ -175,16 +158,9 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user) {
-      // Run all independent fetches in parallel
-      Promise.all([
-        fetchDashboardData(),
-        fetchHiddenProjects(),
-        fetchPendingInvitations(),
-        fetchPendingApprovals(),
-        fetchPendingWsInvites(),
-      ]);
-    } else {
-      setIsLoading(false);
+      // Invitations and workspace invites still use local state (not yet migrated)
+      fetchPendingInvitations();
+      fetchPendingWsInvites();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, activeWorkspace?.id]);
@@ -202,7 +178,7 @@ export default function Dashboard() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'pending_approvals', filter: `user_id=eq.${user.id}` },
-        () => { fetchPendingApprovals(); }
+        () => { queryClient.invalidateQueries({ queryKey: ['pending-approvals', user.id] }); }
       )
       .on(
         'postgres_changes',
