@@ -419,6 +419,7 @@ export const en = {
         rows: [
           { label: 'Meeting duration', free: '15 min', plus: '60 min', pro: 'Unlimited', business: 'Unlimited', enterprise: 'Unlimited' },
           { label: 'Activity logs', free: false, plus: '30 days', pro: 'Unlimited', business: 'Unlimited', enterprise: 'Unlimited' },
+          { label: 'AI Assistant', free: '5/day', plus: '20/day', pro: '50/day', business: 'Unlimited', enterprise: 'Unlimited' },
         ],
       },
       {
