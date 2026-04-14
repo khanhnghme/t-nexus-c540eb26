@@ -168,12 +168,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user) {
-      fetchDashboardData();
-      fetchProjectStats();
-      fetchHiddenProjects();
-      fetchPendingInvitations();
-      fetchPendingApprovals();
-      fetchPendingWsInvites();
+      // Run all independent fetches in parallel
+      Promise.all([
+        fetchDashboardData(),
+        fetchHiddenProjects(),
+        fetchPendingInvitations(),
+        fetchPendingApprovals(),
+        fetchPendingWsInvites(),
+      ]);
     } else {
       setIsLoading(false);
     }
@@ -388,13 +390,7 @@ export default function Dashboard() {
     }
   };
 
-  const fetchProjectStats = async () => {
-    if (!user) return;
-    const { data: owned } = await supabase.from('groups').select('id').eq('created_by', user.id);
-    const { data: joined } = await supabase.from('group_members').select('id').eq('user_id', user.id);
-    setOwnedProjectCount(owned?.length || 0);
-    setJoinedProjectCount(joined?.length || 0);
-  };
+  // fetchProjectStats removed — stats computed from fetchDashboardData results
 
   const fetchHiddenProjects = async () => {
     if (!user) return;
