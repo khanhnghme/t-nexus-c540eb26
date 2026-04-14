@@ -40,6 +40,7 @@ import {
   Filter,
   MessageSquarePlus,
   Paperclip,
+  ChevronRight,
   X,
   Mail,
   FileText,
@@ -123,8 +124,10 @@ export default function FeedbackPage() {
   const [adminStatus, setAdminStatus] = useState<FeedbackStatus>('reviewed');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Image preview
+  // File/image preview
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  // Detail dialog
+  const [viewingFeedback, setViewingFeedback] = useState<FeedbackItem | null>(null);
 
   useEffect(() => {
     fetchFeedbacks();
@@ -372,74 +375,45 @@ export default function FeedbackPage() {
     );
   };
 
-  const FeedbackCard = ({ fb, showUser }: { fb: FeedbackItem; showUser?: boolean }) => {
+  const FeedbackRow = ({ fb, showUser }: { fb: FeedbackItem; showUser?: boolean }) => {
     const typeConfig = TYPE_LABELS[fb.type] || TYPE_LABELS.other;
     return (
-      <Card className="transition-all hover:shadow-sm">
-        <CardContent className="p-4 space-y-3">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              {showUser && (
-                <div className="flex items-center gap-2 mb-2">
-                  <UserAvatar src={fb.user_avatar_url} name={fb.user_name} size="sm" />
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-medium text-sm truncate">{fb.user_name}</span>
-                      <PlanBadge plan={fb.user_plan || 'plan_free'} />
-                    </div>
-                    {fb.user_email && (
-                      <p className="text-xs text-muted-foreground truncate">{fb.user_email}</p>
-                    )}
-                  </div>
-                </div>
-              )}
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="outline" className={`text-xs ${typeConfig.color}`}>
-                  {typeConfig.label}
-                </Badge>
-                <h3 className="font-semibold text-sm">{fb.title}</h3>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <StatusBadge status={fb.status} />
-            </div>
+      <button
+        type="button"
+        onClick={() => setViewingFeedback(fb)}
+        className="w-full text-left px-4 py-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors flex items-center gap-3"
+      >
+        {showUser && (
+          <UserAvatar src={fb.user_avatar_url} name={fb.user_name} size="sm" />
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${typeConfig.color}`}>
+              {typeConfig.label}
+            </Badge>
+            <span className="font-medium text-sm truncate">{fb.title}</span>
           </div>
-
-          {/* Content */}
-          <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-            {fb.content}
-          </p>
-
-          {/* Attachments */}
-          <Attachments urls={fb.attachments} />
-
-          {/* Time */}
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Clock className="w-3.5 h-3.5" />
-            {formatTime(fb.created_at)}
+          <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+            {showUser && <span className="truncate max-w-[120px]">{fb.user_name}</span>}
+            <span>·</span>
+            <span>{formatTime(fb.created_at)}</span>
+            {fb.attachments && fb.attachments.length > 0 && (
+              <>
+                <span>·</span>
+                <Paperclip className="w-3 h-3" />
+                <span>{fb.attachments.length}</span>
+              </>
+            )}
           </div>
-
-          {/* Admin response */}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <StatusBadge status={fb.status} />
           {fb.admin_response && (
-            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-1">
-              <p className="text-xs font-medium text-primary">Phản hồi từ quản trị viên</p>
-              <p className="text-sm whitespace-pre-wrap">{fb.admin_response}</p>
-              {fb.responded_at && (
-                <p className="text-xs text-muted-foreground">{formatTime(fb.responded_at)}</p>
-              )}
-            </div>
+            <MessageSquareText className="w-3.5 h-3.5 text-primary" />
           )}
-
-          {/* Admin action */}
-          {isAdmin && showUser && (
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => openRespondDialog(fb)}>
-              <MessageSquareText className="w-3.5 h-3.5" />
-              {fb.admin_response ? 'Sửa phản hồi' : 'Phản hồi'}
-            </Button>
-          )}
-        </CardContent>
-      </Card>
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        </div>
+      </button>
     );
   };
 
@@ -610,7 +584,7 @@ export default function FeedbackPage() {
               </CardContent>
             </Card>
           ) : (
-            myFeedbacks.map(fb => <FeedbackCard key={fb.id} fb={fb} />)
+            myFeedbacks.map(fb => <FeedbackRow key={fb.id} fb={fb} />)
           )}
         </TabsContent>
 
@@ -673,7 +647,7 @@ export default function FeedbackPage() {
               </Card>
             ) : (
               <div className="space-y-3">
-                {filteredFeedbacks.map(fb => <FeedbackCard key={fb.id} fb={fb} showUser />)}
+                {filteredFeedbacks.map(fb => <FeedbackRow key={fb.id} fb={fb} showUser />)}
               </div>
             )}
           </TabsContent>
@@ -686,6 +660,72 @@ export default function FeedbackPage() {
           </TabsContent>
         )}
       </Tabs>
+
+      {/* Feedback detail dialog */}
+      <Dialog open={!!viewingFeedback} onOpenChange={(open) => !open && setViewingFeedback(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto" onCloseAutoFocus={e => e.preventDefault()}>
+          {viewingFeedback && (() => {
+            const fb = viewingFeedback;
+            const typeConfig = TYPE_LABELS[fb.type] || TYPE_LABELS.other;
+            return (
+              <>
+                <DialogHeader>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant="outline" className={`text-xs ${typeConfig.color}`}>
+                      {typeConfig.label}
+                    </Badge>
+                    <StatusBadge status={fb.status} />
+                  </div>
+                  <DialogTitle className="text-base">{fb.title}</DialogTitle>
+                  <DialogDescription className="flex items-center gap-2">
+                    {fb.user_name && (
+                      <span className="flex items-center gap-1.5">
+                        <UserAvatar src={fb.user_avatar_url} name={fb.user_name} size="sm" />
+                        <span>{fb.user_name}</span>
+                        {fb.user_plan && <PlanBadge plan={fb.user_plan} />}
+                      </span>
+                    )}
+                    <span>· {formatTime(fb.created_at)}</span>
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4 py-2">
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{fb.content}</p>
+
+                  <Attachments urls={fb.attachments} />
+
+                  {fb.admin_response && (
+                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-1">
+                      <p className="text-xs font-medium text-primary">Phản hồi từ quản trị viên</p>
+                      <p className="text-sm whitespace-pre-wrap">{fb.admin_response}</p>
+                      {fb.responded_at && (
+                        <p className="text-xs text-muted-foreground">{formatTime(fb.responded_at)}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {isAdmin && (
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => {
+                        setViewingFeedback(null);
+                        openRespondDialog(fb);
+                      }}
+                    >
+                      <MessageSquareText className="w-3.5 h-3.5" />
+                      {fb.admin_response ? 'Sửa phản hồi' : 'Phản hồi'}
+                    </Button>
+                  </DialogFooter>
+                )}
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
 
       {/* Admin respond dialog */}
       <Dialog open={!!respondingTo} onOpenChange={(open) => !open && setRespondingTo(null)}>
