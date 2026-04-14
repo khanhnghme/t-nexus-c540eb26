@@ -539,16 +539,54 @@ serve(async (req) => {
       }
     }
 
-    let userName = userEmail || "Người dùng";
-    if (userId) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', userId)
-        .single();
-      if (profile?.full_name) {
-        userName = profile.full_name;
-      }
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "Bạn cần đăng nhập để sử dụng AI.", code: "UNAUTHENTICATED" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ─── Check AI daily usage limit ──────────────────────────────────
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+    // Get user's plan and limit
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('full_name, user_plan')
+      .eq('id', userId)
+      .single();
+
+    const userPlan = profileData?.user_plan || 'plan_free';
+    let userName = profileData?.full_name || userEmail || "Người dùng";
+
+    const { data: planLimitData } = await supabase
+      .from('plan_limits')
+      .select('max_ai_messages_per_day')
+      .eq('plan', userPlan)
+      .maybeSingle();
+
+    const maxMessages = planLimitData?.max_ai_messages_per_day ?? 5; // default 5
+
+    // Get today's usage
+    const { data: usageRow } = await supabase
+      .from('ai_daily_usage')
+      .select('message_count')
+      .eq('user_id', userId)
+      .eq('usage_date', today)
+      .maybeSingle();
+
+    const currentCount = usageRow?.message_count ?? 0;
+
+    // Check limit (null = unlimited)
+    if (maxMessages !== null && currentCount >= maxMessages) {
+      return new Response(JSON.stringify({ 
+        error: `Bạn đã sử dụng hết ${maxMessages} lượt hỏi AI hôm nay. Vui lòng quay lại ngày mai hoặc nâng cấp gói.`,
+        code: "AI_LIMIT_EXCEEDED",
+        usage: { used: currentCount, max: maxMessages }
+      }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Fetch system policy
@@ -573,58 +611,52 @@ serve(async (req) => {
     let currentProjectName: string | undefined;
     let userExtraContext = '';
 
-    if (userId) {
-      // Fetch user's extra context in parallel
-      const [notifRes, feedbackRes, invitationsRes, approvalsRes] = await Promise.all([
-        supabase.from('notifications').select('title, message, type, is_read, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
-        supabase.from('feedbacks').select('title, status, type, priority, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
-        supabase.from('project_invitations').select('group_id, status, created_at').eq('invited_user_id', userId).eq('status', 'pending').order('created_at', { ascending: false }).limit(5),
-        supabase.from('pending_approvals').select('group_id, status, created_at').eq('user_id', userId).eq('status', 'pending').order('created_at', { ascending: false }).limit(5),
-      ]);
+    // Fetch user's extra context in parallel
+    const [notifRes, feedbackRes, invitationsRes, approvalsRes] = await Promise.all([
+      supabase.from('notifications').select('title, message, type, is_read, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
+      supabase.from('feedbacks').select('title, status, type, priority, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
+      supabase.from('project_invitations').select('group_id, status, created_at').eq('invited_user_id', userId).eq('status', 'pending').order('created_at', { ascending: false }).limit(5),
+      supabase.from('pending_approvals').select('group_id, status, created_at').eq('user_id', userId).eq('status', 'pending').order('created_at', { ascending: false }).limit(5),
+    ]);
 
-      const extraLines: string[] = [];
+    const extraLines: string[] = [];
 
-      // Notifications
-      if (notifRes.data && notifRes.data.length > 0) {
-        extraLines.push('## THÔNG BÁO GẦN NHẤT CỦA BẠN');
-        for (const n of notifRes.data) {
-          const readStatus = n.is_read ? '(đã đọc)' : '(chưa đọc)';
-          extraLines.push(`- ${n.title}: ${n.message} ${readStatus}`);
-        }
-      }
-
-      // Feedbacks
-      if (feedbackRes.data && feedbackRes.data.length > 0) {
-        const statusMap: Record<string, string> = { 'open': 'Đang mở', 'in_progress': 'Đang xử lý', 'resolved': 'Đã giải quyết', 'closed': 'Đã đóng' };
-        extraLines.push('## PHẢN HỒI CỦA BẠN');
-        for (const f of feedbackRes.data) {
-          extraLines.push(`- "${f.title}" — Trạng thái: ${statusMap[f.status] || f.status}`);
-        }
-      }
-
-      // Pending invitations
-      if (invitationsRes.data && invitationsRes.data.length > 0) {
-        extraLines.push(`## LỜI MỜI ĐANG CHỜ: ${invitationsRes.data.length} lời mời`);
-      }
-
-      // Pending approvals
-      if (approvalsRes.data && approvalsRes.data.length > 0) {
-        extraLines.push(`## YÊU CẦU THAM GIA ĐANG CHỜ DUYỆT: ${approvalsRes.data.length} yêu cầu`);
-      }
-
-      if (extraLines.length > 0) {
-        userExtraContext = extraLines.join('\n');
+    if (notifRes.data && notifRes.data.length > 0) {
+      extraLines.push('## THÔNG BÁO GẦN NHẤT CỦA BẠN');
+      for (const n of notifRes.data) {
+        const readStatus = n.is_read ? '(đã đọc)' : '(chưa đọc)';
+        extraLines.push(`- ${n.title}: ${n.message} ${readStatus}`);
       }
     }
 
-    if (projectId && userId) {
+    if (feedbackRes.data && feedbackRes.data.length > 0) {
+      const statusMap: Record<string, string> = { 'open': 'Đang mở', 'in_progress': 'Đang xử lý', 'resolved': 'Đã giải quyết', 'closed': 'Đã đóng' };
+      extraLines.push('## PHẢN HỒI CỦA BẠN');
+      for (const f of feedbackRes.data) {
+        extraLines.push(`- "${f.title}" — Trạng thái: ${statusMap[f.status] || f.status}`);
+      }
+    }
+
+    if (invitationsRes.data && invitationsRes.data.length > 0) {
+      extraLines.push(`## LỜI MỜI ĐANG CHỜ: ${invitationsRes.data.length} lời mời`);
+    }
+
+    if (approvalsRes.data && approvalsRes.data.length > 0) {
+      extraLines.push(`## YÊU CẦU THAM GIA ĐANG CHỜ DUYỆT: ${approvalsRes.data.length} yêu cầu`);
+    }
+
+    if (extraLines.length > 0) {
+      userExtraContext = extraLines.join('\n');
+    }
+
+    if (projectId) {
       isProjectSpecific = true;
       const context = await fetchProjectContext(supabase, projectId, userId);
       if (context) {
         currentProjectName = context.project.name;
         projectContexts.push(buildProjectContext(context));
       }
-    } else if (userId) {
+    } else {
       const { data: memberships } = await supabase
         .from('group_members')
         .select('group_id')
@@ -650,7 +682,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash-lite",
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
@@ -685,6 +717,19 @@ serve(async (req) => {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // ─── Increment usage AFTER successful AI call ──────────────────
+    try {
+      await supabase.rpc('increment_ai_usage', { _user_id: userId, _date: today });
+    } catch (e) {
+      // Fallback: upsert directly
+      await supabase
+        .from('ai_daily_usage')
+        .upsert(
+          { user_id: userId, usage_date: today, message_count: currentCount + 1, updated_at: new Date().toISOString() },
+          { onConflict: 'user_id,usage_date' }
+        );
     }
 
     return new Response(response.body, {
