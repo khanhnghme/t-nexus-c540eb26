@@ -29,7 +29,7 @@ export function LottiePlayer({
         loop={loop}
         autoplay={autoplay}
         className={className}
-        speed={speed}
+        {...(speed !== 1 ? { lottieRef: undefined } : {})}
       />
     </Suspense>
   );
