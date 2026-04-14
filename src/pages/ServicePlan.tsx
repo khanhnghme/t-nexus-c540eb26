@@ -578,7 +578,6 @@ export default function ServicePlan() {
                     iconColor: 'text-purple-500',
                     note: t.aiMessagesNote,
                   },
-                  },
                 ];
 
                 return usageCards.map((card, idx) => {
