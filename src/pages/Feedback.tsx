@@ -39,9 +39,12 @@ import {
   MessageSquareText,
   Filter,
   MessageSquarePlus,
-  ImagePlus,
+  Paperclip,
   X,
   Mail,
+  FileText,
+  Image as ImageIcon,
+  Download,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -170,9 +173,7 @@ export default function FeedbackPage() {
     if (fileInputRef.current) fileInputRef.current.value = '';
 
     for (const file of files) {
-      if (!file.type.startsWith('image/')) {
-        toast({ title: 'Lỗi', description: `"${file.name}" không phải ảnh`, variant: 'destructive' });
-        return;
+      // No file type restriction - allow all files
       }
       if (file.size > MAX_FILE_SIZE_BYTES) {
         toast({ title: 'Lỗi', description: `"${file.name}" vượt quá ${MAX_FILE_SIZE_MB}MB`, variant: 'destructive' });
@@ -183,7 +184,7 @@ export default function FeedbackPage() {
     setAttachedFiles(prev => {
       const combined = [...prev, ...files];
       if (combined.length > MAX_FILES) {
-        toast({ title: 'Lỗi', description: `Tối đa ${MAX_FILES} ảnh`, variant: 'destructive' });
+        toast({ title: 'Lỗi', description: `Tối đa ${MAX_FILES} file`, variant: 'destructive' });
         return prev;
       }
       return combined;
@@ -315,25 +316,58 @@ export default function FeedbackPage() {
     );
   };
 
-  const AttachmentImages = ({ urls }: { urls?: string[] }) => {
+  const isImageUrl = (url: string) => {
+    const ext = url.split('?')[0].split('.').pop()?.toLowerCase() || '';
+    return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(ext);
+  };
+
+  const getFileNameFromUrl = (url: string) => {
+    const path = url.split('?')[0];
+    const segments = path.split('/');
+    const raw = segments[segments.length - 1] || 'file';
+    // Remove timestamp prefix like "1234567890-"
+    return raw.replace(/^\d+-/, '');
+  };
+
+  const Attachments = ({ urls }: { urls?: string[] }) => {
     if (!urls || urls.length === 0) return null;
     return (
       <div className="flex flex-wrap gap-2 mt-2">
         {urls.map((url, i) => {
           const normalizedUrl = normalizeStorageUrl(url) || url;
+          const isImg = isImageUrl(normalizedUrl);
+          const fileName = getFileNameFromUrl(normalizedUrl);
+
+          if (isImg) {
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setPreviewImage(normalizedUrl)}
+                className="relative w-20 h-20 rounded-lg overflow-hidden border border-border hover:border-primary transition-colors"
+              >
+                <img
+                  src={normalizedUrl}
+                  alt={`Đính kèm ${i + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </button>
+            );
+          }
+
           return (
-            <button
+            <a
               key={i}
-              type="button"
-              onClick={() => setPreviewImage(normalizedUrl)}
-              className="relative w-20 h-20 rounded-lg overflow-hidden border border-border hover:border-primary transition-colors"
+              href={normalizedUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border hover:border-primary transition-colors bg-muted/30 text-xs max-w-[200px]"
+              title={fileName}
             >
-              <img
-                src={normalizedUrl}
-                alt={`Ảnh đính kèm ${i + 1}`}
-                className="w-full h-full object-cover"
-              />
-            </button>
+              <FileText className="w-4 h-4 shrink-0 text-muted-foreground" />
+              <span className="truncate">{fileName}</span>
+              <Download className="w-3 h-3 shrink-0 text-muted-foreground" />
+            </a>
           );
         })}
       </div>
@@ -380,7 +414,7 @@ export default function FeedbackPage() {
           </p>
 
           {/* Attachments */}
-          <AttachmentImages urls={fb.attachments} />
+          <Attachments urls={fb.attachments} />
 
           {/* Time */}
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -501,43 +535,51 @@ export default function FeedbackPage() {
 
               {/* Image upload */}
               <div className="space-y-2">
-                <Label>Ảnh đính kèm <span className="text-muted-foreground text-xs">(tối đa {MAX_FILES} ảnh, {MAX_FILE_SIZE_MB}MB/ảnh)</span></Label>
+                <Label>File đính kèm <span className="text-muted-foreground text-xs">(tối đa {MAX_FILES} file, {MAX_FILE_SIZE_MB}MB/file)</span></Label>
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
                   multiple
                   className="hidden"
                   onChange={handleFileSelect}
                 />
                 <div className="flex flex-wrap gap-2 items-start">
-                  {attachedFiles.map((file, i) => (
-                    <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border group">
-                      <img
-                        src={URL.createObjectURL(file)}
-                        alt={file.name}
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeFile(i)}
-                        className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                      <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[9px] px-1 truncate">
-                        {file.name}
+                  {attachedFiles.map((file, i) => {
+                    const isImage = file.type.startsWith('image/');
+                    return (
+                      <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border group">
+                        {isImage ? (
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={file.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center bg-muted/50 p-1">
+                            <FileText className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeFile(i)}
+                          className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[9px] px-1 truncate">
+                          {file.name}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {attachedFiles.length < MAX_FILES && (
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       className="w-20 h-20 rounded-lg border-2 border-dashed border-border hover:border-primary transition-colors flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary"
                     >
-                      <ImagePlus className="w-5 h-5" />
-                      <span className="text-[10px]">Thêm ảnh</span>
+                      <Paperclip className="w-5 h-5" />
+                      <span className="text-[10px]">Thêm file</span>
                     </button>
                   )}
                 </div>
@@ -658,7 +700,7 @@ export default function FeedbackPage() {
           </DialogHeader>
 
           {respondingTo?.attachments && respondingTo.attachments.length > 0 && (
-            <AttachmentImages urls={respondingTo.attachments} />
+            <Attachments urls={respondingTo.attachments} />
           )}
 
           <div className="space-y-4 py-2">
