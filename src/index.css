@@ -1901,6 +1901,17 @@ html.no-animations [data-state="active"][role="tabpanel"] {
     display: none;
   }
 
+  .dashboard-grid.mobile-sidebar-open .grid-cell-logo {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 280px;
+    z-index: 51;
+    height: 48px;
+    padding: 0 12px;
+  }
+
   /* Hide topbar by default on mobile, show only when project nav exists */
   .grid-cell-topbar {
     display: none;
