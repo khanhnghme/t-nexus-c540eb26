@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, Loader2, Sparkles, AlertCircle, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import tNexusTextLogo from '@/assets/t-nexus-text.png';
@@ -32,6 +33,7 @@ export default function AIAssistant() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { user, profile } = useAuth();
+  const { activeWorkspace } = useWorkspace();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -39,8 +41,8 @@ export default function AIAssistant() {
       if (!user?.id) { setUsageLoading(false); return; }
       const today = new Date().toISOString().slice(0, 10);
       try {
-        const { data: ownerId } = await supabase.rpc('get_user_workspace_owner', { _user_id: user.id });
-        const effectiveOwnerId = ownerId || user.id;
+        // Use active workspace owner for shared pool quota
+        const effectiveOwnerId = activeWorkspace?.owner_id || user.id;
         const [usageRes, ownerProfileRes] = await Promise.all([
           supabase.rpc('get_owner_ai_usage_today', { _owner_id: effectiveOwnerId, _date: today }),
           supabase.from('profiles').select('user_plan').eq('id', effectiveOwnerId).single(),
@@ -55,7 +57,7 @@ export default function AIAssistant() {
       setUsageLoading(false);
     };
     loadUsage();
-  }, [user?.id]);
+  }, [user?.id, activeWorkspace?.id]);
 
   const isUserScrollingUp = useRef(false);
 
