@@ -500,9 +500,9 @@ export default function FeedbackPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="suggestion">💡 Đề xuất cải tiến</SelectItem>
-                    <SelectItem value="bug">🐛 Báo lỗi</SelectItem>
-                    <SelectItem value="other">📝 Khác</SelectItem>
+                    <SelectItem value="suggestion"><span>💡 Đề xuất cải tiến</span></SelectItem>
+                    <SelectItem value="bug"><span>🐛 Báo lỗi</span></SelectItem>
+                    <SelectItem value="other"><span>📝 Khác</span></SelectItem>
                   </SelectContent>
                 </Select>
               </div>
