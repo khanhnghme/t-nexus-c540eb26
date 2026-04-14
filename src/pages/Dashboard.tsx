@@ -405,48 +405,10 @@ export default function Dashboard() {
   const hiddenCount = groups.filter(g => hiddenProjectIds.has(g.id)).length;
   const pendingCount = pendingApprovalGroups.length;
 
-  const fetchDashboardData = async () => {
-    try {
-      const { data: memberData, error: memberError } = await supabase
-        .from('group_members')
-        .select('group_id')
-        .eq('user_id', user!.id);
-
-      if (memberError) throw memberError;
-
-      const groupIds = memberData?.map((m) => m.group_id) || [];
-
-      if (groupIds.length === 0) {
-        setGroups([]);
-        return;
-      }
-
-      let query = supabase
-        .from('groups')
-        .select('*')
-        .in('id', groupIds)
-        .order('created_at', { ascending: false });
-
-      // Filter by active workspace if available
-      if (wsAvailable && activeWorkspace?.id) {
-        query = query.eq('workspace_id', activeWorkspace.id);
-      }
-
-      const { data: groupsData, error: groupsError } = await query;
-
-      if (groupsError) throw groupsError;
-
-      const allGroups = groupsData || [];
-      setGroups(allGroups);
-      // Compute stats from data we already have (no extra queries)
-      setOwnedProjectCount(allGroups.filter(g => g.created_by === user!.id).length);
-      setJoinedProjectCount(memberData?.length || 0);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const refreshDashboard = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['dashboard-data', user?.id] });
+    queryClient.invalidateQueries({ queryKey: ['pending-approvals', user?.id] });
+  }, [queryClient, user?.id]);
 
   const getRoleBadge = () => {
     if (isAdmin) return (
