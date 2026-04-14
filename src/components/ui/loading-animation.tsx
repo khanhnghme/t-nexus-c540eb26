@@ -25,20 +25,18 @@ export function LoadingAnimation({
         <LottiePlayer
           animationData={animationData}
           loop
-          className={`w-[${px}px] h-[${px}px]`}
-          style-width={px}
+          className="mx-auto"
         />
       ) : (
         <div className="flex items-center gap-1.5" style={{ height: px }}>
           {[0, 1, 2].map((i) => (
             <span
               key={i}
-              className="inline-block rounded-full bg-muted-foreground/40 animate-bounce-in"
+              className="inline-block rounded-full bg-muted-foreground/40"
               style={{
                 width: Math.max(px / 6, 6),
                 height: Math.max(px / 6, 6),
-                animationDelay: `${i * 120}ms`,
-                animationIterationCount: "infinite",
+                animation: `bounce-in 0.6s ease-in-out ${i * 120}ms infinite`,
               }}
             />
           ))}

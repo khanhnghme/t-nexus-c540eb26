@@ -1,4 +1,4 @@
-import React, { Suspense } from "react";
+import React, { Suspense, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 const LottieReact = React.lazy(() => import("lottie-react"));
@@ -18,6 +18,14 @@ export function LottiePlayer({
   className,
   speed = 1,
 }: LottiePlayerProps) {
+  const lottieRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (lottieRef.current && speed !== 1) {
+      lottieRef.current.setSpeed(speed);
+    }
+  }, [speed]);
+
   return (
     <Suspense
       fallback={
@@ -29,7 +37,7 @@ export function LottiePlayer({
         loop={loop}
         autoplay={autoplay}
         className={className}
-        {...(speed !== 1 ? { lottieRef: undefined } : {})}
+        lottieRef={lottieRef}
       />
     </Suspense>
   );
