@@ -232,61 +232,6 @@ const sections: SectionData[] = [
       },
     ],
   },
-  {
-    id: 'admin',
-    label: 'Phần III — Admin',
-    roleLabel: 'OwnerSystem',
-    roleIcon: Lock,
-    gradientClass: 'from-destructive/80 to-destructive',
-    badgeClass: 'bg-destructive/15 text-destructive',
-    notice: '🔒 Chức năng quản trị chỉ dành cho Admin. Thành viên thường không có quyền truy cập.',
-    chapters: [
-      {
-        id: 'user-management', title: 'Quản lý thành viên', icon: Users, image: tip15,
-        description: 'Quản lý toàn bộ người dùng: phê duyệt, phân quyền, khóa tài khoản.',
-        details: 'Admin có quyền quản lý toàn bộ user trong hệ thống. Phê duyệt tài khoản mới đăng ký trước khi họ có thể đăng nhập. Phân vai trò cho user: Member (thành viên thường), Thành viên NC (trưởng nhóm, có quyền quản lý task), Admin (quản trị viên). Có thể tạm khóa (suspend) tài khoản vi phạm với lý do cụ thể và thời hạn, hoặc xóa tài khoản vĩnh viễn. Hỗ trợ tìm kiếm user theo tên, MSSV, email.',
-        steps: [
-          'Xem danh sách tất cả thành viên — tìm kiếm theo tên, MSSV hoặc email',
-          'Phê duyệt tài khoản mới đăng ký để cho phép đăng nhập',
-          'Phân vai trò: Member → Thành viên NC → Admin',
-          'Tạm khóa hoặc xóa tài khoản vi phạm kèm lý do',
-        ],
-      },
-      {
-        id: 'system-admin', title: 'Quản trị hệ thống', icon: Shield, image: tip16,
-        description: 'Cài đặt toàn cục: bảo trì, chính sách, thông báo hệ thống.',
-        details: 'Trang quản trị hệ thống cho phép admin cấu hình toàn bộ thiết lập. Bật/tắt chế độ bảo trì (Maintenance Mode) khi cần nâng cấp hệ thống — lúc này user thường sẽ thấy thông báo bảo trì. Cấu hình chính sách: giới hạn dung lượng file upload cho user, số dự án tối đa mỗi người. Gửi thông báo hệ thống (mandatory notification) đến toàn bộ hoặc một nhóm user cụ thể. Xem log lỗi hệ thống để debug.',
-        steps: [
-          'Bật/tắt chế độ bảo trì (Maintenance Mode) khi cần nâng cấp',
-          'Cấu hình chính sách: giới hạn dung lượng, số dự án tối đa mỗi user',
-          'Gửi thông báo hệ thống đến toàn bộ hoặc nhóm user cụ thể',
-          'Theo dõi log lỗi hệ thống để phát hiện và xử lý sự cố',
-        ],
-      },
-      {
-        id: 'backup', title: 'Sao lưu dữ liệu', icon: FolderArchive, image: tip17,
-        description: 'Backup và restore dữ liệu dự án, đảm bảo an toàn thông tin.',
-        details: 'Chức năng sao lưu giúp admin bảo vệ dữ liệu dự án. Xuất toàn bộ dữ liệu của một dự án ra file JSON (bao gồm task, giai đoạn, thành viên, bài nộp, điểm...). Khi cần, có thể khôi phục (restore) dữ liệu từ bản sao lưu trước đó. Hệ thống cũng hỗ trợ di chuyển dữ liệu giữa các dự án (data migration) để tái sử dụng cấu trúc.',
-        steps: [
-          'Chọn dự án cần sao lưu từ danh sách',
-          'Bấm "Xuất dữ liệu" để download file JSON backup',
-          'Khôi phục dữ liệu bằng cách upload file backup và xác nhận',
-          'Sử dụng Data Migration để copy cấu trúc giữa các dự án',
-        ],
-      },
-      {
-        id: 'utilities', title: 'Tiện ích Admin', icon: Wrench, image: tip18,
-        description: 'Công cụ hỗ trợ: chỉnh profile hàng loạt, quản lý thành tích.',
-        details: 'Các tiện ích admin bao gồm nhiều công cụ hỗ trợ quản lý. Chỉnh sửa thông tin profile của bất kỳ user nào (khi user yêu cầu hỗ trợ). Quản lý thành tích và chứng chỉ cho user: thêm, sửa, xóa các mục thành tích hiển thị trên profile công khai. Đặt lại mật khẩu cho user khi họ quên. Các công cụ hệ thống khác giúp admin vận hành nền tảng suôn sẻ.',
-        steps: [
-          'Chỉnh sửa thông tin profile của user khi cần hỗ trợ',
-          'Quản lý thành tích và chứng chỉ cho user',
-          'Đặt lại mật khẩu cho user quên mật khẩu',
-          'Truy cập các công cụ hệ thống hỗ trợ vận hành',
-        ],
-      },
-    ],
-  },
 ];
 
 const allChapterIds = sections.flatMap(s => s.chapters.map(c => c.id));
