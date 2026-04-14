@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Spinner } from '@/components/ui/spinner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,7 +31,7 @@ import { r2Storage } from '@/lib/r2Storage';
 import { normalizeStorageUrl } from '@/lib/r2Storage';
 import {
   Send,
-  Loader2,
+  // Loader2 replaced by Spinner
   Lightbulb,
   Clock,
   Bug,

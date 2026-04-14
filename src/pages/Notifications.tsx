@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Bell, Trash2, Check, Clock, CheckCircle2, Send, UserPlus, Edit, X as XIcon, MailOpen, Loader2, Inbox, Filter, Shield, Eye, Calendar, User, ChevronDown, ChevronUp, Mail } from 'lucide-react';
+import { Bell, Trash2, Check, Clock, CheckCircle2, Send, UserPlus, Edit, X as XIcon, MailOpen, Inbox, Filter, Shield, Eye, Calendar, User, ChevronDown, ChevronUp, Mail } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -451,7 +452,7 @@ export default function Notifications() {
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-            <Loader2 className="w-8 h-8 animate-spin mb-3" />
+            <Spinner size="lg" className="mb-3" />
             <p className="text-sm">{t.loading}</p>
           </div>
         ) : filtered.length === 0 ? (
