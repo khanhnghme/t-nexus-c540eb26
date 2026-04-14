@@ -355,7 +355,7 @@ export const en = {
           'Total 200 unique seats (shared across all WSs, free)',
           'Unlimited meeting time',
           'Unlimited activity logs',
-          'AI Assistant: 150 messages/month',
+          'AI Assistant: 500 messages/month',
         ],
         features: [
           'Unlock Business features for all members',
@@ -3107,7 +3107,7 @@ export const en = {
     plan_free: ['1 Workspace', '5 total projects', '5 total unique seats', '500 MB total storage', 'Upload 5 MB/file', 'AI Assistant: 30/month'],
     plan_plus: ['5 Workspaces', '15 total projects', '15 total unique seats', '10 GB total storage', 'Upload 100 MB/file', 'AI Assistant: 100/month'],
     plan_pro: ['20 Workspaces', '50 total projects', '50 total unique seats', '50 GB total storage', 'Upload 5 GB/file', 'AI Assistant: 250/month'],
-    plan_business: ['50 Workspaces', '500 total projects', '200 total unique seats', '200 GB total storage', 'Upload 5 GB/file', 'AI Assistant: 150/month'],
+    plan_business: ['50 Workspaces', '500 total projects', '200 total unique seats', '200 GB total storage', 'Upload 5 GB/file', 'AI Assistant: 500/month'],
     plan_custom: ['Unlimited', 'Unlimited projects', 'Unlimited seats', 'Unlimited storage', 'Upload 5 GB/file', 'AI Assistant: Unlimited'],
   },
 
@@ -3165,7 +3165,7 @@ export const en = {
       'Unlimited meetings',
       'System administration',
       'Express Support (same day)',
-      'AI Assistant: 150 messages/month',
+      'AI Assistant: 500 messages/month',
       'Bundled add-ons, 20% off',
     ],
     plan_custom: [
