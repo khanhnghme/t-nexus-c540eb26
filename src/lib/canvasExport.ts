@@ -152,7 +152,8 @@ function getInlineText(block: AnyBlock): string {
     .join("");
 }
 
-export function downloadPdf(blocks: AnyBlock[], title = "Untitled") {
+export async function downloadPdf(blocks: AnyBlock[], title = "Untitled") {
+  const { default: jsPDF } = await import("jspdf");
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;

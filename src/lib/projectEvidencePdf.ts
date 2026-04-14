@@ -496,6 +496,8 @@ const loadImageAsBase64 = async (imageSrc: string): Promise<PdfImage | null> => 
 
 const generateProjectEvidencePdf = async (data: ExportData, includeTimestampInName: boolean) => {
   const { project, members, stages, tasks, taskScores, stageScores, finalScores, scoreAppeals, resources, activityLogs, meetings, meetingAttendance, submissions, stageWeights, options } = data;
+  const { default: jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
