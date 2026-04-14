@@ -2490,6 +2490,7 @@ html.no-animations [data-state="active"][role="tabpanel"] {
     border-left: none;
     padding-left: 0;
   }
+}
 
 /* BlockNote formatting toolbar - ensure color picker dropdown is not clipped */
 .bn-formatting-toolbar {
