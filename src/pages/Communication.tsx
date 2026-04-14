@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Spinner } from '@/components/ui/spinner';
 import { deleteWithUndo } from '@/lib/deleteWithUndo';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,7 +18,7 @@ import {
   ChevronLeft,
   AtSign,
   FolderKanban,
-  Loader2,
+  // Loader2 replaced by Spinner
   ExternalLink,
   Users,
   Clock,
@@ -735,7 +736,7 @@ export default function Communication() {
           {/* Project List */}
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-16">
-               <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
+               <Spinner size="xl" className="text-primary mb-4" />
                <p className="text-muted-foreground">{comm.loadingProjects}</p>
             </div>
           ) : projects.length === 0 ? (

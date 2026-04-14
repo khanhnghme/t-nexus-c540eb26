@@ -17,10 +17,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { r2Storage } from '@/lib/r2Storage';
 import { 
   User, Mail, GraduationCap, BookOpen, Phone, Sparkles, FileText,
-  Camera, Loader2, Save, Shield, Crown, UserCheck, Calendar, Star,
+  Camera, Save, Shield, Crown, UserCheck, Calendar, Star,
   CheckCircle2, AlertCircle, Edit3, X, FolderKanban, HardDrive,
   Lock, Unlock, Zap, ArrowRight, Plus, Bell,
 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { format } from 'date-fns';
 import { vi as viLocale } from 'date-fns/locale';
 
@@ -222,7 +223,7 @@ export default function PersonalInfo() {
                 </Avatar>
                 <button onClick={() => fileInputRef.current?.click()} disabled={isUploadingAvatar}
                   className="absolute bottom-1 right-1 p-2 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all hover:scale-110">
-                  {isUploadingAvatar ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                  {isUploadingAvatar ? <Spinner size="sm" /> : <Camera className="w-4 h-4" />}
                 </button>
                 <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
               </div>
@@ -355,7 +356,7 @@ export default function PersonalInfo() {
                 <Separator />
                 <div className="flex gap-3">
                   <Button onClick={handleSave} disabled={isSaving} className="flex-1 sm:flex-none">
-                    {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                    {isSaving ? <Spinner size="sm" className="mr-2" /> : <Save className="w-4 h-4 mr-2" />}
                     {t.save}
                   </Button>
                   <Button variant="ghost" onClick={() => setIsEditing(false)} disabled={isSaving}>

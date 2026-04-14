@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { Spinner } from '@/components/ui/spinner';
 
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,7 +35,7 @@ import {
   FolderKanban,
   ArrowRight,
   Plus,
-  Loader2,
+  // Loader2 replaced by Spinner
   Sparkles,
   Shield,
   Star,
@@ -518,7 +519,7 @@ export default function Dashboard() {
     return (
       <>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <Spinner size="lg" className="text-primary" />
         </div>
       </>
     );
@@ -875,7 +876,7 @@ export default function Dashboard() {
                               disabled={processingInvitation === inv.id}
                             >
                               {processingInvitation === inv.id ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <Spinner size="sm" />
                               ) : (
                                 <CheckCircle2 className="w-3.5 h-3.5" />
                               )}
@@ -938,7 +939,7 @@ export default function Dashboard() {
                               disabled={processingInvitation === inv.id}
                             >
                               {processingInvitation === inv.id ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <Spinner size="sm" />
                               ) : (
                                 <CheckCircle2 className="w-3.5 h-3.5" />
                               )}

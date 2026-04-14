@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Spinner } from '@/components/ui/spinner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,7 +31,7 @@ import { r2Storage } from '@/lib/r2Storage';
 import { normalizeStorageUrl } from '@/lib/r2Storage';
 import {
   Send,
-  Loader2,
+  // Loader2 replaced by Spinner
   Lightbulb,
   Clock,
   Bug,
@@ -585,7 +586,7 @@ export default function FeedbackPage() {
                   Góp ý sẽ được gửi riêng tư đến quản trị viên
                 </p>
                 <Button onClick={handleCreate} disabled={isCreating} className="gap-2">
-                  {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {isCreating ? <Spinner size="sm" /> : <Send className="w-4 h-4" />}
                   Gửi góp ý
                 </Button>
               </div>
@@ -597,7 +598,7 @@ export default function FeedbackPage() {
         <TabsContent value="my" className="space-y-3">
           {isLoading ? (
             <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+               <Spinner size="lg" className="text-primary" />
             </div>
           ) : myFeedbacks.length === 0 ? (
             <Card>
@@ -660,7 +661,7 @@ export default function FeedbackPage() {
 
             {isLoading ? (
               <div className="flex items-center justify-center py-16">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <Spinner size="lg" className="text-primary" />
               </div>
             ) : filteredFeedbacks.length === 0 ? (
               <Card>
@@ -818,7 +819,7 @@ export default function FeedbackPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setRespondingTo(null)}>Hủy</Button>
             <Button onClick={handleAdminRespond} disabled={isSaving} className="gap-2">
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              {isSaving ? <Spinner size="sm" /> : <Send className="w-4 h-4" />}
               Lưu phản hồi
             </Button>
           </DialogFooter>

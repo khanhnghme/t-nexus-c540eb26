@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Building2, Loader2 } from 'lucide-react';
+import { Building2 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { useReadOnlyGuard } from '@/components/ReadOnlyGuard';
 
 export default function CreateWorkspace() {
@@ -106,7 +107,7 @@ export default function CreateWorkspace() {
                 {cw.cancelBtn}
               </Button>
               <Button type="submit" className="flex-1" disabled={isSubmitting || !name.trim()}>
-                {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {isSubmitting && <Spinner size="sm" className="mr-2" />}
                 {cw.createBtn}
               </Button>
             </div>
