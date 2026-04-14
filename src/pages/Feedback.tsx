@@ -414,7 +414,7 @@ export default function FeedbackPage() {
           </p>
 
           {/* Attachments */}
-          <AttachmentImages urls={fb.attachments} />
+          <Attachments urls={fb.attachments} />
 
           {/* Time */}
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -700,7 +700,7 @@ export default function FeedbackPage() {
           </DialogHeader>
 
           {respondingTo?.attachments && respondingTo.attachments.length > 0 && (
-            <AttachmentImages urls={respondingTo.attachments} />
+            <Attachments urls={respondingTo.attachments} />
           )}
 
           <div className="space-y-4 py-2">
