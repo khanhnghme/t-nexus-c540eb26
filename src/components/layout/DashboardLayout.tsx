@@ -462,9 +462,9 @@ export default function DashboardLayout({
             {/* Scrollable nav */}
             <div className="sidebar-nav-scroll">
               {location.pathname.startsWith('/admin') ? (
-                <AdminSidebarNav collapsed={sidebarCollapsed} />
+                <AdminSidebarNav collapsed={isMobileOpen ? false : sidebarCollapsed} />
               ) : (
-                <SidebarTreeNav collapsed={sidebarCollapsed} />
+                <SidebarTreeNav collapsed={isMobileOpen ? false : sidebarCollapsed} />
               )}
             </div>
 
