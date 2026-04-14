@@ -1,32 +1,42 @@
 
 
-## Plan: Thêm dòng "Tax / VAT (0%)" vào Checkout Step 1 & Step 2
+## Plan: Thêm trang Tìm kiếm toàn diện (Global Search)
 
-Hiện tại dòng "Tax / VAT (0%)" chỉ được plan thêm vào Summary và bản in, nhưng chưa có ở 2 trang checkout. Cần thêm vào cả 2 nơi để nhất quán.
+Tạo trang `/search` riêng biệt với khả năng tìm kiếm "siêu chi tiết" xuyên suốt toàn bộ dữ liệu trong hệ thống, đặt ngay dưới mục "Trang chủ" trên thanh điều hướng.
 
-### Files thay đổi
+### Tính năng tìm kiếm
 
-**1. `src/pages/Checkout.tsx`** (Step 1 — Order Summary card, ~line 592)
-- Thêm dòng "Tax / VAT (0%) — $0.00" ngay sau Separator và trước dòng Total:
-```tsx
-<div className="flex justify-between text-sm text-muted-foreground">
-  <span>{isVi ? 'Thuế VAT (0%)' : 'Tax / VAT (0%)'}</span>
-  <span>$0.00</span>
-</div>
-```
+- **Dự án**: tìm theo tên, mô tả, mã lớp
+- **Nhiệm vụ (Tasks)**: tìm theo tiêu đề, mô tả, trạng thái
+- **Thành viên**: tìm theo tên, email
+- **Tài nguyên (Resources)**: tìm theo tên file
+- **Lịch & Cuộc họp**: tìm theo tiêu đề
+- **Feedback**: tìm theo tiêu đề, nội dung
 
-**2. `src/pages/CheckoutPayment.tsx`** (Step 2 — Totals section, ~line 414)
-- Thêm dòng tương tự ngay trước Separator và dòng Total:
-```tsx
-<div className="flex justify-between text-sm text-muted-foreground">
-  <span>{isVi ? 'Thuế VAT (0%)' : 'Tax / VAT (0%)'}</span>
-  <span>$0.00</span>
-</div>
-```
+Kết quả được phân loại theo tab, có highlight từ khóa, click để đi thẳng đến trang chi tiết.
 
-**3. Các file đã plan trước đó** (Summary, InvoiceTemplate, PDF) — vẫn thực hiện theo plan đã duyệt.
+### Chi tiết kỹ thuật
 
-**4. Deploy** edge function `payment-confirmation-email` để cập nhật PDF.
+**1. Tạo file `src/pages/Search.tsx`**
+- Input tìm kiếm lớn ở đầu trang (autofocus)
+- Debounce 300ms trước khi query
+- Tabs phân loại: Tất cả / Dự án / Nhiệm vụ / Thành viên / Tài nguyên / Cuộc họp / Feedback
+- Mỗi tab query Supabase bằng `.ilike()` hoặc `.textSearch()` trên các bảng tương ứng
+- Hiển thị kết quả dạng card nhỏ, có icon + highlight keyword + link navigate
+- Empty state khi chưa nhập hoặc không có kết quả
+- Loading skeleton khi đang tìm
 
-### Tổng cộng: 4 files code + 1 deploy
+**2. Cập nhật `src/App.tsx`**
+- Import `Search` page
+- Thêm route `/search` trong protected layout (cạnh `/dashboard`)
+
+**3. Cập nhật `src/components/SidebarTreeNav.tsx`**
+- Thêm link `/search` với icon `Search` ngay dưới Home (cả expanded và collapsed mode)
+
+**4. Cập nhật i18n** (`src/lib/i18n/en.ts` + `vi.ts`)
+- EN: `search: 'Search'` trong sidebar
+- VI: `search: 'Tìm kiếm'` trong sidebar  
+- Thêm section translations cho trang Search (placeholder, tab labels, empty states)
+
+### Tổng cộng: 4 files thay đổi + 1 file mới
 
