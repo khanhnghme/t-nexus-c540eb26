@@ -512,7 +512,7 @@ export default function ServicePlan() {
               {t.usageOverview}
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {(() => {
                 const totalStorage = wsUsages.reduce((s, w) => s + w.storageMb, 0);
 
@@ -565,7 +565,19 @@ export default function ServicePlan() {
                     bonus: accountLimits.bonusStorageMb,
                     suffix: 'MB',
                     iconColor: 'text-orange-500',
-                    formatMax: (v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)} GB` : `${v} MB`,
+                     formatMax: (v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)} GB` : `${v} MB`,
+                  },
+                  {
+                    label: t.aiMessages,
+                    icon: <Bot className="w-4 h-4" />,
+                    current: aiUsage,
+                    max: aiLimit,
+                    baseMax: aiLimit,
+                    bonus: 0,
+                    suffix: '/day',
+                    iconColor: 'text-purple-500',
+                    note: t.aiMessagesNote,
+                  },
                   },
                 ];
 
