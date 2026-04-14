@@ -446,7 +446,7 @@ export default function FeedbackPage() {
       <div>
         <h1 className="text-2xl font-heading font-bold tracking-tight flex items-center gap-3">
           <Lightbulb className="w-8 h-8 text-warning" />
-          Góp ý / Báo lỗi
+          Góp ý & Báo lỗi
         </h1>
         <p className="text-muted-foreground mt-1">
           Gửi góp ý riêng tư đến quản trị viên về hệ thống và quy trình làm việc
