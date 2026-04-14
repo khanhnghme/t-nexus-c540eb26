@@ -387,7 +387,7 @@ const SYSTEM_KNOWLEDGE_BASE = `
 - **Dark mode**: hỗ trợ giao diện tối
 - **Profile công khai**: trang cá nhân có thể chia sẻ, hiển thị thành tựu
 - **Thông báo**: chuông thông báo realtime cho task, deadline, lời mời
-- **Trợ lý AI (Bé Củ Cải)**: hỗ trợ tra cứu thông tin nhanh về dự án và hệ thống
+- **Trợ lý AI**: hỗ trợ tra cứu thông tin nhanh về dự án và hệ thống
 
 ### Admin (Quản trị viên)
 - Quản lý tài khoản: duyệt/khóa/xóa người dùng, đặt lại mật khẩu
@@ -425,7 +425,7 @@ Người dùng đang ở ngoài phạm vi dự án cụ thể.
 - Có thể trả lời tổng quan về tất cả các dự án
 - Khi đề cập đến công việc, PHẢI nói rõ thuộc dự án nào`;
 
-  return `Bạn là "Bé Củ Cải" — trợ lý AI thân thiện của hệ thống T-Nexus.
+  return `Bạn là trợ lý AI của hệ thống T-Nexus — thân thiện, chuyên nghiệp và hữu ích.
 
 ## THÔNG TIN
 - Người dùng: ${userName}
