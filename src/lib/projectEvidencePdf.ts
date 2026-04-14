@@ -1,6 +1,5 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
+import type jsPDFType from 'jspdf';
 import type { Group, GroupMember, Task, Stage } from '@/types/database';
 import ettLogoImage from '@/assets/t-nexus-text.png';
 
@@ -241,7 +240,7 @@ interface TOCEntry {
 type PdfImage = { dataUrl: string; width: number; height: number };
 
 const addCoverPage = (
-  doc: jsPDF, 
+  doc: any, 
   pageWidth: number, 
   pageHeight: number,
   project: Group,
@@ -337,7 +336,7 @@ const addCoverPage = (
 };
 
 // Add Table of Contents
-const addTableOfContents = (doc: jsPDF, pageWidth: number, toc: TOCEntry[]) => {
+const addTableOfContents = (doc: any, pageWidth: number, toc: TOCEntry[]) => {
   doc.addPage();
   
   // Header
@@ -387,7 +386,7 @@ const addTableOfContents = (doc: jsPDF, pageWidth: number, toc: TOCEntry[]) => {
 };
 
 // Add chapter heading
-const addChapterHeading = (doc: jsPDF, title: string, yPos: number, pageWidth: number): number => {
+const addChapterHeading = (doc: any, title: string, yPos: number, pageWidth: number): number => {
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...ETT_TEAL);
@@ -402,7 +401,7 @@ const addChapterHeading = (doc: jsPDF, title: string, yPos: number, pageWidth: n
 };
 
 // Add section heading
-const addSectionHeading = (doc: jsPDF, title: string, yPos: number): number => {
+const addSectionHeading = (doc: any, title: string, yPos: number): number => {
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(80, 80, 80);
@@ -411,7 +410,7 @@ const addSectionHeading = (doc: jsPDF, title: string, yPos: number): number => {
 };
 
 // Add sub-section heading
-const addSubSectionHeading = (doc: jsPDF, title: string, yPos: number): number => {
+const addSubSectionHeading = (doc: any, title: string, yPos: number): number => {
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(100, 100, 100);
@@ -420,7 +419,7 @@ const addSubSectionHeading = (doc: jsPDF, title: string, yPos: number): number =
 };
 
 // Add footer with page number
-const addFooter = (doc: jsPDF, pageWidth: number, pageHeight: number, pageNumber: number, totalPages: number) => {
+const addFooter = (doc: any, pageWidth: number, pageHeight: number, pageNumber: number, totalPages: number) => {
   // Footer line
   doc.setDrawColor(...ETT_TEAL);
   doc.setLineWidth(0.3);
@@ -450,7 +449,7 @@ const addFooter = (doc: jsPDF, pageWidth: number, pageHeight: number, pageNumber
 };
 
 // Check if we need a new page
-const checkNewPage = (doc: jsPDF, yPos: number, pageHeight: number, minSpace: number = 40): number => {
+const checkNewPage = (doc: any, yPos: number, pageHeight: number, minSpace: number = 40): number => {
   if (yPos > pageHeight - minSpace) {
     doc.addPage();
     return 25;
@@ -497,6 +496,8 @@ const loadImageAsBase64 = async (imageSrc: string): Promise<PdfImage | null> => 
 
 const generateProjectEvidencePdf = async (data: ExportData, includeTimestampInName: boolean) => {
   const { project, members, stages, tasks, taskScores, stageScores, finalScores, scoreAppeals, resources, activityLogs, meetings, meetingAttendance, submissions, stageWeights, options } = data;
+  const { default: jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();

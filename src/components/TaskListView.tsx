@@ -736,6 +736,8 @@ export default function TaskListView({
   const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set(stages.map(s => s.id)));
   const [filterStage, setFilterStage] = useState<string>('all');
   const [showHidden, setShowHidden] = useState(false);
+  const TASK_RENDER_LIMIT = 30;
+  const [fullyExpandedStages, setFullyExpandedStages] = useState<Set<string>>(new Set());
   const [taskFilters, setTaskFilters] = useState<TaskFiltersType>(defaultTaskFilters);
 
   // Auto-collapse completed stages - per user preference in localStorage
@@ -1502,13 +1504,16 @@ export default function TaskListView({
                       </div>
                     ) : (
                       <Droppable droppableId={stage.id} type="TASK">
-                        {(provided, snapshot) => (
+                        {(provided, snapshot) => {
+                          const showAll = fullyExpandedStages.has(stage.id) || stageTasks.length <= TASK_RENDER_LIMIT;
+                          const visibleTasks = showAll ? stageTasks : stageTasks.slice(0, TASK_RENDER_LIMIT);
+                          return (
                           <div
                             ref={provided.innerRef}
                             {...provided.droppableProps}
                             className={`space-y-2 min-h-[40px] rounded-lg transition-colors ${snapshot.isDraggingOver ? 'bg-primary/5' : ''}`}
                           >
-                            {stageTasks.map((task, index) => (
+                            {visibleTasks.map((task, index) => (
                               <Draggable key={task.id} draggableId={task.id} index={index} isDragDisabled={!isLeaderInGroup || isMultiSelectMode}>
                                 {(dragProvided, dragSnapshot) => (
                                   <div
@@ -1545,9 +1550,20 @@ export default function TaskListView({
                                 )}
                               </Draggable>
                             ))}
+                            {!showAll && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full text-xs text-muted-foreground"
+                                onClick={() => setFullyExpandedStages(prev => new Set([...prev, stage.id]))}
+                              >
+                                Hiện thêm {stageTasks.length - TASK_RENDER_LIMIT} task còn lại
+                              </Button>
+                            )}
                             {provided.placeholder}
                           </div>
-                        )}
+                          );
+                        }}
                       </Droppable>
                     )}
                     {isLeaderInGroup && (

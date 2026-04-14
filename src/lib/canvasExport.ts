@@ -1,4 +1,4 @@
-import jsPDF from "jspdf";
+import type jsPDFType from "jspdf";
 
 // Use `any` for blocks since our custom block types (taskList, memberList, etc.)
 // are not part of BlockNote's default Block type union.
@@ -152,7 +152,8 @@ function getInlineText(block: AnyBlock): string {
     .join("");
 }
 
-export function downloadPdf(blocks: AnyBlock[], title = "Untitled") {
+export async function downloadPdf(blocks: AnyBlock[], title = "Untitled") {
+  const { default: jsPDF } = await import("jspdf");
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
