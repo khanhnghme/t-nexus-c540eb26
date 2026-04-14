@@ -711,7 +711,7 @@ export const en = {
       personalInfo: 'Information',
       settings: 'Settings',
       tips: 'Tips',
-      feedback: 'Feedback / Bugs',
+      feedback: 'Feedback & Bugs',
       systemMembers: 'Members',
       backup: 'Backup',
       admin: 'Admin',

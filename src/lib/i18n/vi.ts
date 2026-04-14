@@ -699,7 +699,7 @@ export const vi: Translations = {
       personalInfo: 'Thông tin',
       settings: 'Cài đặt',
       tips: 'Mẹo',
-      feedback: 'Góp ý / Báo lỗi',
+      feedback: 'Góp ý & Lỗi',
       systemMembers: 'Thành viên',
       backup: 'Sao lưu',
       admin: 'Quản trị',
