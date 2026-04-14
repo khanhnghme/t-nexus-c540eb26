@@ -584,7 +584,7 @@ export default function FeedbackPage() {
               </CardContent>
             </Card>
           ) : (
-            myFeedbacks.map(fb => <FeedbackCard key={fb.id} fb={fb} />)
+            myFeedbacks.map(fb => <FeedbackRow key={fb.id} fb={fb} />)
           )}
         </TabsContent>
 
@@ -647,7 +647,7 @@ export default function FeedbackPage() {
               </Card>
             ) : (
               <div className="space-y-3">
-                {filteredFeedbacks.map(fb => <FeedbackCard key={fb.id} fb={fb} showUser />)}
+                {filteredFeedbacks.map(fb => <FeedbackRow key={fb.id} fb={fb} showUser />)}
               </div>
             )}
           </TabsContent>
