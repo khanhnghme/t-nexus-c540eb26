@@ -686,52 +686,76 @@ export default function FeedbackPage() {
 
       {/* Feedback detail dialog */}
       <Dialog open={!!viewingFeedback} onOpenChange={(open) => !open && setViewingFeedback(null)}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto" onCloseAutoFocus={e => e.preventDefault()}>
+        <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden" onCloseAutoFocus={e => e.preventDefault()}>
           {viewingFeedback && (() => {
             const fb = viewingFeedback;
             const typeConfig = TYPE_LABELS[fb.type] || TYPE_LABELS.other;
+            const statusConfig = STATUS_CONFIG[fb.status] || STATUS_CONFIG.pending;
+            const StatusIcon = statusConfig.icon;
             return (
               <>
-                <DialogHeader>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant="outline" className={`text-xs ${typeConfig.color}`}>
-                      {typeConfig.label}
-                    </Badge>
-                    <StatusBadge status={fb.status} />
+                {/* Colored header strip */}
+                <div className={`px-6 pt-6 pb-4 border-b bg-muted/30`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-2 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="outline" className={`text-xs ${typeConfig.color}`}>
+                          {typeConfig.label}
+                        </Badge>
+                        <Badge variant="outline" className={`text-xs ${statusConfig.color} border-current/20`}>
+                          <StatusIcon className="w-3 h-3 mr-1" />
+                          {statusConfig.label}
+                        </Badge>
+                      </div>
+                      <h2 className="text-lg font-bold tracking-tight">{fb.title}</h2>
+                    </div>
                   </div>
-                  <DialogTitle className="text-base">{fb.title}</DialogTitle>
-                  <DialogDescription className="flex items-center gap-2">
-                    {fb.user_name && (
-                      <span className="flex items-center gap-1.5">
-                        <UserAvatar src={fb.user_avatar_url} name={fb.user_name} size="sm" />
-                        <span>{fb.user_name}</span>
-                        {fb.user_plan && <PlanBadge plan={fb.user_plan} />}
-                      </span>
-                    )}
-                    <span>· {formatTime(fb.created_at)}</span>
-                  </DialogDescription>
-                </DialogHeader>
 
-                <div className="space-y-4 py-2">
-                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{fb.content}</p>
+                  {/* User info row */}
+                  <div className="flex items-center gap-2 mt-3">
+                    <UserAvatar src={fb.user_avatar_url} name={fb.user_name || 'User'} size="sm" />
+                    <div className="flex items-center gap-1.5 text-sm">
+                      <span className="font-medium">{fb.user_name}</span>
+                      {fb.user_plan && <PlanBadge plan={fb.user_plan} />}
+                    </div>
+                    <span className="text-xs text-muted-foreground ml-auto flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {formatTime(fb.created_at)}
+                    </span>
+                  </div>
+                </div>
 
-                  <Attachments urls={fb.attachments} />
+                {/* Content body */}
+                <div className="px-6 py-5 space-y-4 max-h-[50vh] overflow-y-auto">
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground/90">{fb.content}</p>
 
+                  {/* Attachments */}
+                  {fb.attachments && fb.attachments.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Đính kèm</p>
+                      <Attachments urls={fb.attachments} />
+                    </div>
+                  )}
+
+                  {/* Admin response */}
                   {fb.admin_response && (
-                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-1">
-                      <p className="text-xs font-medium text-primary">Phản hồi từ quản trị viên</p>
-                      <p className="text-sm whitespace-pre-wrap">{fb.admin_response}</p>
+                    <div className="rounded-xl bg-primary/5 border border-primary/15 p-4 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <MessageSquareText className="w-4 h-4 text-primary" />
+                        <span className="text-xs font-semibold text-primary">Phản hồi từ quản trị viên</span>
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed pl-6">{fb.admin_response}</p>
                       {fb.responded_at && (
-                        <p className="text-xs text-muted-foreground">{formatTime(fb.responded_at)}</p>
+                        <p className="text-[11px] text-muted-foreground pl-6">{formatTime(fb.responded_at)}</p>
                       )}
                     </div>
                   )}
                 </div>
 
+                {/* Footer actions */}
                 {isAdmin && (
-                  <DialogFooter>
+                  <div className="px-6 py-3 border-t bg-muted/20 flex justify-end">
                     <Button
-                      variant="outline"
                       size="sm"
                       className="gap-1.5"
                       onClick={() => {
@@ -742,7 +766,7 @@ export default function FeedbackPage() {
                       <MessageSquareText className="w-3.5 h-3.5" />
                       {fb.admin_response ? 'Sửa phản hồi' : 'Phản hồi'}
                     </Button>
-                  </DialogFooter>
+                  </div>
                 )}
               </>
             );
