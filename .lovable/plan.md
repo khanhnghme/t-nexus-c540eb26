@@ -1,72 +1,52 @@
 
 
-## Plan: Fix 4 vấn đề 🔴 HIGH — Tối ưu hiệu năng
+## Plan: Fix 3 vấn đề 🟡 MEDIUM — Tối ưu hiệu năng
 
-### HIGH #1: Code Splitting toàn bộ pages trong App.tsx
+### MEDIUM #5: Realtime subscription chỉ re-fetch data liên quan
 
-**Vấn đề:** 50+ pages import trực tiếp → initial bundle rất lớn. Chỉ 4 page dùng `React.lazy`.
+**Vấn đề:** `GroupDetail.tsx` dòng 219-235 — khi `group_members` thay đổi, gọi lại `fetchGroupData()` toàn bộ (stages, tasks, meetings, members...). Mỗi member join/leave → 7+ queries chạy lại.
 
-**Giải pháp:** Chuyển tất cả page imports (trừ Landing) sang `React.lazy()`. Giữ `Landing` static vì là trang đầu tiên user thấy.
+**Giải pháp:** Tách `fetchGroupData` thành các hàm nhỏ:
+- `fetchMembers()` — chỉ query members + profiles
+- `fetchTasks()` — chỉ query tasks + assignments
+- `fetchMeetings()` — chỉ query meetings
 
-- Auth pages (7): Login, Register, Auth, ForgotPassword, VerifyOtp, ResetPasswordNew, PasswordSuccess
-- Protected pages (14): Dashboard, Groups, GroupDetail, Communication, Calendar, Feedback, PersonalInfo, AccountSettings, Notifications, Tips, Onboarding, SearchPage, ServicePlan, BillingHistory
-- Admin pages (7): AdminActivity, AdminBackup, AdminSystem, AdminBilling, AdminUserBilling, MemberManagement, Utilities
-- Checkout pages (6): Checkout, CheckoutPayment, AddonCheckout, AddonCheckoutPayment, PaymentResult, CheckoutSummary
-- Public pages (5): PublicProjectView, PublicProfile, PublicTaskPreview, FilePreview, ResetPassword
-- Workspace pages (4): WorkspaceSettings, WorkspaceMembers, CreateWorkspace, Upgrade
-- Misc (5): Pricing, PricingDocs, Privacy, Terms, Guide, DownloadPage, NotFound
+Realtime callback chỉ gọi `fetchMembers()` thay vì `fetchGroupData()`. Các chỗ khác (thêm task, xóa stage...) vẫn gọi hàm tương ứng thay vì toàn bộ.
 
-**File:** `src/App.tsx`
-**Impact:** Bundle giảm ~60-70%
+**File:** `src/pages/GroupDetail.tsx`
+**Impact:** Giảm ~80% API calls khi có realtime update
 
 ---
 
-### HIGH #2: Song song hóa queries trong GroupDetail
+### MEDIUM #6: Dynamic import cho heavy dependencies
 
-**Vấn đề:** `fetchGroupData()` chạy tuần tự 7 queries nối tiếp nhau.
-
-**Giải pháp:** Sau khi fetch group, chạy song song:
-
-```text
-Step 1: group (1 query)
-Step 2: Promise.all([stages, members+profiles])
-Step 3: Access check (cần members data)
-Step 4: Promise.all([tasks+assignments+profiles, meetings])
-```
-
-**File:** `src/pages/GroupDetail.tsx` — refactor `fetchGroupData()` (lines 237-344)
-**Impact:** Từ 7 queries tuần tự → 3 bước song song, giảm ~40% thời gian load
-
----
-
-### HIGH #3: Gộp + tối ưu Dashboard queries
-
-**Vấn đề:** Dashboard mount gọi 6 API functions riêng lẻ. `fetchProjectStats` query `groups` + `group_members` trùng với `fetchDashboardData`.
+**Vấn đề:** `jspdf`, `xlsx`, `recharts` import tĩnh trong các lib/component files. Dù pages đã lazy-loaded, các file lib như `activityLogPdf.ts`, `projectEvidencePdf.ts`, `canvasExport.ts` vẫn import `jsPDF` ở top-level. `ExcelMemberImport.tsx` import `xlsx` trực tiếp. `chart.tsx` import `recharts` trực tiếp.
 
 **Giải pháp:**
-1. Xóa `fetchProjectStats`, tính `ownedProjectCount`/`joinedProjectCount` từ data đã có trong `fetchDashboardData`
-2. Chạy song song 5 fetch functions còn lại bằng `Promise.all`
+- `src/lib/activityLogPdf.ts` — đổi sang `const jsPDF = (await import('jspdf')).default` bên trong function
+- `src/lib/projectEvidencePdf.ts` — tương tự
+- `src/lib/canvasExport.ts` — tương tự  
+- `src/components/ExcelMemberImport.tsx` — đổi `import * as XLSX from 'xlsx'` sang dynamic import khi user click upload
+- `src/components/ui/chart.tsx` — giữ nguyên vì recharts đã nằm trong lazy-loaded pages
 
-**File:** `src/pages/Dashboard.tsx`
-**Impact:** Giảm 2 API calls trùng lặp + chạy song song
+**Files:** 4 files (3 lib + 1 component)
+**Impact:** Loại bỏ jspdf (~300KB) và xlsx (~200KB) khỏi các chunk không cần thiết
 
 ---
 
-### HIGH #4: React.memo cho list item components
+### MEDIUM #7: Virtualized list cho TaskListView
 
-**Vấn đề:** 0 components dùng `React.memo`. Mỗi state change → re-render toàn bộ list.
+**Vấn đề:** `TaskListView.tsx` (1756 dòng) render toàn bộ tasks vào DOM. Project có 100+ tasks sẽ tạo hàng trăm DOM nodes không cần thiết.
 
-**Giải pháp:** Wrap `React.memo` cho 5 components:
+**Giải pháp:**
+- Cài `@tanstack/react-virtual`
+- Wrap danh sách tasks trong mỗi stage bằng `useVirtualizer` khi count > 30
+- Khi ≤30 tasks, render bình thường (tránh overhead cho list nhỏ)
+- Áp dụng tương tự cho `MemberManagementCard` member list
 
-| Component | File |
-|-----------|------|
-| DashboardProjectCard | `src/components/dashboard/DashboardProjectCard.tsx` |
-| TaskCard | `src/components/TaskCard.tsx` |
-| TaskListView | `src/components/TaskListView.tsx` |
-| MemberManagementCard | `src/components/MemberManagementCard.tsx` |
-| MessageItem | `src/components/communication/MessageItem.tsx` |
-
-**Impact:** Giảm ~70% re-render không cần thiết
+**Files:** `src/components/TaskListView.tsx`, `src/components/MemberManagementCard.tsx`
+**Dependencies mới:** `@tanstack/react-virtual`
+**Impact:** Giảm ~90% DOM nodes cho list dài
 
 ---
 
@@ -74,10 +54,9 @@ Step 4: Promise.all([tasks+assignments+profiles, meetings])
 
 | # | Task | Files | Impact |
 |---|------|-------|--------|
-| 1 | Code splitting toàn bộ pages | `App.tsx` | Bundle -60% |
-| 2 | Song song hóa GroupDetail queries | `GroupDetail.tsx` | Load -40% |
-| 3 | Gộp Dashboard queries | `Dashboard.tsx` | API calls -30% |
-| 4 | React.memo list items | 5 component files | Re-render -70% |
+| 5 | Selective realtime re-fetch | `GroupDetail.tsx` | API calls -80% on updates |
+| 6 | Dynamic import heavy deps | 4 files (3 lib + 1 component) | Chunk size -500KB |
+| 7 | Virtualized lists | 2 component files + dependency | DOM nodes -90% |
 
-**Tổng: ~7 files thay đổi. Không thêm dependencies. Backward compatible 100%.**
+**Tổng: ~7 files thay đổi. 1 dependency mới (`@tanstack/react-virtual`). Backward compatible 100%.**
 
