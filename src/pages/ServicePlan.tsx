@@ -156,8 +156,7 @@ export default function ServicePlan() {
       setWsUsages(usages);
       setUniqueMemberCount(uniqueMemberIds.size);
 
-      // Fetch AI usage
-      const today = new Date().toISOString().slice(0, 10);
+      // Fetch aggregate AI usage for the account summary card
       const [aiUsageRes, aiLimitRes] = await Promise.all([
         supabase.rpc('get_owner_ai_usage_today', { _owner_id: user.id, _date: today }),
         supabase.from('plan_limits').select('max_ai_messages_per_day').eq('plan', plan as any).maybeSingle(),
