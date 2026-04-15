@@ -696,8 +696,8 @@ export default function AIAssistant() {
           className={cn(
             "w-full resize-none border-0 bg-transparent placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0",
             variant === 'empty'
-              ? "pl-12 pr-28 px-5 py-5 min-h-[168px] max-h-[400px] text-[15px]"
-              : "pl-12 pr-24 px-5 py-4 min-h-[144px] max-h-[360px] text-sm"
+              ? "pl-12 pr-28 px-5 py-5 min-h-[112px] max-h-[280px] text-[15px]"
+              : "pl-12 pr-24 px-5 py-4 min-h-[96px] max-h-[240px] text-sm"
           )}
           rows={1}
         />
