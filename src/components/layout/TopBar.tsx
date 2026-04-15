@@ -301,7 +301,7 @@ export default function TopBar() {
               <span className="text-[10px] text-muted-foreground">AI</span>
             </div>
           ) : (
-            <Link to="/dashboard" className="flex items-center ml-1 opacity-70 hover:opacity-100 transition-opacity">
+            <Link to="/dashboard" className="flex items-center ml-1">
               <TNexusLogo width={60} />
             </Link>
           )}
