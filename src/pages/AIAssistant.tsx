@@ -628,7 +628,21 @@ export default function AIAssistant() {
         </main>
 
         <div className="shrink-0 border-t border-border/30 bg-background/80 backdrop-blur-sm px-4 md:px-6 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <div className="max-w-[48rem] mx-auto">
+          <div className="max-w-[48rem] mx-auto space-y-2">
+            {/* Compact credit indicator in chat mode */}
+            {!usageLoading && !isFreePlan && maxCredits && (
+              <div className="flex items-center gap-3 px-1">
+                <div className="flex-1 min-w-0">
+                  <Progress value={creditPercent} className={cn("h-1.5", getProgressColorClass())} />
+                </div>
+                <span className={cn(
+                  "text-[11px] font-medium shrink-0",
+                  isCriticalCredit ? "text-destructive" : isLowCredit ? "text-amber-500" : "text-muted-foreground"
+                )}>
+                  {creditsUsed.toLocaleString()}/{maxCredits.toLocaleString()} credit
+                </span>
+              </div>
+            )}
             {renderInput('chat')}
           </div>
         </div>
@@ -724,6 +738,49 @@ export default function AIAssistant() {
               </button>
             ))}
           </div>
+
+          {/* Credit Usage Bar - Empty State */}
+          {!usageLoading && (
+            <div className="w-full mt-8 animate-fade-in" style={{ animationDelay: '350ms', animationFillMode: 'backwards' }}>
+              {isFreePlan ? (
+                <div className="flex items-center justify-center">
+                  <Badge variant="secondary" className="gap-1.5 px-3 py-1.5 text-xs font-medium">
+                    <Sparkles className="h-3 w-3 text-primary" />
+                    {t?.sidebar?.aiFreeLabel || 'Miễn phí'} · {getModelLabel(activeModel)}
+                  </Badge>
+                </div>
+              ) : maxCredits ? (
+                <div className="max-w-sm mx-auto space-y-2.5 p-4 rounded-xl border border-border/40 bg-card/60">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground font-medium">
+                      {t?.sidebar?.aiCreditsUsed || 'Đã sử dụng'}
+                    </span>
+                    <span className={cn(
+                      "font-semibold tabular-nums",
+                      isCriticalCredit ? "text-destructive" : isLowCredit ? "text-amber-500" : "text-foreground"
+                    )}>
+                      {creditsUsed.toLocaleString()} / {maxCredits.toLocaleString()} credit
+                    </span>
+                  </div>
+                  <Progress value={creditPercent} className={cn("h-2", getProgressColorClass())} />
+                  {isLowCredit && (
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[11px] text-amber-500 flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        {t?.sidebar?.aiCreditLow || 'Sắp hết credit'}
+                      </span>
+                      <button
+                        onClick={() => navigate('/upgrade')}
+                        className="text-[11px] font-medium text-primary hover:underline"
+                      >
+                        {t?.sidebar?.aiUpgrade || 'Nâng cấp'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          )}
         </div>
       </div>
     </div>
