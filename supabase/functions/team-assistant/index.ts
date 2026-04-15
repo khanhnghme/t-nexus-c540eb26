@@ -789,6 +789,7 @@ serve(async (req) => {
 
     // ─── Intercept stream to capture token usage from final chunk ───
     let totalTokens = 0;
+    let totalCharsProcessed = 0;
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();
 
@@ -809,16 +810,28 @@ serve(async (req) => {
             if (parsed.usage?.total_tokens) {
               totalTokens = parsed.usage.total_tokens;
             }
+            // Accumulate output chars for fallback estimation
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) {
+              totalCharsProcessed += content.length;
+            }
           } catch {}
         }
       },
       async flush() {
         // After stream ends, record token usage to DB
+        let tokensToRecord = totalTokens;
+        // Fallback: estimate tokens from char count if provider didn't return usage
+        if (tokensToRecord === 0 && totalCharsProcessed > 0) {
+          // Add estimated input chars (rough: output is typically ~60% of total)
+          const estimatedTotalChars = Math.ceil(totalCharsProcessed / 0.6);
+          tokensToRecord = Math.ceil(estimatedTotalChars / 4);
+        }
         try {
           await supabase.rpc('increment_ai_token_usage', { 
             _user_id: userId, 
             _date: today, 
-            _tokens: totalTokens || 0 
+            _tokens: tokensToRecord 
           });
         } catch (e) {
           console.error('Failed to record token usage:', e);
