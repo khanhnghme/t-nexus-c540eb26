@@ -349,11 +349,15 @@ export default function AIAssistant() {
   const hasMessages = messages.length > 0;
   const grouped = groupConversations(conversations, t);
 
+  // Ref to keep handleClearChat stable for context
+  const clearChatRef = useRef(handleClearChat);
+  clearChatRef.current = handleClearChat;
+
   // Sync AI controls to TopBar via context
   useEffect(() => {
     setAITopBarProps({
       onToggleHistory: () => setShowHistory(prev => !prev),
-      onClearChat: handleClearChat,
+      onClearChat: () => clearChatRef.current(),
       hasMessages,
       questionsToday,
       maxQuestions,
