@@ -501,89 +501,47 @@ export default function Groups() {
       <div className="space-y-6">
         {/* Header */}
         <div className="space-y-4">
-          <div>
-            <h1 className="text-2xl font-heading font-bold tracking-tight">{g.title}</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {activeFilter === 'created' ? (g.filterCreatedDesc || g.subtitle) : activeFilter === 'shared' ? (g.filterSharedDesc || g.subtitle) : (g.filterAllDesc || g.subtitle)}
-            </p>
-            <p className="text-xs text-muted-foreground/70 mt-0.5">
-              {activeFilter === 'created' ? (g.filterCreatedSub || '') : activeFilter === 'shared' ? (g.filterSharedSub || '') : (g.filterAllSub || '')}
-            </p>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-heading font-bold tracking-tight">{g.title}</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                {activeFilter === 'created' ? (g.filterCreatedDesc || g.subtitle) : activeFilter === 'shared' ? (g.filterSharedDesc || g.subtitle) : (g.filterAllDesc || g.subtitle)}
+              </p>
+              <p className="text-xs text-muted-foreground/70 mt-0.5">
+                {activeFilter === 'created' ? (g.filterCreatedSub || '') : activeFilter === 'shared' ? (g.filterSharedSub || '') : (g.filterAllSub || '')}
+              </p>
+            </div>
+
+            {/* Create project button */}
+            <Dialog open={showModeSelector} onOpenChange={setShowModeSelector}>
+              <DialogTrigger asChild disabled={!canCreateProject}>
+                <Button
+                  size="sm"
+                  disabled={!canCreateProject}
+                  className="shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  {g.createNew || 'Create project'}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Chọn loại dự án</DialogTitle>
+                  <DialogDescription>Chọn cách bạn muốn quản lý dự án</DialogDescription>
+                </DialogHeader>
+                <ProjectModeSelector
+                  onSelectBasic={() => {
+                    setShowModeSelector(false);
+                    setIsDialogOpen(true);
+                  }}
+                  onSelectCustom={() => {
+                    setShowModeSelector(false);
+                    navigate(activeWorkspace ? `/create-custom?workspace=${activeWorkspace.id}` : '/create-custom');
+                  }}
+                />
+              </DialogContent>
+            </Dialog>
           </div>
-
-          {/* Filter tabs */}
-          <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/50 w-fit">
-            {[
-              { value: 'all', label: t.sidebar?.allProjects || 'All projects' },
-              { value: 'created', label: t.sidebar?.createdByMe || 'Created by me' },
-              { value: 'shared', label: t.sidebar?.sharedWithMe || 'Shared with me' },
-            ].map(tab => (
-              <button
-                key={tab.value}
-                onClick={() => navigate(tab.value === 'all' ? '/groups' : `/groups/${tab.value}`)}
-                className={cn(
-                  'px-3 py-1.5 rounded-md text-sm font-medium transition-all',
-                  activeFilter === tab.value
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Mode Selector Dialog */}
-          <Dialog open={showModeSelector} onOpenChange={setShowModeSelector}>
-            <DialogTrigger asChild disabled={!canCreateProject}>
-              <div className={`relative overflow-hidden rounded-xl border-2 border-dashed p-5 transition-all duration-300 ${
-                canCreateProject
-                  ? 'border-primary/40 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 hover:border-primary hover:shadow-lg hover:shadow-primary/10 hover:scale-[1.005] cursor-pointer group'
-                  : 'border-muted-foreground/20 bg-muted/30 cursor-default'
-              }`}>
-                {canCreateProject && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                )}
-                <div className="relative flex items-center gap-4">
-                  <div className={`p-3.5 rounded-xl ${
-                    canCreateProject ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-                  }`}>
-                    <Plus className="w-7 h-7" />
-                  </div>
-                  <div className="flex-1">
-                  <p className={`font-bold text-lg ${canCreateProject ? 'text-foreground' : 'text-muted-foreground'}`}>
-                      {canCreateProject ? g.createNew : g.createNewNoPermission}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      {canCreateProject
-                        ? g.createDesc
-                        : g.noPermissionDesc}
-                    </p>
-                  </div>
-                  {canCreateProject && (
-                    <ArrowRight className="w-5 h-5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                  )}
-                </div>
-              </div>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Chọn loại dự án</DialogTitle>
-                <DialogDescription>Chọn cách bạn muốn quản lý dự án</DialogDescription>
-              </DialogHeader>
-              <ProjectModeSelector
-                onSelectBasic={() => {
-                  setShowModeSelector(false);
-                  setIsDialogOpen(true);
-                }}
-                onSelectCustom={() => {
-                  setShowModeSelector(false);
-                  navigate(activeWorkspace ? `/create-custom?workspace=${activeWorkspace.id}` : '/create-custom');
-                }}
-              />
-            </DialogContent>
-          </Dialog>
-
           {/* Basic project creation dialog */}
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
