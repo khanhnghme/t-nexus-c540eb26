@@ -1,64 +1,62 @@
 
+# Cập nhật UI & Logic theo hệ thống Credit mới
 
-# Fix: Credit không cập nhật sau khi dùng AI
+## Tổng quan vấn đề
 
-## Nguyên nhân gốc
+Có **3 nơi** vẫn dùng logic cũ (message count / `max_ai_messages_per_month`):
 
-### Frontend (chính)
-`loadUsage` useEffect chỉ chạy **1 lần khi mount** (deps: `[user?.id, activeWorkspace?.id]`). Sau khi gửi tin nhắn và stream kết thúc, frontend **không bao giờ fetch lại** credit usage → UI đứng im.
+1. **`src/components/ai/AIAssistantPanel.tsx`** — Sheet panel AI dùng trong project context, vẫn đếm `questionsToday`, check `max_ai_messages_per_month`
+2. **`src/pages/ServicePlan.tsx`** — Trang quản lý gói hiển thị "AI Messages" với RPC `get_owner_ai_usage_month` (message count) và `max_ai_messages_per_month`
+3. **`src/lib/i18n/en.ts` & `vi.ts`** — Labels: "AI Messages", "lượt", "messages" cần đổi thành "AI Credits", "credit"
 
-### Backend (phụ — chỉ ảnh hưởng Gemini)
-Gemini (Lovable AI Gateway) không trả `usage.total_tokens` trong SSE stream → `totalTokens` luôn = 0 cho Free/Plus users. Nhưng vì Free/Plus không giới hạn credit nên không ảnh hưởng nghiêm trọng. DeepSeek (Pro/Business) hoạt động đúng — DB ghi nhận `token_count: 53469`.
+Trang **`AIAssistant.tsx`** đã đúng (dùng `get_owner_ai_credit_usage_month` + `max_ai_credits_per_month`).
 
-## Thay đổi
+## Thay đổi chi tiết
 
-### 1. `src/pages/AIAssistant.tsx` — Re-fetch credits sau mỗi message
+### 1. `src/components/ai/AIAssistantPanel.tsx`
+- Đổi `questionsToday` → `creditsUsed`, `maxQuestions` → `maxCredits`
+- Thay RPC `get_owner_ai_usage_month` → `get_owner_ai_credit_usage_month`
+- Thay query `max_ai_messages_per_month` → `max_ai_credits_per_month`
+- Cập nhật quota check: `creditsUsed >= maxCredits` thay vì message count
+- Đổi toast: "Đã hết lượt hỏi" → "Đã hết credit AI"
+- Free/Plus (`maxCredits === null`): bỏ giới hạn (Gemini miễn phí)
+- Thêm `loadUsage` callback reusable + gọi lại sau mỗi message thành công (giống fix ở AIAssistant.tsx)
 
-Extract `loadUsage` thành một hàm callback reusable. Sau khi stream hoàn tất thành công (dòng ~332, sau `saveMessage`), gọi lại `loadUsage()` để refresh credit bar.
+### 2. `src/pages/ServicePlan.tsx`
+- Thay RPC `get_owner_ai_usage_month` → `get_owner_ai_credit_usage_month` (dòng ~163)
+- Thay query `max_ai_messages_per_month` → `max_ai_credits_per_month` (dòng ~164)
+- Cập nhật usage card label: `t.aiMessages` → `t.aiCredits`
+- Đổi unit: `t.aiMessagesUnit` → `t.aiCreditsUnit` ("credit")
+- Cập nhật workspace detail section (dòng ~737): hiển thị credit thay vì "lượt"
+- Workspace-level AI RPC: `get_workspace_ai_usage_month` cũng cần đổi sang credit-based (hoặc dùng aggregate từ token_count)
 
-```typescript
-// Thay useEffect loadUsage thành useCallback
-const loadUsage = useCallback(async () => {
-  // ... existing logic ...
-}, [user?.id, activeWorkspace?.id]);
+### 3. `src/lib/i18n/en.ts` & `vi.ts`
+- Thêm keys mới: `aiCredits`, `aiCreditsUnit`, `aiCreditsNote`
+- EN: "AI Credits", "credit", "Shared across all workspace members"
+- VI: "Credit AI", "credit", "Dùng chung cho tất cả thành viên workspace"
+- Giữ keys cũ để backward compatible
 
-// Mount effect
-useEffect(() => { loadUsage(); }, [loadUsage]);
+### 4. DB: Thêm RPC `get_workspace_ai_credit_usage_month`
+Hiện có `get_workspace_ai_usage_month` trả message count. Cần RPC mới trả credit (token/1000) cho mỗi workspace để ServicePlan workspace detail section hiển thị đúng.
 
-// Trong sendMessage, sau khi stream xong:
-if (assistantContent) {
-  await saveMessage(convId, 'assistant', assistantContent);
-  // ... update conversation ...
-  loadUsage(); // ← RE-FETCH credits
-}
+```sql
+CREATE OR REPLACE FUNCTION public.get_workspace_ai_credit_usage_month(
+  _workspace_id uuid, _month_start date, _month_end date
+) RETURNS integer ...
+  SELECT COALESCE(CEIL(SUM(token_count)::numeric / 1000), 0)::integer
+  FROM ai_daily_usage WHERE usage_date BETWEEN _month_start AND _month_end
+  AND user_id IN (owner + members of workspace)
 ```
-
-### 2. `supabase/functions/team-assistant/index.ts` — Fallback token estimation cho Gemini
-
-Khi `totalTokens === 0` sau stream (Gemini không trả usage), ước tính dựa trên text length:
-- `estimatedTokens = Math.ceil((inputText.length + outputText.length) / 4)`
-- Ghi vào DB để admin có analytics data (dù Free/Plus không bị limit)
-
-Thêm logic trong `flush()`:
-```typescript
-async flush() {
-  let tokensToRecord = totalTokens;
-  if (tokensToRecord === 0) {
-    // Rough estimate: ~4 chars per token
-    tokensToRecord = Math.ceil(totalCharsProcessed / 4);
-  }
-  await supabase.rpc('increment_ai_token_usage', { ... _tokens: tokensToRecord });
-}
-```
-
-Cần accumulate `totalCharsProcessed` trong `transform()`.
 
 ## Không thay đổi
-- DB schema, RPC functions — đã đúng
-- Credit limit check logic — đã đúng
-- Pre-check quota — đã đúng
+- `AIAssistant.tsx` — đã cập nhật đúng credit system
+- Edge Function `team-assistant` — đã ghi token đúng
+- DB schema (`ai_daily_usage`, `plan_limits`) — đã có cột `token_count`, `max_ai_credits_per_month`
+- `BillingWidget.tsx` — không hiển thị AI usage
+- Pricing/Upgrade/Onboarding pages — i18n đã đúng credit labels
 
-## Ưu tiên
-1. Fix frontend re-fetch (fix chính, giải quyết ngay vấn đề UI)
-2. Fix Gemini token estimation (nice-to-have cho analytics)
-
+## Thứ tự triển khai
+1. DB migration (RPC `get_workspace_ai_credit_usage_month`)
+2. i18n labels (en.ts, vi.ts)
+3. `AIAssistantPanel.tsx` → credit-based logic
+4. `ServicePlan.tsx` → credit-based queries + labels
