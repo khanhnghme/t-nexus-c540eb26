@@ -382,7 +382,7 @@ export default function AIAssistantPanel({
             {projectId ? (
               <>
                 <FolderKanban className="h-3 w-3" />
-                <span className="truncate max-w-[180px]">{projectName}</span>
+                <span className="truncate max-w-[120px]">{projectName}</span>
               </>
             ) : (
               <>
@@ -390,10 +390,20 @@ export default function AIAssistantPanel({
                 <span>Tổng quan</span>
               </>
             )}
+            <span className="text-muted-foreground/40 mx-0.5">·</span>
+            {shareMode ? (
+              <span className="inline-flex items-center gap-1 text-[10px]">
+                <Link2 className="h-2.5 w-2.5" /> {workspaceName || 'Shared'}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[10px]">
+                <User className="h-2.5 w-2.5" /> {userPlanLabel}
+              </span>
+            )}
           </div>
           <div className="ml-auto flex items-center gap-2">
             {isUnlimited ? (
-              <span className="text-[10px] text-muted-foreground">∞ Unlimited</span>
+              <span className="text-[10px] text-muted-foreground">∞</span>
             ) : (
               <>
                 <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
