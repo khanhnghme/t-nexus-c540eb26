@@ -404,23 +404,23 @@ export const vi: Translations = {
       {
         category: 'Tài khoản & Workspace',
         rows: [
-          { label: 'Workspace được tạo / tài khoản', free: '1', plus: '5', pro: '20', business: '50', enterprise: 'Không giới hạn (DeepSeek V3.2)' },
-          { label: 'Tổng lưu trữ (gộp tất cả Workspace)', free: '500 MB', plus: '10 GB', pro: '50 GB', business: '200 GB', enterprise: 'Không giới hạn (DeepSeek V3.2)' },
+          { label: 'Workspace được tạo / tài khoản', free: '1', plus: '5', pro: '20', business: '50', enterprise: 'Không giới hạn' },
+          { label: 'Tổng lưu trữ (gộp tất cả Workspace)', free: '500 MB', plus: '10 GB', pro: '50 GB', business: '200 GB', enterprise: 'Không giới hạn' },
           { label: 'Giới hạn upload / file', free: '5 MB', plus: '100 MB', pro: '5 GB', business: '5 GB', enterprise: '5 GB' },
         ],
       },
       {
         category: 'Giới hạn Dự án & Thành viên',
         rows: [
-          { label: 'Tổng dự án trên toàn tài khoản', free: '5', plus: '15', pro: '50', business: '500', enterprise: 'Không giới hạn (DeepSeek V3.2)' },
-          { label: 'Tổng suất thành viên (unique seat, miễn phí)', free: '5', plus: '15', pro: '50', business: '200', enterprise: 'Không giới hạn (DeepSeek V3.2)' },
+          { label: 'Tổng dự án trên toàn tài khoản', free: '5', plus: '15', pro: '50', business: '500', enterprise: 'Không giới hạn' },
+          { label: 'Tổng suất thành viên (unique seat, miễn phí)', free: '5', plus: '15', pro: '50', business: '200', enterprise: 'Không giới hạn' },
         ],
       },
       {
         category: 'Họp & Giao tiếp',
         rows: [
-          { label: 'Thời lượng họp', free: '15 phút', plus: '60 phút', pro: 'Không giới hạn', business: 'Không giới hạn', enterprise: 'Không giới hạn (DeepSeek V3.2)' },
-          { label: 'Nhật ký hoạt động', free: false, plus: '30 ngày', pro: 'Không giới hạn', business: 'Không giới hạn', enterprise: 'Không giới hạn (DeepSeek V3.2)' },
+          { label: 'Thời lượng họp', free: '15 phút', plus: '60 phút', pro: 'Không giới hạn', business: 'Không giới hạn', enterprise: 'Không giới hạn' },
+          { label: 'Nhật ký hoạt động', free: false, plus: '30 ngày', pro: 'Không giới hạn', business: 'Không giới hạn', enterprise: 'Không giới hạn' },
           { label: 'Trợ lý AI', free: 'Miễn phí (Gemini Flash)', plus: 'Miễn phí (Gemini Flash)', pro: '1.000 credit/tháng (DeepSeek V3.2)', business: '2.500 credit/tháng (DeepSeek V3.2)', enterprise: 'Không giới hạn (DeepSeek V3.2)' },
         ],
       },
@@ -3160,7 +3160,7 @@ export const vi: Translations = {
       { category: 'Công cụ & Tính năng', icon: 'sparkles', items: [
         { label: 'Quản lý task cơ bản', value: '✓' },
         { label: 'Chat nhóm', value: '✓' },
-        { label: 'Trợ lý AI', value: '20/tháng (Gemini Flash)' },
+        { label: 'Trợ lý AI', value: 'Miễn phí (Gemini Flash)' },
         { label: 'Chấm điểm thành viên', value: '—' },
         { label: 'Xuất dữ liệu đầy đủ', value: '—' },
         { label: 'Add-ons', value: '—' },
@@ -3186,7 +3186,7 @@ export const vi: Translations = {
       { category: 'Công cụ & Tính năng', icon: 'sparkles', items: [
         { label: 'Quản lý task cơ bản', value: '✓' },
         { label: 'Chat nhóm', value: '✓' },
-        { label: 'Trợ lý AI', value: '60/tháng (Gemini Flash)' },
+        { label: 'Trợ lý AI', value: 'Miễn phí (Gemini Flash)' },
         { label: 'Chấm điểm thành viên', value: '✓' },
         { label: 'Xuất dữ liệu đầy đủ', value: '✓' },
         { label: 'Add-ons', value: 'Có thể mua' },
@@ -3206,12 +3206,12 @@ export const vi: Translations = {
         { label: 'Tổng suất thành viên', value: '50' },
       ]},
       { category: 'Họp & Giao tiếp', icon: 'video', items: [
-        { label: 'Thời lượng họp', value: 'Không giới hạn (DeepSeek V3.2)' },
-        { label: 'Nhật ký hoạt động', value: 'Không giới hạn (DeepSeek V3.2)' },
+        { label: 'Thời lượng họp', value: 'Không giới hạn' },
+        { label: 'Nhật ký hoạt động', value: 'Không giới hạn' },
       ]},
       { category: 'Công cụ & Tính năng', icon: 'sparkles', items: [
         { label: 'Tất cả tính năng Plus', value: '✓' },
-        { label: 'Trợ lý AI', value: '150/tháng (DeepSeek V3.2)' },
+        { label: 'Trợ lý AI', value: '1.000 credit/tháng (DeepSeek V3.2)' },
         { label: 'Quản lý giai đoạn', value: '✓' },
         { label: 'Điểm nâng cao', value: '✓' },
         { label: 'Add-ons', value: 'Đi kèm, giảm 10%' },
@@ -3231,12 +3231,12 @@ export const vi: Translations = {
         { label: 'Tổng suất thành viên', value: '200' },
       ]},
       { category: 'Họp & Giao tiếp', icon: 'video', items: [
-        { label: 'Thời lượng họp', value: 'Không giới hạn (DeepSeek V3.2)' },
-        { label: 'Nhật ký hoạt động', value: 'Không giới hạn (DeepSeek V3.2)' },
+        { label: 'Thời lượng họp', value: 'Không giới hạn' },
+        { label: 'Nhật ký hoạt động', value: 'Không giới hạn' },
       ]},
       { category: 'Công cụ & Tính năng', icon: 'sparkles', items: [
         { label: 'Tất cả tính năng Pro', value: '✓' },
-        { label: 'Trợ lý AI', value: '300/tháng (DeepSeek V3.2)' },
+        { label: 'Trợ lý AI', value: '2.500 credit/tháng (DeepSeek V3.2)' },
         { label: 'Quản trị hệ thống', value: '✓' },
         { label: 'Add-ons', value: 'Đi kèm, giảm 20%' },
       ]},
@@ -3246,17 +3246,17 @@ export const vi: Translations = {
     ],
     plan_custom: [
       { category: 'Tài khoản & Workspaces', icon: 'building', items: [
-        { label: 'Workspaces', value: 'Không giới hạn (DeepSeek V3.2)' },
-        { label: 'Tổng lưu trữ', value: 'Không giới hạn (DeepSeek V3.2)' },
+        { label: 'Workspaces', value: 'Không giới hạn' },
+        { label: 'Tổng lưu trữ', value: 'Không giới hạn' },
         { label: 'Upload tối đa / file', value: '5 GB' },
       ]},
       { category: 'Dự án & Thành viên', icon: 'folder', items: [
-        { label: 'Tổng dự án', value: 'Không giới hạn (DeepSeek V3.2)' },
-        { label: 'Tổng suất thành viên', value: 'Không giới hạn (DeepSeek V3.2)' },
+        { label: 'Tổng dự án', value: 'Không giới hạn' },
+        { label: 'Tổng suất thành viên', value: 'Không giới hạn' },
       ]},
       { category: 'Họp & Giao tiếp', icon: 'video', items: [
-        { label: 'Thời lượng họp', value: 'Không giới hạn (DeepSeek V3.2)' },
-        { label: 'Nhật ký hoạt động', value: 'Không giới hạn (DeepSeek V3.2)' },
+        { label: 'Thời lượng họp', value: 'Không giới hạn' },
+        { label: 'Nhật ký hoạt động', value: 'Không giới hạn' },
       ]},
       { category: 'Công cụ & Tính năng', icon: 'sparkles', items: [
         { label: 'Tất cả tính năng Business', value: '✓' },

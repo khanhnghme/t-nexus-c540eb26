@@ -402,23 +402,23 @@ export const en = {
       {
         category: 'Account & Workspaces',
         rows: [
-          { label: 'Workspaces you can create', free: '1', plus: '5', pro: '20', business: '50', enterprise: 'Unlimited (DeepSeek V3.2)' },
-          { label: 'Total storage (shared across Workspaces)', free: '500 MB', plus: '10 GB', pro: '50 GB', business: '200 GB', enterprise: 'Unlimited (DeepSeek V3.2)' },
+          { label: 'Workspaces you can create', free: '1', plus: '5', pro: '20', business: '50', enterprise: 'Unlimited' },
+          { label: 'Total storage (shared across Workspaces)', free: '500 MB', plus: '10 GB', pro: '50 GB', business: '200 GB', enterprise: 'Unlimited' },
           { label: 'Max upload per file', free: '5 MB', plus: '100 MB', pro: '5 GB', business: '5 GB', enterprise: '5 GB' },
         ],
       },
       {
         category: 'Projects & Members',
         rows: [
-          { label: 'Total projects across account', free: '5', plus: '15', pro: '50', business: '500', enterprise: 'Unlimited (DeepSeek V3.2)' },
-          { label: 'Total unique seats (free)', free: '5', plus: '15', pro: '50', business: '200', enterprise: 'Unlimited (DeepSeek V3.2)' },
+          { label: 'Total projects across account', free: '5', plus: '15', pro: '50', business: '500', enterprise: 'Unlimited' },
+          { label: 'Total unique seats (free)', free: '5', plus: '15', pro: '50', business: '200', enterprise: 'Unlimited' },
         ],
       },
       {
         category: 'Meetings & Communication',
         rows: [
-          { label: 'Meeting duration', free: '15 min', plus: '60 min', pro: 'Unlimited', business: 'Unlimited', enterprise: 'Unlimited (DeepSeek V3.2)' },
-          { label: 'Activity logs', free: false, plus: '30 days', pro: 'Unlimited', business: 'Unlimited', enterprise: 'Unlimited (DeepSeek V3.2)' },
+          { label: 'Meeting duration', free: '15 min', plus: '60 min', pro: 'Unlimited', business: 'Unlimited', enterprise: 'Unlimited' },
+          { label: 'Activity logs', free: false, plus: '30 days', pro: 'Unlimited', business: 'Unlimited', enterprise: 'Unlimited' },
           { label: 'AI Assistant', free: 'Free (Gemini Flash)', plus: 'Free (Gemini Flash)', pro: '1,000 credits/month (DeepSeek V3.2)', business: '2,500 credits/month (DeepSeek V3.2)', enterprise: 'Unlimited (DeepSeek V3.2)' },
         ],
       },
@@ -3233,7 +3233,7 @@ export const en = {
       { category: 'Tools & Features', icon: 'sparkles', items: [
         { label: 'Basic task management', value: '✓' },
         { label: 'Group chat', value: '✓' },
-        { label: 'AI Assistant', value: '20/month (Gemini Flash)' },
+        { label: 'AI Assistant', value: 'Free (Gemini Flash)' },
         { label: 'Member scoring', value: '—' },
         { label: 'Full data export', value: '—' },
         { label: 'Add-ons', value: '—' },
@@ -3259,7 +3259,7 @@ export const en = {
       { category: 'Tools & Features', icon: 'sparkles', items: [
         { label: 'Basic task management', value: '✓' },
         { label: 'Group chat', value: '✓' },
-        { label: 'AI Assistant', value: '60/month (Gemini Flash)' },
+        { label: 'AI Assistant', value: 'Free (Gemini Flash)' },
         { label: 'Member scoring', value: '✓' },
         { label: 'Full data export', value: '✓' },
         { label: 'Add-ons', value: 'Available' },
@@ -3279,12 +3279,12 @@ export const en = {
         { label: 'Total unique seats', value: '50' },
       ]},
       { category: 'Meetings & Communication', icon: 'video', items: [
-        { label: 'Meeting duration', value: 'Unlimited (DeepSeek V3.2)' },
-        { label: 'Activity logs', value: 'Unlimited (DeepSeek V3.2)' },
+        { label: 'Meeting duration', value: 'Unlimited' },
+        { label: 'Activity logs', value: 'Unlimited' },
       ]},
       { category: 'Tools & Features', icon: 'sparkles', items: [
         { label: 'All Plus features', value: '✓' },
-        { label: 'AI Assistant', value: '150/month (DeepSeek V3.2)' },
+        { label: 'AI Assistant', value: '1,000 credits/month (DeepSeek V3.2)' },
         { label: 'Stage management', value: '✓' },
         { label: 'Advanced scoring', value: '✓' },
         { label: 'Add-ons', value: 'Bundled, 10% off' },
@@ -3304,12 +3304,12 @@ export const en = {
         { label: 'Total unique seats', value: '200' },
       ]},
       { category: 'Meetings & Communication', icon: 'video', items: [
-        { label: 'Meeting duration', value: 'Unlimited (DeepSeek V3.2)' },
-        { label: 'Activity logs', value: 'Unlimited (DeepSeek V3.2)' },
+        { label: 'Meeting duration', value: 'Unlimited' },
+        { label: 'Activity logs', value: 'Unlimited' },
       ]},
       { category: 'Tools & Features', icon: 'sparkles', items: [
         { label: 'All Pro features', value: '✓' },
-        { label: 'AI Assistant', value: '300/month (DeepSeek V3.2)' },
+        { label: 'AI Assistant', value: '2,500 credits/month (DeepSeek V3.2)' },
         { label: 'System administration', value: '✓' },
         { label: 'Add-ons', value: 'Bundled, 20% off' },
       ]},
@@ -3319,17 +3319,17 @@ export const en = {
     ],
     plan_custom: [
       { category: 'Account & Workspaces', icon: 'building', items: [
-        { label: 'Workspaces', value: 'Unlimited (DeepSeek V3.2)' },
-        { label: 'Total storage', value: 'Unlimited (DeepSeek V3.2)' },
+        { label: 'Workspaces', value: 'Unlimited' },
+        { label: 'Total storage', value: 'Unlimited' },
         { label: 'Max upload per file', value: '5 GB' },
       ]},
       { category: 'Projects & Members', icon: 'folder', items: [
-        { label: 'Total projects', value: 'Unlimited (DeepSeek V3.2)' },
-        { label: 'Total unique seats', value: 'Unlimited (DeepSeek V3.2)' },
+        { label: 'Total projects', value: 'Unlimited' },
+        { label: 'Total unique seats', value: 'Unlimited' },
       ]},
       { category: 'Meetings & Communication', icon: 'video', items: [
-        { label: 'Meeting duration', value: 'Unlimited (DeepSeek V3.2)' },
-        { label: 'Activity logs', value: 'Unlimited (DeepSeek V3.2)' },
+        { label: 'Meeting duration', value: 'Unlimited' },
+        { label: 'Activity logs', value: 'Unlimited' },
       ]},
       { category: 'Tools & Features', icon: 'sparkles', items: [
         { label: 'All Business features', value: '✓' },
