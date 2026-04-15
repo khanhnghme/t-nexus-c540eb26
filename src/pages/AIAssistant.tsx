@@ -77,8 +77,8 @@ export default function AIAssistant() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [questionsToday, setQuestionsToday] = useState(0);
-  const [maxQuestions, setMaxQuestions] = useState<number | null>(5);
+  const [creditsUsed, setCreditsUsed] = useState(0);
+  const [maxCredits, setMaxCredits] = useState<number | null>(null);
   const [usageLoading, setUsageLoading] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -105,7 +105,7 @@ export default function AIAssistant() {
     setActiveModel(getModelFromPlan(profile?.user_plan));
   }, [profile?.user_plan]);
 
-  // ── Load usage (internal only — no UI) ──
+  // ── Load credit usage ──
   useEffect(() => {
     const loadUsage = async () => {
       if (!user?.id) { setUsageLoading(false); return; }
@@ -114,17 +114,17 @@ export default function AIAssistant() {
       const monthEnd = now.toISOString().slice(0, 10);
       try {
         const effectiveOwnerId = activeWorkspace?.owner_id || user.id;
-        const [usageRes, ownerProfileRes] = await Promise.all([
-          supabase.rpc('get_owner_ai_usage_month', { _owner_id: effectiveOwnerId, _month_start: monthStart, _month_end: monthEnd }),
+        const [creditRes, ownerProfileRes] = await Promise.all([
+          supabase.rpc('get_owner_ai_credit_usage_month', { _owner_id: effectiveOwnerId, _month_start: monthStart, _month_end: monthEnd }),
           supabase.from('profiles').select('user_plan').eq('id', effectiveOwnerId).single(),
         ]);
-        setQuestionsToday(typeof usageRes.data === 'number' ? usageRes.data : 0);
+        setCreditsUsed(typeof creditRes.data === 'number' ? creditRes.data : 0);
         const ownerPlan = (ownerProfileRes.data as any)?.user_plan || 'plan_free';
         setActiveModel(getModelFromPlan(ownerPlan));
         const { data: limitData } = await supabase
-          .from('plan_limits').select('max_ai_messages_per_month')
+          .from('plan_limits').select('max_ai_credits_per_month')
           .eq('plan', ownerPlan as any).maybeSingle();
-        setMaxQuestions((limitData as any)?.max_ai_messages_per_month ?? 20);
+        setMaxCredits((limitData as any)?.max_ai_credits_per_month ?? null);
       } catch { /* fallback */ }
       setUsageLoading(false);
     };
@@ -200,7 +200,7 @@ export default function AIAssistant() {
 
   useEffect(() => { textareaRef.current?.focus(); }, []);
 
-  const incrementUsage = () => setQuestionsToday(prev => prev + 1);
+  const incrementCredits = (delta: number) => setCreditsUsed(prev => prev + delta);
 
   const sendMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
@@ -209,8 +209,8 @@ export default function AIAssistant() {
       toast({ title: 'Câu hỏi quá dài', description: `Vui lòng giới hạn trong ${MAX_MESSAGE_WORDS} từ (hiện tại: ${wc}).`, variant: 'destructive' });
       return;
     }
-    if (maxQuestions !== null && questionsToday >= maxQuestions) {
-      toast({ title: 'Đã hết lượt hỏi tháng này', description: `Đã sử dụng hết ${maxQuestions} lượt tháng này. Quay lại tháng sau hoặc nâng cấp gói.`, variant: 'destructive' });
+    if (maxCredits !== null && creditsUsed >= maxCredits) {
+      toast({ title: 'Đã hết credit AI tháng này', description: `Đã sử dụng hết ${maxCredits} credit. Quay lại tháng sau hoặc nâng cấp gói.`, variant: 'destructive' });
       return;
     }
 
@@ -252,7 +252,7 @@ export default function AIAssistant() {
       const modelHeader = response.headers.get('X-AI-Model');
       if (modelHeader) setActiveModel(modelHeader);
 
-      incrementUsage();
+      // Don't increment credits here — tokens are tracked server-side
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let textBuffer = '';
