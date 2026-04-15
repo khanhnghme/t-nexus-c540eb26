@@ -359,6 +359,27 @@ export default function JoinByCodeDialog({ open, onOpenChange, onJoined, initial
           return;
         }
 
+        // Ensure workspace membership sync
+        try {
+          const { data: groupData } = await supabase
+            .from('groups')
+            .select('workspace_id')
+            .eq('id', groupPreview.id)
+            .single();
+
+          if (groupData?.workspace_id) {
+            await supabase.functions.invoke('workspace-management', {
+              body: {
+                action: 'ensure_workspace_member',
+                workspace_id: groupData.workspace_id,
+                target_user_id: user.id,
+              },
+            });
+          }
+        } catch (wsErr) {
+          console.warn('[JoinByCode] ensure_workspace_member fallback:', wsErr);
+        }
+
         await logActivity({
           userId: user.id,
           userName: profile.full_name,
