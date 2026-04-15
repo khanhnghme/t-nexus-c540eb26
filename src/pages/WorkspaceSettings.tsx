@@ -84,6 +84,7 @@ export default function WorkspaceSettings() {
     if (activeWorkspace) {
       setName(activeWorkspace.name);
       setDescription(activeWorkspace.description || '');
+      setShareAiCredits((activeWorkspace as any).share_ai_credits === true);
 
       // Fetch WS-specific project count
       supabase.from('groups').select('id', { count: 'exact', head: true })
