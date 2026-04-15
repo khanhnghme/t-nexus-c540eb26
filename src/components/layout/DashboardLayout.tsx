@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardLayoutContext } from '@/contexts/DashboardLayoutContext';
@@ -43,7 +43,10 @@ import {
   Plus,
   ChevronsUpDown,
   ArrowLeft,
+  Settings,
+  Users,
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import SidebarTreeNav from '@/components/SidebarTreeNav';
 import AdminSidebarNav from '@/components/AdminSidebarNav';
 import { useTheme } from 'next-themes';
