@@ -301,11 +301,11 @@ export default function AIAssistantPanel({
     setError(null);
   };
 
-  const isUnlimited = maxQuestions === null;
-  const remainingQuestions = isUnlimited ? Infinity : maxQuestions - questionsToday;
+  const isUnlimited = maxCredits === null;
+  const remainingQuestions = isUnlimited ? Infinity : maxCredits - creditsUsed;
   const wordCount = countWords(input);
   const isOverLimit = wordCount > MAX_MESSAGE_WORDS;
-  const usagePercent = isUnlimited ? 0 : Math.min(100, (questionsToday / maxQuestions) * 100);
+  const usagePercent = isUnlimited ? 0 : Math.min(100, (creditsUsed / maxCredits) * 100);
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
