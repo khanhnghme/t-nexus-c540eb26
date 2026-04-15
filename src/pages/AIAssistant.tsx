@@ -387,10 +387,8 @@ export default function AIAssistant() {
         activeConversationId === conv.id ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
       )}
     >
-      {conv.is_pinned ? (
+      {conv.is_pinned && (
         <Pin className="h-3.5 w-3.5 shrink-0 text-primary/60" />
-      ) : (
-        <MessageSquare className="h-3.5 w-3.5 shrink-0 opacity-50" />
       )}
       <span className="block truncate min-w-0 flex-1">{conv.title || 'Untitled'}</span>
       <div className="absolute right-1 top-1/2 -translate-y-1/2 shrink-0">
