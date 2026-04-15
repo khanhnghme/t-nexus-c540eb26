@@ -214,48 +214,6 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
             </>
           )}
 
-          {/* Projects sub-tree */}
-          <button
-            onClick={() => toggle('projects')}
-            className={cn(
-              'sidebar-nav-item w-full text-left group',
-              hasActiveChild(projectPaths) && !isProjectsExpanded && 'semi-active'
-            )}
-          >
-            <ChevronRight className={cn('nav-chevron', isProjectsExpanded && 'expanded')} />
-            <FolderKanban className="nav-icon" strokeWidth={1.8} />
-            <span className="nav-label">{t?.projects || 'Projects'}</span>
-            <span className="text-[10px] opacity-40 tabular-nums">{projects.length}</span>
-          </button>
-
-          {isProjectsExpanded && (
-            <div className="tree-children tree-level-1">
-              {/* View all projects link */}
-              <Link
-                to="/groups"
-                className={cn('sidebar-nav-item', location.pathname === '/groups' && 'active')}
-              >
-                <span className="nav-label text-muted-foreground">{t?.viewAll || 'View all'}</span>
-              </Link>
-
-              {visibleProjects.map(p => {
-                const href = getProjectHref(p);
-                const active = location.pathname === href || location.pathname.startsWith(href + '/');
-                return (
-                  <Link
-                    key={p.id}
-                    to={href}
-                    className={cn('sidebar-nav-item', active && 'active', !p.isMember && 'opacity-60')}
-                  >
-                    <span className="nav-label truncate">{p.name}</span>
-                    {!p.isMember && (
-                      <span className="text-[9px] px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">{t?.newLabel || 'New'}</span>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          )}
         </div>
       ) : (
         <div className="ws-nav-section">
