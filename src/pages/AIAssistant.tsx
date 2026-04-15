@@ -600,14 +600,6 @@ export default function AIAssistant() {
 
         <div className="shrink-0 border-t border-border/30 bg-background/80 backdrop-blur-sm px-4 md:px-6 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <div className="max-w-[48rem] mx-auto">
-            {activeModel && (
-              <div className="mb-1.5">
-                <span className="text-[10px] text-muted-foreground/60 bg-muted/50 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/70" />
-                  {getModelLabel(activeModel)}
-                </span>
-              </div>
-            )}
             {renderInput('chat')}
           </div>
         </div>
@@ -639,16 +631,9 @@ export default function AIAssistant() {
           <h1 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-2 tracking-tight">
             {t?.sidebar?.aiGreeting || 'Hôm nay tôi có thể giúp gì cho bạn?'}
           </h1>
-          <p className="text-sm text-muted-foreground/70 text-center mb-3">
+          <p className="text-sm text-muted-foreground/70 text-center mb-10">
             {t?.sidebar?.aiSubGreeting || 'Chọn một gợi ý bên dưới hoặc nhập câu hỏi của bạn'}
           </p>
-          {activeModel && (
-            <span className="text-[10px] text-muted-foreground/60 bg-muted/50 px-2 py-0.5 rounded-full mb-10 inline-flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/70" />
-              {getModelLabel(activeModel)}
-            </span>
-          )}
-          {!activeModel && <div className="mb-10" />}
 
           {/* Large Input */}
           <div className="w-full mb-8">
