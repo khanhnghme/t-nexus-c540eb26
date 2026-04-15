@@ -552,7 +552,7 @@ export default function AIAssistant() {
 
       <div className="flex-1 flex flex-col items-center justify-center px-5">
         <div className="max-w-2xl w-full flex flex-col items-center">
-          <img src={tNexusIcon} alt="T-Nexus" className="w-16 h-16 mb-4 dark:invert" />
+          <img src={tNexusIcon} alt="T-Nexus" className="w-20 h-20 mb-4 dark:invert" />
           <h1 className="text-2xl md:text-3xl font-semibold text-foreground text-center mb-8">
             {t?.sidebar?.aiGreeting || 'Hôm nay tôi có thể giúp gì cho bạn?'}
           </h1>
