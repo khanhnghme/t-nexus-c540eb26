@@ -442,8 +442,8 @@ export default function AIAssistant() {
         </button>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="px-2 py-1">
+      <ScrollArea className="flex-1 overflow-hidden">
+        <div className="px-2 py-1 overflow-hidden">
           {conversations.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center py-8">{t?.sidebar?.noHistory || 'Chưa có lịch sử trò chuyện'}</p>
           ) : (
