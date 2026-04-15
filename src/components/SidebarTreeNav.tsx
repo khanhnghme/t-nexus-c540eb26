@@ -175,9 +175,7 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
         {/* Workspace pages */}
         {isAvailable && activeWorkspace && !isGuest && (
           <>
-            <TreeItemCollapsed icon={LayoutGrid} label={t?.overview || 'Overview'} href="/workspace/settings" active={isPathActive('/workspace/settings')} />
             <TreeItemCollapsed icon={Sparkles} label={t?.aiAssistant || 'AI Assistant'} href="/ai-assistant" active={isPathActive('/ai-assistant')} />
-            <TreeItemCollapsed icon={Users} label={t?.members || 'Members'} href="/workspace/members" active={isPathActive('/workspace/members')} />
           </>
         )}
 

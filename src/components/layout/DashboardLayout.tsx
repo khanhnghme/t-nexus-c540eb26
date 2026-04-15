@@ -181,7 +181,6 @@ function WorkspaceSwitcherCell({ collapsed }: { collapsed: boolean }) {
         </p>
       </div>
       {workspaces.map(ws => {
-        const wsIsPaid = ws.owner_plan && ws.owner_plan !== 'plan_free';
         return (
           <DropdownMenuItem key={ws.id} onClick={() => switchWorkspace(ws.id)} className={cn('gap-2 mx-1', ws.id === activeWorkspace?.id && 'bg-accent')}>
             <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs shrink-0">
@@ -191,11 +190,6 @@ function WorkspaceSwitcherCell({ collapsed }: { collapsed: boolean }) {
               <span className="truncate text-sm font-medium">{ws.name}</span>
               <span className="text-[10px] text-muted-foreground">{getRoleBadge(ws.my_role)} {getRoleLabel(ws.my_role)}</span>
             </div>
-            {wsIsPaid && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-semibold shrink-0">
-                {formatPlanName(ws.owner_plan)}
-              </span>
-            )}
             {ws.id === activeWorkspace?.id && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
           </DropdownMenuItem>
         );
