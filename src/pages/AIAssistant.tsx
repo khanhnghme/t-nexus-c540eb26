@@ -383,38 +383,29 @@ export default function AIAssistant() {
       onClick={() => loadConversation(conv.id)}
       title={conv.title || 'Untitled'}
       className={cn(
-        "grid grid-cols-[1fr_28px] items-center gap-1 rounded-lg text-left text-sm transition-colors group cursor-pointer px-2 py-1.5",
+        "flex items-center gap-1 rounded-lg text-left text-sm transition-colors group cursor-pointer px-2 py-1.5",
         activeConversationId === conv.id ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
       )}
     >
-      <span
-        className={cn(
-          "truncate min-w-0",
-          conv.is_pinned && "flex items-center gap-1.5"
-        )}
-      >
-        {conv.is_pinned && <Pin className="h-3 w-3 shrink-0 text-primary/60 inline-block" />}
-        <span className="truncate">{conv.title || 'Untitled'}</span>
-      </span>
-      <div className="flex items-center justify-center shrink-0">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-            <button className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-0.5 rounded hover:bg-muted text-muted-foreground transition-all">
-              <MoreHorizontal className="h-3.5 w-3.5" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem onClick={(e) => handleTogglePin(e as any, conv.id)}>
-              {conv.is_pinned ? <PinOff className="h-3.5 w-3.5 mr-2" /> : <Pin className="h-3.5 w-3.5 mr-2" />}
-              {conv.is_pinned ? 'Bỏ ghim' : 'Ghim'}
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => handleDeleteConversation(e as any, conv.id)}>
-              <Trash2 className="h-3.5 w-3.5 mr-2" />
-              Xóa
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      {conv.is_pinned && <Pin className="h-3 w-3 shrink-0 text-primary/60" />}
+      <span className="truncate min-w-0 flex-1">{conv.title || 'Untitled'}</span>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+          <button className="opacity-0 group-hover:opacity-100 focus:opacity-100 shrink-0 p-0.5 rounded hover:bg-muted text-muted-foreground transition-all">
+            <MoreHorizontal className="h-3.5 w-3.5" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuItem onClick={(e) => handleTogglePin(e as any, conv.id)}>
+            {conv.is_pinned ? <PinOff className="h-3.5 w-3.5 mr-2" /> : <Pin className="h-3.5 w-3.5 mr-2" />}
+            {conv.is_pinned ? 'Bỏ ghim' : 'Ghim'}
+          </DropdownMenuItem>
+          <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => handleDeleteConversation(e as any, conv.id)}>
+            <Trash2 className="h-3.5 w-3.5 mr-2" />
+            Xóa
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 
