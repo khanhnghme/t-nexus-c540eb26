@@ -433,8 +433,10 @@ export default function AIAssistant() {
   const renderInput = (variant: 'empty' | 'chat') => (
     <form onSubmit={handleSubmit}>
       <div className={cn(
-        "relative border rounded-xl transition-all",
-        isOverLimit ? "border-destructive" : "border-border/60 bg-muted/20 focus-within:bg-background focus-within:border-border focus-within:shadow-sm"
+        "relative rounded-2xl transition-all duration-300",
+        isOverLimit
+          ? "border-2 border-destructive"
+          : "border-2 border-border/40 bg-muted/10 focus-within:bg-background focus-within:border-primary/50 focus-within:shadow-[0_0_0_3px_hsl(var(--primary)/0.1)] focus-within:shadow-primary/10"
       )}>
         <Textarea
           ref={textareaRef}
@@ -445,7 +447,7 @@ export default function AIAssistant() {
           disabled={isLoading || remainingQuestions <= 0}
           className={cn(
             "w-full resize-none border-0 bg-transparent text-sm placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0",
-            variant === 'empty' ? "px-5 py-4 pr-20 min-h-[56px] max-h-[140px]" : "px-4 py-3 pr-14 min-h-[48px] max-h-[120px]"
+            variant === 'empty' ? "px-5 py-5 pr-20 min-h-[64px] max-h-[160px] text-base" : "px-5 py-4 pr-14 min-h-[56px] max-h-[140px]"
           )}
           rows={variant === 'empty' ? 2 : 1}
         />
