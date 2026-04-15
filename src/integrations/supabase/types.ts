@@ -1966,6 +1966,32 @@ export type Database = {
         }
         Relationships: []
       }
+      project_access_log: {
+        Row: {
+          accessed_at: string | null
+          group_id: string
+          user_id: string
+        }
+        Insert: {
+          accessed_at?: string | null
+          group_id: string
+          user_id: string
+        }
+        Update: {
+          accessed_at?: string | null
+          group_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_access_log_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_invitations: {
         Row: {
           created_at: string
@@ -2463,6 +2489,32 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "stages_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      starred_projects: {
+        Row: {
+          created_at: string | null
+          group_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          group_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          group_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "starred_projects_group_id_fkey"
             columns: ["group_id"]
             isOneToOne: false
             referencedRelation: "groups"
