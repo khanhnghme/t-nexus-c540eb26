@@ -141,6 +141,19 @@ export default function GroupDetail() {
     return () => setProjectInfo({});
   }, [group?.id, group?.name, group?.zalo_link, setProjectInfo]);
 
+  // Log recent access for project_access_log
+  useEffect(() => {
+    if (group?.id && user?.id) {
+      supabase
+        .from('project_access_log')
+        .upsert(
+          { user_id: user.id, group_id: group.id, accessed_at: new Date().toISOString() },
+          { onConflict: 'user_id,group_id' }
+        )
+        .then(() => {});
+    }
+  }, [group?.id, user?.id]);
+
   const handleRenameProject = useCallback(async (newName: string) => {
     if (!group || !newName.trim()) return;
     const trimmed = newName.trim();
