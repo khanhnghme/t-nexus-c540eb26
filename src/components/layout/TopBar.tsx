@@ -253,30 +253,13 @@ export default function TopBar() {
       )}
 
       <div className="flex items-center gap-2 shrink-0">
-        {isAIRoute && aiTopBarProps && (
-          <>
-            {!aiTopBarProps.isUnlimited && (
-              <div className="flex items-center gap-2">
-                <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className={cn("h-full rounded-full transition-all duration-500",
-                      aiTopBarProps.maxQuestions && (aiTopBarProps.questionsToday / aiTopBarProps.maxQuestions) > 0.8 ? "bg-destructive" : "bg-primary"
-                    )}
-                    style={{ width: `${aiTopBarProps.maxQuestions ? Math.min(100, (aiTopBarProps.questionsToday / aiTopBarProps.maxQuestions) * 100) : 0}%` }}
-                  />
-                </div>
-                <span className="text-[10px] text-muted-foreground tabular-nums">{aiTopBarProps.questionsToday}/{aiTopBarProps.maxQuestions}</span>
-              </div>
-            )}
-            {aiTopBarProps.hasMessages && (
-              <button
-                onClick={aiTopBarProps.onClearChat}
-                className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </>
+        {isAIRoute && aiTopBarProps && aiTopBarProps.hasMessages && (
+          <button
+            onClick={aiTopBarProps.onClearChat}
+            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
         )}
         <div className="hidden md:flex items-center gap-2">
           <Tooltip>
