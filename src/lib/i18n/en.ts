@@ -727,7 +727,7 @@ export const en = {
       servicePlan: 'Service Plan',
       billing: 'Billing',
       search: 'Search',
-      aiAssistant: 'AI Assistant',
+      aiAssistant: 'T-Nexus AI',
       aiGreeting: 'What can I help you with today?',
       aiPlaceholder: 'Ask anything...',
       aiSuggestion1Label: 'Summarize project',
