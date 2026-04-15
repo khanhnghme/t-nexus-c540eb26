@@ -20,9 +20,15 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 import { useDashboardLayoutContext } from '@/contexts/DashboardLayoutContext';
 
+interface MessageAttachment {
+  file_name: string;
+  file_size: number;
+}
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  attachments?: MessageAttachment[];
 }
 
 interface Conversation {
