@@ -52,6 +52,7 @@ export function DashboardLayoutProvider({ children }: { children: ReactNode }) {
     return false;
   });
   const [projectNavProps, setProjectNavPropsState] = useState<ProjectNavProps | null>(null);
+  const [aiTopBarProps, setAITopBarPropsState] = useState<AIAssistantTopBarProps | null>(null);
 
   const setProjectInfo = useCallback((info: ProjectInfo) => {
     setProjectInfoState(info);
@@ -74,8 +75,12 @@ export function DashboardLayoutProvider({ children }: { children: ReactNode }) {
     setProjectNavPropsState(props);
   }, []);
 
+  const setAITopBarProps = useCallback((props: AIAssistantTopBarProps | null) => {
+    setAITopBarPropsState(props);
+  }, []);
+
   return (
-    <DashboardLayoutContext.Provider value={{ projectInfo, setProjectInfo, sidebarCollapsed, setSidebarCollapsed, toggleSidebar, projectNavProps, setProjectNavProps }}>
+    <DashboardLayoutContext.Provider value={{ projectInfo, setProjectInfo, sidebarCollapsed, setSidebarCollapsed, toggleSidebar, projectNavProps, setProjectNavProps, aiTopBarProps, setAITopBarProps }}>
       {children}
     </DashboardLayoutContext.Provider>
   );
