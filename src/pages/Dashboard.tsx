@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Spinner } from '@/components/ui/spinner';
 
@@ -67,7 +67,7 @@ import type { Group } from '@/types/database';
 
 // Removed hard-coded DEFAULT_PROJECT_LIMIT — limits come from plan_limits table
 
-type ProjectModeFilter = 'all' | 'basic' | 'custom';
+
 
 interface PendingInvitationGroup {
   name: string;
