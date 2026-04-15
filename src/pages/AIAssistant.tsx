@@ -488,8 +488,17 @@ export default function AIAssistant() {
               {messages.map((message, idx) => (
                 <div key={idx} className={cn("animate-fade-in", message.role === 'user' ? 'flex justify-end' : '')}>
                   {message.role === 'user' ? (
-                    <div className="max-w-[80%] bg-muted text-foreground rounded-2xl rounded-br-sm px-4 py-2.5 text-sm">
-                      <div className="whitespace-pre-wrap">{message.content}</div>
+                    <div className="flex items-start gap-3 justify-end">
+                      <div className="max-w-[80%] bg-muted text-foreground rounded-2xl rounded-br-sm px-4 py-2.5 text-sm">
+                        <div className="whitespace-pre-wrap">{message.content}</div>
+                      </div>
+                      {profile?.avatar_url ? (
+                        <img src={profile.avatar_url} alt="You" className="w-6 h-6 rounded-full shrink-0 mt-0.5 object-cover" />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full shrink-0 mt-0.5 bg-primary/15 flex items-center justify-center text-[10px] font-semibold text-primary">
+                          {(profile?.full_name || 'U').charAt(0).toUpperCase()}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="flex gap-3">
