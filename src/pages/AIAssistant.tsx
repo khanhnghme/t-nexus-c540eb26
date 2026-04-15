@@ -141,18 +141,21 @@ export default function AIAssistant() {
         shareMode = (wsData as any)?.share_ai_credits === true;
       }
 
-      const [creditRes, ownerProfileRes] = await Promise.all([
+      // Determine which plan to use for limit
+      const planForLimit = shareMode ? effectiveOwnerId : user.id;
+
+      const [creditRes, planProfileRes] = await Promise.all([
         shareMode
           ? supabase.rpc('get_owner_ai_credit_usage_month', { _owner_id: effectiveOwnerId, _month_start: monthStart, _month_end: monthEnd })
           : supabase.rpc('get_user_ai_credit_usage_month' as any, { _user_id: user.id, _month_start: monthStart, _month_end: monthEnd }),
-        supabase.from('profiles').select('user_plan').eq('id', effectiveOwnerId).single(),
+        supabase.from('profiles').select('user_plan').eq('id', planForLimit).single(),
       ]);
       setCreditsUsed(typeof creditRes.data === 'number' ? creditRes.data : 0);
-      const ownerPlan = (ownerProfileRes.data as any)?.user_plan || 'plan_free';
-      setActiveModel(getModelFromPlan(ownerPlan));
+      const relevantPlan = (planProfileRes.data as any)?.user_plan || 'plan_free';
+      setActiveModel(getModelFromPlan(relevantPlan));
       const { data: limitData } = await supabase
         .from('plan_limits').select('max_ai_credits_per_month')
-        .eq('plan', ownerPlan as any).maybeSingle();
+        .eq('plan', relevantPlan as any).maybeSingle();
       setMaxCredits((limitData as any)?.max_ai_credits_per_month ?? null);
     } catch { /* fallback */ }
     setUsageLoading(false);

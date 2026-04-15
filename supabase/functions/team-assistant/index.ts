@@ -576,14 +576,6 @@ serve(async (req) => {
       ownerPlan = ownerProfile?.user_plan || 'plan_free';
     }
 
-    const { data: planLimitData } = await supabase
-      .from('plan_limits')
-      .select('max_ai_messages_per_month, max_ai_credits_per_month')
-      .eq('plan', ownerPlan)
-      .maybeSingle();
-
-    const maxCredits = planLimitData?.max_ai_credits_per_month ?? null; // null = unlimited (Free/Plus/Custom)
-
     // Check share_ai_credits setting from user's workspace
     let shareAiCredits = false;
     {
@@ -596,9 +588,19 @@ serve(async (req) => {
       shareAiCredits = wsData?.share_ai_credits === true;
     }
 
+    // Determine credit limit based on sharing mode
+    let maxCredits: number | null;
     let currentCredits: number;
+
     if (shareAiCredits) {
-      // Shared pool: count all members' usage under the owner
+      // ON: Shared pool — use owner's plan limit, count all members' usage
+      const { data: planLimitData } = await supabase
+        .from('plan_limits')
+        .select('max_ai_credits_per_month')
+        .eq('plan', ownerPlan)
+        .maybeSingle();
+      maxCredits = planLimitData?.max_ai_credits_per_month ?? null;
+
       const { data: totalCredits } = await supabase.rpc('get_owner_ai_credit_usage_month', { 
         _owner_id: effectiveOwnerId, 
         _month_start: monthStart,
@@ -606,7 +608,16 @@ serve(async (req) => {
       });
       currentCredits = totalCredits ?? 0;
     } else {
-      // Individual: count only this user's usage
+      // OFF: Individual — each user uses their OWN plan's limit
+      // Owner uses their own plan; members fall back to their personal plan
+      const userPlan = profileData?.user_plan || 'plan_free';
+      const { data: userPlanLimit } = await supabase
+        .from('plan_limits')
+        .select('max_ai_credits_per_month')
+        .eq('plan', userPlan)
+        .maybeSingle();
+      maxCredits = userPlanLimit?.max_ai_credits_per_month ?? null;
+
       const { data: userCredits } = await supabase.rpc('get_user_ai_credit_usage_month', {
         _user_id: userId,
         _month_start: monthStart,
