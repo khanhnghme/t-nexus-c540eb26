@@ -230,17 +230,9 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
           {/* Workspace management - only for non-guest */}
           {!isGuest && (
             <>
-              <Link to="/workspace/settings" className={cn('sidebar-nav-item', isPathActive('/workspace/settings') && 'active')}>
-                <LayoutGrid className="nav-icon" strokeWidth={1.8} />
-                <span className="nav-label">{t?.overview || 'Overview'}</span>
-              </Link>
               <Link to="/ai-assistant" className={cn('sidebar-nav-item', isPathActive('/ai-assistant') && 'active')}>
                 <Sparkles className="nav-icon" strokeWidth={1.8} />
                 <span className="nav-label">{t?.aiAssistant || 'AI Assistant'}</span>
-              </Link>
-              <Link to="/workspace/members" className={cn('sidebar-nav-item', isPathActive('/workspace/members') && 'active')}>
-                <Users className="nav-icon" strokeWidth={1.8} />
-                <span className="nav-label">{t?.members || 'Members'}</span>
               </Link>
             </>
           )}
