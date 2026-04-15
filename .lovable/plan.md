@@ -1,62 +1,63 @@
 
 
-# Fix hiển thị sai AI credits trên nhiều trang
+# Fix thiếu renderer cho AI output (chart/diagram/table)
 
-## Các lỗi phát hiện
+## Vấn đề
+Cả 2 nơi hiển thị AI response (`AIAssistant.tsx` và `AIAssistantPanel.tsx`) đều dùng `ReactMarkdown` **không có plugins** — thiếu `remarkGfm` (tables, strikethrough) và `rehypeRaw`. Code blocks không có syntax highlighting. Không có renderer cho Mermaid diagrams.
 
-### Lỗi 1: `servicePlanFeatureGroups` — AI credit values sai (nghiêm trọng)
-Trong cả `en.ts` và `vi.ts`, phần `servicePlanFeatureGroups` (dùng ở trang Upgrade) hiển thị **giá trị message cũ** thay vì credit mới:
+Packages `remark-gfm`, `rehype-raw`, `recharts` **đã cài sẵn** trong project.
 
-| Gói | Hiện tại (SAI) | Đúng |
-|-----|---------------|------|
-| Free | `20/month` | `Free (Gemini Flash)` |
-| Plus | `60/month` | `Free (Gemini Flash)` |
-| Pro | `150/month` | `1,000 credits/month` |
-| Business | `300/month` | `2,500 credits/month` |
+## Giải pháp
 
-### Lỗi 2: `(DeepSeek V3.2)` dán nhầm vào các row không liên quan đến AI
-Trong `servicePlanFeatureGroups` (Pro, Business, Enterprise) và `comparisonCategories` (Enterprise column):
-- `Meeting duration: Unlimited (DeepSeek V3.2)` → nên là `Unlimited`
-- `Activity logs: Unlimited (DeepSeek V3.2)` → nên là `Unlimited`
-- `Workspaces: Unlimited (DeepSeek V3.2)` → nên là `Unlimited`
-- `Total storage: Unlimited (DeepSeek V3.2)` → nên là `Unlimited`
-- Chỉ row **AI Assistant** mới nên có `(DeepSeek V3.2)`
+### 1. Tạo shared component `src/components/ai/AIMessageRenderer.tsx`
+Component dùng chung cho cả 2 nơi, tránh duplicate code:
 
-## Thay đổi
+- **Markdown**: `ReactMarkdown` + `remarkGfm` + `rehypeRaw`
+- **GFM Tables**: Custom `table/thead/tbody/tr/th/td` components map sang `Table` UI components đã có
+- **Code blocks**: Custom `code` component phát hiện ngôn ngữ, hiển thị header (language label + copy button), styled block
+- **Mermaid diagrams**: Custom `code` component detect `language-mermaid` → render diagram inline bằng dynamic import `mermaid` library
+- **Inline code**: Giữ style hiện tại
 
-### File 1: `src/lib/i18n/en.ts`
-- **comparisonCategories** (dòng 405-422): Xóa `(DeepSeek V3.2)` khỏi enterprise column của non-AI rows
-- **servicePlanFeatureGroups** (dòng 3236-3343): Fix tất cả AI values + xóa `(DeepSeek V3.2)` khỏi Meeting/Logs rows
+### 2. Install thêm package `mermaid`
+Cần cài `mermaid` để render diagrams. Sử dụng dynamic import (`React.lazy` / `useEffect`) để không ảnh hưởng bundle size.
 
-### File 2: `src/lib/i18n/vi.ts`  
-- **comparisonCategories** (dòng 407-424): Tương tự en.ts
-- **servicePlanFeatureGroups** (dòng 3209-3270): Tương tự en.ts
+### 3. Cập nhật `AIAssistant.tsx` (dòng 601-609)
+Thay block `<ReactMarkdown components={...}>` bằng `<AIMessageRenderer content={message.content} />`
 
-### Giá trị đúng cần áp dụng
+### 4. Cập nhật `AIAssistantPanel.tsx` (dòng 446-459)
+Tương tự — thay bằng `<AIMessageRenderer content={message.content} compact />`
+(prop `compact` cho smaller font/spacing trong panel)
 
-**en.ts `servicePlanFeatureGroups`:**
-- Free AI: `Free (Gemini Flash)`
-- Plus AI: `Free (Gemini Flash)` 
-- Pro AI: `1,000 credits/month (DeepSeek V3.2)`
-- Business AI: `2,500 credits/month (DeepSeek V3.2)`
-- Enterprise AI: `Unlimited (DeepSeek V3.2)`
-- Meeting/Logs Pro+Business: `Unlimited` (no DeepSeek tag)
+## Chi tiết kỹ thuật
 
-**vi.ts `servicePlanFeatureGroups`:**
-- Free AI: `Miễn phí (Gemini Flash)`
-- Plus AI: `Miễn phí (Gemini Flash)`
-- Pro AI: `1.000 credit/tháng (DeepSeek V3.2)`
-- Business AI: `2.500 credit/tháng (DeepSeek V3.2)`
-- Enterprise AI: `Không giới hạn (DeepSeek V3.2)`
-- Meeting/Logs Pro+Business: `Không giới hạn` (no DeepSeek tag)
+### AIMessageRenderer component structure:
+```
+AIMessageRenderer
+├── ReactMarkdown (remarkGfm, rehypeRaw)
+│   ├── table → shadcn Table component
+│   ├── code (block) → CodeBlock component
+│   │   ├── language === 'mermaid' → MermaidRenderer
+│   │   └── other → styled pre/code + copy button
+│   ├── code (inline) → styled inline code
+│   ├── p, ul, ol, li, strong → styled elements
+│   └── a → external link with icon
+```
 
-**Enterprise comparison columns:** Remove `(DeepSeek V3.2)` from non-AI rows (Workspaces, Storage, Projects, Members, Meeting, Logs).
+### MermaidRenderer:
+- `useEffect` load mermaid library dynamically
+- Render SVG inline from mermaid syntax
+- Dark mode support via mermaid theme config
+- Error fallback: show raw code if parse fails
+
+### CodeBlock:
+- Language label header bar
+- Copy-to-clipboard button
+- Overflow-x scroll
+- Monospace font styling
 
 ## Không thay đổi
-- DB values (`plan_limits`) — đã đúng: Pro 1000, Business 2500
-- `servicePlanFeatures` — đã đúng
-- `servicePlanFullFeatures` — đã đúng  
-- Pricing cards (`plans` array) — đã đúng
-- AIAssistant.tsx, AIAssistantPanel.tsx — logic đã đúng
-- Edge Function — đã đúng
+- Backend / Edge Functions
+- DB schema
+- Existing UI components (Table, Chart)
+- Logic gửi/nhận message
 
