@@ -149,6 +149,35 @@ export default function AIAssistantPanel({
     setCreditsUsed(prev => prev + 1);
   };
 
+  const MAX_FILES = 5;
+  const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    if (pendingFiles.length + files.length > MAX_FILES) {
+      toast({ title: 'Tối đa 5 file', variant: 'destructive' });
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+    const oversized = files.filter(f => f.size > MAX_FILE_SIZE);
+    if (oversized.length > 0) {
+      toast({ title: 'File vượt quá giới hạn 5MB', variant: 'destructive' });
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+    setPendingFiles(prev => [...prev, ...files]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeFile = (index: number) => setPendingFiles(prev => prev.filter((_, i) => i !== index));
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes}B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)}KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+  };
+
   const sendMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
 
@@ -176,11 +205,31 @@ export default function AIAssistantPanel({
     const userMessage: Message = { role: 'user', content: messageText };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
+    const filesToUpload = [...pendingFiles];
+    setPendingFiles([]);
     setIsLoading(true);
 
     setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
     let assistantContent = '';
+
+    // Upload files
+    let attachmentsMeta: { file_path: string; file_name: string; content_type: string }[] = [];
+    if (filesToUpload.length > 0 && user?.id) {
+      try {
+        for (const file of filesToUpload) {
+          const filePath = `${user.id}/panel/${Date.now()}-${file.name}`;
+          const { error: uploadErr } = await r2Storage.from('ai-attachments').upload(filePath, file, {
+            contentType: file.type || 'application/octet-stream',
+          });
+          if (!uploadErr) {
+            attachmentsMeta.push({ file_path: filePath, file_name: file.name, content_type: file.type || 'application/octet-stream' });
+          }
+        }
+      } catch (err) {
+        console.error('File upload error:', err);
+      }
+    }
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -201,6 +250,7 @@ export default function AIAssistantPanel({
               content: m.content,
             })),
             projectId: projectId || undefined,
+            attachments: attachmentsMeta.length > 0 ? attachmentsMeta : undefined,
           }),
         }
       );
