@@ -419,7 +419,7 @@ export const en = {
         rows: [
           { label: 'Meeting duration', free: '15 min', plus: '60 min', pro: 'Unlimited', business: 'Unlimited', enterprise: 'Unlimited (DeepSeek V3.2)' },
           { label: 'Activity logs', free: false, plus: '30 days', pro: 'Unlimited', business: 'Unlimited', enterprise: 'Unlimited (DeepSeek V3.2)' },
-          { label: 'AI Assistant', free: '20/month (Gemini Flash)', plus: '60/month (Gemini Flash)', pro: '150/month (DeepSeek V3.2)', business: '300/month (DeepSeek V3.2)', enterprise: 'Unlimited (DeepSeek V3.2)' },
+          { label: 'AI Assistant', free: 'Free (Gemini Flash)', plus: 'Free (Gemini Flash)', pro: '1,000 credits/month (DeepSeek V3.2)', business: '2,500 credits/month (DeepSeek V3.2)', enterprise: 'Unlimited (DeepSeek V3.2)' },
         ],
       },
       {

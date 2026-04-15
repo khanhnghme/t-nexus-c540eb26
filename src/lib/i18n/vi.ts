@@ -421,7 +421,7 @@ export const vi: Translations = {
         rows: [
           { label: 'Thời lượng họp', free: '15 phút', plus: '60 phút', pro: 'Không giới hạn', business: 'Không giới hạn', enterprise: 'Không giới hạn (DeepSeek V3.2)' },
           { label: 'Nhật ký hoạt động', free: false, plus: '30 ngày', pro: 'Không giới hạn', business: 'Không giới hạn', enterprise: 'Không giới hạn (DeepSeek V3.2)' },
-          { label: 'Trợ lý AI', free: '20/tháng (Gemini Flash)', plus: '60/tháng (Gemini Flash)', pro: '150/tháng (DeepSeek V3.2)', business: '300/tháng (DeepSeek V3.2)', enterprise: 'Không giới hạn (DeepSeek V3.2)' },
+          { label: 'Trợ lý AI', free: 'Miễn phí (Gemini Flash)', plus: 'Miễn phí (Gemini Flash)', pro: '1.000 credit/tháng (DeepSeek V3.2)', business: '2.500 credit/tháng (DeepSeek V3.2)', enterprise: 'Không giới hạn (DeepSeek V3.2)' },
         ],
       },
       {
