@@ -1,17 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, Sparkles, AlertCircle, Trash2 } from 'lucide-react';
+import { Send, Trash2, ArrowUp, FileText, ListChecks, BarChart3, PenLine } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import tNexusTextLogo from '@/assets/t-nexus-text.png';
+import { TNexusLogo } from '@/components/TNexusLogo';
 import ReactMarkdown from 'react-markdown';
-import UserAvatar from '@/components/UserAvatar';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -36,6 +34,14 @@ export default function AIAssistant() {
   const { user, profile } = useAuth();
   const { activeWorkspace } = useWorkspace();
   const { toast } = useToast();
+  const { translations: t } = useLanguage();
+
+  const suggestions = [
+    { icon: FileText, label: t?.sidebar?.aiSuggestion1Label || 'Tóm tắt dự án', desc: t?.sidebar?.aiSuggestion1Desc || '', prompt: 'Tóm tắt nội dung và tiến độ dự án hiện tại của tôi' },
+    { icon: ListChecks, label: t?.sidebar?.aiSuggestion2Label || 'Lên kế hoạch', desc: t?.sidebar?.aiSuggestion2Desc || '', prompt: 'Giúp tôi lên kế hoạch và phân chia công việc cho dự án' },
+    { icon: BarChart3, label: t?.sidebar?.aiSuggestion3Label || 'Phân tích tiến độ', desc: t?.sidebar?.aiSuggestion3Desc || '', prompt: 'Phân tích tiến độ và hiệu suất làm việc của nhóm tôi' },
+    { icon: PenLine, label: t?.sidebar?.aiSuggestion4Label || 'Viết báo cáo', desc: t?.sidebar?.aiSuggestion4Desc || '', prompt: 'Giúp tôi viết báo cáo tiến độ dự án' },
+  ];
 
   useEffect(() => {
     const loadUsage = async () => {
@@ -217,78 +223,51 @@ export default function AIAssistant() {
   const isOverLimit = wordCount > MAX_MESSAGE_WORDS;
   const usagePercent = isUnlimited ? 0 : Math.min(100, (questionsToday / maxQuestions) * 100);
 
-  return (
-    <div className="flex flex-col h-[calc(100dvh-56px)] bg-background">
-      {/* Header */}
-      <header className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-border/60">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-9 w-9">
-            <AvatarImage src={tNexusTextLogo} alt="AI" className="object-contain p-1.5 bg-white rounded-full" />
-            <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">T</AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="text-sm font-semibold text-foreground">T-Nexus AI</p>
-            <div className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span className="text-[11px] text-muted-foreground">Online</span>
-            </div>
+  const hasMessages = messages.length > 0;
+
+  // ── Chat state ──
+  if (hasMessages) {
+    return (
+      <div className="flex flex-col h-[calc(100dvh-56px)] bg-background">
+        {/* Minimal header */}
+        <header className="shrink-0 flex items-center justify-between px-5 py-2.5 border-b border-border/40">
+          <div className="flex items-center gap-2">
+            <TNexusLogo width={80} />
+            <span className="text-xs text-muted-foreground">AI</span>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          {isUnlimited ? (
-            <span className="text-[11px] text-muted-foreground">∞ Unlimited</span>
-          ) : (
-            <div className="flex items-center gap-2">
-              <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
-                <div
-                  className={cn("h-full rounded-full transition-all duration-500", usagePercent > 80 ? "bg-destructive" : "bg-foreground")}
-                  style={{ width: `${usagePercent}%` }}
-                />
+          <div className="flex items-center gap-3">
+            {!isUnlimited && (
+              <div className="flex items-center gap-2">
+                <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className={cn("h-full rounded-full transition-all duration-500", usagePercent > 80 ? "bg-destructive" : "bg-primary")}
+                    style={{ width: `${usagePercent}%` }}
+                  />
+                </div>
+                <span className="text-[10px] text-muted-foreground tabular-nums">{questionsToday}/{maxQuestions}</span>
               </div>
-              <span className="text-[11px] text-muted-foreground tabular-nums">{questionsToday}/{maxQuestions}</span>
-            </div>
-          )}
-          {messages.length > 0 && (
+            )}
             <button
               onClick={handleClearChat}
               className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3.5 w-3.5" />
             </button>
-          )}
-        </div>
-      </header>
-
-      {/* Messages */}
-      <main ref={chatContainerRef} className="flex-1 overflow-y-auto">
-        {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full">
-            <Avatar className="h-14 w-14 mb-4">
-              <AvatarImage src={tNexusTextLogo} alt="AI" className="object-contain p-2 bg-white rounded-full" />
-              <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">T</AvatarFallback>
-            </Avatar>
-            <p className="text-sm text-muted-foreground">Hỏi bất cứ điều gì về công việc của bạn</p>
           </div>
-        ) : (
-          <div className="max-w-2xl mx-auto px-5 py-8 space-y-6">
+        </header>
+
+        {/* Messages */}
+        <main ref={chatContainerRef} className="flex-1 overflow-y-auto">
+          <div className="max-w-2xl mx-auto px-5 py-6 space-y-5">
             {messages.map((message, idx) => (
-              <div key={idx} className={cn("flex gap-3 animate-fade-in", message.role === 'user' ? 'flex-row-reverse' : 'flex-row')}>
-                {message.role === 'assistant' ? (
-                  <Avatar className="h-7 w-7 shrink-0 mt-0.5">
-                    <AvatarImage src={tNexusTextLogo} alt="AI" className="object-contain p-1 bg-white rounded-full" />
-                    <AvatarFallback className="bg-muted text-muted-foreground text-[10px] font-semibold">T</AvatarFallback>
-                  </Avatar>
+              <div key={idx} className={cn("animate-fade-in", message.role === 'user' ? 'flex justify-end' : '')}>
+                {message.role === 'user' ? (
+                  <div className="max-w-[80%] bg-muted text-foreground rounded-2xl rounded-br-sm px-4 py-2.5 text-sm">
+                    <div className="whitespace-pre-wrap">{message.content}</div>
+                  </div>
                 ) : (
-                  <UserAvatar src={profile?.avatar_url} name={profile?.full_name} size="sm" className="shrink-0 mt-0.5" />
-                )}
-                <div className={cn(
-                  "max-w-[75%] text-sm leading-relaxed",
-                  message.role === 'user'
-                    ? 'bg-foreground text-background rounded-2xl rounded-br-sm px-4 py-2.5'
-                    : 'flex-1 text-muted-foreground'
-                )}>
-                  {message.content ? (
-                    message.role === 'assistant' ? (
+                  <div className="text-sm leading-relaxed text-foreground">
+                    {message.content ? (
                       <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground prose-headings:text-sm">
                         <ReactMarkdown components={{
                           p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
@@ -296,82 +275,151 @@ export default function AIAssistant() {
                           ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
                           li: ({ children }) => <li className="text-sm">{children}</li>,
                           strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                          em: ({ children }) => <em className="italic">{children}</em>,
                           code: ({ children }) => <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>,
                         }}>{message.content}</ReactMarkdown>
                       </div>
                     ) : (
-                      <div className="whitespace-pre-wrap">{message.content}</div>
-                    )
-                  ) : (
-                    <div className="flex items-center gap-1.5 py-1">
-                      <span className="w-1.5 h-1.5 rounded-full ai-typing-dot bg-muted-foreground/40" style={{ animationDelay: '0ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full ai-typing-dot bg-muted-foreground/40" style={{ animationDelay: '200ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full ai-typing-dot bg-muted-foreground/40" style={{ animationDelay: '400ms' }} />
-                    </div>
-                  )}
-                </div>
+                      <div className="flex items-center gap-1.5 py-1">
+                        <span className="w-1.5 h-1.5 rounded-full ai-typing-dot bg-muted-foreground/40" style={{ animationDelay: '0ms' }} />
+                        <span className="w-1.5 h-1.5 rounded-full ai-typing-dot bg-muted-foreground/40" style={{ animationDelay: '200ms' }} />
+                        <span className="w-1.5 h-1.5 rounded-full ai-typing-dot bg-muted-foreground/40" style={{ animationDelay: '400ms' }} />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
             {error && (
-              <div className="flex items-center gap-2 text-destructive text-xs p-3 bg-destructive/5 rounded-xl">
-                <AlertCircle className="h-4 w-4 shrink-0" /><span>{error}</span>
-              </div>
+              <div className="text-destructive text-xs p-3 bg-destructive/5 rounded-xl">{error}</div>
             )}
             <div ref={messagesEndRef} />
           </div>
-        )}
-      </main>
+        </main>
 
-      {/* Input */}
-      <div className="shrink-0 border-t border-border/60 px-5 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-        <div className="max-w-2xl mx-auto">
-          <form onSubmit={handleSubmit}>
-            <div className={cn(
-              "relative border rounded-xl transition-all",
-              isOverLimit
-                ? "border-destructive"
-                : "border-border/80 bg-muted/30 focus-within:bg-background focus-within:border-border focus-within:shadow-sm"
-            )}>
-              <Textarea
-                ref={textareaRef}
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={remainingQuestions <= 0 ? "Đã hết lượt hỏi tháng này..." : "Nhập câu hỏi..."}
-                disabled={isLoading || remainingQuestions <= 0}
-                className="w-full resize-none border-0 bg-transparent px-4 py-3.5 pr-14 text-sm placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[56px] max-h-[140px]"
-                rows={2}
-              />
-              <div className="absolute right-2 bottom-2.5 flex items-center gap-2">
-                {input.trim() && (
-                  <span className={cn("text-[10px] tabular-nums", isOverLimit ? "text-destructive font-semibold" : "text-muted-foreground")}>
-                    {wordCount}/{MAX_MESSAGE_WORDS}
-                  </span>
-                )}
-                <button
-                  type="submit"
-                  disabled={!input.trim() || isLoading || isOverLimit || remainingQuestions <= 0}
-                  className="p-2 rounded-lg bg-foreground text-background hover:bg-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isLoading ? <Spinner size="sm" className="text-background" /> : <Send className="h-4 w-4" />}
-                </button>
+        {/* Input fixed bottom */}
+        <div className="shrink-0 border-t border-border/40 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div className="max-w-2xl mx-auto">
+            <form onSubmit={handleSubmit}>
+              <div className={cn(
+                "relative border rounded-xl transition-all",
+                isOverLimit ? "border-destructive" : "border-border/60 bg-muted/20 focus-within:bg-background focus-within:border-border focus-within:shadow-sm"
+              )}>
+                <Textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={remainingQuestions <= 0 ? "Đã hết lượt..." : (t?.sidebar?.aiPlaceholder || "Hỏi bất cứ điều gì...")}
+                  disabled={isLoading || remainingQuestions <= 0}
+                  className="w-full resize-none border-0 bg-transparent px-4 py-3 pr-14 text-sm placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[48px] max-h-[120px]"
+                  rows={1}
+                />
+                <div className="absolute right-2 bottom-2 flex items-center gap-2">
+                  {input.trim() && (
+                    <span className={cn("text-[10px] tabular-nums", isOverLimit ? "text-destructive font-semibold" : "text-muted-foreground")}>
+                      {wordCount}/{MAX_MESSAGE_WORDS}
+                    </span>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={!input.trim() || isLoading || isOverLimit || remainingQuestions <= 0}
+                    className="p-1.5 rounded-lg bg-foreground text-background hover:bg-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isLoading ? <Spinner size="sm" className="text-background" /> : <ArrowUp className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
-            </div>
-          </form>
+            </form>
+          </div>
+        </div>
+
+        <style>{`
+          @keyframes ai-typing-wave {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
+            30% { transform: translateY(-4px); opacity: 1; }
+          }
+          .ai-typing-dot { animation: ai-typing-wave 1.4s ease-in-out infinite; }
+        `}</style>
+      </div>
+    );
+  }
+
+  // ── Empty state ──
+  return (
+    <div className="flex flex-col h-[calc(100dvh-56px)] bg-background">
+      <div className="flex-1 flex flex-col items-center justify-center px-5">
+        <div className="max-w-2xl w-full flex flex-col items-center">
+          {/* Logo */}
+          <div className="mb-6">
+            <TNexusLogo width={140} />
+          </div>
+
+          {/* Greeting */}
+          <h1 className="text-2xl md:text-3xl font-semibold text-foreground text-center mb-8">
+            {t?.sidebar?.aiGreeting || 'Hôm nay tôi có thể giúp gì cho bạn?'}
+          </h1>
+
+          {/* Input */}
+          <div className="w-full mb-8">
+            <form onSubmit={handleSubmit}>
+              <div className={cn(
+                "relative border rounded-xl transition-all",
+                isOverLimit ? "border-destructive" : "border-border/60 bg-muted/20 focus-within:bg-background focus-within:border-border focus-within:shadow-sm"
+              )}>
+                <Textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={remainingQuestions <= 0 ? "Đã hết lượt..." : (t?.sidebar?.aiPlaceholder || "Hỏi bất cứ điều gì...")}
+                  disabled={isLoading || remainingQuestions <= 0}
+                  className="w-full resize-none border-0 bg-transparent px-5 py-4 pr-20 text-sm placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[56px] max-h-[140px]"
+                  rows={2}
+                />
+                <div className="absolute right-3 bottom-3 flex items-center gap-2">
+                  {!isUnlimited && (
+                    <span className="text-[10px] text-muted-foreground tabular-nums">{questionsToday}/{maxQuestions}</span>
+                  )}
+                  {input.trim() && (
+                    <span className={cn("text-[10px] tabular-nums", isOverLimit ? "text-destructive font-semibold" : "text-muted-foreground")}>
+                      {wordCount}/{MAX_MESSAGE_WORDS}
+                    </span>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={!input.trim() || isLoading || isOverLimit || remainingQuestions <= 0}
+                    className="p-2 rounded-lg bg-foreground text-background hover:bg-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isLoading ? <Spinner size="sm" className="text-background" /> : <ArrowUp className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          {/* Suggestion cards */}
+          <div className="grid grid-cols-2 gap-3 w-full max-w-lg">
+            {suggestions.map((s, idx) => (
+              <button
+                key={idx}
+                onClick={() => sendMessage(s.prompt)}
+                disabled={isLoading || remainingQuestions <= 0}
+                className="flex items-start gap-3 p-3.5 rounded-xl border border-border/50 bg-card hover:bg-muted/50 hover:border-border transition-all text-left group disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <s.icon className="h-4 w-4 mt-0.5 text-muted-foreground group-hover:text-foreground shrink-0 transition-colors" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground leading-tight">{s.label}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{s.desc}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+
           {remainingQuestions <= 0 && (
-            <p className="text-[10px] text-muted-foreground text-center mt-2">Bạn đã hết lượt hỏi tháng này. Quay lại tháng sau nhé!</p>
+            <p className="text-[11px] text-muted-foreground text-center mt-4">Bạn đã hết lượt hỏi tháng này. Quay lại tháng sau nhé!</p>
           )}
         </div>
       </div>
-
-      <style>{`
-        @keyframes ai-typing-wave {
-          0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
-          30% { transform: translateY(-4px); opacity: 1; }
-        }
-        .ai-typing-dot { animation: ai-typing-wave 1.4s ease-in-out infinite; }
-      `}</style>
     </div>
   );
 }
