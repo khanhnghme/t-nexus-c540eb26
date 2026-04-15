@@ -3,6 +3,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Trash2, ArrowUp, FileText, ListChecks, BarChart3, PenLine, History, Plus, X, MessageSquare, MoreHorizontal, Pin, PinOff } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import tNexusIcon from '@/assets/t-nexus-icon.png';
+import deepseekIcon from '@/assets/deepseek-icon.png';
+import geminiIcon from '@/assets/gemini-icon.png';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -35,7 +37,12 @@ const MODEL_LABELS: Record<string, string> = {
   'deepseek-chat': 'DeepSeek V3.2',
   'google/gemini-2.5-flash-lite': 'Gemini Flash',
 };
+const MODEL_ICONS: Record<string, string> = {
+  'deepseek-chat': deepseekIcon,
+  'google/gemini-2.5-flash-lite': geminiIcon,
+};
 const getModelLabel = (model: string | null) => model ? (MODEL_LABELS[model] || model) : null;
+const getModelIcon = (model: string | null) => model ? (MODEL_ICONS[model] || null) : null;
 const getModelFromPlan = (plan?: string | null) =>
   ['plan_pro', 'plan_business', 'plan_custom'].includes(plan || '')
     ? 'deepseek-chat'
@@ -518,7 +525,7 @@ export default function AIAssistant() {
         <div className={cn("absolute flex items-center gap-1.5", variant === 'empty' ? "right-3 bottom-3" : "right-2.5 bottom-2.5")}>
           {activeModel && (
             <span className="text-[10px] text-muted-foreground/50 bg-muted/40 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 select-none">
-              <span className="w-1 h-1 rounded-full bg-emerald-500/70" />
+              {getModelIcon(activeModel) ? <img src={getModelIcon(activeModel)!} alt="" className="w-3 h-3 rounded-sm" /> : <span className="w-1 h-1 rounded-full bg-emerald-500/70" />}
               {getModelLabel(activeModel)}
             </span>
           )}
@@ -663,7 +670,7 @@ export default function AIAssistant() {
                 <div className="absolute right-4 bottom-4 flex items-center gap-1.5">
                   {activeModel && (
                     <span className="text-[10px] text-muted-foreground/50 bg-muted/40 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 select-none">
-                      <span className="w-1 h-1 rounded-full bg-emerald-500/70" />
+                      {getModelIcon(activeModel) ? <img src={getModelIcon(activeModel)!} alt="" className="w-3 h-3 rounded-sm" /> : <span className="w-1 h-1 rounded-full bg-emerald-500/70" />}
                       {getModelLabel(activeModel)}
                     </span>
                   )}
