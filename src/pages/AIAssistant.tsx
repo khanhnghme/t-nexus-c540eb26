@@ -363,7 +363,6 @@ export default function AIAssistant() {
   const isOverLimit = wordCount > MAX_MESSAGE_WORDS;
 
   const hasMessages = messages.length > 0;
-  const grouped = groupConversations(conversations, t);
 
   const clearChatRef = useRef(handleClearChat);
   clearChatRef.current = handleClearChat;
