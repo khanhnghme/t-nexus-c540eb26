@@ -383,14 +383,21 @@ export default function AIAssistant() {
       onClick={() => loadConversation(conv.id)}
       title={conv.title || 'Untitled'}
       className={cn(
-        "relative w-full max-w-full min-w-0 overflow-hidden flex items-center gap-2 px-2 pr-7 py-1.5 rounded-lg text-left text-sm transition-colors group cursor-pointer",
+        "relative w-full min-w-0 max-w-full overflow-hidden rounded-lg text-left text-sm transition-colors group cursor-pointer px-2 py-1.5 pr-8",
         activeConversationId === conv.id ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
       )}
     >
       {conv.is_pinned && (
-        <Pin className="h-3.5 w-3.5 shrink-0 text-primary/60" />
+        <Pin className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 shrink-0 text-primary/60" />
       )}
-      <span className="block truncate min-w-0 flex-1">{conv.title || 'Untitled'}</span>
+      <span
+        className={cn(
+          "block w-full min-w-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap",
+          conv.is_pinned && "pl-5"
+        )}
+      >
+        {conv.title || 'Untitled'}
+      </span>
       <div className="absolute right-1 top-1/2 -translate-y-1/2 shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -416,7 +423,7 @@ export default function AIAssistant() {
   // ── History Sidebar ──
   const historySidebar = (
     <div className={cn(
-      "fixed inset-y-0 left-0 z-50 w-72 bg-card border-r border-border/60 shadow-2xl flex flex-col transition-transform duration-200",
+      "fixed inset-y-0 left-0 z-50 w-72 min-w-0 max-w-full overflow-hidden bg-card border-r border-border/60 shadow-2xl flex flex-col transition-transform duration-200",
       showHistory ? "translate-x-0" : "-translate-x-full"
     )} style={{ top: 56 }}>
       <div className="shrink-0 flex items-center justify-between px-4 h-12 border-b border-border/40">
@@ -433,7 +440,7 @@ export default function AIAssistant() {
         </div>
       </div>
 
-      <div className="shrink-0 px-3 py-2">
+      <div className="shrink-0 px-3 py-2 min-w-0 max-w-full overflow-hidden">
         <button
           onClick={handleNewChat}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-border/50 hover:bg-muted/50 text-sm text-foreground transition-colors"
@@ -443,15 +450,15 @@ export default function AIAssistant() {
         </button>
       </div>
 
-      <ScrollArea className="flex-1 overflow-hidden min-w-0">
-        <div className="px-2 py-1 overflow-hidden max-w-full">
+      <ScrollArea className="flex-1 min-w-0 max-w-full overflow-hidden [&_[data-radix-scroll-area-viewport]]:max-w-full [&_[data-radix-scroll-area-viewport]]:overflow-x-hidden">
+        <div className="w-full min-w-0 max-w-full px-2 py-1 overflow-x-hidden">
           {conversations.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center py-8">{t?.sidebar?.noHistory || 'Chưa có lịch sử trò chuyện'}</p>
           ) : (
             <>
               {/* Pinned section */}
               {conversations.filter(c => c.is_pinned).length > 0 && (
-                <div className="mb-3">
+                <div className="mb-3 min-w-0 max-w-full overflow-hidden">
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70 px-2 py-1.5 font-medium flex items-center gap-1">
                     <Pin className="h-2.5 w-2.5" /> Đã ghim
                   </p>
@@ -460,7 +467,7 @@ export default function AIAssistant() {
               )}
               {/* Grouped unpinned */}
               {groupConversations(conversations.filter(c => !c.is_pinned), t).map(group => (
-                <div key={group.label} className="mb-3">
+                <div key={group.label} className="mb-3 min-w-0 max-w-full overflow-hidden">
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70 px-2 py-1.5 font-medium">{group.label}</p>
                   {group.items.map(conv => renderConvItem(conv))}
                 </div>
