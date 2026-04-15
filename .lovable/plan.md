@@ -1,83 +1,88 @@
 
 
-# Cập nhật UI hiển thị AI credit trực quan hơn
+# Hệ thống Upload File cho AI + Giới hạn lưu trữ Chat
 
-## Vấn đề hiện tại
-- Credit bar không hiển thị đang dùng credit của workspace nào, của ai
-- Không phân biệt được mode "Personal credit" vs "Shared pool"
-- Khi OFF (không chia sẻ), user không biết mình đang dùng credit cá nhân theo gói riêng
+## Tổng quan
+Cho phép user upload tối đa 5 file (mỗi file ≤5MB) kèm câu hỏi AI. Giới hạn tối đa 10 cuộc trò chuyện, tự động xóa chat + file cũ nhất khi vượt quá.
 
 ## Thay đổi
 
-### 1. Thêm state tracking workspace/share info
-Trong cả `AIAssistant.tsx` và `AIAssistantPanel.tsx`, lưu thêm:
-- `shareMode` (boolean) — đang dùng shared pool hay không
-- `workspaceName` (string) — tên workspace hiện tại  
-- `ownerName` (string) — tên owner workspace (khi share ON)
-- `userPlanLabel` (string) — tên gói đang áp dụng (Free/Pro/Business)
+### 1. DB Migration
+- Thêm bảng `ai_message_attachments`:
+  ```
+  id uuid PK
+  message_id uuid FK → ai_messages(id) ON DELETE CASCADE
+  file_path text NOT NULL
+  file_name text NOT NULL
+  file_size integer NOT NULL
+  content_type text
+  created_at timestamptz
+  ```
+- RLS: user chỉ truy cập attachment thuộc message của mình
+- Tạo DB function `cleanup_old_ai_conversations(_user_id uuid, _max_conversations int DEFAULT 10)`:
+  - Tìm conversation cũ nhất vượt quá limit (trừ pinned)
+  - Trả về danh sách file_path cần xóa từ `ai_message_attachments`
+  - Xóa conversation (CASCADE tự xóa messages + attachments)
 
-Fetch từ `loadUsage()` đã có sẵn workspace query, chỉ cần lưu thêm data.
+### 2. R2 Storage — Bucket `ai-attachments`
+- Thêm bucket mới `ai-attachments` vào `ALLOWED_BUCKETS` trong `r2-storage` EF
+- Thêm `BUCKET_URL_KEYS` mapping cho `ai-attachments`
+- Cập nhật `r2Storage.ts` client-side: thêm `'ai-attachments'` vào `ALL_BUCKETS`
+- Cần user cung cấp secret `R2_URL_AI_ATTACHMENTS` (public URL cho bucket)
 
-### 2. Cập nhật Credit Card (Empty State) — `AIAssistant.tsx`
-Thay credit bar đơn giản bằng card có thông tin rõ ràng:
+### 3. Edge Function `team-assistant` — Nhận file content
+- Thêm field `attachments` trong request body (array of `{ file_path, file_name, content_type }`)
+- Với mỗi file: download từ R2, extract text content (text/csv/json → đọc trực tiếp, PDF/docx → ghi nhận metadata)
+- Append nội dung file vào user message cuối cùng dưới dạng context block
+- Validate: max 5 attachments, tổng kích thước ≤ 25MB
 
-**Khi Share ON:**
+### 4. Frontend `AIAssistant.tsx` — UI Upload
+- Thêm state `pendingFiles: File[]`
+- Nút attach (📎) bên cạnh input, mở file picker (multiple, max 5)
+- Hiển thị preview chips (tên file + kích thước + nút xóa)
+- Validate client-side: ≤5MB/file, ≤5 file
+- Khi send: upload files lên R2 trước → gửi message với attachments metadata → lưu `ai_message_attachments`
+- Sau khi tạo conversation mới: gọi cleanup function xóa chat cũ + file R2
+
+### 5. Frontend `AIAssistantPanel.tsx` — Tương tự
+- Thêm upload UI compact cho side panel
+- Cùng logic upload + cleanup
+
+### 6. Cleanup Logic (Client-side after send)
+- Sau `ensureConversation()`, đếm số conversation hiện tại
+- Nếu > 10: gọi RPC `cleanup_old_ai_conversations` → nhận danh sách file paths
+- Xóa file từ R2 via `r2Storage.from('ai-attachments').remove(paths)`
+- Conversation bị pin không bị xóa tự động
+
+### 7. Hiển thị file trong chat history
+- Khi load messages, fetch attachments kèm theo
+- Hiển thị file chips dưới user message (tên file + icon theo loại)
+- Không cần download lại file — chỉ hiển thị metadata
+
+### 8. i18n labels (EN/VI)
 ```
-┌─────────────────────────────────────┐
-│ 🔗 Shared Pool · [Workspace Name]  │
-│ Owner: [Owner Name] · Pro           │
-│ ▓▓▓▓▓▓▓░░░  450 / 1,000 credit     │
-│ Tất cả thành viên dùng chung pool  │
-└─────────────────────────────────────┘
+aiAttachFiles: 'Attach files' / 'Đính kèm file'
+aiMaxFiles: 'Maximum 5 files per message' / 'Tối đa 5 file mỗi tin nhắn'
+aiMaxFileSize: 'Maximum 5MB per file' / 'Tối đa 5MB mỗi file'
+aiFileTooLarge: 'File exceeds 5MB limit' / 'File vượt quá giới hạn 5MB'
+aiTooManyFiles: 'Maximum 5 files allowed' / 'Tối đa 5 file'
+aiOldChatsDeleted: 'Old conversations cleaned up' / 'Đã dọn dẹp cuộc trò chuyện cũ'
+aiChatLimit: 'Only the 10 most recent conversations are kept' / 'Chỉ giữ 10 cuộc trò chuyện gần nhất'
 ```
 
-**Khi Share OFF:**
-```
-┌─────────────────────────────────────┐
-│ 👤 Personal Credit · [Your Plan]    │
-│ Workspace: [Name] · Không chia sẻ  │
-│ ▓▓▓░░░░░░░  120 / 1,000 credit     │
-│ Credit tính riêng theo gói cá nhân │
-└─────────────────────────────────────┘
-```
-
-**Khi Free plan (unlimited Gemini):**
-```
-┌─────────────────────────────────────┐
-│ ✨ Miễn phí · Gemini Flash          │
-│ Workspace: [Name] · Không chia sẻ  │
-│ Không giới hạn (tốc độ có thể giảm)│
-└─────────────────────────────────────┘
-```
-
-### 3. Cập nhật Compact Credit Bar (Chat Mode) — `AIAssistant.tsx`
-Dưới chat input, thêm 1 dòng nhỏ:
-- Icon 🔗 hoặc 👤 + label "Shared · [WS Name]" hoặc "Personal · [Plan]"
-- Bên phải: progress bar + credit count (giữ nguyên)
-
-### 4. Cập nhật Panel Header — `AIAssistantPanel.tsx`
-Trong compact usage row (line 374-408), thêm:
-- Label nhỏ: "🔗 Shared" hoặc "👤 Personal"
-- Workspace name truncated
-
-### 5. i18n labels mới (EN/VI)
-```
-aiSharedPool: 'Shared Pool' / 'Pool chung'
-aiPersonalCredit: 'Personal Credit' / 'Credit cá nhân'
-aiCreditOwner: 'Owner' / 'Chủ sở hữu'
-aiNotShared: 'Not shared' / 'Không chia sẻ'
-aiSharedDesc: 'All members share the same credit pool' / 'Tất cả thành viên dùng chung pool'
-aiPersonalDesc: 'Credit is counted individually by your plan' / 'Credit tính riêng theo gói cá nhân'
-aiFreeUnlimited: 'Unlimited (speed may vary under load)' / 'Không giới hạn (tốc độ có thể giảm khi quá tải)'
-```
-
-## Files thay đổi
-1. `src/pages/AIAssistant.tsx` — thêm state, cập nhật credit card + compact bar
-2. `src/components/ai/AIAssistantPanel.tsx` — thêm state, cập nhật header usage row
-3. `src/lib/i18n/en.ts` — thêm labels
-4. `src/lib/i18n/vi.ts` — thêm labels
+## Thứ tự triển khai
+1. DB migration (bảng + RPC cleanup)
+2. R2 bucket setup + cập nhật r2-storage EF
+3. Edge Function team-assistant (nhận attachments)
+4. i18n labels
+5. AIAssistant.tsx (upload UI + cleanup logic)
+6. AIAssistantPanel.tsx (compact upload UI)
 
 ## Không thay đổi
-- DB, Edge Functions, logic credit
-- Các trang khác (WorkspaceSettings, ServicePlan)
+- Billing / credit logic
+- Existing conversation/message schema (chỉ thêm bảng mới)
+- AI model routing logic
+
+## Yêu cầu từ user
+- Cung cấp R2 public URL cho bucket `ai-attachments` (secret `R2_URL_AI_ATTACHMENTS`)
 
