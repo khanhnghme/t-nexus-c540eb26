@@ -1005,6 +1005,7 @@ export const vi: Translations = {
       join: 'Tham gia',
       myProjects: 'Projects của tôi',
       recentProjects: 'Dự án gần đây',
+      recentProjectsTooltip: 'Hiển thị 5 dự án bạn truy cập gần nhất trên tất cả workspace, không giới hạn workspace hiện tại',
       projectsYouJoined: 'Các dự án bạn đang tham gia',
       viewAllProj: 'Xem tất cả',
       active: 'Đang dùng',

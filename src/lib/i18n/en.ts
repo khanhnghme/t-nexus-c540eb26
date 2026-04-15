@@ -1017,6 +1017,7 @@ export const en = {
       join: 'Join',
       myProjects: 'My Projects',
       recentProjects: 'Recent Projects',
+      recentProjectsTooltip: 'Shows the 5 most recently accessed projects across all workspaces, not limited to the current one',
       projectsYouJoined: 'Projects you are participating in',
       viewAllProj: 'View all',
       active: 'Active',
