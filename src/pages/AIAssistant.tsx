@@ -575,7 +575,7 @@ export default function AIAssistant() {
               <Spinner size="default" />
             </div>
           ) : (
-            <div className="max-w-[48rem] mx-auto px-4 md:px-6 py-6 space-y-6">
+            <div className="max-w-4xl mx-auto px-4 md:px-6 py-6 space-y-6">
               {messages.map((message, idx) => (
                 <div key={idx} className={cn("animate-fade-in", message.role === 'user' ? 'flex justify-end' : '')}>
                   {message.role === 'user' ? (
@@ -628,7 +628,7 @@ export default function AIAssistant() {
         </main>
 
         <div className="shrink-0 border-t border-border/30 bg-background/80 backdrop-blur-sm px-4 md:px-6 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <div className="max-w-[48rem] mx-auto space-y-2">
+          <div className="max-w-4xl mx-auto space-y-2">
             {/* Compact credit indicator in chat mode */}
             {!usageLoading && !isFreePlan && maxCredits && (
               <div className="flex items-center gap-3 px-1">
@@ -665,7 +665,7 @@ export default function AIAssistant() {
       {historySidebar}
 
       <div className="flex-1 flex flex-col items-center justify-center px-4 md:px-6">
-        <div className="max-w-[44rem] w-full flex flex-col items-center animate-fade-in">
+        <div className="max-w-3xl w-full flex flex-col items-center animate-fade-in">
           {/* Logo + Greeting */}
           <div className="mb-6 relative">
             <div className="absolute inset-0 bg-primary/10 rounded-full blur-3xl scale-[2.5] animate-pulse" />
