@@ -508,6 +508,28 @@ export default function Groups() {
             </p>
           </div>
 
+          {/* Filter tabs */}
+          <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/50 w-fit">
+            {[
+              { value: 'all', label: t.sidebar?.allProjects || 'All projects' },
+              { value: 'created', label: t.sidebar?.createdByMe || 'Created by me' },
+              { value: 'shared', label: t.sidebar?.sharedWithMe || 'Shared with me' },
+            ].map(tab => (
+              <button
+                key={tab.value}
+                onClick={() => setSearchParams({ filter: tab.value })}
+                className={cn(
+                  'px-3 py-1.5 rounded-md text-sm font-medium transition-all',
+                  activeFilter === tab.value
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
           {/* Mode Selector Dialog */}
           <Dialog open={showModeSelector} onOpenChange={setShowModeSelector}>
             <DialogTrigger asChild disabled={!canCreateProject}>
