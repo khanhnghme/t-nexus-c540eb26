@@ -90,6 +90,7 @@ const PricingDocs = React.lazy(() => import("./pages/PricingDocs"));
 const Privacy = React.lazy(() => import("./pages/Privacy"));
 const Terms = React.lazy(() => import("./pages/Terms"));
 const Guide = React.lazy(() => import("./pages/Guide"));
+const AIGuide = React.lazy(() => import("./pages/AIGuide"));
 const DownloadPage = React.lazy(() => import("./pages/Download"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 
@@ -182,6 +183,7 @@ function AppRoutes() {
         <Route path="/guide/terms" element={<ForceLightMode><Terms /></ForceLightMode>} />
         <Route path="/guide/pricing" element={<ForceLightMode><PricingDocs /></ForceLightMode>} />
         <Route path="/guide/privacy" element={<ForceLightMode><Privacy /></ForceLightMode>} />
+        <Route path="/guide/ai" element={<ForceLightMode><AIGuide /></ForceLightMode>} />
 
         {/* ═══ Localized public routes — Vietnamese (/vi) ═══ */}
         <Route path="/vi">
@@ -199,6 +201,7 @@ function AppRoutes() {
           <Route path="guide/terms" element={<ForceLightMode><Terms /></ForceLightMode>} />
           <Route path="guide/pricing" element={<ForceLightMode><PricingDocs /></ForceLightMode>} />
           <Route path="guide/privacy" element={<ForceLightMode><Privacy /></ForceLightMode>} />
+          <Route path="guide/ai" element={<ForceLightMode><AIGuide /></ForceLightMode>} />
         </Route>
 
         {/* ═══ Non-localized public routes ═══ */}
