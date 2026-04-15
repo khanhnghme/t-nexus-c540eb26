@@ -499,7 +499,7 @@ export default function AIAssistant() {
         <main ref={chatContainerRef} className="flex-1 overflow-y-auto">
           {historyLoading ? (
             <div className="flex items-center justify-center h-full">
-              <Spinner size="md" />
+              <Spinner size="default" />
             </div>
           ) : (
             <div className="max-w-2xl mx-auto px-5 py-6 space-y-5">
