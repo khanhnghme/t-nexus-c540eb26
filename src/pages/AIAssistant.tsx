@@ -34,7 +34,7 @@ export default function AIAssistant() {
   const { user, profile } = useAuth();
   const { activeWorkspace } = useWorkspace();
   const { toast } = useToast();
-  const { t } = useLanguage();
+  const { translations: t } = useLanguage();
 
   const suggestions = [
     { icon: FileText, label: t?.sidebar?.aiSuggestion1Label || 'Tóm tắt dự án', desc: t?.sidebar?.aiSuggestion1Desc || '', prompt: 'Tóm tắt nội dung và tiến độ dự án hiện tại của tôi' },
