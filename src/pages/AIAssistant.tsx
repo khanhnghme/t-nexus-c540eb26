@@ -11,6 +11,7 @@ import { TNexusLogo } from '@/components/TNexusLogo';
 import ReactMarkdown from 'react-markdown';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useDashboardLayoutContext } from '@/contexts/DashboardLayoutContext';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -71,6 +72,7 @@ export default function AIAssistant() {
   const { activeWorkspace } = useWorkspace();
   const { toast } = useToast();
   const { translations: t } = useLanguage();
+  const { setAITopBarProps } = useDashboardLayoutContext();
 
   const suggestions = [
     { icon: FileText, label: t?.sidebar?.aiSuggestion1Label || 'Tóm tắt dự án', desc: t?.sidebar?.aiSuggestion1Desc || '', prompt: 'Tóm tắt nội dung và tiến độ dự án hiện tại của tôi' },
@@ -347,6 +349,23 @@ export default function AIAssistant() {
   const hasMessages = messages.length > 0;
   const grouped = groupConversations(conversations, t);
 
+  // Ref to keep handleClearChat stable for context
+  const clearChatRef = useRef(handleClearChat);
+  clearChatRef.current = handleClearChat;
+
+  // Sync AI controls to TopBar via context
+  useEffect(() => {
+    setAITopBarProps({
+      onToggleHistory: () => setShowHistory(prev => !prev),
+      onClearChat: () => clearChatRef.current(),
+      hasMessages,
+      questionsToday,
+      maxQuestions,
+      isUnlimited,
+    });
+    return () => setAITopBarProps(null);
+  }, [hasMessages, questionsToday, maxQuestions, isUnlimited, setAITopBarProps]);
+
   // ── History Sidebar ──
   const historySidebar = (
     <div className={cn(
@@ -448,39 +467,6 @@ export default function AIAssistant() {
     </form>
   );
 
-  // ── Shared top bar (history, logo, credits, clear) ──
-  const topBar = (
-    <header className="shrink-0 flex items-center justify-between px-5 py-2 border-b border-border/40">
-      <div className="flex items-center gap-2">
-        <button onClick={() => setShowHistory(prev => !prev)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-          <History className="h-4 w-4" />
-        </button>
-        <TNexusLogo width={80} />
-        <span className="text-xs text-muted-foreground">AI</span>
-      </div>
-      <div className="flex items-center gap-3">
-        {!isUnlimited && (
-          <div className="flex items-center gap-2">
-            <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
-              <div
-                className={cn("h-full rounded-full transition-all duration-500", usagePercent > 80 ? "bg-destructive" : "bg-primary")}
-                style={{ width: `${usagePercent}%` }}
-              />
-            </div>
-            <span className="text-[10px] text-muted-foreground tabular-nums">{questionsToday}/{maxQuestions}</span>
-          </div>
-        )}
-        {hasMessages && (
-          <button
-            onClick={handleClearChat}
-            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </div>
-    </header>
-  );
 
   // ── Chat state ──
   if (hasMessages) {
@@ -488,7 +474,6 @@ export default function AIAssistant() {
       <div className="flex flex-col h-[calc(100dvh-56px)] bg-background">
         {overlay}
         {historySidebar}
-        {topBar}
 
         <main ref={chatContainerRef} className="flex-1 overflow-y-auto">
           {historyLoading ? (
@@ -557,7 +542,7 @@ export default function AIAssistant() {
     <div className="flex flex-col h-[calc(100dvh-56px)] bg-background">
       {overlay}
       {historySidebar}
-      {topBar}
+      
 
       <div className="flex-1 flex flex-col items-center justify-center px-5">
         <div className="max-w-2xl w-full flex flex-col items-center">
