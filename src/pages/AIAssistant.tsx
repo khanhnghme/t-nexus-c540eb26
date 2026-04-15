@@ -399,16 +399,16 @@ export default function AIAssistant() {
               <div key={group.label} className="mb-3">
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5 font-medium">{group.label}</p>
                 {group.items.map(conv => (
-                  <button
+                  <div
                     key={conv.id}
                     onClick={() => loadConversation(conv.id)}
                     className={cn(
-                      "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-sm transition-colors group overflow-hidden min-w-0",
+                      "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-sm transition-colors group cursor-pointer",
                       activeConversationId === conv.id ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                     )}
                   >
                     <MessageSquare className="h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate flex-1">{conv.title || 'Untitled'}</span>
+                    <span className="truncate flex-1 min-w-0">{conv.title || 'Untitled'}</span>
                     <button
                       onClick={(e) => handleDeleteConversation(e, conv.id)}
                       className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all shrink-0"
@@ -416,7 +416,7 @@ export default function AIAssistant() {
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>
-                  </button>
+                  </div>
                 ))}
               </div>
             ))
