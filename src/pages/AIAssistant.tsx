@@ -448,8 +448,8 @@ export default function AIAssistant() {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={remainingQuestions <= 0 ? "Đã hết lượt..." : (t?.sidebar?.aiPlaceholder || "Hỏi bất cứ điều gì...")}
-          disabled={isLoading || remainingQuestions <= 0}
+          placeholder={t?.sidebar?.aiPlaceholder || "Hỏi bất cứ điều gì..."}
+          disabled={isLoading}
           className={cn(
             "w-full resize-none border-0 bg-transparent placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0",
             variant === 'empty'
@@ -461,7 +461,7 @@ export default function AIAssistant() {
         <div className={cn("absolute flex items-center", variant === 'empty' ? "right-3 bottom-3" : "right-2.5 bottom-2.5")}>
           <button
             type="submit"
-            disabled={!input.trim() || isLoading || isOverLimit || remainingQuestions <= 0}
+            disabled={!input.trim() || isLoading || isOverLimit}
             className="p-2 rounded-xl bg-foreground text-background hover:bg-foreground/80 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
           >
             {isLoading ? <Spinner size="sm" className="text-background" /> : <ArrowUp className="h-4 w-4" />}
@@ -479,7 +479,7 @@ export default function AIAssistant() {
   // ── Chat View ──
   if (hasMessages) {
     return (
-      <div className="flex flex-col h-[calc(100dvh-56px)] bg-background overflow-hidden">
+      <div className="flex flex-col h-full bg-background overflow-hidden">
         {overlay}
         {historySidebar}
 
