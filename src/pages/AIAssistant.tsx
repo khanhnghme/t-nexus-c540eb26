@@ -470,7 +470,6 @@ export default function AIAssistant() {
       <div className="flex flex-col h-[calc(100dvh-56px)] bg-background">
         {overlay}
         {historySidebar}
-        {topBar}
 
         <main ref={chatContainerRef} className="flex-1 overflow-y-auto">
           {historyLoading ? (
@@ -539,7 +538,7 @@ export default function AIAssistant() {
     <div className="flex flex-col h-[calc(100dvh-56px)] bg-background">
       {overlay}
       {historySidebar}
-      {topBar}
+      
 
       <div className="flex-1 flex flex-col items-center justify-center px-5">
         <div className="max-w-2xl w-full flex flex-col items-center">
