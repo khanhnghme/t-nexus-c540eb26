@@ -250,9 +250,9 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
           <div className="sidebar-section-label">{t?.projects || 'PROJECTS'}</div>
           {projectItems.map(item => (
             <Link
-              key={item.matchFilter}
+              key={item.matchPath}
               to={item.href}
-              className={cn('sidebar-nav-item', isProjectFilterActive(item.matchFilter) && 'active')}
+              className={cn('sidebar-nav-item', isProjectFilterActive(item.matchPath) && 'active')}
             >
               <item.icon className="nav-icon" strokeWidth={1.8} />
               <span className="nav-label">{item.name}</span>
