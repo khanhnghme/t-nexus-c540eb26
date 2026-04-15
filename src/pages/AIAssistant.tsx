@@ -456,8 +456,9 @@ export default function AIAssistant() {
       if (assistantContent) {
         await saveMessage(convId, 'assistant', assistantContent);
         await supabase.from('ai_conversations').update({ updated_at: new Date().toISOString() } as any).eq('id', convId);
-        // Re-fetch credit usage after successful message
         loadUsage();
+        // Cleanup old conversations (keep max 10)
+        cleanupOldConversations();
       }
     } catch (err) {
       console.error('AI Assistant error:', err);
