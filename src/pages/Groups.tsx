@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { Spinner } from '@/components/ui/spinner';
+import { useSearchParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { fixStorageUrl } from '@/lib/urlUtils';
 import { Link, useNavigate } from 'react-router-dom';
@@ -90,6 +91,8 @@ export default function Groups() {
   const { translations: { app: t } } = useLanguage();
   const g = t.groups;
   const tc = t.common;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeFilter = (searchParams.get('filter') as 'all' | 'created' | 'shared') || 'all';
 
   // Permission: workspace_owner, workspace_admin, or system_admin can create projects
   const canCreateProject = isSystemAdmin || workspaceRole === 'workspace:owner' || workspaceRole === 'workspace:admin';
@@ -456,6 +459,12 @@ export default function Groups() {
 
   const filteredGroups = useMemo(() => {
     let result = groups;
+    // Apply sidebar filter
+    if (activeFilter === 'created') {
+      result = result.filter(g => g.created_by === user?.id);
+    } else if (activeFilter === 'shared') {
+      result = result.filter(g => g.created_by !== user?.id && g.myRole);
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(g => g.name.toLowerCase().includes(q));
@@ -467,7 +476,7 @@ export default function Groups() {
       result = result.filter(g => g.visibility === visibilityFilter);
     }
     return result;
-  }, [groups, searchQuery, modeFilter, visibilityFilter]);
+  }, [groups, searchQuery, modeFilter, visibilityFilter, activeFilter, user?.id]);
 
   const trimmedMemberSearch = memberSearch.trim();
   const memberEmailSearchReady = isMemberEmailSearchReady(trimmedMemberSearch);
@@ -497,6 +506,28 @@ export default function Groups() {
             <p className="text-muted-foreground mt-1">
               {g.subtitle}
             </p>
+          </div>
+
+          {/* Filter tabs */}
+          <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/50 w-fit">
+            {[
+              { value: 'all', label: t.sidebar?.allProjects || 'All projects' },
+              { value: 'created', label: t.sidebar?.createdByMe || 'Created by me' },
+              { value: 'shared', label: t.sidebar?.sharedWithMe || 'Shared with me' },
+            ].map(tab => (
+              <button
+                key={tab.value}
+                onClick={() => setSearchParams({ filter: tab.value })}
+                className={cn(
+                  'px-3 py-1.5 rounded-md text-sm font-medium transition-all',
+                  activeFilter === tab.value
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
 
           {/* Mode Selector Dialog */}

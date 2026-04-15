@@ -2,10 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
-import { useWorkspaceProjects, WorkspaceProject } from '@/hooks/useWorkspaceProjects';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useWorkspaceBilling, formatPlanName } from '@/hooks/useWorkspaceBilling';
-import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import {
   Home,
@@ -13,23 +11,16 @@ import {
   Users,
   FolderKanban,
   ChevronRight,
-  Lock,
-  Globe,
   CalendarDays,
   MessageSquare,
   UserCircle,
-  Settings,
   BookOpen,
   Lightbulb,
   Shield,
   Plus,
-  LayoutGrid,
   Sparkles,
-  ChevronsUpDown,
-  Check,
   FolderOpen,
   Bell,
-  Zap,
   CreditCard,
   Search,
 } from 'lucide-react';
@@ -55,12 +46,12 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
   const navigate = useNavigate();
   const { profile, isAdmin } = useAuth();
   const { activeWorkspace, workspaces, switchWorkspace, isAvailable, workspaceRole } = useWorkspace();
-  const { projects, isGuest } = useWorkspaceProjects();
-  const { user } = useAuth();
   const { translations } = useLanguage();
   const billing = useWorkspaceBilling();
   const ownerPlan = billing?.ownerPlan;
   const t = translations.app?.sidebar;
+
+  const isGuest = isAvailable && !!activeWorkspace && !workspaceRole;
 
   const hiddenNav = Array.isArray(profile?.nav_hidden_pages)
     ? (profile.nav_hidden_pages as string[])
@@ -68,25 +59,6 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
 
   // Expanded state — accordion: only one submenu open at a time
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
-
-  // Fetch hidden project ids
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from('hidden_projects')
-      .select('group_id')
-      .eq('user_id', user.id)
-      .then(({ data }) => {
-        setHiddenIds(new Set((data || []).map(d => d.group_id)));
-      });
-  }, [user]);
-
-  // If >9 projects, filter out hidden ones from sidebar
-  const MAX_SIDEBAR_PROJECTS = 9;
-  const visibleProjects = projects.length > MAX_SIDEBAR_PROJECTS
-    ? projects.filter(p => !hiddenIds.has(p.id))
-    : projects;
 
   const toggle = useCallback((key: string) => {
     setExpanded(prev => (prev === key ? null : key));
@@ -96,16 +68,26 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
   useEffect(() => {
     const path = location.pathname;
     if (path === '/workspace/new') return;
-    if (path.startsWith('/pr/') || path.startsWith('/p/')) {
-      setExpanded('projects');
-    } else if (path === '/personal-info' || path === '/account-settings') {
+    if (path === '/personal-info' || path === '/account-settings') {
       setExpanded('account');
     } else if (path === '/service-plan' || path === '/billing-history') {
       setExpanded('billing');
     }
   }, [location.pathname]);
 
-  const isProjectsExpanded = expanded === 'projects';
+  // Project filter links
+  const projectItems = [
+    { name: t?.allProjects || 'All projects', href: '/groups?filter=all', icon: FolderKanban, matchFilter: 'all' },
+    { name: t?.createdByMe || 'Created by me', href: '/groups?filter=created', icon: FolderOpen, matchFilter: 'created' },
+    { name: t?.sharedWithMe || 'Shared with me', href: '/groups?filter=shared', icon: Users, matchFilter: 'shared' },
+  ];
+
+  const isProjectFilterActive = (filterVal: string) => {
+    if (location.pathname !== '/groups') return false;
+    const params = new URLSearchParams(location.search);
+    const f = params.get('filter') || 'all';
+    return f === filterVal;
+  };
 
   const getRoleBadge = (role?: string | null) => {
     switch (role) {
@@ -145,16 +127,9 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
 
   const isPathActive = (href: string) => {
     if (href === '/dashboard') return location.pathname === '/dashboard';
+    if (href.startsWith('/groups?')) return false; // handled by isProjectFilterActive
     return location.pathname === href || location.pathname.startsWith(href + '/');
   };
-
-  const hasActiveChild = (paths: string[]) => paths.some(p => isPathActive(p));
-  const getProjectHref = (p: WorkspaceProject) => {
-    if (!activeWorkspace?.short_id) return `/p/${p.slug || p.id}`;
-    const prefix = p.project_mode === 'custom' ? '/pa' : '/pr';
-    return `${prefix}/ws-${activeWorkspace.short_id}/${p.slug || p.id}`;
-  };
-  const projectPaths = visibleProjects.map(p => getProjectHref(p));
 
   /* ─── Collapsed mode ─── */
   if (collapsed) {
@@ -237,48 +212,6 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
             </>
           )}
 
-          {/* Projects sub-tree */}
-          <button
-            onClick={() => toggle('projects')}
-            className={cn(
-              'sidebar-nav-item w-full text-left group',
-              hasActiveChild(projectPaths) && !isProjectsExpanded && 'semi-active'
-            )}
-          >
-            <ChevronRight className={cn('nav-chevron', isProjectsExpanded && 'expanded')} />
-            <FolderKanban className="nav-icon" strokeWidth={1.8} />
-            <span className="nav-label">{t?.projects || 'Projects'}</span>
-            <span className="text-[10px] opacity-40 tabular-nums">{projects.length}</span>
-          </button>
-
-          {isProjectsExpanded && (
-            <div className="tree-children tree-level-1">
-              {/* View all projects link */}
-              <Link
-                to="/groups"
-                className={cn('sidebar-nav-item', location.pathname === '/groups' && 'active')}
-              >
-                <span className="nav-label text-muted-foreground">{t?.viewAll || 'View all'}</span>
-              </Link>
-
-              {visibleProjects.map(p => {
-                const href = getProjectHref(p);
-                const active = location.pathname === href || location.pathname.startsWith(href + '/');
-                return (
-                  <Link
-                    key={p.id}
-                    to={href}
-                    className={cn('sidebar-nav-item', active && 'active', !p.isMember && 'opacity-60')}
-                  >
-                    <span className="nav-label truncate">{p.name}</span>
-                    {!p.isMember && (
-                      <span className="text-[9px] px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">{t?.newLabel || 'New'}</span>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          )}
         </div>
       ) : (
         <div className="ws-nav-section">
@@ -308,6 +241,24 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
             </button>
           </div>
         </div>
+      )}
+
+      {/* ── Projects section ── */}
+      {isAvailable && activeWorkspace && (
+        <>
+          <div className="sidebar-nav-separator" />
+          <div className="sidebar-section-label">{t?.projects || 'PROJECTS'}</div>
+          {projectItems.map(item => (
+            <Link
+              key={item.matchFilter}
+              to={item.href}
+              className={cn('sidebar-nav-item', isProjectFilterActive(item.matchFilter) && 'active')}
+            >
+              <item.icon className="nav-icon" strokeWidth={1.8} />
+              <span className="nav-label">{item.name}</span>
+            </Link>
+          ))}
+        </>
       )}
 
       {/* ── Personal section ── */}
