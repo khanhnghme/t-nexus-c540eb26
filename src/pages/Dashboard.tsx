@@ -56,7 +56,6 @@ import {
   X as XIcon,
   Check,
   Users,
-  Clock,
   Building2,
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -68,7 +67,6 @@ import type { Group } from '@/types/database';
 
 // Removed hard-coded DEFAULT_PROJECT_LIMIT — limits come from plan_limits table
 
-type DashboardFilter = 'all' | 'active' | 'hidden' | 'pending';
 type ProjectModeFilter = 'all' | 'basic' | 'custom';
 
 interface PendingInvitationGroup {
