@@ -640,7 +640,6 @@ export default function AIAssistant() {
             </span>
           )}
           {!activeModel && <div className="mb-10" />}
-          </p>
 
           {/* Large Input */}
           <div className="w-full mb-8">
