@@ -3503,6 +3503,14 @@ export type Database = {
         Returns: number
       }
       get_user_workspace_owner: { Args: { _user_id: string }; Returns: string }
+      get_workspace_ai_credit_usage_month: {
+        Args: {
+          _month_end: string
+          _month_start: string
+          _workspace_id: string
+        }
+        Returns: number
+      }
       get_workspace_ai_usage_month: {
         Args: {
           _month_end: string

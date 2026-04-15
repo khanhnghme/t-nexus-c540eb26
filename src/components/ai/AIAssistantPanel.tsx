@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -43,8 +43,8 @@ export default function AIAssistantPanel({
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [questionsToday, setQuestionsToday] = useState(0);
-  const [maxQuestions, setMaxQuestions] = useState<number | null>(5);
+  const [creditsUsed, setCreditsUsed] = useState(0);
+  const [maxCredits, setMaxCredits] = useState<number | null>(null);
   const [usageLoading, setUsageLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -52,39 +52,39 @@ export default function AIAssistantPanel({
   const { activeWorkspace } = useWorkspace();
   const { toast } = useToast();
 
+  const loadUsage = useCallback(async () => {
+    if (!user?.id) { setUsageLoading(false); return; }
+
+    const now = new Date();
+    const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    const monthEnd = now.toISOString().slice(0, 10);
+    try {
+      const effectiveOwnerId = activeWorkspace?.owner_id || user.id;
+
+      const [usageRes, ownerProfileRes] = await Promise.all([
+        supabase.rpc('get_owner_ai_credit_usage_month', { _owner_id: effectiveOwnerId, _month_start: monthStart, _month_end: monthEnd }),
+        supabase.from('profiles').select('user_plan').eq('id', effectiveOwnerId).single(),
+      ]);
+
+      setCreditsUsed(typeof usageRes.data === 'number' ? usageRes.data : 0);
+
+      const ownerPlan = (ownerProfileRes.data as any)?.user_plan || 'plan_free';
+      const { data: limitData } = await supabase
+        .from('plan_limits')
+        .select('max_ai_credits_per_month')
+        .eq('plan', ownerPlan as any)
+        .maybeSingle();
+
+      setMaxCredits((limitData as any)?.max_ai_credits_per_month ?? null);
+    } catch {
+      // fallback defaults
+    }
+    setUsageLoading(false);
+  }, [user?.id, activeWorkspace?.owner_id, activeWorkspace?.id]);
+
   useEffect(() => {
-    const loadUsage = async () => {
-      if (!user?.id) { setUsageLoading(false); return; }
-
-      const now = new Date();
-      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-      const monthEnd = now.toISOString().slice(0, 10);
-      try {
-        const effectiveOwnerId = activeWorkspace?.owner_id || user.id;
-
-        const [usageRes, ownerProfileRes] = await Promise.all([
-          supabase.rpc('get_owner_ai_usage_month', { _owner_id: effectiveOwnerId, _month_start: monthStart, _month_end: monthEnd }),
-          supabase.from('profiles').select('user_plan').eq('id', effectiveOwnerId).single(),
-        ]);
-
-        setQuestionsToday(typeof usageRes.data === 'number' ? usageRes.data : 0);
-
-        const ownerPlan = (ownerProfileRes.data as any)?.user_plan || 'plan_free';
-        const { data: limitData } = await supabase
-          .from('plan_limits')
-          .select('max_ai_messages_per_month')
-          .eq('plan', ownerPlan as any)
-          .maybeSingle();
-
-        setMaxQuestions((limitData as any)?.max_ai_messages_per_month ?? 20);
-      } catch {
-        // fallback defaults
-      }
-      setUsageLoading(false);
-    };
-
     if (isOpen) loadUsage();
-  }, [user?.id, isOpen, activeWorkspace?.id]);
+  }, [isOpen, loadUsage]);
 
   const isUserScrollingUp = useRef(false);
   const lastScrollHeight = useRef(0);
@@ -121,7 +121,7 @@ export default function AIAssistantPanel({
   }, [isOpen]);
 
   const incrementUsage = () => {
-    setQuestionsToday(prev => prev + 1);
+    setCreditsUsed(prev => prev + 1);
   };
 
   const sendMessage = async (messageText: string) => {
@@ -138,10 +138,10 @@ export default function AIAssistantPanel({
       return;
     }
 
-    if (maxQuestions !== null && questionsToday >= maxQuestions) {
+    if (maxCredits !== null && creditsUsed >= maxCredits) {
       toast({
-        title: 'Đã hết lượt hỏi tháng này',
-        description: `Bạn đã sử dụng hết ${maxQuestions} lượt hỏi AI tháng này. Vui lòng quay lại tháng sau hoặc nâng cấp gói.`,
+        title: 'Đã hết credit AI tháng này',
+        description: `Bạn đã sử dụng hết ${maxCredits} credit AI tháng này. Vui lòng quay lại tháng sau hoặc nâng cấp gói.`,
         variant: 'destructive',
       });
       return;
@@ -261,6 +261,11 @@ export default function AIAssistantPanel({
           } catch {}
         }
       }
+
+      // Re-fetch credits after successful stream
+      if (assistantContent) {
+        loadUsage();
+      }
     } catch (err) {
       console.error('AI Assistant error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Có lỗi xảy ra';
@@ -301,11 +306,11 @@ export default function AIAssistantPanel({
     setError(null);
   };
 
-  const isUnlimited = maxQuestions === null;
-  const remainingQuestions = isUnlimited ? Infinity : maxQuestions - questionsToday;
+  const isUnlimited = maxCredits === null;
+  const remainingQuestions = isUnlimited ? Infinity : maxCredits - creditsUsed;
   const wordCount = countWords(input);
   const isOverLimit = wordCount > MAX_MESSAGE_WORDS;
-  const usagePercent = isUnlimited ? 0 : Math.min(100, (questionsToday / maxQuestions) * 100);
+  const usagePercent = isUnlimited ? 0 : Math.min(100, (creditsUsed / maxCredits) * 100);
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -379,7 +384,7 @@ export default function AIAssistantPanel({
                   />
                 </div>
                 <span className="text-[10px] text-muted-foreground tabular-nums">
-                  {remainingQuestions}/{maxQuestions}
+                  {remainingQuestions}/{maxCredits}
                 </span>
               </>
             )}
