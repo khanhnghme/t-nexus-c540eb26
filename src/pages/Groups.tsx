@@ -91,6 +91,8 @@ export default function Groups() {
   const { translations: { app: t } } = useLanguage();
   const g = t.groups;
   const tc = t.common;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeFilter = (searchParams.get('filter') as 'all' | 'created' | 'shared') || 'all';
 
   // Permission: workspace_owner, workspace_admin, or system_admin can create projects
   const canCreateProject = isSystemAdmin || workspaceRole === 'workspace:owner' || workspaceRole === 'workspace:admin';
