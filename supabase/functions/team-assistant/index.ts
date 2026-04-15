@@ -578,27 +578,27 @@ serve(async (req) => {
 
     const { data: planLimitData } = await supabase
       .from('plan_limits')
-      .select('max_ai_messages_per_month')
+      .select('max_ai_messages_per_month, max_ai_credits_per_month')
       .eq('plan', ownerPlan)
       .maybeSingle();
 
-    const maxMessages = planLimitData?.max_ai_messages_per_month ?? 20; // default 20
+    const maxCredits = planLimitData?.max_ai_credits_per_month ?? null; // null = unlimited (Free/Plus/Custom)
 
-    // Get total usage across all members in owner's workspaces for current month
-    const { data: totalUsage } = await supabase.rpc('get_owner_ai_usage_month', { 
+    // Get total credit usage across all members in owner's workspaces for current month
+    const { data: totalCredits } = await supabase.rpc('get_owner_ai_credit_usage_month', { 
       _owner_id: effectiveOwnerId, 
       _month_start: monthStart,
       _month_end: monthEnd,
     });
 
-    const currentCount = totalUsage ?? 0;
+    const currentCredits = totalCredits ?? 0;
 
-    // Check limit (null = unlimited)
-    if (maxMessages !== null && currentCount >= maxMessages) {
+    // Check credit limit (null = unlimited for Free/Plus/Custom)
+    if (maxCredits !== null && currentCredits >= maxCredits) {
       return new Response(JSON.stringify({ 
-        error: `Nhóm của bạn đã sử dụng hết ${maxMessages} lượt hỏi AI tháng này. Vui lòng quay lại tháng sau hoặc nâng cấp gói.`,
+        error: `Nhóm của bạn đã sử dụng hết ${maxCredits} credit AI tháng này. Vui lòng quay lại tháng sau hoặc nâng cấp gói.`,
         code: "AI_LIMIT_EXCEEDED",
-        usage: { used: currentCount, max: maxMessages }
+        usage: { used: currentCredits, max: maxCredits }
       }), {
         status: 429,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
