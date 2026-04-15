@@ -144,8 +144,27 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
         {/* Notifications */}
         <TreeItemCollapsed icon={Bell} label={t?.notifications || 'Notifications'} href="/notifications" active={isPathActive('/notifications')} />
 
-        {/* All Projects */}
-        <TreeItemCollapsed icon={FolderKanban} label={t?.projects || 'Projects'} href="/groups" active={isPathActive('/groups')} />
+        {/* Projects — dropdown with filters */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className={cn('sidebar-nav-item w-full', location.pathname.startsWith('/groups') && 'active')}
+              title={t?.projects || 'Projects'}
+            >
+              <FolderKanban className="nav-icon" strokeWidth={1.8} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="right" align="start" sideOffset={8}>
+            {projectItems.map(item => (
+              <DropdownMenuItem key={item.matchPath} asChild>
+                <Link to={item.href} className={cn(isProjectFilterActive(item.matchPath) && 'font-semibold')}>
+                  <item.icon className="w-4 h-4 mr-2" />
+                  {item.name}
+                </Link>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Workspace pages */}
         {isAvailable && activeWorkspace && !isGuest && (
