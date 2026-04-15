@@ -322,10 +322,14 @@ export default function AIAssistant() {
     }
 
     setError(null);
-    const userMessage: Message = { role: 'user', content: messageText };
+    const userMessage: Message = { 
+      role: 'user', 
+      content: messageText,
+      attachments: filesToUpload.length > 0 ? filesToUpload.map(f => ({ file_name: f.name, file_size: f.size })) : undefined,
+    };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
-    const filesToUpload = [...pendingFiles];
+    const filesToUploadCopy = [...pendingFiles];
     setPendingFiles([]);
     setIsLoading(true);
     setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
@@ -336,7 +340,7 @@ export default function AIAssistant() {
 
     // Upload files to R2 and save attachment records
     let attachmentsMeta: { file_path: string; file_name: string; content_type: string }[] = [];
-    if (filesToUpload.length > 0) {
+    if (filesToUploadCopy.length > 0) {
       try {
         const { data: lastMsg } = await supabase
           .from('ai_messages')
@@ -347,7 +351,7 @@ export default function AIAssistant() {
           .single();
         const messageId = lastMsg?.id;
 
-        for (const file of filesToUpload) {
+        for (const file of filesToUploadCopy) {
           const filePath = `${user!.id}/${convId}/${Date.now()}-${file.name}`;
           const { error: uploadErr } = await r2Storage.from('ai-attachments').upload(filePath, file, {
             contentType: file.type || 'application/octet-stream',
