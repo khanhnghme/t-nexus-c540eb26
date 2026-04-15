@@ -580,9 +580,9 @@ export default function DashboardLayout({
 
           {/* Cell 4: Bottom-right — Main content */}
           <div className="grid-cell-content">
-            <div className="max-w-[1100px] mx-auto px-12 py-8 space-y-4">
-              {location.pathname !== '/dashboard' && <ReadOnlyBanner compact />}
-              {useOutlet ? (
+            {location.pathname === '/ai-assistant' ? (
+              /* AI route: full-bleed, no wrapper padding — page owns its own layout */
+              useOutlet ? (
                 <Suspense fallback={
                   <div className="flex items-center justify-center py-20">
                     <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -590,8 +590,21 @@ export default function DashboardLayout({
                 }>
                   <Outlet />
                 </Suspense>
-              ) : children}
-            </div>
+              ) : children
+            ) : (
+              <div className="max-w-[1100px] mx-auto px-12 py-8 space-y-4">
+                {location.pathname !== '/dashboard' && <ReadOnlyBanner compact />}
+                {useOutlet ? (
+                  <Suspense fallback={
+                    <div className="flex items-center justify-center py-20">
+                      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  }>
+                    <Outlet />
+                  </Suspense>
+                ) : children}
+              </div>
+            )}
           </div>
         </div>
       </TooltipProvider>

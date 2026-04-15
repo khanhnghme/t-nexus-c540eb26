@@ -346,8 +346,6 @@ export default function AIAssistant() {
     toast({ title: t?.sidebar?.allDeleted || 'Đã xóa tất cả lịch sử' });
   };
 
-  const isUnlimited = maxQuestions === null;
-  const remainingQuestions = isUnlimited ? Infinity : maxQuestions - questionsToday;
   const wordCount = countWords(input);
   const isOverLimit = wordCount > MAX_MESSAGE_WORDS;
 
