@@ -656,17 +656,30 @@ export default function AIAssistant() {
         <div className="shrink-0 border-t border-border/30 bg-background/80 backdrop-blur-sm px-4 md:px-6 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <div className="max-w-4xl mx-auto space-y-2">
             {/* Compact credit indicator in chat mode */}
-            {!usageLoading && !isFreePlan && maxCredits && (
+            {!usageLoading && (
               <div className="flex items-center gap-3 px-1">
-                <div className="flex-1 min-w-0">
-                  <Progress value={creditPercent} className={cn("h-1.5", getProgressColorClass())} />
-                </div>
-                <span className={cn(
-                  "text-[11px] font-medium shrink-0",
-                  isCriticalCredit ? "text-destructive" : isLowCredit ? "text-amber-500" : "text-muted-foreground"
-                )}>
-                  {creditsUsed.toLocaleString()}/{maxCredits.toLocaleString()} credit
+                <span className="text-[10px] text-muted-foreground flex items-center gap-1 shrink-0">
+                  {shareMode ? (
+                    <><Link2 className="h-3 w-3" /> {t?.sidebar?.aiSharedPool || 'Shared Pool'} · {workspaceName}</>
+                  ) : (
+                    <><User className="h-3 w-3" /> {userPlanLabel}</>
+                  )}
                 </span>
+                {!isFreePlan && maxCredits ? (
+                  <>
+                    <div className="flex-1 min-w-0">
+                      <Progress value={creditPercent} className={cn("h-1.5", getProgressColorClass())} />
+                    </div>
+                    <span className={cn(
+                      "text-[11px] font-medium shrink-0",
+                      isCriticalCredit ? "text-destructive" : isLowCredit ? "text-amber-500" : "text-muted-foreground"
+                    )}>
+                      {creditsUsed.toLocaleString()}/{maxCredits.toLocaleString()}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-[10px] text-muted-foreground ml-auto">∞</span>
+                )}
               </div>
             )}
             {renderInput('chat')}
