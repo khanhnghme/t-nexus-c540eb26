@@ -213,7 +213,7 @@ export default function AIGuide() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <LanguageToggle />
           <Link to={lp('/')} style={{ display: 'flex', alignItems: 'center' }}>
-            <TNexusLogo className="h-5" style={{ filter: 'brightness(0)' }} />
+            <TNexusLogo className="h-5 brightness-0" />
           </Link>
         </div>
       </header>
