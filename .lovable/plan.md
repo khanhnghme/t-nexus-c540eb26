@@ -1,46 +1,48 @@
 
 Mục tiêu
-- Sửa dứt điểm lỗi tràn UI ở phần “Lịch sử trò chuyện” của `/ai-assistant`.
-- Tên cuộc trò chuyện dài phải luôn bị giới hạn đúng trong sidebar và hiển thị bằng dấu `...`.
-- Menu 3 chấm, ghim/bỏ ghim, và trạng thái active không được làm vỡ layout.
+- Sửa dứt điểm lỗi tên cuộc trò chuyện dài làm vỡ layout ở sidebar `/ai-assistant`.
+- Tên dài phải luôn hiển thị `...` và không che/đẩy nút 3 chấm.
 
-Nhận định từ ảnh + code hiện tại
-- Ảnh cho thấy tiêu đề đang bị cắt ngang mép phải, chưa ellipsis đúng chuẩn.
-- Trong `src/pages/AIAssistant.tsx`, item lịch sử hiện đang để icon, title và menu 3 chấm cùng tham gia một hàng `flex`.
-- Dù đã có `truncate`, nhưng ràng buộc chiều rộng vẫn chưa đủ chặt ở toàn bộ chuỗi container (`item -> title wrapper -> scroll container`), nên title vẫn có thể bị tràn.
-- Nút menu 3 chấm hiện nằm ngay trong flow của hàng, nên khi hover vẫn có thể ảnh hưởng không gian của text.
+Nguyên nhân đã xác định
+- Ở `src/pages/AIAssistant.tsx`, lịch sử trò chuyện đang bọc trong `ScrollArea`.
+- `ScrollArea` hiện dùng Radix viewport; bên trong nó có content wrapper tự co theo nội dung. Với title dài, chiều rộng hàng bị nở theo text thay vì bị khóa theo bề ngang sidebar.
+- Row lịch sử hiện còn dùng title + menu theo layout chưa có “phần còn lại” cố định cho text: nút 3 chấm đặt `absolute`, còn text `w-full` nên bị clip ở mép sidebar thay vì kích hoạt ellipsis thật sự.
 
 Kế hoạch fix
-1. Cố định lại layout từng item lịch sử
-- Chuyển item sang cấu trúc ổn định hơn: `icon | title(minmax(0,1fr)) | actions`.
-- Bổ sung đầy đủ `w-full max-w-full min-w-0 overflow-hidden` cho item và wrapper chứa title.
-- Đổi phần title sang phần tử block rõ ràng để `truncate` hoạt động chắc chắn.
+1. Đổi riêng phần lịch sử trò chuyện sang native scroll container
+- Bỏ `ScrollArea` ở sidebar lịch sử của `/ai-assistant`.
+- Dùng `div` thường với `flex-1 overflow-y-auto overflow-x-hidden min-w-0`.
+- Mục đích: loại bỏ hoàn toàn hiệu ứng sizing của wrapper bên trong Radix gây sai width.
 
-2. Tách vùng actions khỏi vùng text
-- Giữ menu 3 chấm ở một vùng width cố định hoặc đặt tuyệt đối ở mép phải và chừa khoảng trống sẵn cho text.
-- Đảm bảo hover menu không làm thay đổi layout hoặc đẩy text sang phải.
+2. Refactor mỗi item lịch sử sang layout khóa cứng chiều ngang
+- Chuyển item sang `grid` hoặc `flex` có cột action cố định, ví dụ: `title(minmax(0,1fr)) | actions(32px)`.
+- Title wrapper có đủ `min-w-0 overflow-hidden`.
+- Text node dùng `truncate` trên chính phần tử hiển thị tên.
+- Không để text và menu chồng nhau bằng `absolute` nữa.
 
-3. Khóa overflow ngang ở cấp sidebar
-- Siết lại `ScrollArea` và các group wrapper trong `historySidebar` bằng `overflow-x-hidden`, `max-w-full`, `min-w-0`.
-- Chỉ áp dụng local cho route AI để tránh ảnh hưởng các khu vực khác đang dùng `ScrollArea`.
+3. Giữ thao tác 3 chấm luôn dùng được
+- Nút 3 chấm có vùng rộng cố định, không phụ thuộc độ dài tiêu đề.
+- Cho hiện trên hover/focus/active để người dùng luôn thao tác được.
+- Nếu cần, giữ `title={conv.title}` để xem tên đầy đủ khi hover.
 
-4. Cải thiện UX cho tên dài
-- Giữ ellipsis mặc định trên danh sách.
-- Thêm `title={conv.title}` hoặc tooltip nhẹ để vẫn xem được tên đầy đủ khi cần.
-
-5. Rà soát hồi quy
-- Test tên rất dài tiếng Việt có dấu.
-- Test chuỗi dài không có khoảng trắng.
-- Test item đang active, item được ghim, hover hiện menu 3 chấm, và lúc sidebar mở/đóng.
-- Test ở viewport hiện tại và viewport hẹp hơn để đảm bảo không còn tràn.
+4. Rà soát trạng thái đặc biệt
+- Kiểm tra item đang active, item đã ghim, và danh sách dài nhiều nhóm thời gian.
+- Đảm bảo pin indicator không làm mất chỗ của ellipsis.
 
 Technical details
 - File chính: `src/pages/AIAssistant.tsx`
-- Ưu tiên fix cục bộ trong AI sidebar.
-- Chỉ đụng `src/components/ui/scroll-area.tsx` nếu thật sự cần mở rộng API/class cho viewport; nếu không sẽ giữ nguyên shared component để tránh regression.
+- Không cần đụng database.
+- Ưu tiên không sửa shared `src/components/ui/scroll-area.tsx` để tránh regression toàn hệ thống; chỉ sửa cục bộ route AI.
 
 Kết quả mong đợi
-- Không còn text tràn khỏi sidebar.
-- Tên dài luôn hiển thị `...` đúng chuẩn.
-- Menu 3 chấm và ghim/bỏ ghim vẫn hoạt động bình thường.
-- Sidebar “Lịch sử trò chuyện” gọn, sạch, ổn định trên mọi trạng thái.
+- Tên rất dài vẫn gọn trong sidebar và luôn có `...`.
+- Không còn tràn ngang hoặc vỡ layer.
+- Nút 3 chấm luôn hiện/nhấn được bình thường.
+- Lịch sử trò chuyện ổn định ở cả title tiếng Việt dài và chuỗi dài không có khoảng trắng.
+
+Checklist verify sau khi implement
+- Test 1 title dài tiếng Việt có dấu.
+- Test 1 title dài không có khoảng trắng.
+- Test item ghim/bỏ ghim, item active, hover hiện menu.
+- Test danh sách nhiều cuộc trò chuyện vẫn không có horizontal overflow.
+- Test end-to-end việc mở menu 3 chấm và xóa/ghim vẫn hoạt động bình thường.
