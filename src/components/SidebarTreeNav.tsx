@@ -146,20 +146,14 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
 
         {/* Projects — dropdown with filters */}
         <DropdownMenu>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className={cn('sidebar-nav-item w-full', location.pathname.startsWith('/groups') && 'active')}
-                >
-                  <FolderKanban className="nav-icon" strokeWidth={1.8} />
-                </button>
-              </DropdownMenuTrigger>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={12}>
-              <p className="font-medium">{t?.projects || 'Projects'}</p>
-            </TooltipContent>
-          </Tooltip>
+          <DropdownMenuTrigger asChild>
+            <button
+              className={cn('sidebar-nav-item w-full', location.pathname.startsWith('/groups') && 'active')}
+              title={t?.projects || 'Projects'}
+            >
+              <FolderKanban className="nav-icon" strokeWidth={1.8} />
+            </button>
+          </DropdownMenuTrigger>
           <DropdownMenuContent side="right" align="start" sideOffset={8}>
             {projectItems.map(item => (
               <DropdownMenuItem key={item.matchPath} asChild>
