@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Textarea } from '@/components/ui/textarea';
-import { Trash2, ArrowUp, FileText, ListChecks, BarChart3, PenLine, History, Plus, X, MessageSquare, MoreHorizontal, Pin, PinOff, Sparkles, AlertTriangle } from 'lucide-react';
+import { Trash2, ArrowUp, FileText, ListChecks, BarChart3, PenLine, History, Plus, X, MessageSquare, MoreHorizontal, Pin, PinOff, Sparkles, AlertTriangle, Share2, User, Link2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
@@ -83,6 +83,10 @@ export default function AIAssistant() {
   const [creditsUsed, setCreditsUsed] = useState(0);
   const [maxCredits, setMaxCredits] = useState<number | null>(null);
   const [usageLoading, setUsageLoading] = useState(true);
+  const [shareMode, setShareMode] = useState(false);
+  const [workspaceName, setWorkspaceName] = useState('');
+  const [ownerName, setOwnerName] = useState('');
+  const [userPlanLabel, setUserPlanLabel] = useState('Free');
   const [showHistory, setShowHistory] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
