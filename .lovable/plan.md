@@ -1,60 +1,43 @@
 
 
-# Cập nhật kế hoạch: Phân tầng Model AI theo Plan
+# Thêm comment bảo vệ model + Hiển thị model đang dùng trên UI
 
-## Quy tắc mới
+## Thay đổi
 
-| Plan | Model | Provider |
-|---|---|---|
-| **Free & Plus** | `google/gemini-2.5-flash-lite` | Lovable AI Gateway (giữ nguyên) |
-| **Pro & Business** | `deepseek-chat` (V3) | DeepSeek API trực tiếp |
-
-## Thay đổi kỹ thuật
-
-### File: `supabase/functions/team-assistant/index.ts`
-
-**Vị trí**: Sau khi có `ownerPlan` (dòng 569-577), trước khi gọi API (dòng 694-709).
-
-**Logic mới** (~15 dòng):
-
+### 1. Edge Function (`supabase/functions/team-assistant/index.ts`)
+- Thêm comment IMPORTANT ngay trên block phân tầng model (dòng ~694):
 ```typescript
-// Determine model and endpoint based on owner's plan
-const isPro = ownerPlan === 'plan_pro' || ownerPlan === 'plan_business' || ownerPlan === 'plan_custom';
-
-let apiUrl: string;
-let apiKey: string;
-let modelName: string;
-
-if (isPro) {
-  apiUrl = "https://api.deepseek.com/chat/completions";
-  apiKey = Deno.env.get("DEEPSEEK_API_KEY") || "";
-  modelName = "deepseek-chat";
-} else {
-  apiUrl = "https://ai.gateway.lovable.dev/v1/chat/completions";
-  apiKey = Deno.env.get("LOVABLE_API_KEY") || "";
-  modelName = "google/gemini-2.5-flash-lite";
-}
+// IMPORTANT:
+// Only use DeepSeek V3 standard model (deepseek-chat)
+// Do NOT switch to deepseek-reasoner to avoid higher cost
 ```
+- Thêm header `X-AI-Model` vào response (dòng 794) để frontend biết model nào đang được dùng:
+```typescript
+return new Response(response.body, {
+  headers: { ...corsHeaders, "Content-Type": "text/event-stream", "X-AI-Model": modelName },
+});
+```
+- Tương tự cho fallback response (thêm header `X-AI-Model: google/gemini-2.5-flash-lite`).
 
-Sau đó thay thế hardcoded URL/model tại dòng 694-708 bằng các biến trên.
+### 2. Frontend (`src/pages/AIAssistant.tsx`)
+- Thêm state `activeModel` để lưu model đang dùng.
+- Sau khi nhận response thành công, đọc header `X-AI-Model` và lưu vào state:
+```typescript
+const modelHeader = response.headers.get('X-AI-Model');
+if (modelHeader) setActiveModel(modelHeader);
+```
+- Hiển thị badge model ở 2 vị trí:
+  - **Empty state**: Dưới subtitle, trước input box — badge nhỏ hiện tên model (ví dụ: "DeepSeek V3" hoặc "Gemini Flash").
+  - **Chat view**: Ở footer input area, bên trái — badge nhỏ text muted.
+- Map tên model thành label dễ đọc:
+  - `deepseek-chat` → "DeepSeek V3"
+  - `google/gemini-2.5-flash-lite` → "Gemini Flash"
+- Badge style: `text-[10px] text-muted-foreground/60 bg-muted/50 px-2 py-0.5 rounded-full`
 
-### Secret mới
-- Thêm `DEEPSEEK_API_KEY` vào Supabase secrets (user cung cấp key).
-
-### Fallback
-- Nếu `DEEPSEEK_API_KEY` rỗng hoặc DeepSeek trả lỗi 5xx, tự động fallback về Lovable Gateway để tránh gián đoạn.
+### 3. Cập nhật memory
+- Update `mem://architecture/ai-model-tier-routing` thêm quy tắc không dùng `deepseek-reasoner`.
 
 ## Không thay đổi
-- Frontend (`AIAssistant.tsx`) — không đổi gì (SSE format giống nhau).
-- Quota logic — giữ nguyên hoàn toàn.
-- System prompt, project context — giữ nguyên.
-
-## Checklist triển khai
-1. User cung cấp DeepSeek API key
-2. Lưu `DEEPSEEK_API_KEY` vào secrets
-3. Cập nhật `team-assistant/index.ts` với logic phân tầng model
-4. Deploy edge function
-5. Test: tài khoản Free/Plus → vẫn dùng Gemini
-6. Test: tài khoản Pro/Business → dùng DeepSeek
-7. Test fallback khi DeepSeek lỗi
+- Logic phân tầng model giữ nguyên.
+- Quota, auth, streaming — không đổi.
 
