@@ -149,13 +149,11 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
           <Tooltip>
             <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
-                <Link
-                  to="/groups"
-                  className={cn('sidebar-nav-item', location.pathname.startsWith('/groups') && 'active')}
-                  onClick={(e) => e.preventDefault()}
+                <button
+                  className={cn('sidebar-nav-item w-full', location.pathname.startsWith('/groups') && 'active')}
                 >
                   <FolderKanban className="nav-icon" strokeWidth={1.8} />
-                </Link>
+                </button>
               </DropdownMenuTrigger>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={12}>
