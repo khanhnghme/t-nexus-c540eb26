@@ -371,12 +371,9 @@ export default function AIAssistant() {
       onToggleHistory: () => setShowHistory(prev => !prev),
       onClearChat: () => clearChatRef.current(),
       hasMessages,
-      questionsToday,
-      maxQuestions,
-      isUnlimited,
     });
     return () => setAITopBarProps(null);
-  }, [hasMessages, questionsToday, maxQuestions, isUnlimited, setAITopBarProps]);
+  }, [hasMessages, setAITopBarProps]);
 
   // ── History Sidebar ──
   const historySidebar = (
@@ -487,7 +484,7 @@ export default function AIAssistant() {
   // ── Chat state ──
   if (hasMessages) {
     return (
-      <div className="flex flex-col h-[calc(100dvh-56px)] bg-background">
+      <div className="flex flex-col h-[calc(100dvh-56px)] bg-background overflow-hidden">
         {overlay}
         {historySidebar}
 
@@ -497,7 +494,7 @@ export default function AIAssistant() {
               <Spinner size="default" />
             </div>
           ) : (
-            <div className="max-w-3xl mx-auto px-5 py-6 space-y-5">
+            <div className="max-w-4xl mx-auto px-5 py-6 space-y-5">
               {messages.map((message, idx) => (
                 <div key={idx} className={cn("animate-fade-in", message.role === 'user' ? 'flex justify-end' : '')}>
                   {message.role === 'user' ? (
@@ -549,7 +546,7 @@ export default function AIAssistant() {
         </main>
 
         <div className="shrink-0 border-t border-border/40 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-4xl mx-auto">
             {renderInput('chat')}
           </div>
         </div>
