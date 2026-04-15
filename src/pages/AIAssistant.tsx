@@ -463,39 +463,6 @@ export default function AIAssistant() {
     </form>
   );
 
-  // ── Shared top bar (history, logo, credits, clear) ──
-  const topBar = (
-    <header className="shrink-0 flex items-center justify-between px-5 py-2 border-b border-border/40">
-      <div className="flex items-center gap-2">
-        <button onClick={() => setShowHistory(prev => !prev)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-          <History className="h-4 w-4" />
-        </button>
-        <TNexusLogo width={80} />
-        <span className="text-xs text-muted-foreground">AI</span>
-      </div>
-      <div className="flex items-center gap-3">
-        {!isUnlimited && (
-          <div className="flex items-center gap-2">
-            <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
-              <div
-                className={cn("h-full rounded-full transition-all duration-500", usagePercent > 80 ? "bg-destructive" : "bg-primary")}
-                style={{ width: `${usagePercent}%` }}
-              />
-            </div>
-            <span className="text-[10px] text-muted-foreground tabular-nums">{questionsToday}/{maxQuestions}</span>
-          </div>
-        )}
-        {hasMessages && (
-          <button
-            onClick={handleClearChat}
-            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </div>
-    </header>
-  );
 
   // ── Chat state ──
   if (hasMessages) {
