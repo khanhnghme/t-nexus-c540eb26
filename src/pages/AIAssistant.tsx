@@ -319,12 +319,50 @@ export default function AIAssistant() {
     const userMessage: Message = { role: 'user', content: messageText };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
+    const filesToUpload = [...pendingFiles];
+    setPendingFiles([]);
     setIsLoading(true);
     setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
     let assistantContent = '';
 
     const convId = await ensureConversation(messageText);
     await saveMessage(convId, 'user', messageText);
+
+    // Upload files to R2 and save attachment records
+    let attachmentsMeta: { file_path: string; file_name: string; content_type: string }[] = [];
+    if (filesToUpload.length > 0) {
+      try {
+        const { data: lastMsg } = await supabase
+          .from('ai_messages')
+          .select('id')
+          .eq('conversation_id', convId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        const messageId = lastMsg?.id;
+
+        for (const file of filesToUpload) {
+          const filePath = `${user!.id}/${convId}/${Date.now()}-${file.name}`;
+          const { error: uploadErr } = await r2Storage.from('ai-attachments').upload(filePath, file, {
+            contentType: file.type || 'application/octet-stream',
+          });
+          if (!uploadErr) {
+            attachmentsMeta.push({ file_path: filePath, file_name: file.name, content_type: file.type || 'application/octet-stream' });
+            if (messageId) {
+              await supabase.from('ai_message_attachments').insert({
+                message_id: messageId,
+                file_path: filePath,
+                file_name: file.name,
+                file_size: file.size,
+                content_type: file.type || 'application/octet-stream',
+              } as any);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('File upload error:', err);
+      }
+    }
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -340,6 +378,7 @@ export default function AIAssistant() {
           },
           body: JSON.stringify({
             messages: [...messages, userMessage].map(m => ({ role: m.role, content: m.content })),
+            attachments: attachmentsMeta.length > 0 ? attachmentsMeta : undefined,
           }),
         }
       );
