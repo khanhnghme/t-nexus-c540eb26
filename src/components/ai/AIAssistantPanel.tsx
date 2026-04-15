@@ -556,6 +556,28 @@ export default function AIAssistantPanel({
 
         {/* Input Area — Simple */}
         <div className="border-t p-3 bg-background">
+          {/* File preview chips */}
+          {pendingFiles.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-2">
+              {pendingFiles.map((file, idx) => (
+                <div key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted/60 border border-border/40 text-[11px]">
+                  <FileIcon className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+                  <span className="truncate max-w-[80px] text-foreground">{file.name}</span>
+                  <button type="button" onClick={() => removeFile(idx)} className="p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive">
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={handleFileSelect}
+            accept="*/*"
+          />
           <form onSubmit={handleSubmit} className="flex gap-2 items-end">
             <div className="flex-1 relative">
               <Textarea
@@ -580,10 +602,21 @@ export default function AIAssistantPanel({
                 </span>
               )}
             </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isLoading || pendingFiles.length >= MAX_FILES}
+              className="shrink-0 h-11 w-11 rounded-xl text-muted-foreground"
+              title="Đính kèm file"
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
             <Button 
               type="submit" 
               size="icon" 
-              disabled={!input.trim() || isLoading || isOverLimit || remainingQuestions <= 0}
+              disabled={(!input.trim() && pendingFiles.length === 0) || isLoading || isOverLimit || remainingQuestions <= 0}
               className="shrink-0 h-11 w-11 rounded-xl"
             >
               {isLoading ? (
