@@ -1,63 +1,28 @@
 
 
-# Fix thiếu renderer cho AI output (chart/diagram/table)
+# Tạo trang /guide/ai — Hướng dẫn AI Usage
 
-## Vấn đề
-Cả 2 nơi hiển thị AI response (`AIAssistant.tsx` và `AIAssistantPanel.tsx`) đều dùng `ReactMarkdown` **không có plugins** — thiếu `remarkGfm` (tables, strikethrough) và `rehypeRaw`. Code blocks không có syntax highlighting. Không có renderer cho Mermaid diagrams.
+## Thay đổi
 
-Packages `remark-gfm`, `rehype-raw`, `recharts` **đã cài sẵn** trong project.
+### 1. Tạo `src/pages/AIGuide.tsx`
+Trang documentation mới theo layout pattern của PricingDocs (sticky header, sidebar TOC, inline styles). Nội dung song ngữ EN/VI gồm 6 section:
 
-## Giải pháp
+1. **Giới thiệu** — AI tính theo usage thực tế, chỉ cần hiểu "credit"
+2. **Cách tính credit** — 1 credit = 1000 token, làm tròn lên, tối thiểu 1 credit/lần
+3. **Giới hạn theo gói** — Free/Plus miễn phí (Gemini, không đảm bảo ổn định), Pro 1000 credit, Business 2500 credit (DeepSeek V3.2)
+4. **Minh bạch & kiểm soát** — Thanh usage, cập nhật realtime sau mỗi tin nhắn
+5. **Mẹo tiết kiệm credit** — Viết ngắn gọn, hỏi đúng trọng tâm
+6. **FAQ** — Câu hỏi thường gặp
 
-### 1. Tạo shared component `src/components/ai/AIMessageRenderer.tsx`
-Component dùng chung cho cả 2 nơi, tránh duplicate code:
+Sidebar TOC với scroll-to navigation, mobile hamburger menu.
 
-- **Markdown**: `ReactMarkdown` + `remarkGfm` + `rehypeRaw`
-- **GFM Tables**: Custom `table/thead/tbody/tr/th/td` components map sang `Table` UI components đã có
-- **Code blocks**: Custom `code` component phát hiện ngôn ngữ, hiển thị header (language label + copy button), styled block
-- **Mermaid diagrams**: Custom `code` component detect `language-mermaid` → render diagram inline bằng dynamic import `mermaid` library
-- **Inline code**: Giữ style hiện tại
+### 2. Cập nhật `src/App.tsx`
+- Thêm lazy import `AIGuide`
+- Thêm route `/guide/ai` và `guide/ai` (trong `/vi`) wrapped trong `ForceLightMode`
 
-### 2. Install thêm package `mermaid`
-Cần cài `mermaid` để render diagrams. Sử dụng dynamic import (`React.lazy` / `useEffect`) để không ảnh hưởng bundle size.
+### 3. Cập nhật `src/pages/Guide.tsx`
+Thêm link "AI Usage Guide" / "Hướng dẫn AI" vào section Documentation.
 
-### 3. Cập nhật `AIAssistant.tsx` (dòng 601-609)
-Thay block `<ReactMarkdown components={...}>` bằng `<AIMessageRenderer content={message.content} />`
-
-### 4. Cập nhật `AIAssistantPanel.tsx` (dòng 446-459)
-Tương tự — thay bằng `<AIMessageRenderer content={message.content} compact />`
-(prop `compact` cho smaller font/spacing trong panel)
-
-## Chi tiết kỹ thuật
-
-### AIMessageRenderer component structure:
-```
-AIMessageRenderer
-├── ReactMarkdown (remarkGfm, rehypeRaw)
-│   ├── table → shadcn Table component
-│   ├── code (block) → CodeBlock component
-│   │   ├── language === 'mermaid' → MermaidRenderer
-│   │   └── other → styled pre/code + copy button
-│   ├── code (inline) → styled inline code
-│   ├── p, ul, ol, li, strong → styled elements
-│   └── a → external link with icon
-```
-
-### MermaidRenderer:
-- `useEffect` load mermaid library dynamically
-- Render SVG inline from mermaid syntax
-- Dark mode support via mermaid theme config
-- Error fallback: show raw code if parse fails
-
-### CodeBlock:
-- Language label header bar
-- Copy-to-clipboard button
-- Overflow-x scroll
-- Monospace font styling
-
-## Không thay đổi
-- Backend / Edge Functions
-- DB schema
-- Existing UI components (Table, Chart)
-- Logic gửi/nhận message
+### Không thay đổi
+- DB, Edge Functions, logic credit, i18n files (nội dung hardcoded trong component giống PricingDocs pattern)
 
