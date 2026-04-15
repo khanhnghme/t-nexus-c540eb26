@@ -52,6 +52,8 @@ export default function AIAssistantPanel({
   const [userPlanLabel, setUserPlanLabel] = useState('Free');
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const { user, profile } = useAuth();
   const { activeWorkspace } = useWorkspace();
   const { toast } = useToast();
