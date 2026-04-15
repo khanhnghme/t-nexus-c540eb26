@@ -122,30 +122,29 @@ export default function AIAssistant() {
   }, [profile?.user_plan]);
 
   // ── Load credit usage ──
-  useEffect(() => {
-    const loadUsage = async () => {
-      if (!user?.id) { setUsageLoading(false); return; }
-      const now = new Date();
-      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-      const monthEnd = now.toISOString().slice(0, 10);
-      try {
-        const effectiveOwnerId = activeWorkspace?.owner_id || user.id;
-        const [creditRes, ownerProfileRes] = await Promise.all([
-          supabase.rpc('get_owner_ai_credit_usage_month', { _owner_id: effectiveOwnerId, _month_start: monthStart, _month_end: monthEnd }),
-          supabase.from('profiles').select('user_plan').eq('id', effectiveOwnerId).single(),
-        ]);
-        setCreditsUsed(typeof creditRes.data === 'number' ? creditRes.data : 0);
-        const ownerPlan = (ownerProfileRes.data as any)?.user_plan || 'plan_free';
-        setActiveModel(getModelFromPlan(ownerPlan));
-        const { data: limitData } = await supabase
-          .from('plan_limits').select('max_ai_credits_per_month')
-          .eq('plan', ownerPlan as any).maybeSingle();
-        setMaxCredits((limitData as any)?.max_ai_credits_per_month ?? null);
-      } catch { /* fallback */ }
-      setUsageLoading(false);
-    };
-    loadUsage();
-  }, [user?.id, activeWorkspace?.id]);
+  const loadUsage = useCallback(async () => {
+    if (!user?.id) { setUsageLoading(false); return; }
+    const now = new Date();
+    const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    const monthEnd = now.toISOString().slice(0, 10);
+    try {
+      const effectiveOwnerId = activeWorkspace?.owner_id || user.id;
+      const [creditRes, ownerProfileRes] = await Promise.all([
+        supabase.rpc('get_owner_ai_credit_usage_month', { _owner_id: effectiveOwnerId, _month_start: monthStart, _month_end: monthEnd }),
+        supabase.from('profiles').select('user_plan').eq('id', effectiveOwnerId).single(),
+      ]);
+      setCreditsUsed(typeof creditRes.data === 'number' ? creditRes.data : 0);
+      const ownerPlan = (ownerProfileRes.data as any)?.user_plan || 'plan_free';
+      setActiveModel(getModelFromPlan(ownerPlan));
+      const { data: limitData } = await supabase
+        .from('plan_limits').select('max_ai_credits_per_month')
+        .eq('plan', ownerPlan as any).maybeSingle();
+      setMaxCredits((limitData as any)?.max_ai_credits_per_month ?? null);
+    } catch { /* fallback */ }
+    setUsageLoading(false);
+  }, [user?.id, activeWorkspace?.id, activeWorkspace?.owner_id]);
+
+  useEffect(() => { loadUsage(); }, [loadUsage]);
 
   // ── Load conversation history ──
   const loadConversations = useCallback(async () => {
@@ -332,6 +331,8 @@ export default function AIAssistant() {
       if (assistantContent) {
         await saveMessage(convId, 'assistant', assistantContent);
         await supabase.from('ai_conversations').update({ updated_at: new Date().toISOString() } as any).eq('id', convId);
+        // Re-fetch credit usage after successful message
+        loadUsage();
       }
     } catch (err) {
       console.error('AI Assistant error:', err);
