@@ -245,6 +245,24 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
         </div>
       )}
 
+      {/* ── Projects section ── */}
+      {isAvailable && activeWorkspace && (
+        <>
+          <div className="sidebar-nav-separator" />
+          <div className="sidebar-section-label">{t?.projects || 'PROJECTS'}</div>
+          {projectItems.map(item => (
+            <Link
+              key={item.matchFilter}
+              to={item.href}
+              className={cn('sidebar-nav-item', isProjectFilterActive(item.matchFilter) && 'active')}
+            >
+              <item.icon className="nav-icon" strokeWidth={1.8} />
+              <span className="nav-label">{item.name}</span>
+            </Link>
+          ))}
+        </>
+      )}
+
       {/* ── Personal section ── */}
       {(personalItems.length > 0 || true) && (
         <>
