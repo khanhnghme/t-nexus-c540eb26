@@ -1,48 +1,60 @@
 
-Mục tiêu
-- Sửa dứt điểm lỗi tên cuộc trò chuyện dài làm vỡ layout ở sidebar `/ai-assistant`.
-- Tên dài phải luôn hiển thị `...` và không che/đẩy nút 3 chấm.
 
-Nguyên nhân đã xác định
-- Ở `src/pages/AIAssistant.tsx`, lịch sử trò chuyện đang bọc trong `ScrollArea`.
-- `ScrollArea` hiện dùng Radix viewport; bên trong nó có content wrapper tự co theo nội dung. Với title dài, chiều rộng hàng bị nở theo text thay vì bị khóa theo bề ngang sidebar.
-- Row lịch sử hiện còn dùng title + menu theo layout chưa có “phần còn lại” cố định cho text: nút 3 chấm đặt `absolute`, còn text `w-full` nên bị clip ở mép sidebar thay vì kích hoạt ellipsis thật sự.
+# Cập nhật kế hoạch: Phân tầng Model AI theo Plan
 
-Kế hoạch fix
-1. Đổi riêng phần lịch sử trò chuyện sang native scroll container
-- Bỏ `ScrollArea` ở sidebar lịch sử của `/ai-assistant`.
-- Dùng `div` thường với `flex-1 overflow-y-auto overflow-x-hidden min-w-0`.
-- Mục đích: loại bỏ hoàn toàn hiệu ứng sizing của wrapper bên trong Radix gây sai width.
+## Quy tắc mới
 
-2. Refactor mỗi item lịch sử sang layout khóa cứng chiều ngang
-- Chuyển item sang `grid` hoặc `flex` có cột action cố định, ví dụ: `title(minmax(0,1fr)) | actions(32px)`.
-- Title wrapper có đủ `min-w-0 overflow-hidden`.
-- Text node dùng `truncate` trên chính phần tử hiển thị tên.
-- Không để text và menu chồng nhau bằng `absolute` nữa.
+| Plan | Model | Provider |
+|---|---|---|
+| **Free & Plus** | `google/gemini-2.5-flash-lite` | Lovable AI Gateway (giữ nguyên) |
+| **Pro & Business** | `deepseek-chat` (V3) | DeepSeek API trực tiếp |
 
-3. Giữ thao tác 3 chấm luôn dùng được
-- Nút 3 chấm có vùng rộng cố định, không phụ thuộc độ dài tiêu đề.
-- Cho hiện trên hover/focus/active để người dùng luôn thao tác được.
-- Nếu cần, giữ `title={conv.title}` để xem tên đầy đủ khi hover.
+## Thay đổi kỹ thuật
 
-4. Rà soát trạng thái đặc biệt
-- Kiểm tra item đang active, item đã ghim, và danh sách dài nhiều nhóm thời gian.
-- Đảm bảo pin indicator không làm mất chỗ của ellipsis.
+### File: `supabase/functions/team-assistant/index.ts`
 
-Technical details
-- File chính: `src/pages/AIAssistant.tsx`
-- Không cần đụng database.
-- Ưu tiên không sửa shared `src/components/ui/scroll-area.tsx` để tránh regression toàn hệ thống; chỉ sửa cục bộ route AI.
+**Vị trí**: Sau khi có `ownerPlan` (dòng 569-577), trước khi gọi API (dòng 694-709).
 
-Kết quả mong đợi
-- Tên rất dài vẫn gọn trong sidebar và luôn có `...`.
-- Không còn tràn ngang hoặc vỡ layer.
-- Nút 3 chấm luôn hiện/nhấn được bình thường.
-- Lịch sử trò chuyện ổn định ở cả title tiếng Việt dài và chuỗi dài không có khoảng trắng.
+**Logic mới** (~15 dòng):
 
-Checklist verify sau khi implement
-- Test 1 title dài tiếng Việt có dấu.
-- Test 1 title dài không có khoảng trắng.
-- Test item ghim/bỏ ghim, item active, hover hiện menu.
-- Test danh sách nhiều cuộc trò chuyện vẫn không có horizontal overflow.
-- Test end-to-end việc mở menu 3 chấm và xóa/ghim vẫn hoạt động bình thường.
+```typescript
+// Determine model and endpoint based on owner's plan
+const isPro = ownerPlan === 'plan_pro' || ownerPlan === 'plan_business' || ownerPlan === 'plan_custom';
+
+let apiUrl: string;
+let apiKey: string;
+let modelName: string;
+
+if (isPro) {
+  apiUrl = "https://api.deepseek.com/chat/completions";
+  apiKey = Deno.env.get("DEEPSEEK_API_KEY") || "";
+  modelName = "deepseek-chat";
+} else {
+  apiUrl = "https://ai.gateway.lovable.dev/v1/chat/completions";
+  apiKey = Deno.env.get("LOVABLE_API_KEY") || "";
+  modelName = "google/gemini-2.5-flash-lite";
+}
+```
+
+Sau đó thay thế hardcoded URL/model tại dòng 694-708 bằng các biến trên.
+
+### Secret mới
+- Thêm `DEEPSEEK_API_KEY` vào Supabase secrets (user cung cấp key).
+
+### Fallback
+- Nếu `DEEPSEEK_API_KEY` rỗng hoặc DeepSeek trả lỗi 5xx, tự động fallback về Lovable Gateway để tránh gián đoạn.
+
+## Không thay đổi
+- Frontend (`AIAssistant.tsx`) — không đổi gì (SSE format giống nhau).
+- Quota logic — giữ nguyên hoàn toàn.
+- System prompt, project context — giữ nguyên.
+
+## Checklist triển khai
+1. User cung cấp DeepSeek API key
+2. Lưu `DEEPSEEK_API_KEY` vào secrets
+3. Cập nhật `team-assistant/index.ts` với logic phân tầng model
+4. Deploy edge function
+5. Test: tài khoản Free/Plus → vẫn dùng Gemini
+6. Test: tài khoản Pro/Business → dùng DeepSeek
+7. Test fallback khi DeepSeek lỗi
+
