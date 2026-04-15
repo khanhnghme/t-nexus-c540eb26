@@ -144,13 +144,16 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
         {/* Notifications */}
         <TreeItemCollapsed icon={Bell} label={t?.notifications || 'Notifications'} href="/notifications" active={isPathActive('/notifications')} />
 
-        {/* All Projects */}
-        <TreeItemCollapsed icon={FolderKanban} label={t?.allProjects || 'All projects'} href="/groups" active={location.pathname.startsWith('/groups')} />
-
         {/* Workspace pages */}
         {isAvailable && activeWorkspace && !isGuest && (
+          <TreeItemCollapsed icon={Sparkles} label={t?.aiAssistant || 'AI Assistant'} href="/ai-assistant" active={isPathActive('/ai-assistant')} />
+        )}
+
+        {/* Projects */}
+        {isAvailable && activeWorkspace && (
           <>
-            <TreeItemCollapsed icon={Sparkles} label={t?.aiAssistant || 'AI Assistant'} href="/ai-assistant" active={isPathActive('/ai-assistant')} />
+            <div className="sidebar-nav-separator" />
+            <TreeItemCollapsed icon={FolderKanban} label={t?.allProjects || 'All projects'} href="/groups" active={location.pathname.startsWith('/groups')} />
           </>
         )}
 
