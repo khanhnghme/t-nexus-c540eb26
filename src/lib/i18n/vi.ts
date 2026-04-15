@@ -294,7 +294,7 @@ export const vi: Translations = {
           'Upload tối đa 5 MB / file',
           'Tổng 5 suất thành viên (unique seat, dùng chung cho tất cả WS)',
           'Họp tối đa 15 phút',
-          'Trợ lý AI: 20 lượt/tháng',
+          'Trợ lý AI (Gemini Flash): 20 lượt/tháng',
         ],
         features: [
           'Quản lý task cơ bản',
@@ -314,7 +314,7 @@ export const vi: Translations = {
           'Tổng 15 suất thành viên (unique seat, dùng chung cho tất cả WS)',
           'Họp tối đa 60 phút',
           'Nhật ký hoạt động (30 ngày)',
-          'Trợ lý AI: 60 lượt/tháng',
+          'Trợ lý AI (Gemini Flash): 60 lượt/tháng',
         ],
         features: [
           'Mở khóa tính năng Plus cho mọi thành viên',
@@ -335,7 +335,7 @@ export const vi: Translations = {
           'Tổng 50 suất thành viên (unique seat, dùng chung cho tất cả WS)',
           'Họp không giới hạn',
           'Nhật ký hoạt động không giới hạn',
-          'Trợ lý AI: 150 lượt/tháng',
+          'Trợ lý AI (DeepSeek V3.2): 150 lượt/tháng',
         ],
         features: [
           'Mở khóa tính năng Pro cho mọi thành viên',
@@ -356,7 +356,7 @@ export const vi: Translations = {
           'Tổng 200 suất thành viên (unique seat, dùng chung cho tất cả WS)',
           'Họp không giới hạn',
           'Nhật ký hoạt động không giới hạn',
-          'Trợ lý AI: 300 lượt/tháng',
+          'Trợ lý AI (DeepSeek V3.2): 300 lượt/tháng',
         ],
         features: [
           'Mở khóa tính năng Business cho mọi thành viên',
@@ -376,7 +376,7 @@ export const vi: Translations = {
           'Upload tối đa 5 GB / file',
           'Suất thành viên không giới hạn',
           'Họp không giới hạn',
-          'Trợ lý AI không giới hạn',
+          'Trợ lý AI (DeepSeek V3.2) không giới hạn',
         ],
         features: [
           'Bảo mật cấp doanh nghiệp',
@@ -404,24 +404,24 @@ export const vi: Translations = {
       {
         category: 'Tài khoản & Workspace',
         rows: [
-          { label: 'Workspace được tạo / tài khoản', free: '1', plus: '5', pro: '20', business: '50', enterprise: 'Không giới hạn' },
-          { label: 'Tổng lưu trữ (gộp tất cả Workspace)', free: '500 MB', plus: '10 GB', pro: '50 GB', business: '200 GB', enterprise: 'Không giới hạn' },
+          { label: 'Workspace được tạo / tài khoản', free: '1', plus: '5', pro: '20', business: '50', enterprise: 'Không giới hạn (DeepSeek V3.2)' },
+          { label: 'Tổng lưu trữ (gộp tất cả Workspace)', free: '500 MB', plus: '10 GB', pro: '50 GB', business: '200 GB', enterprise: 'Không giới hạn (DeepSeek V3.2)' },
           { label: 'Giới hạn upload / file', free: '5 MB', plus: '100 MB', pro: '5 GB', business: '5 GB', enterprise: '5 GB' },
         ],
       },
       {
         category: 'Giới hạn Dự án & Thành viên',
         rows: [
-          { label: 'Tổng dự án trên toàn tài khoản', free: '5', plus: '15', pro: '50', business: '500', enterprise: 'Không giới hạn' },
-          { label: 'Tổng suất thành viên (unique seat, miễn phí)', free: '5', plus: '15', pro: '50', business: '200', enterprise: 'Không giới hạn' },
+          { label: 'Tổng dự án trên toàn tài khoản', free: '5', plus: '15', pro: '50', business: '500', enterprise: 'Không giới hạn (DeepSeek V3.2)' },
+          { label: 'Tổng suất thành viên (unique seat, miễn phí)', free: '5', plus: '15', pro: '50', business: '200', enterprise: 'Không giới hạn (DeepSeek V3.2)' },
         ],
       },
       {
         category: 'Họp & Giao tiếp',
         rows: [
-          { label: 'Thời lượng họp', free: '15 phút', plus: '60 phút', pro: 'Không giới hạn', business: 'Không giới hạn', enterprise: 'Không giới hạn' },
-          { label: 'Nhật ký hoạt động', free: false, plus: '30 ngày', pro: 'Không giới hạn', business: 'Không giới hạn', enterprise: 'Không giới hạn' },
-          { label: 'Trợ lý AI', free: '20/tháng', plus: '60/tháng', pro: '150/tháng', business: '300/tháng', enterprise: 'Không giới hạn' },
+          { label: 'Thời lượng họp', free: '15 phút', plus: '60 phút', pro: 'Không giới hạn', business: 'Không giới hạn', enterprise: 'Không giới hạn (DeepSeek V3.2)' },
+          { label: 'Nhật ký hoạt động', free: false, plus: '30 ngày', pro: 'Không giới hạn', business: 'Không giới hạn', enterprise: 'Không giới hạn (DeepSeek V3.2)' },
+          { label: 'Trợ lý AI', free: '20/tháng (Gemini Flash)', plus: '60/tháng (Gemini Flash)', pro: '150/tháng (DeepSeek V3.2)', business: '300/tháng (DeepSeek V3.2)', enterprise: 'Không giới hạn (DeepSeek V3.2)' },
         ],
       },
       {
@@ -3061,11 +3061,11 @@ export const vi: Translations = {
   },
 
   servicePlanFeatures: {
-    plan_free: ['1 Workspace', 'Tổng 5 dự án', 'Tổng 5 suất thành viên (unique)', '500 MB tổng lưu trữ', 'Upload 5 MB/file', 'Trợ lý AI: 20 lượt/tháng'],
-    plan_plus: ['5 Workspaces', 'Tổng 15 dự án', 'Tổng 15 suất thành viên (unique)', '10 GB tổng lưu trữ', 'Upload 100 MB/file', 'Trợ lý AI: 60 lượt/tháng'],
-    plan_pro: ['20 Workspaces', 'Tổng 50 dự án', 'Tổng 50 suất thành viên (unique)', '50 GB tổng lưu trữ', 'Upload 5 GB/file', 'Trợ lý AI: 150 lượt/tháng'],
-    plan_business: ['50 Workspaces', 'Tổng 500 dự án', 'Tổng 200 suất thành viên (unique)', '200 GB tổng lưu trữ', 'Upload 5 GB/file', 'Trợ lý AI: 300 lượt/tháng'],
-    plan_custom: ['Không giới hạn', 'Không giới hạn dự án', 'Không giới hạn suất thành viên', 'Không giới hạn lưu trữ', 'Upload 5 GB/file', 'Trợ lý AI: Không giới hạn'],
+    plan_free: ['1 Workspace', 'Tổng 5 dự án', 'Tổng 5 suất thành viên (unique)', '500 MB tổng lưu trữ', 'Upload 5 MB/file', 'Trợ lý AI (Gemini Flash): 20 lượt/tháng'],
+    plan_plus: ['5 Workspaces', 'Tổng 15 dự án', 'Tổng 15 suất thành viên (unique)', '10 GB tổng lưu trữ', 'Upload 100 MB/file', 'Trợ lý AI (Gemini Flash): 60 lượt/tháng'],
+    plan_pro: ['20 Workspaces', 'Tổng 50 dự án', 'Tổng 50 suất thành viên (unique)', '50 GB tổng lưu trữ', 'Upload 5 GB/file', 'Trợ lý AI (DeepSeek V3.2): 150 lượt/tháng'],
+    plan_business: ['50 Workspaces', 'Tổng 500 dự án', 'Tổng 200 suất thành viên (unique)', '200 GB tổng lưu trữ', 'Upload 5 GB/file', 'Trợ lý AI (DeepSeek V3.2): 300 lượt/tháng'],
+    plan_custom: ['Không giới hạn', 'Không giới hạn dự án', 'Không giới hạn suất thành viên', 'Không giới hạn lưu trữ', 'Upload 5 GB/file', 'Trợ lý AI (DeepSeek V3.2): Không giới hạn'],
   },
 
   servicePlanFullFeatures: {
@@ -3078,7 +3078,7 @@ export const vi: Translations = {
       'Quản lý task cơ bản',
       'Chat nhóm',
       'Họp tối đa 15 phút',
-      'Trợ lý AI: 20 lượt/tháng',
+      'Trợ lý AI (Gemini Flash): 20 lượt/tháng',
       'Standard Email Support',
     ],
     plan_plus: [
@@ -3092,7 +3092,7 @@ export const vi: Translations = {
       'Nhật ký hoạt động (30 ngày)',
       'Chấm điểm thành viên',
       'Xuất dữ liệu đầy đủ',
-      'Trợ lý AI: 60 lượt/tháng',
+      'Trợ lý AI (Gemini Flash): 60 lượt/tháng',
       'Có thể mua thêm add-on',
     ],
     plan_pro: [
@@ -3108,7 +3108,7 @@ export const vi: Translations = {
       'Quản lý giai đoạn (Stage)',
       'Hệ thống điểm nâng cao',
       'Priority Support (24h-48h)',
-      'Trợ lý AI: 150 lượt/tháng',
+      'Trợ lý AI (DeepSeek V3.2): 150 lượt/tháng',
       'Add-on đi kèm, giảm 10%',
     ],
     plan_business: [
@@ -3122,7 +3122,7 @@ export const vi: Translations = {
       'Họp không giới hạn',
       'Quản trị hệ thống',
       'Express Support (cùng ngày)',
-      'Trợ lý AI: 300 lượt/tháng',
+      'Trợ lý AI (DeepSeek V3.2): 300 lượt/tháng',
       'Add-on đi kèm, giảm 20%',
     ],
     plan_custom: [
@@ -3134,7 +3134,7 @@ export const vi: Translations = {
       'Mở khóa tất cả tính năng cho mọi thành viên',
       'Hỗ trợ 24/7 chuyên dụng',
       'Triển khai riêng',
-      'Trợ lý AI: Không giới hạn',
+      'Trợ lý AI (DeepSeek V3.2): Không giới hạn',
       'SLA cam kết',
     ],
   },
@@ -3157,7 +3157,7 @@ export const vi: Translations = {
       { category: 'Công cụ & Tính năng', icon: 'sparkles', items: [
         { label: 'Quản lý task cơ bản', value: '✓' },
         { label: 'Chat nhóm', value: '✓' },
-        { label: 'Trợ lý AI', value: '20/tháng' },
+        { label: 'Trợ lý AI', value: '20/tháng (Gemini Flash)' },
         { label: 'Chấm điểm thành viên', value: '—' },
         { label: 'Xuất dữ liệu đầy đủ', value: '—' },
         { label: 'Add-ons', value: '—' },
@@ -3183,7 +3183,7 @@ export const vi: Translations = {
       { category: 'Công cụ & Tính năng', icon: 'sparkles', items: [
         { label: 'Quản lý task cơ bản', value: '✓' },
         { label: 'Chat nhóm', value: '✓' },
-        { label: 'Trợ lý AI', value: '60/tháng' },
+        { label: 'Trợ lý AI', value: '60/tháng (Gemini Flash)' },
         { label: 'Chấm điểm thành viên', value: '✓' },
         { label: 'Xuất dữ liệu đầy đủ', value: '✓' },
         { label: 'Add-ons', value: 'Có thể mua' },
@@ -3203,12 +3203,12 @@ export const vi: Translations = {
         { label: 'Tổng suất thành viên', value: '50' },
       ]},
       { category: 'Họp & Giao tiếp', icon: 'video', items: [
-        { label: 'Thời lượng họp', value: 'Không giới hạn' },
-        { label: 'Nhật ký hoạt động', value: 'Không giới hạn' },
+        { label: 'Thời lượng họp', value: 'Không giới hạn (DeepSeek V3.2)' },
+        { label: 'Nhật ký hoạt động', value: 'Không giới hạn (DeepSeek V3.2)' },
       ]},
       { category: 'Công cụ & Tính năng', icon: 'sparkles', items: [
         { label: 'Tất cả tính năng Plus', value: '✓' },
-        { label: 'Trợ lý AI', value: '150/tháng' },
+        { label: 'Trợ lý AI', value: '150/tháng (DeepSeek V3.2)' },
         { label: 'Quản lý giai đoạn', value: '✓' },
         { label: 'Điểm nâng cao', value: '✓' },
         { label: 'Add-ons', value: 'Đi kèm, giảm 10%' },
@@ -3228,12 +3228,12 @@ export const vi: Translations = {
         { label: 'Tổng suất thành viên', value: '200' },
       ]},
       { category: 'Họp & Giao tiếp', icon: 'video', items: [
-        { label: 'Thời lượng họp', value: 'Không giới hạn' },
-        { label: 'Nhật ký hoạt động', value: 'Không giới hạn' },
+        { label: 'Thời lượng họp', value: 'Không giới hạn (DeepSeek V3.2)' },
+        { label: 'Nhật ký hoạt động', value: 'Không giới hạn (DeepSeek V3.2)' },
       ]},
       { category: 'Công cụ & Tính năng', icon: 'sparkles', items: [
         { label: 'Tất cả tính năng Pro', value: '✓' },
-        { label: 'Trợ lý AI', value: '300/tháng' },
+        { label: 'Trợ lý AI', value: '300/tháng (DeepSeek V3.2)' },
         { label: 'Quản trị hệ thống', value: '✓' },
         { label: 'Add-ons', value: 'Đi kèm, giảm 20%' },
       ]},
@@ -3243,21 +3243,21 @@ export const vi: Translations = {
     ],
     plan_custom: [
       { category: 'Tài khoản & Workspaces', icon: 'building', items: [
-        { label: 'Workspaces', value: 'Không giới hạn' },
-        { label: 'Tổng lưu trữ', value: 'Không giới hạn' },
+        { label: 'Workspaces', value: 'Không giới hạn (DeepSeek V3.2)' },
+        { label: 'Tổng lưu trữ', value: 'Không giới hạn (DeepSeek V3.2)' },
         { label: 'Upload tối đa / file', value: '5 GB' },
       ]},
       { category: 'Dự án & Thành viên', icon: 'folder', items: [
-        { label: 'Tổng dự án', value: 'Không giới hạn' },
-        { label: 'Tổng suất thành viên', value: 'Không giới hạn' },
+        { label: 'Tổng dự án', value: 'Không giới hạn (DeepSeek V3.2)' },
+        { label: 'Tổng suất thành viên', value: 'Không giới hạn (DeepSeek V3.2)' },
       ]},
       { category: 'Họp & Giao tiếp', icon: 'video', items: [
-        { label: 'Thời lượng họp', value: 'Không giới hạn' },
-        { label: 'Nhật ký hoạt động', value: 'Không giới hạn' },
+        { label: 'Thời lượng họp', value: 'Không giới hạn (DeepSeek V3.2)' },
+        { label: 'Nhật ký hoạt động', value: 'Không giới hạn (DeepSeek V3.2)' },
       ]},
       { category: 'Công cụ & Tính năng', icon: 'sparkles', items: [
         { label: 'Tất cả tính năng Business', value: '✓' },
-        { label: 'Trợ lý AI', value: 'Không giới hạn' },
+        { label: 'Trợ lý AI', value: 'Không giới hạn (DeepSeek V3.2)' },
         { label: 'Triển khai riêng', value: '✓' },
         { label: 'SLA cam kết', value: '✓' },
       ]},
