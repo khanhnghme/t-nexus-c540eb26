@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Trash2, ArrowUp, FileText, ListChecks, BarChart3, PenLine, History, Plus, X, MessageSquare } from 'lucide-react';
+import { Trash2, ArrowUp, FileText, ListChecks, BarChart3, PenLine, History, Plus, X, MessageSquare } from 'lucide-react';
 import tNexusIcon from '@/assets/t-nexus-icon.png';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
@@ -8,7 +8,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { TNexusLogo } from '@/components/TNexusLogo';
 import ReactMarkdown from 'react-markdown';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -76,13 +75,13 @@ export default function AIAssistant() {
   const { setAITopBarProps } = useDashboardLayoutContext();
 
   const suggestions = [
-    { icon: FileText, label: t?.sidebar?.aiSuggestion1Label || 'Tóm tắt dự án', desc: t?.sidebar?.aiSuggestion1Desc || '', prompt: 'Tóm tắt nội dung và tiến độ dự án hiện tại của tôi' },
-    { icon: ListChecks, label: t?.sidebar?.aiSuggestion2Label || 'Lên kế hoạch', desc: t?.sidebar?.aiSuggestion2Desc || '', prompt: 'Giúp tôi lên kế hoạch và phân chia công việc cho dự án' },
-    { icon: BarChart3, label: t?.sidebar?.aiSuggestion3Label || 'Phân tích tiến độ', desc: t?.sidebar?.aiSuggestion3Desc || '', prompt: 'Phân tích tiến độ và hiệu suất làm việc của nhóm tôi' },
-    { icon: PenLine, label: t?.sidebar?.aiSuggestion4Label || 'Viết báo cáo', desc: t?.sidebar?.aiSuggestion4Desc || '', prompt: 'Giúp tôi viết báo cáo tiến độ dự án' },
+    { icon: FileText, label: t?.sidebar?.aiSuggestion1Label || 'Tóm tắt dự án', prompt: 'Tóm tắt nội dung và tiến độ dự án hiện tại của tôi' },
+    { icon: ListChecks, label: t?.sidebar?.aiSuggestion2Label || 'Lên kế hoạch', prompt: 'Giúp tôi lên kế hoạch và phân chia công việc cho dự án' },
+    { icon: BarChart3, label: t?.sidebar?.aiSuggestion3Label || 'Phân tích tiến độ', prompt: 'Phân tích tiến độ và hiệu suất làm việc của nhóm tôi' },
+    { icon: PenLine, label: t?.sidebar?.aiSuggestion4Label || 'Viết báo cáo', prompt: 'Giúp tôi viết báo cáo tiến độ dự án' },
   ];
 
-  // ── Load usage ──
+  // ── Load usage (internal only — no UI) ──
   useEffect(() => {
     const loadUsage = async () => {
       if (!user?.id) { setUsageLoading(false); return; }
@@ -121,7 +120,6 @@ export default function AIAssistant() {
 
   useEffect(() => { loadConversations(); }, [loadConversations]);
 
-  // ── Load messages for a conversation ──
   const loadConversation = async (convId: string) => {
     setHistoryLoading(true);
     setActiveConversationId(convId);
@@ -136,12 +134,10 @@ export default function AIAssistant() {
     setShowHistory(false);
   };
 
-  // ── Save message to DB ──
   const saveMessage = async (conversationId: string, role: string, content: string) => {
     await supabase.from('ai_messages').insert({ conversation_id: conversationId, role, content } as any);
   };
 
-  // ── Create or get conversation ──
   const ensureConversation = async (firstMessage: string): Promise<string> => {
     if (activeConversationId) return activeConversationId;
     const title = firstMessage.slice(0, 50);
@@ -176,17 +172,15 @@ export default function AIAssistant() {
     }
   }, [messages]);
 
-  useEffect(() => {
-    textareaRef.current?.focus();
-  }, []);
+  useEffect(() => { textareaRef.current?.focus(); }, []);
 
   const incrementUsage = () => setQuestionsToday(prev => prev + 1);
 
   const sendMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
-    const wordCount = countWords(messageText);
-    if (wordCount > MAX_MESSAGE_WORDS) {
-      toast({ title: 'Câu hỏi quá dài', description: `Vui lòng giới hạn trong ${MAX_MESSAGE_WORDS} từ (hiện tại: ${wordCount}).`, variant: 'destructive' });
+    const wc = countWords(messageText);
+    if (wc > MAX_MESSAGE_WORDS) {
+      toast({ title: 'Câu hỏi quá dài', description: `Vui lòng giới hạn trong ${MAX_MESSAGE_WORDS} từ (hiện tại: ${wc}).`, variant: 'destructive' });
       return;
     }
     if (maxQuestions !== null && questionsToday >= maxQuestions) {
@@ -356,16 +350,13 @@ export default function AIAssistant() {
   const remainingQuestions = isUnlimited ? Infinity : maxQuestions - questionsToday;
   const wordCount = countWords(input);
   const isOverLimit = wordCount > MAX_MESSAGE_WORDS;
-  const usagePercent = isUnlimited ? 0 : Math.min(100, (questionsToday / maxQuestions) * 100);
 
   const hasMessages = messages.length > 0;
   const grouped = groupConversations(conversations, t);
 
-  // Ref to keep handleClearChat stable for context
   const clearChatRef = useRef(handleClearChat);
   clearChatRef.current = handleClearChat;
 
-  // Sync AI controls to TopBar via context
   useEffect(() => {
     setAITopBarProps({
       onToggleHistory: () => setShowHistory(prev => !prev),
@@ -378,18 +369,18 @@ export default function AIAssistant() {
   // ── History Sidebar ──
   const historySidebar = (
     <div className={cn(
-      "fixed inset-y-0 left-0 z-50 w-72 bg-card border-r border-border shadow-xl flex flex-col transition-transform duration-200",
+      "fixed inset-y-0 left-0 z-50 w-72 bg-card border-r border-border/60 shadow-2xl flex flex-col transition-transform duration-200",
       showHistory ? "translate-x-0" : "-translate-x-full"
     )} style={{ top: 56 }}>
-      <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border/40">
+      <div className="shrink-0 flex items-center justify-between px-4 h-12 border-b border-border/40">
         <span className="text-sm font-medium text-foreground">{t?.sidebar?.chatHistory || 'Lịch sử trò chuyện'}</span>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           {conversations.length > 0 && (
-            <button onClick={handleDeleteAllConversations} className="p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title={t?.sidebar?.deleteAll || 'Xóa tất cả'}>
+            <button onClick={handleDeleteAllConversations} className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title={t?.sidebar?.deleteAll || 'Xóa tất cả'}>
               <Trash2 className="h-3.5 w-3.5" />
             </button>
           )}
-          <button onClick={() => setShowHistory(false)} className="p-1 rounded-md hover:bg-muted text-muted-foreground">
+          <button onClick={() => setShowHistory(false)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -412,7 +403,7 @@ export default function AIAssistant() {
           ) : (
             grouped.map(group => (
               <div key={group.label} className="mb-3">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5 font-medium">{group.label}</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70 px-2 py-1.5 font-medium">{group.label}</p>
                 {group.items.map(conv => (
                   <div
                     key={conv.id}
@@ -422,7 +413,7 @@ export default function AIAssistant() {
                       activeConversationId === conv.id ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                     )}
                   >
-                    <MessageSquare className="h-3.5 w-3.5 shrink-0" />
+                    <MessageSquare className="h-3.5 w-3.5 shrink-0 opacity-50" />
                     <span className="truncate flex-1 min-w-0">{conv.title || 'Untitled'}</span>
                     <button
                       onClick={(e) => handleDeleteConversation(e, conv.id)}
@@ -442,17 +433,17 @@ export default function AIAssistant() {
   );
 
   const overlay = showHistory && (
-    <div className="fixed inset-0 z-40 bg-black/20" style={{ top: 56 }} onClick={() => setShowHistory(false)} />
+    <div className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px]" style={{ top: 56 }} onClick={() => setShowHistory(false)} />
   );
 
-  // ── Input area (shared) ──
+  // ── Shared Input ──
   const renderInput = (variant: 'empty' | 'chat') => (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="w-full">
       <div className={cn(
-        "relative rounded-2xl transition-all duration-300",
+        "relative rounded-2xl transition-all duration-200",
         isOverLimit
-          ? "border-2 border-destructive"
-          : "border-2 border-border/40 bg-muted/10 focus-within:bg-background focus-within:border-primary/50 focus-within:shadow-[0_0_0_3px_hsl(var(--primary)/0.1)] focus-within:shadow-primary/10"
+          ? "border border-destructive/60 bg-destructive/5"
+          : "border border-border/60 bg-muted/30 focus-within:bg-background focus-within:border-primary/40 focus-within:shadow-[0_0_0_3px_hsl(var(--primary)/0.08)]"
       )}>
         <Textarea
           ref={textareaRef}
@@ -462,71 +453,78 @@ export default function AIAssistant() {
           placeholder={remainingQuestions <= 0 ? "Đã hết lượt..." : (t?.sidebar?.aiPlaceholder || "Hỏi bất cứ điều gì...")}
           disabled={isLoading || remainingQuestions <= 0}
           className={cn(
-            "w-full resize-none border-0 bg-transparent text-sm placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0",
-            variant === 'empty' ? "px-5 py-5 pr-20 min-h-[64px] max-h-[160px] text-base" : "px-5 py-4 pr-14 min-h-[56px] max-h-[140px]"
+            "w-full resize-none border-0 bg-transparent placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0",
+            variant === 'empty'
+              ? "px-5 py-4 pr-16 min-h-[56px] max-h-[160px] text-[15px]"
+              : "px-5 py-3.5 pr-14 min-h-[48px] max-h-[140px] text-sm"
           )}
-          rows={variant === 'empty' ? 2 : 1}
+          rows={1}
         />
-        <div className={cn("absolute flex items-center gap-2", variant === 'empty' ? "right-3 bottom-3" : "right-2 bottom-2")}>
+        <div className={cn("absolute flex items-center", variant === 'empty' ? "right-3 bottom-3" : "right-2.5 bottom-2.5")}>
           <button
             type="submit"
             disabled={!input.trim() || isLoading || isOverLimit || remainingQuestions <= 0}
-            className="p-1.5 rounded-lg bg-foreground text-background hover:bg-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="p-2 rounded-xl bg-foreground text-background hover:bg-foreground/80 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
           >
             {isLoading ? <Spinner size="sm" className="text-background" /> : <ArrowUp className="h-4 w-4" />}
           </button>
         </div>
       </div>
+      {isOverLimit && (
+        <p className="text-[11px] text-destructive mt-1.5 text-center">
+          Vượt giới hạn {MAX_MESSAGE_WORDS} từ ({wordCount}/{MAX_MESSAGE_WORDS})
+        </p>
+      )}
     </form>
   );
 
-
-  // ── Chat state ──
+  // ── Chat View ──
   if (hasMessages) {
     return (
       <div className="flex flex-col h-[calc(100dvh-56px)] bg-background overflow-hidden">
         {overlay}
         {historySidebar}
 
-        <main ref={chatContainerRef} className="flex-1 overflow-y-auto">
+        <main ref={chatContainerRef} className="flex-1 overflow-y-auto min-h-0">
           {historyLoading ? (
             <div className="flex items-center justify-center h-full">
               <Spinner size="default" />
             </div>
           ) : (
-            <div className="max-w-4xl mx-auto px-5 py-6 space-y-5">
+            <div className="max-w-[48rem] mx-auto px-4 md:px-6 py-6 space-y-6">
               {messages.map((message, idx) => (
                 <div key={idx} className={cn("animate-fade-in", message.role === 'user' ? 'flex justify-end' : '')}>
                   {message.role === 'user' ? (
-                    <div className="flex items-start gap-3 justify-end">
-                      <div className="max-w-[80%] bg-muted text-foreground rounded-2xl rounded-br-sm px-4 py-2.5 text-sm">
+                    <div className="flex items-start gap-2.5 max-w-[85%]">
+                      <div className="bg-primary/10 text-foreground rounded-2xl rounded-br-md px-4 py-3 text-[14px] leading-relaxed">
                         <div className="whitespace-pre-wrap">{message.content}</div>
                       </div>
                       {profile?.avatar_url ? (
-                        <img src={profile.avatar_url} alt="You" className="w-6 h-6 rounded-full shrink-0 mt-0.5 object-cover" />
+                        <img src={profile.avatar_url} alt="You" className="w-7 h-7 rounded-full shrink-0 mt-0.5 object-cover ring-1 ring-border/30" />
                       ) : (
-                        <div className="w-6 h-6 rounded-full shrink-0 mt-0.5 bg-primary/15 flex items-center justify-center text-[10px] font-semibold text-primary">
+                        <div className="w-7 h-7 rounded-full shrink-0 mt-0.5 bg-primary/15 flex items-center justify-center text-[11px] font-semibold text-primary ring-1 ring-primary/20">
                           {(profile?.full_name || 'U').charAt(0).toUpperCase()}
                         </div>
                       )}
                     </div>
                   ) : (
                     <div className="flex gap-3">
-                      <img src={tNexusIcon} alt="AI" className="w-6 h-6 shrink-0 mt-0.5 dark:invert" />
-                      <div className="text-sm leading-relaxed text-foreground flex-1 min-w-0">
+                      <img src={tNexusIcon} alt="AI" className="w-7 h-7 shrink-0 mt-0.5 dark:invert" />
+                      <div className="text-[14px] leading-[1.7] text-foreground flex-1 min-w-0">
                         {message.content ? (
-                          <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground prose-headings:text-sm">
+                          <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground prose-headings:text-sm prose-code:text-[13px]">
                             <ReactMarkdown components={{
-                              p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                              ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
-                              ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
-                              li: ({ children }) => <li className="text-sm">{children}</li>,
+                              p: ({ children }) => <p className="mb-2.5 last:mb-0">{children}</p>,
+                              ul: ({ children }) => <ul className="list-disc list-inside mb-2.5 space-y-1">{children}</ul>,
+                              ol: ({ children }) => <ol className="list-decimal list-inside mb-2.5 space-y-1">{children}</ol>,
+                              li: ({ children }) => <li className="text-[14px]">{children}</li>,
                               strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                              code: ({ children }) => <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>,
+                              code: ({ children }) => <code className="bg-muted px-1.5 py-0.5 rounded text-[12px] font-mono">{children}</code>,
+                              pre: ({ children }) => <pre className="bg-muted/50 border border-border/40 rounded-xl p-4 overflow-x-auto my-3 text-[13px]">{children}</pre>,
                             }}>{message.content}</ReactMarkdown>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-1.5 py-1">
+                          <div className="flex items-center gap-1.5 py-2">
                             <span className="w-1.5 h-1.5 rounded-full ai-typing-dot bg-muted-foreground/40" style={{ animationDelay: '0ms' }} />
                             <span className="w-1.5 h-1.5 rounded-full ai-typing-dot bg-muted-foreground/40" style={{ animationDelay: '200ms' }} />
                             <span className="w-1.5 h-1.5 rounded-full ai-typing-dot bg-muted-foreground/40" style={{ animationDelay: '400ms' }} />
@@ -538,15 +536,15 @@ export default function AIAssistant() {
                 </div>
               ))}
               {error && (
-                <div className="text-destructive text-xs p-3 bg-destructive/5 rounded-xl">{error}</div>
+                <div className="text-destructive text-xs p-3 bg-destructive/5 rounded-xl border border-destructive/10">{error}</div>
               )}
               <div ref={messagesEndRef} />
             </div>
           )}
         </main>
 
-        <div className="shrink-0 border-t border-border/40 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <div className="max-w-4xl mx-auto">
+        <div className="shrink-0 border-t border-border/30 bg-background/80 backdrop-blur-sm px-4 md:px-6 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="max-w-[48rem] mx-auto">
             {renderInput('chat')}
           </div>
         </div>
@@ -562,47 +560,50 @@ export default function AIAssistant() {
     );
   }
 
-  // ── Empty state ──
+  // ── Empty State ──
   return (
-    <div className="flex flex-col h-[calc(100dvh-56px)] bg-background">
+    <div className="flex flex-col h-[calc(100dvh-56px)] bg-background overflow-hidden">
       {overlay}
       {historySidebar}
-      
 
-      <div className="flex-1 flex flex-col items-center justify-center px-5">
-        <div className="max-w-3xl w-full flex flex-col items-center">
-          <div className="mb-6 relative">
-            <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl scale-150" />
-            <img src={tNexusIcon} alt="T-Nexus" className="relative w-16 h-16 dark:invert" />
+      <div className="flex-1 flex flex-col items-center justify-center px-4 md:px-6">
+        <div className="max-w-[40rem] w-full flex flex-col items-center">
+          {/* Logo + Greeting */}
+          <div className="mb-5 relative">
+            <div className="absolute inset-0 bg-primary/8 rounded-full blur-3xl scale-[2]" />
+            <img src={tNexusIcon} alt="T-Nexus" className="relative w-14 h-14 dark:invert" />
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-2 tracking-tight">
+          <h1 className="text-xl md:text-2xl font-semibold text-foreground text-center mb-1 tracking-tight">
             {t?.sidebar?.aiGreeting || 'Hôm nay tôi có thể giúp gì cho bạn?'}
           </h1>
-          <p className="text-sm text-muted-foreground text-center mb-8">
+          <p className="text-[13px] text-muted-foreground/70 text-center mb-8">
             {t?.sidebar?.aiSubGreeting || 'Chọn một gợi ý bên dưới hoặc nhập câu hỏi của bạn'}
           </p>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full mb-8">
+          {/* Input first */}
+          <div className="w-full mb-6">
+            {renderInput('empty')}
+          </div>
+
+          {/* Suggestions */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 w-full">
             {suggestions.map((s, idx) => (
               <button
                 key={idx}
                 onClick={() => sendMessage(s.prompt)}
                 disabled={isLoading || remainingQuestions <= 0}
-                className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border border-border/50 bg-card hover:bg-muted/50 hover:border-primary/30 hover:shadow-sm transition-all text-center group disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex flex-col items-center gap-2 p-3.5 rounded-xl border border-border/40 bg-card/50 hover:bg-muted/60 hover:border-border transition-all text-center group disabled:opacity-30 disabled:cursor-not-allowed"
               >
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <s.icon className="h-5 w-5 text-primary shrink-0 transition-colors" />
+                <div className="w-9 h-9 rounded-lg bg-primary/8 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
+                  <s.icon className="h-4 w-4 text-primary/80 group-hover:text-primary transition-colors" />
                 </div>
-                <p className="text-sm font-medium text-foreground leading-tight">{s.label}</p>
+                <p className="text-[12px] font-medium text-muted-foreground group-hover:text-foreground leading-tight transition-colors">{s.label}</p>
               </button>
             ))}
           </div>
 
-          <div className="w-full">
-            {renderInput('empty')}
-          </div>
           {remainingQuestions <= 0 && (
-            <p className="text-[11px] text-muted-foreground text-center mt-4">Bạn đã hết lượt hỏi tháng này. Quay lại tháng sau nhé!</p>
+            <p className="text-[11px] text-muted-foreground text-center mt-5">Bạn đã hết lượt hỏi tháng này. Quay lại tháng sau nhé!</p>
           )}
         </div>
       </div>
