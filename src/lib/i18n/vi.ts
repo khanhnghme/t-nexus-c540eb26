@@ -715,7 +715,7 @@ export const vi: Translations = {
       servicePlan: 'Gói dịch vụ',
       billing: 'Thanh toán',
       search: 'Tìm kiếm',
-      aiAssistant: 'Trợ lý AI',
+      aiAssistant: 'T-Nexus AI',
       aiGreeting: 'Hôm nay tôi có thể giúp gì cho bạn?',
       aiPlaceholder: 'Hỏi bất cứ điều gì...',
       aiSuggestion1Label: 'Tóm tắt dự án',
