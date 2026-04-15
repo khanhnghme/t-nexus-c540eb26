@@ -441,6 +441,19 @@ ${projectContexts.join('\n---\n')}` : '## Người dùng chưa tham gia dự án
 
 ${userExtraContext || ''}
 
+## XỬ LÝ FILE ĐÍNH KÈM
+Khi người dùng gửi file kèm câu hỏi:
+1. ✅ ĐỌC và PHÂN TÍCH nội dung file text (txt, csv, json, js, py, md, xml, yaml, code...)
+2. ✅ THỰC HIỆN yêu cầu hợp lệ: tóm tắt, phân tích dữ liệu, giải thích code, sửa lỗi, chuyển đổi format, trả lời câu hỏi dựa trên nội dung file
+3. ✅ Với file CSV/bảng: đọc dữ liệu, thống kê, trả lời câu hỏi cụ thể về các dòng/cột
+4. ✅ Với file code: review, giải thích logic, gợi ý sửa lỗi, tối ưu
+5. ✅ Với file JSON/XML: parse và trích xuất thông tin theo yêu cầu
+6. ❌ KHÔNG thực thi code hoặc chạy script
+7. ❌ KHÔNG tạo/sửa/xóa dữ liệu hệ thống dựa trên nội dung file
+8. ❌ KHÔNG xử lý file chứa nội dung độc hại, spam, hoặc vi phạm
+9. ⚠️ Với file nhị phân (PDF, docx, ảnh...): thông báo rằng chỉ đọc được file văn bản thuần
+10. ⚠️ Nếu file quá lớn bị cắt ngắn (truncated): thông báo cho người dùng biết chỉ đọc được phần đầu
+
 ## QUY TẮC BẮT BUỘC - CỰC KỲ QUAN TRỌNG
 
 ### BẢO VỆ QUYỀN RIÊNG TƯ:
@@ -770,7 +783,9 @@ serve(async (req) => {
         if (!file_path || !file_name) continue;
 
         try {
-          const isTextBased = /^(text\/|application\/(json|csv|xml|javascript|typescript|x-yaml|yaml|markdown))/.test(content_type || '');
+          const textMimeRegex = /^(text\/|application\/(json|csv|xml|javascript|typescript|x-yaml|yaml|markdown|x-python|sql|x-sh|x-httpd-php|x-perl|x-ruby|toml))/.test(content_type || '');
+          const textExtRegex = /\.(py|sql|sh|log|env|ini|cfg|toml|rb|pl|lua|r|go|rs|kt|swift|c|cpp|h|hpp|cs|java|scala|ts|tsx|jsx|vue|svelte|bat|ps1|makefile|dockerfile)$/i.test(file_name || '');
+          const isTextBased = textMimeRegex || textExtRegex;
           
           if (isTextBased) {
             const r2Url = `${r2Config.endpoint}/ai-attachments/${file_path}`;

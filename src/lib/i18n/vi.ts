@@ -758,6 +758,8 @@ export const vi: Translations = {
       aiTooManyFiles: 'Tối đa 5 file',
       aiOldChatsDeleted: 'Đã dọn dẹp cuộc trò chuyện cũ',
       aiChatLimit: 'Chỉ giữ 10 cuộc trò chuyện gần nhất',
+      aiFileReadSuccess: 'Đã đọc nội dung file',
+      aiFileNotReadable: 'Loại file này không thể đọc trực tiếp',
       aiFileAttached: 'file đính kèm',
       aiRemoveFile: 'Xóa file',
     },
