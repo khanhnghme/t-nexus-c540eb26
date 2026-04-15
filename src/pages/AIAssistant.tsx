@@ -533,6 +533,17 @@ export default function AIAssistant() {
         <div className="shrink-0 border-t border-border/40 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <div className="max-w-3xl mx-auto">
             {renderInput('chat')}
+            {!isUnlimited && (
+              <div className="flex items-center justify-center gap-2 mt-2">
+                <div className="w-20 h-1 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className={cn("h-full rounded-full transition-all duration-500", usagePercent > 80 ? "bg-destructive" : "bg-primary")}
+                    style={{ width: `${usagePercent}%` }}
+                  />
+                </div>
+                <span className="text-[10px] text-muted-foreground tabular-nums">{questionsToday}/{maxQuestions}</span>
+              </div>
+            )}
           </div>
         </div>
 
