@@ -20,9 +20,15 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 import { useDashboardLayoutContext } from '@/contexts/DashboardLayoutContext';
 
+interface MessageAttachment {
+  file_name: string;
+  file_size: number;
+}
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  attachments?: MessageAttachment[];
 }
 
 interface Conversation {
@@ -316,10 +322,15 @@ export default function AIAssistant() {
     }
 
     setError(null);
-    const userMessage: Message = { role: 'user', content: messageText };
+    const filesToUpload = [...pendingFiles];
+    const userMessage: Message = { 
+      role: 'user', 
+      content: messageText,
+      attachments: filesToUpload.length > 0 ? filesToUpload.map(f => ({ file_name: f.name, file_size: f.size })) : undefined,
+    };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
-    const filesToUpload = [...pendingFiles];
+    setPendingFiles([]);
     setPendingFiles([]);
     setIsLoading(true);
     setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
@@ -696,8 +707,8 @@ export default function AIAssistant() {
           className={cn(
             "w-full resize-none border-0 bg-transparent placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0",
             variant === 'empty'
-              ? "pl-12 pr-28 px-5 py-5 min-h-[168px] max-h-[400px] text-[15px]"
-              : "pl-12 pr-24 px-5 py-4 min-h-[144px] max-h-[360px] text-sm"
+              ? "pl-12 pr-28 px-5 py-5 min-h-[112px] max-h-[280px] text-[15px]"
+              : "pl-12 pr-24 px-5 py-4 min-h-[96px] max-h-[240px] text-sm"
           )}
           rows={1}
         />
@@ -750,6 +761,17 @@ export default function AIAssistant() {
                     <div className="flex items-start gap-2.5 max-w-[85%]">
                       <div className="bg-primary/10 text-foreground rounded-2xl rounded-br-md px-4 py-3 text-[14px] leading-relaxed">
                         <div className="whitespace-pre-wrap">{message.content}</div>
+                        {message.attachments && message.attachments.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-primary/10">
+                            {message.attachments.map((att, ai) => (
+                              <div key={ai} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-[11px] text-foreground/70">
+                                <FileIcon className="h-3 w-3 shrink-0" />
+                                <span className="truncate max-w-[120px]">{att.file_name}</span>
+                                <span className="text-foreground/40">{formatFileSize(att.file_size)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       {profile?.avatar_url ? (
                         <img src={profile.avatar_url} alt="You" className="w-7 h-7 rounded-full shrink-0 mt-0.5 object-cover ring-1 ring-border/30" />
