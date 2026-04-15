@@ -1,28 +1,92 @@
 
 
-# Tạo trang /guide/ai — Hướng dẫn AI Usage
+# Thêm chức năng chia sẻ Credit AI theo Workspace
 
-## Thay đổi
+## Phân tích hiện trạng
 
-### 1. Tạo `src/pages/AIGuide.tsx`
-Trang documentation mới theo layout pattern của PricingDocs (sticky header, sidebar TOC, inline styles). Nội dung song ngữ EN/VI gồm 6 section:
+Hiện tại, credit AI **luôn** được tính chung (shared pool) theo Owner — hàm `get_owner_ai_credit_usage_month` cộng tổng `token_count` của tất cả members trong workspace của owner. Không có cơ chế tắt/bật chia sẻ.
 
-1. **Giới thiệu** — AI tính theo usage thực tế, chỉ cần hiểu "credit"
-2. **Cách tính credit** — 1 credit = 1000 token, làm tròn lên, tối thiểu 1 credit/lần
-3. **Giới hạn theo gói** — Free/Plus miễn phí (Gemini, không đảm bảo ổn định), Pro 1000 credit, Business 2500 credit (DeepSeek V3.2)
-4. **Minh bạch & kiểm soát** — Thanh usage, cập nhật realtime sau mỗi tin nhắn
-5. **Mẹo tiết kiệm credit** — Viết ngắn gọn, hỏi đúng trọng tâm
-6. **FAQ** — Câu hỏi thường gặp
+## Thay đổi cần làm
 
-Sidebar TOC với scroll-to navigation, mobile hamburger menu.
+### 1. DB Migration — Thêm cột `share_ai_credits` vào bảng `workspaces`
 
-### 2. Cập nhật `src/App.tsx`
-- Thêm lazy import `AIGuide`
-- Thêm route `/guide/ai` và `guide/ai` (trong `/vi`) wrapped trong `ForceLightMode`
+```sql
+ALTER TABLE public.workspaces 
+  ADD COLUMN share_ai_credits boolean NOT NULL DEFAULT false;
+```
 
-### 3. Cập nhật `src/pages/Guide.tsx`
-Thêm link "AI Usage Guide" / "Hướng dẫn AI" vào section Documentation.
+### 2. Edge Function `workspace-management` — Cho phép update `share_ai_credits`
 
-### Không thay đổi
-- DB, Edge Functions, logic credit, i18n files (nội dung hardcoded trong component giống PricingDocs pattern)
+Trong action `update_workspace`, thêm:
+```typescript
+if (body.share_ai_credits !== undefined) updates.share_ai_credits = body.share_ai_credits;
+```
+
+Thêm `share_ai_credits?: boolean` vào `RequestBody`.
+
+### 3. Edge Function `team-assistant` — Logic kiểm tra credit theo mode
+
+Sau khi lấy được `effectiveOwnerId` và workspace, thêm logic:
+
+- Query `workspaces.share_ai_credits` cho workspace hiện tại
+- **Khi OFF (default):** Chỉ tính credit của user hiện tại (query `ai_daily_usage` WHERE `user_id = userId`)
+- **Khi ON:** Giữ logic hiện tại (pool toàn bộ members qua `get_owner_ai_credit_usage_month`)
+
+Cần tạo RPC mới `get_user_ai_credit_usage_month` cho mode individual:
+```sql
+CREATE OR REPLACE FUNCTION public.get_user_ai_credit_usage_month(
+  _user_id uuid, _month_start date, _month_end date
+) RETURNS integer
+LANGUAGE sql STABLE SECURITY DEFINER
+AS $$
+  SELECT COALESCE(
+    CEIL(SUM(token_count)::numeric / 1000)::integer, 0
+  )
+  FROM public.ai_daily_usage
+  WHERE user_id = _user_id
+    AND usage_date >= _month_start
+    AND usage_date <= _month_end;
+$$;
+```
+
+### 4. UI — WorkspaceSettings.tsx
+
+Trong Info tab, thêm section "AI Credit Sharing" (chỉ hiển thị khi owner/admin và plan Pro+):
+
+- **Switch** toggle ON/OFF
+- **Warning text** khi bật: "Tất cả thành viên sẽ dùng chung credit AI của workspace"
+- Gọi `workspace-management` với `action: 'update_workspace'` + `share_ai_credits`
+- Chỉ owner có quyền thay đổi setting này
+
+### 5. Frontend AI pages — Cập nhật logic hiển thị usage
+
+Cập nhật 3 nơi (`AIAssistant.tsx`, `AIAssistantPanel.tsx`, `ServicePlan.tsx`):
+
+- Fetch `share_ai_credits` từ workspace hiện tại
+- **Khi OFF:** Gọi `get_user_ai_credit_usage_month` (credit cá nhân)
+- **Khi ON:** Giữ logic hiện tại `get_owner_ai_credit_usage_month` (pool chung)
+- Hiển thị label phụ: "Personal credit" vs "Shared pool"
+
+### 6. i18n — Thêm labels EN/VI
+
+```
+shareAiCredits: 'Share AI Credit within Workspace'
+shareAiCreditsDesc: 'When enabled, all members share the same credit pool'
+shareAiCreditsWarning: 'All members will share the workspace AI credit pool'
+personalCredit: 'Personal credit'
+sharedPool: 'Shared pool'
+```
+
+## Không thay đổi
+- Billing logic / plan_limits
+- Token recording (vẫn ghi theo user_id)
+- DB table `ai_daily_usage` structure
+
+## Thứ tự triển khai
+1. DB migration (add column + new RPC)
+2. Edge Function `workspace-management` (accept new field)
+3. Edge Function `team-assistant` (branching logic)
+4. i18n labels
+5. WorkspaceSettings UI (toggle)
+6. AIAssistant + AIAssistantPanel + ServicePlan (display logic)
 
