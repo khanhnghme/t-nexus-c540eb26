@@ -322,6 +322,7 @@ export default function AIAssistant() {
     }
 
     setError(null);
+    const filesToUpload = [...pendingFiles];
     const userMessage: Message = { 
       role: 'user', 
       content: messageText,
@@ -329,7 +330,7 @@ export default function AIAssistant() {
     };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
-    const filesToUploadCopy = [...pendingFiles];
+    setPendingFiles([]);
     setPendingFiles([]);
     setIsLoading(true);
     setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
