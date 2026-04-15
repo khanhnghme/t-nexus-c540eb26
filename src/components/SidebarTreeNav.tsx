@@ -9,7 +9,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import {
   Home,
-  Building2,
   Users,
   FolderKanban,
   ChevronRight,
