@@ -149,6 +149,26 @@ export default function WorkspaceSettings() {
     }
   };
 
+  const handleToggleShareCredits = async (checked: boolean) => {
+    if (guardReadOnly()) return;
+    if (!isOwner || !activeWorkspace) return;
+    setIsTogglingShare(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('workspace-management', {
+        body: { action: 'update_workspace', workspace_id: activeWorkspace.id, share_ai_credits: checked },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setShareAiCredits(checked);
+      await refreshWorkspaces();
+      toast({ title: tc.saved, description: tw.shareAiCreditsSaved });
+    } catch (err: any) {
+      toast({ title: tc.error, description: err.message, variant: 'destructive' });
+    } finally {
+      setIsTogglingShare(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!isOwner) return;
     setIsDeleting(true);
