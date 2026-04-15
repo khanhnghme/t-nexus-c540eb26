@@ -716,6 +716,9 @@ export const vi: Translations = {
       billing: 'Thanh toán',
       search: 'Tìm kiếm',
       aiAssistant: 'Trợ lý AI',
+      allProjects: 'Tất cả dự án',
+      createdByMe: 'Tôi tạo',
+      sharedWithMe: 'Được chia sẻ',
     },
     search: {
       title: 'Tìm kiếm',

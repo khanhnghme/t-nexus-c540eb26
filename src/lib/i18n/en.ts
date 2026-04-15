@@ -728,6 +728,9 @@ export const en = {
       billing: 'Billing',
       search: 'Search',
       aiAssistant: 'AI Assistant',
+      allProjects: 'All projects',
+      createdByMe: 'Created by me',
+      sharedWithMe: 'Shared with me',
     },
     search: {
       title: 'Search',
