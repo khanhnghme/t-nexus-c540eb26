@@ -32,7 +32,7 @@ const countWords = (text: string): number =>
   text.trim().split(/\s+/).filter(w => w.length > 0).length;
 
 const MODEL_LABELS: Record<string, string> = {
-  'deepseek-chat': 'DeepSeek V3',
+  'deepseek-chat': 'DeepSeek V3.2',
   'google/gemini-2.5-flash-lite': 'Gemini Flash',
 };
 const getModelLabel = (model: string | null) => model ? (MODEL_LABELS[model] || model) : null;
