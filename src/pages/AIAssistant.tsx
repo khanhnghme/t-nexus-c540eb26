@@ -349,6 +349,19 @@ export default function AIAssistant() {
   const hasMessages = messages.length > 0;
   const grouped = groupConversations(conversations, t);
 
+  // Sync AI controls to TopBar via context
+  useEffect(() => {
+    setAITopBarProps({
+      onToggleHistory: () => setShowHistory(prev => !prev),
+      onClearChat: handleClearChat,
+      hasMessages,
+      questionsToday,
+      maxQuestions,
+      isUnlimited,
+    });
+    return () => setAITopBarProps(null);
+  }, [hasMessages, questionsToday, maxQuestions, isUnlimited, setAITopBarProps]);
+
   // ── History Sidebar ──
   const historySidebar = (
     <div className={cn(
