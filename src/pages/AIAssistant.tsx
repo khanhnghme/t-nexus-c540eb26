@@ -848,6 +848,21 @@ export default function AIAssistant() {
           {/* Large Input */}
           <div className="w-full mb-8">
             <form onSubmit={handleSubmit} className="w-full">
+              {/* File preview chips */}
+              {pendingFiles.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2 px-1">
+                  {pendingFiles.map((file, idx) => (
+                    <div key={idx} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted/60 border border-border/40 text-xs">
+                      <FileIcon className="h-3 w-3 text-muted-foreground shrink-0" />
+                      <span className="truncate max-w-[120px] text-foreground">{file.name}</span>
+                      <span className="text-muted-foreground/60">{formatFileSize(file.size)}</span>
+                      <button type="button" onClick={() => removeFile(idx)} className="p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className={cn(
                 "relative rounded-2xl transition-all duration-300 shadow-lg shadow-primary/5",
                 isOverLimit
@@ -861,7 +876,7 @@ export default function AIAssistant() {
                   onKeyDown={handleKeyDown}
                   placeholder={t?.sidebar?.aiPlaceholder || "Hỏi bất cứ điều gì..."}
                   disabled={isLoading}
-                  className="w-full resize-none border-0 bg-transparent placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:ring-offset-0 px-6 py-5 pr-16 min-h-[64px] max-h-[180px] text-base"
+                  className="w-full resize-none border-0 bg-transparent placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:ring-offset-0 px-6 py-5 pr-28 min-h-[64px] max-h-[180px] text-base"
                   rows={1}
                 />
                 <div className="absolute right-4 bottom-4 flex items-center gap-1.5">
@@ -872,8 +887,17 @@ export default function AIAssistant() {
                     </span>
                   )}
                   <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isLoading || pendingFiles.length >= MAX_FILES}
+                    className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+                    title={t?.sidebar?.aiAttachFiles || 'Đính kèm file'}
+                  >
+                    <Paperclip className="h-4 w-4" />
+                  </button>
+                  <button
                     type="submit"
-                    disabled={!input.trim() || isLoading || isOverLimit}
+                    disabled={(!input.trim() && pendingFiles.length === 0) || isLoading || isOverLimit}
                     className="p-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-20 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
                   >
                     {isLoading ? <Spinner size="sm" className="text-primary-foreground" /> : <ArrowUp className="h-4.5 w-4.5" />}
@@ -883,6 +907,11 @@ export default function AIAssistant() {
               {isOverLimit && (
                 <p className="text-[11px] text-destructive mt-2 text-center">
                   Vượt giới hạn {MAX_MESSAGE_WORDS} từ ({wordCount}/{MAX_MESSAGE_WORDS})
+                </p>
+              )}
+              {pendingFiles.length > 0 && (
+                <p className="text-[10px] text-muted-foreground mt-1 text-center">
+                  {pendingFiles.length} {t?.sidebar?.aiFileAttached || 'file đính kèm'} · {t?.sidebar?.aiMaxFileSize || 'Tối đa 5MB mỗi file'}
                 </p>
               )}
             </form>
