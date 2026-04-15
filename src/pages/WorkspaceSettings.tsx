@@ -74,6 +74,8 @@ export default function WorkspaceSettings() {
   const [wsProjectCount, setWsProjectCount] = useState(0);
   const [wsStorageMb, setWsStorageMb] = useState(0);
   const [planLimits, setPlanLimits] = useState<{ maxMembers: number | null; maxStorage: number | null }>({ maxMembers: null, maxStorage: null });
+  const [shareAiCredits, setShareAiCredits] = useState(false);
+  const [isTogglingShare, setIsTogglingShare] = useState(false);
 
   const isOwner = workspaceRole === 'workspace:owner';
   const canEdit = isOwner || workspaceRole === 'workspace:admin';
