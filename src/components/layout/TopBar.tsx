@@ -301,13 +301,8 @@ export default function TopBar() {
               <span className="text-[10px] text-muted-foreground">AI</span>
             </div>
           ) : (
-            <Link to="/dashboard" className="flex items-center gap-1.5 ml-1 opacity-70 hover:opacity-100 transition-opacity">
-              <img
-                src={tNexusTextWhite}
-                alt="T-Nexus"
-                className="h-[13px] w-auto hidden sm:block"
-                style={{ filter: isDark ? 'none' : 'invert(1)' }}
-              />
+            <Link to="/dashboard" className="flex items-center ml-1 opacity-70 hover:opacity-100 transition-opacity">
+              <TNexusLogo width={60} />
             </Link>
           )}
         </div>
