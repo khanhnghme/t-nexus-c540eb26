@@ -97,6 +97,36 @@ export function usePendingApprovals(userId: string | undefined) {
   });
 }
 
+async function fetchRecentProjectsFn(userId: string, allGroups: Group[]): Promise<Group[]> {
+  // Try project_access_log first
+  const { data: accessLogs } = await supabase
+    .from('project_access_log')
+    .select('group_id')
+    .eq('user_id', userId)
+    .order('accessed_at', { ascending: false })
+    .limit(5);
+
+  if (accessLogs && accessLogs.length > 0) {
+    const orderedIds = accessLogs.map(l => l.group_id);
+    const groupMap = new Map(allGroups.map(g => [g.id, g]));
+    return orderedIds
+      .map(id => groupMap.get(id))
+      .filter((g): g is Group => !!g);
+  }
+
+  // Fallback: 5 newest groups
+  return allGroups.slice(0, 5);
+}
+
+export function useRecentProjects(userId: string | undefined, allGroups: Group[]) {
+  return useQuery({
+    queryKey: ['recent-projects', userId, allGroups.map(g => g.id).join(',')],
+    queryFn: () => fetchRecentProjectsFn(userId!, allGroups),
+    enabled: !!userId && allGroups.length > 0,
+    staleTime: 30_000,
+  });
+}
+
 interface VideoSettings {
   enabled: boolean;
   opacity: number;
