@@ -1,51 +1,45 @@
 
 
-# Thêm rule cho AI đọc và xử lý file đính kèm
+# Cho phép AI xử lý file nhị phân (ảnh, PDF) qua multimodal
 
-## Vấn đề
-Hiện tại system prompt không có hướng dẫn nào về việc xử lý file đính kèm. AI chỉ nhận nội dung file dưới dạng context block nhưng không có rule rõ ràng về cách phản hồi dựa trên file.
+## Phân tích hiện tại
+- **Gemini 2.5 Flash-lite** (Free/Plus): hỗ trợ multimodal — có thể đọc ảnh, PDF qua base64
+- **DeepSeek V3** (Pro+): chỉ text — không hỗ trợ multimodal
+- Hiện tại: file nhị phân bị bỏ qua với thông báo "không thể đọc trực tiếp"
 
 ## Thay đổi
 
-### 1. Cập nhật System Prompt (`team-assistant/index.ts`)
-Thêm section mới trong `buildSystemPrompt` — quy tắc xử lý file đính kèm:
+### 1. Cập nhật xử lý file trong `team-assistant/index.ts`
 
-```
-## XỬ LÝ FILE ĐÍNH KÈM
-Khi người dùng gửi file kèm câu hỏi:
-1. ✅ ĐỌC và PHÂN TÍCH nội dung file text (txt, csv, json, js, py, md, xml, yaml...)
-2. ✅ THỰC HIỆN yêu cầu hợp lệ: tóm tắt, phân tích, giải thích, sửa lỗi, chuyển đổi format, trả lời câu hỏi dựa trên nội dung
-3. ✅ Với file CSV/bảng: đọc dữ liệu, thống kê, trả lời câu hỏi cụ thể
-4. ✅ Với file code: review, giải thích, gợi ý sửa lỗi
-5. ✅ Với file JSON/XML: parse và trích xuất thông tin theo yêu cầu
-6. ❌ KHÔNG thực thi code hoặc chạy script
-7. ❌ KHÔNG tạo/sửa/xóa dữ liệu hệ thống dựa trên file
-8. ❌ KHÔNG xử lý file chứa nội dung độc hại, spam, hoặc vi phạm
-9. ⚠️ Với file nhị phân (PDF, docx, ảnh...): thông báo chỉ đọc được file văn bản thuần
-10. ⚠️ Nếu file quá lớn bị cắt ngắn: thông báo cho người dùng biết
-```
+Thay đổi logic xử lý attachment (dòng ~780-810):
 
-### 2. Mở rộng khả năng đọc file (`team-assistant/index.ts`)
-Hiện tại `isTextBased` regex chỉ bao gồm một số MIME type cơ bản. Mở rộng thêm:
-- `text/*` (đã có)
-- `application/pdf` → ghi nhận metadata (không đọc được nội dung)
-- Thêm các MIME: `application/x-python`, `application/sql`, `application/x-sh`, `application/x-httpd-php`
-- Fallback: nếu file_name có extension `.py`, `.sql`, `.sh`, `.log`, `.env`, `.ini`, `.cfg`, `.toml` → cũng coi là text
+- **File text**: giữ nguyên — đọc nội dung, append vào message dạng text
+- **File ảnh** (png, jpg, jpeg, gif, webp): tải từ R2, convert sang base64, gửi dạng multimodal `image_url` content part
+- **File PDF**: tải từ R2, convert sang base64, gửi dạng `image_url` với mime `application/pdf` (Gemini hỗ trợ)
+- **Khi dùng DeepSeek (Pro+)**: vẫn chỉ đọc text file, file nhị phân thông báo "model hiện tại không hỗ trợ đọc file này"
 
-### 3. i18n labels
-Thêm label thông báo:
-```
-aiFileReadSuccess: 'File content loaded' / 'Đã đọc nội dung file'
-aiFileNotReadable: 'This file type cannot be read directly' / 'Loại file này không thể đọc trực tiếp'
-```
+Cụ thể:
+- Thêm biến `useMultimodal` dựa trên model (true cho Gemini, false cho DeepSeek)
+- File ảnh/PDF: fetch từ R2 → `arrayBuffer()` → base64 → tạo content part `{ type: "image_url", image_url: { url: "data:{mime};base64,{data}" } }`
+- Convert message cuối thành array format: `content: [{ type: "text", text: "..." }, { type: "image_url", ... }]`
+- Giới hạn file nhị phân tối đa 5MB để tránh payload quá lớn
+
+### 2. Cập nhật system prompt
+
+- Xóa dòng 9 (`⚠️ Với file nhị phân...thông báo chỉ đọc được file văn bản thuần`)
+- Thay bằng: `✅ Với file ảnh (PNG, JPG, GIF, WEBP): phân tích, mô tả, trích xuất thông tin từ hình ảnh`
+- Thêm: `✅ Với file PDF: đọc và phân tích nội dung tài liệu`
+
+### 3. Cập nhật i18n labels
+
+- Sửa `aiFileNotReadable` → chỉ dùng cho DeepSeek fallback case
+- Thêm: `aiFileImageAnalyzed` / `aiFilePdfAnalyzed` cho UI feedback
 
 ## Files thay đổi
-1. `supabase/functions/team-assistant/index.ts` — thêm rules vào system prompt + mở rộng MIME detection
-2. `src/lib/i18n/en.ts` — thêm labels
-3. `src/lib/i18n/vi.ts` — thêm labels
+1. `supabase/functions/team-assistant/index.ts` — multimodal content parts + system prompt update
+2. `src/lib/i18n/en.ts` — cập nhật labels
+3. `src/lib/i18n/vi.ts` — cập nhật labels
 
 ## Không thay đổi
-- DB, RLS, R2 storage
-- Frontend upload UI
-- Credit/billing logic
+- DB, RLS, R2 storage, frontend upload UI, billing logic
 
