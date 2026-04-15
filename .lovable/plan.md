@@ -1,45 +1,40 @@
 
 
-# Cho phép AI xử lý file nhị phân (ảnh, PDF) qua multimodal
+# Nâng cấp AI: Cho phép trả lời câu hỏi ngoài hệ thống
 
-## Phân tích hiện tại
-- **Gemini 2.5 Flash-lite** (Free/Plus): hỗ trợ multimodal — có thể đọc ảnh, PDF qua base64
-- **DeepSeek V3** (Pro+): chỉ text — không hỗ trợ multimodal
-- Hiện tại: file nhị phân bị bỏ qua với thông báo "không thể đọc trực tiếp"
+## Vấn đề hiện tại
+System prompt hiện tại ngầm giới hạn AI chỉ trả lời về dữ liệu dự án và hệ thống T-Nexus. Khi người dùng hỏi câu hỏi chung (kiến thức, học tập, code...), AI không có hướng dẫn rõ ràng để trả lời.
 
 ## Thay đổi
 
-### 1. Cập nhật xử lý file trong `team-assistant/index.ts`
+### Cập nhật System Prompt (`team-assistant/index.ts`)
 
-Thay đổi logic xử lý attachment (dòng ~780-810):
+Thêm một section mới vào system prompt, đặt sau phần giới thiệu và trước các quy tắc bắt buộc:
 
-- **File text**: giữ nguyên — đọc nội dung, append vào message dạng text
-- **File ảnh** (png, jpg, jpeg, gif, webp): tải từ R2, convert sang base64, gửi dạng multimodal `image_url` content part
-- **File PDF**: tải từ R2, convert sang base64, gửi dạng `image_url` với mime `application/pdf` (Gemini hỗ trợ)
-- **Khi dùng DeepSeek (Pro+)**: vẫn chỉ đọc text file, file nhị phân thông báo "model hiện tại không hỗ trợ đọc file này"
+```
+## PHẠM VI TRẢ LỜI
+Bạn có thể trả lời các câu hỏi NGOÀI hệ thống T-Nexus một cách bình thường, bao gồm:
+- Kiến thức chung, học thuật, khoa học, lịch sử, địa lý...
+- Hỗ trợ viết bài, dịch thuật, tóm tắt văn bản
+- Giải thích code, lập trình, công nghệ
+- Tư vấn, gợi ý, brainstorm ý tưởng
+- Toán học, logic, phân tích dữ liệu
 
-Cụ thể:
-- Thêm biến `useMultimodal` dựa trên model (true cho Gemini, false cho DeepSeek)
-- File ảnh/PDF: fetch từ R2 → `arrayBuffer()` → base64 → tạo content part `{ type: "image_url", image_url: { url: "data:{mime};base64,{data}" } }`
-- Convert message cuối thành array format: `content: [{ type: "text", text: "..." }, { type: "image_url", ... }]`
-- Giới hạn file nhị phân tối đa 5MB để tránh payload quá lớn
+Ưu tiên:
+1. Nếu câu hỏi liên quan đến dự án/hệ thống → trả lời dựa trên dữ liệu dự án
+2. Nếu câu hỏi chung → trả lời bình thường như một trợ lý AI thông minh
+3. Vẫn tuân thủ tất cả quy tắc bảo mật và quyền riêng tư bên dưới
+```
 
-### 2. Cập nhật system prompt
+Đồng thời sửa dòng mở đầu từ:
+> "Bạn là trợ lý AI của hệ thống T-Nexus — thân thiện, chuyên nghiệp và hữu ích."
 
-- Xóa dòng 9 (`⚠️ Với file nhị phân...thông báo chỉ đọc được file văn bản thuần`)
-- Thay bằng: `✅ Với file ảnh (PNG, JPG, GIF, WEBP): phân tích, mô tả, trích xuất thông tin từ hình ảnh`
-- Thêm: `✅ Với file PDF: đọc và phân tích nội dung tài liệu`
+Thành:
+> "Bạn là trợ lý AI thông minh, tích hợp trong hệ thống T-Nexus — thân thiện, chuyên nghiệp và hữu ích. Bạn có thể hỗ trợ người dùng cả về dự án lẫn kiến thức chung."
 
-### 3. Cập nhật i18n labels
+### File thay đổi
+1. `supabase/functions/team-assistant/index.ts` — cập nhật system prompt + re-deploy
 
-- Sửa `aiFileNotReadable` → chỉ dùng cho DeepSeek fallback case
-- Thêm: `aiFileImageAnalyzed` / `aiFilePdfAnalyzed` cho UI feedback
-
-## Files thay đổi
-1. `supabase/functions/team-assistant/index.ts` — multimodal content parts + system prompt update
-2. `src/lib/i18n/en.ts` — cập nhật labels
-3. `src/lib/i18n/vi.ts` — cập nhật labels
-
-## Không thay đổi
-- DB, RLS, R2 storage, frontend upload UI, billing logic
+### Không thay đổi
+- DB, RLS, frontend, i18n, billing, file handling logic
 
