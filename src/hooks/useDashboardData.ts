@@ -112,7 +112,7 @@ async function fetchRecentProjectsFn(userId: string): Promise<Group[]> {
       .from('groups')
       .select('*')
       .in('id', orderedIds);
-    const groupMap = new Map((groupsData || []).map(g => [g.id, g]));
+    const groupMap = new Map((groupsData || []).map(g => [g.id, g as unknown as Group]));
     return orderedIds
       .map(id => groupMap.get(id))
       .filter((g): g is Group => !!g);
