@@ -1,47 +1,51 @@
 
 
-## Redesign trang /ai-assistant theo phong cách Notion AI
+## Thêm chức năng lịch sử trò chuyện AI
 
-### Tham chiếu
-Ảnh đính kèm cho thấy bố cục Notion AI:
-- **Empty state**: Logo lớn ở giữa, câu hỏi chào mừng "Hôm nay tôi có thể giúp gì cho bạn?", ô input ở giữa trang (không phải dưới cùng), 4 suggestion cards bên dưới (2x2 grid)
-- **Chat state**: Messages đơn giản không avatar cho AI, user message nhỏ gọn bên phải, input cố định ở dưới
+### Hiện trạng
+Messages chỉ lưu trong React state — mất khi refresh hoặc rời trang. Không có bảng DB nào cho AI conversations.
 
-### Thay đổi
+### Giải pháp
 
-#### `src/pages/AIAssistant.tsx` — Redesign toàn bộ layout
+#### 1. Database — Tạo 2 bảng mới
 
-**Empty state (chưa có tin nhắn):**
-- Bỏ header bar cố định phía trên
-- Logo T-Nexus lớn ở giữa trang (h-16 w-16)
-- Tiêu đề lớn: "Hôm nay tôi có thể giúp gì cho bạn?"
-- Ô input nằm **giữa trang** (không dính dưới), border rounded-xl, placeholder "Làm mọi việc với AI..."
-- Usage bar nhỏ nằm trong input area (góc phải)
-- 4 suggestion cards (2x2 grid) bên dưới input: gợi ý nhanh như "Tóm tắt nội dung dự án", "Lên kế hoạch công việc", "Phân tích tiến độ nhóm", "Viết báo cáo nhanh"
-- Click suggestion → tự gửi message
+**`ai_conversations`** — Mỗi cuộc trò chuyện:
+- `id` (uuid PK), `user_id` (uuid, ref profiles), `title` (text — tự tạo từ message đầu tiên, cắt 50 ký tự), `created_at`, `updated_at`
 
-**Chat state (có tin nhắn):**
-- Header nhỏ gọn: chỉ hiện "T-Nexus AI" breadcrumb-style bên trái, nút trash bên phải
-- Messages: user bubble nhỏ gọn bên phải (bg rounded pill), AI response bên trái không có avatar (plain text với markdown)
-- Input cố định dưới cùng, cùng style rounded-xl như empty state
-- Bỏ avatar cho AI messages trong chat (giống Notion — chỉ text)
+**`ai_messages`** — Mỗi tin nhắn trong cuộc hội thoại:
+- `id` (uuid PK), `conversation_id` (uuid, ref ai_conversations ON DELETE CASCADE), `role` (text: user/assistant), `content` (text), `created_at`
 
-**Cấu trúc chung:**
-- Giữ nguyên toàn bộ logic: streaming, usage tracking, word limit, sendMessage
-- Chỉ thay đổi JSX render
+RLS: user chỉ CRUD conversations/messages của mình.
 
-#### i18n — Thêm keys mới
-- `aiGreeting`: "Hôm nay tôi có thể giúp gì cho bạn?"
-- `aiPlaceholder`: "Làm mọi việc với AI..."
-- 4 suggestion labels + descriptions
+#### 2. `src/pages/AIAssistant.tsx` — Thêm sidebar lịch sử + persistence
+
+**Sidebar lịch sử (bên trái, thu gọn được):**
+- Icon `History` trên header (empty state + chat state) để toggle sidebar
+- Danh sách conversations gần nhất, nhóm theo "Hôm nay", "7 ngày qua", "Tháng trước"
+- Click vào conversation → load messages từ DB
+- Nút "Cuộc trò chuyện mới" ở trên sidebar
+- Swipe/nút xoá từng conversation
+
+**Auto-save logic:**
+- Khi user gửi message đầu tiên trong cuộc chat mới → tạo `ai_conversations` row (title = 50 ký tự đầu)
+- Mỗi message (user + assistant response xong) → insert vào `ai_messages`
+- Clear chat → xóa conversation khỏi DB
+
+**Load on mount:**
+- Fetch danh sách conversations (mới nhất trước, limit 50)
+- Khi chọn conversation → fetch messages theo `conversation_id`
+
+#### 3. i18n — Thêm keys
+- `chatHistory`, `newChat`, `today`, `last7Days`, `lastMonth`, `deleteConversation`, `noHistory`
 
 ### Files thay đổi
 
 | # | File | Thay đổi |
 |---|------|----------|
-| 1 | `src/pages/AIAssistant.tsx` | Redesign layout empty state + chat state |
-| 2 | `src/lib/i18n/vi.ts` | Thêm AI suggestion keys |
-| 3 | `src/lib/i18n/en.ts` | Thêm AI suggestion keys |
+| 1 | Migration SQL | Tạo bảng `ai_conversations`, `ai_messages` + RLS |
+| 2 | `src/pages/AIAssistant.tsx` | Sidebar lịch sử, auto-save, load conversation |
+| 3 | `src/lib/i18n/vi.ts` | Thêm keys lịch sử |
+| 4 | `src/lib/i18n/en.ts` | Thêm keys lịch sử |
 
-**3 files. Không thêm dependencies.**
+**4 thay đổi. Không thêm dependencies.**
 
