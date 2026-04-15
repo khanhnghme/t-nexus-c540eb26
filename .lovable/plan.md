@@ -1,82 +1,40 @@
 
+## Plan: Redesign Workspace Switcher theo mẫu tham khảo
 
-## Plan: Fix đồng bộ workspace_members khi join project
+### Mô tả
+Redesign dropdown workspace switcher trong sidebar theo layout giống ảnh đính kèm: hiện card thông tin workspace đang active (tên, plan, số member) với 2 link nhanh (Settings, Invite members), rồi danh sách tất cả workspaces bên dưới. Bỏ phần Credits UI. Đồng thời di chuyển Overview → Settings và Members → Invite members vào trong dropdown, xóa khỏi sidebar nav.
 
-### Root Cause
+### Thay đổi chi tiết
 
-Trong `JoinByCodeDialog.tsx`, hàm `handleConfirmJoin` khi user join project trực tiếp (không cần duyệt):
-- Insert vào `group_members` ✅
-- **KHÔNG gọi `ensure_workspace_member`** ❌
+#### 1. Redesign `WorkspaceSwitcherCell` trong `DashboardLayout.tsx`
+Dropdown content mới gồm 3 phần:
 
-So sánh các luồng khác:
-- **Accept invitation (Dashboard.tsx):** có gọi `ensure_workspace_member` ✅
-- **Approve request (MemberManagementCard.tsx):** có gọi `ensure_workspace_member` ✅
-- **Join by code (JoinByCodeDialog.tsx):** **THIẾU** ❌
+**Phần 1 — Active workspace info card:**
+- Avatar tròn lớn + tên workspace
+- Dòng phụ: `{planLabel} · {memberCount} member(s)`
+- 2 nút action: ⚙️ Settings → `/workspace/settings`, 👥 Invite members → `/workspace/members`
 
-→ User join qua code/QR thành công nhưng không được add vào workspace → không thấy project.
+**Phần 2 — Separator + "All workspaces" label**
+- Danh sách workspaces với avatar, tên, badge plan (PRO/FREE), checkmark cho active
 
-### Giải pháp: 3 thay đổi
+**Phần 3 — "+ Create new workspace"**
 
-#### 1. Fix `JoinByCodeDialog.tsx` — thêm `ensure_workspace_member` sau khi join
+Bỏ hoàn toàn phần Credits UI (không có trong hệ thống này).
 
-Sau khi insert `group_members` thành công (line 344-360), thêm logic:
-- Fetch `workspace_id` từ group
-- Gọi `ensure_workspace_member` với workspace_id đó
+Cần thêm query nhẹ đếm member count cho active workspace (dùng `workspace_members` count + 1 cho owner).
 
-Tương tự cho flow approval (sau khi insert `pending_approvals`), khi approval được duyệt đã có sync rồi nên không cần thêm.
+#### 2. Xóa Overview & Members khỏi `SidebarTreeNav.tsx`
+- Xóa link `/workspace/settings` (Overview) và `/workspace/members` (Members) khỏi cả collapsed và expanded mode
+- Giữ nguyên AI Assistant và các mục khác
 
-#### 2. DB trigger safeguard — auto-sync khi insert `group_members`
+#### 3. Cập nhật collapsed dropdown
+Collapsed mode cũng hiển thị tương tự nhưng mở sang bên phải, có đầy đủ info card.
 
-Tạo DB trigger `after insert on group_members` để tự động gọi upsert vào `workspace_members`. Đây là lưới an toàn cuối cùng, đảm bảo mọi luồng insert member (code, invite, manual add, future flows) đều được sync.
+### Files thay đổi
 
-```sql
-CREATE OR REPLACE FUNCTION public.auto_ensure_workspace_member()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$
-DECLARE _ws_id uuid;
-BEGIN
-  SELECT workspace_id INTO _ws_id FROM public.groups WHERE id = NEW.group_id;
-  IF _ws_id IS NOT NULL THEN
-    -- Skip if user is already workspace owner
-    IF NOT EXISTS (SELECT 1 FROM public.workspaces WHERE id = _ws_id AND owner_id = NEW.user_id) THEN
-      INSERT INTO public.workspace_members (workspace_id, user_id, role)
-      VALUES (_ws_id, NEW.user_id, 'workspace:member')
-      ON CONFLICT (workspace_id, user_id) DO NOTHING;
-    END IF;
-  END IF;
-  RETURN NEW;
-END; $$;
+| # | File | Thay đổi |
+|---|------|----------|
+| 1 | `src/components/layout/DashboardLayout.tsx` | Redesign `WorkspaceSwitcherCell` dropdown content |
+| 2 | `src/components/SidebarTreeNav.tsx` | Xóa 2 nav items (Overview, Members) |
 
-CREATE TRIGGER trg_auto_ensure_workspace_member
-  AFTER INSERT ON public.group_members
-  FOR EACH ROW EXECUTE FUNCTION public.auto_ensure_workspace_member();
-```
-
-#### 3. Data fix — script repair dữ liệu hiện tại
-
-Migration SQL để fix tất cả user đang ở project nhưng thiếu workspace:
-
-```sql
-INSERT INTO public.workspace_members (workspace_id, user_id, role)
-SELECT DISTINCT g.workspace_id, gm.user_id, 'workspace:member'
-FROM public.group_members gm
-JOIN public.groups g ON g.id = gm.group_id
-WHERE g.workspace_id IS NOT NULL
-  AND NOT EXISTS (
-    SELECT 1 FROM public.workspaces w WHERE w.id = g.workspace_id AND w.owner_id = gm.user_id
-  )
-  AND NOT EXISTS (
-    SELECT 1 FROM public.workspace_members wm WHERE wm.workspace_id = g.workspace_id AND wm.user_id = gm.user_id
-  )
-ON CONFLICT (workspace_id, user_id) DO NOTHING;
-```
-
-### Tổng kết
-
-| # | Thay đổi | File/Type |
-|---|----------|-----------|
-| 1 | Gọi `ensure_workspace_member` sau join by code | `src/components/JoinByCodeDialog.tsx` |
-| 2 | DB trigger auto-sync | Migration SQL (trigger) |
-| 3 | Data fix cho dữ liệu cũ | Migration SQL (one-time insert) |
-
-**Impact:** Fix hoàn toàn vấn đề mất đồng bộ. Trigger đảm bảo không bao giờ xảy ra lại bất kể luồng nào insert member.
-
+**2 files. Không thêm dependencies.**
