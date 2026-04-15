@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Dialog,
@@ -26,7 +26,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import UserPresenceIndicator from '@/components/UserPresenceIndicator';
 import { Navigate } from 'react-router-dom';
-import { useDashboardData, useHiddenProjects, usePendingApprovals, useVideoSettings } from '@/hooks/useDashboardData';
+import { useDashboardData, useRecentProjects, useVideoSettings } from '@/hooks/useDashboardData';
 
 import { getSystemRoleLabel } from '@/lib/roleLabels';
 import JoinByCodeDialog from '@/components/JoinByCodeDialog';
