@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, Loader2, Sparkles, AlertCircle, FolderKanban, Globe, Trash2 } from 'lucide-react';
+import { Send, Loader2, Sparkles, AlertCircle, FolderKanban, Globe, Trash2, Link2, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
@@ -46,6 +46,9 @@ export default function AIAssistantPanel({
   const [creditsUsed, setCreditsUsed] = useState(0);
   const [maxCredits, setMaxCredits] = useState<number | null>(null);
   const [usageLoading, setUsageLoading] = useState(true);
+  const [shareMode, setShareMode] = useState(false);
+  const [workspaceName, setWorkspaceName] = useState('');
+  const [userPlanLabel, setUserPlanLabel] = useState('Free');
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { user, profile } = useAuth();
@@ -61,22 +64,22 @@ export default function AIAssistantPanel({
     try {
       const effectiveOwnerId = activeWorkspace?.owner_id || user.id;
 
-      // Check share_ai_credits setting
-      let shareMode = false;
+      let isShared = false;
       if (activeWorkspace?.id) {
         const { data: wsData } = await supabase
           .from('workspaces')
-          .select('share_ai_credits')
+          .select('share_ai_credits, name')
           .eq('id', activeWorkspace.id)
           .single();
-        shareMode = (wsData as any)?.share_ai_credits === true;
+        isShared = (wsData as any)?.share_ai_credits === true;
+        setWorkspaceName((wsData as any)?.name || '');
       }
+      setShareMode(isShared);
 
-      // When OFF: use user's own plan limit; when ON: use owner's plan limit
-      const planForLimit = shareMode ? effectiveOwnerId : user.id;
+      const planForLimit = isShared ? effectiveOwnerId : user.id;
 
       const [usageRes, planProfileRes] = await Promise.all([
-        shareMode
+        isShared
           ? supabase.rpc('get_owner_ai_credit_usage_month', { _owner_id: effectiveOwnerId, _month_start: monthStart, _month_end: monthEnd })
           : supabase.rpc('get_user_ai_credit_usage_month' as any, { _user_id: user.id, _month_start: monthStart, _month_end: monthEnd }),
         supabase.from('profiles').select('user_plan').eq('id', planForLimit).single(),
@@ -85,6 +88,9 @@ export default function AIAssistantPanel({
       setCreditsUsed(typeof usageRes.data === 'number' ? usageRes.data : 0);
 
       const relevantPlan = (planProfileRes.data as any)?.user_plan || 'plan_free';
+      const planLabels: Record<string, string> = { plan_free: 'Free', plan_plus: 'Plus', plan_pro: 'Pro', plan_business: 'Business', plan_custom: 'Custom' };
+      setUserPlanLabel(planLabels[relevantPlan] || 'Free');
+
       const { data: limitData } = await supabase
         .from('plan_limits')
         .select('max_ai_credits_per_month')
@@ -376,7 +382,7 @@ export default function AIAssistantPanel({
             {projectId ? (
               <>
                 <FolderKanban className="h-3 w-3" />
-                <span className="truncate max-w-[180px]">{projectName}</span>
+                <span className="truncate max-w-[120px]">{projectName}</span>
               </>
             ) : (
               <>
@@ -384,10 +390,20 @@ export default function AIAssistantPanel({
                 <span>Tổng quan</span>
               </>
             )}
+            <span className="text-muted-foreground/40 mx-0.5">·</span>
+            {shareMode ? (
+              <span className="inline-flex items-center gap-1 text-[10px]">
+                <Link2 className="h-2.5 w-2.5" /> {workspaceName || 'Shared'}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[10px]">
+                <User className="h-2.5 w-2.5" /> {userPlanLabel}
+              </span>
+            )}
           </div>
           <div className="ml-auto flex items-center gap-2">
             {isUnlimited ? (
-              <span className="text-[10px] text-muted-foreground">∞ Unlimited</span>
+              <span className="text-[10px] text-muted-foreground">∞</span>
             ) : (
               <>
                 <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
