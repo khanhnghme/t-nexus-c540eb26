@@ -3395,6 +3395,7 @@ export type Database = {
           max_storage_mb: number
           name: string
           owner_id: string
+          share_ai_credits: boolean
           short_id: string
           slug: string
           updated_at: string
@@ -3410,6 +3411,7 @@ export type Database = {
           max_storage_mb?: number
           name: string
           owner_id: string
+          share_ai_credits?: boolean
           short_id: string
           slug: string
           updated_at?: string
@@ -3425,6 +3427,7 @@ export type Database = {
           max_storage_mb?: number
           name?: string
           owner_id?: string
+          share_ai_credits?: boolean
           short_id?: string
           slug?: string
           updated_at?: string
@@ -3500,6 +3503,10 @@ export type Database = {
       }
       get_owner_ai_usage_today: {
         Args: { _date: string; _owner_id: string }
+        Returns: number
+      }
+      get_user_ai_credit_usage_month: {
+        Args: { _month_end: string; _month_start: string; _user_id: string }
         Returns: number
       }
       get_user_workspace_owner: { Args: { _user_id: string }; Returns: string }

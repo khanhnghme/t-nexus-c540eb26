@@ -1140,6 +1140,13 @@ export const en = {
       inviteMembers: 'Invite Members',
       createProject: 'Create Project',
       viewAllProjects: 'View All Projects',
+      // AI Credit Sharing
+      shareAiCredits: 'Share AI Credit within Workspace',
+      shareAiCreditsDesc: 'When enabled, all members share the same AI credit pool from the workspace owner.',
+      shareAiCreditsWarning: 'All members will use the shared workspace AI credit pool. Individual credit tracking will be disabled.',
+      personalCredit: 'Personal credit',
+      sharedPool: 'Shared pool',
+      shareAiCreditsSaved: 'AI credit sharing setting updated.',
     },
     wsMembers: {
       title: 'Workspace Members',

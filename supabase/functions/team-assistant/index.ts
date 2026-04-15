@@ -584,19 +584,41 @@ serve(async (req) => {
 
     const maxCredits = planLimitData?.max_ai_credits_per_month ?? null; // null = unlimited (Free/Plus/Custom)
 
-    // Get total credit usage across all members in owner's workspaces for current month
-    const { data: totalCredits } = await supabase.rpc('get_owner_ai_credit_usage_month', { 
-      _owner_id: effectiveOwnerId, 
-      _month_start: monthStart,
-      _month_end: monthEnd,
-    });
+    // Check share_ai_credits setting from user's workspace
+    let shareAiCredits = false;
+    {
+      const { data: wsData } = await supabase
+        .from('workspaces')
+        .select('share_ai_credits')
+        .eq('owner_id', effectiveOwnerId)
+        .limit(1)
+        .maybeSingle();
+      shareAiCredits = wsData?.share_ai_credits === true;
+    }
 
-    const currentCredits = totalCredits ?? 0;
+    let currentCredits: number;
+    if (shareAiCredits) {
+      // Shared pool: count all members' usage under the owner
+      const { data: totalCredits } = await supabase.rpc('get_owner_ai_credit_usage_month', { 
+        _owner_id: effectiveOwnerId, 
+        _month_start: monthStart,
+        _month_end: monthEnd,
+      });
+      currentCredits = totalCredits ?? 0;
+    } else {
+      // Individual: count only this user's usage
+      const { data: userCredits } = await supabase.rpc('get_user_ai_credit_usage_month', {
+        _user_id: userId,
+        _month_start: monthStart,
+        _month_end: monthEnd,
+      });
+      currentCredits = userCredits ?? 0;
+    }
 
     // Check credit limit (null = unlimited for Free/Plus/Custom)
     if (maxCredits !== null && currentCredits >= maxCredits) {
       return new Response(JSON.stringify({ 
-        error: `Nhóm của bạn đã sử dụng hết ${maxCredits} credit AI tháng này. Vui lòng quay lại tháng sau hoặc nâng cấp gói.`,
+        error: `${shareAiCredits ? 'Nhóm của bạn' : 'Bạn'} đã sử dụng hết ${maxCredits} credit AI tháng này. Vui lòng quay lại tháng sau hoặc nâng cấp gói.`,
         code: "AI_LIMIT_EXCEEDED",
         usage: { used: currentCredits, max: maxCredits }
       }), {

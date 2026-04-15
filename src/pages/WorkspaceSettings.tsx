@@ -8,13 +8,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
   Building2, Save, Trash2, AlertTriangle, Crown, Copy, Check,
-  Users, FolderKanban, HardDrive, LayoutGrid, Settings2, Zap
+  Users, FolderKanban, HardDrive, LayoutGrid, Settings2, Zap, Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
 import {
   AlertDialog, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -73,6 +74,8 @@ export default function WorkspaceSettings() {
   const [wsProjectCount, setWsProjectCount] = useState(0);
   const [wsStorageMb, setWsStorageMb] = useState(0);
   const [planLimits, setPlanLimits] = useState<{ maxMembers: number | null; maxStorage: number | null }>({ maxMembers: null, maxStorage: null });
+  const [shareAiCredits, setShareAiCredits] = useState(false);
+  const [isTogglingShare, setIsTogglingShare] = useState(false);
 
   const isOwner = workspaceRole === 'workspace:owner';
   const canEdit = isOwner || workspaceRole === 'workspace:admin';
@@ -81,6 +84,7 @@ export default function WorkspaceSettings() {
     if (activeWorkspace) {
       setName(activeWorkspace.name);
       setDescription(activeWorkspace.description || '');
+      setShareAiCredits((activeWorkspace as any).share_ai_credits === true);
 
       // Fetch WS-specific project count
       supabase.from('groups').select('id', { count: 'exact', head: true })
@@ -142,6 +146,26 @@ export default function WorkspaceSettings() {
       toast({ title: tc.error, description: err.message, variant: 'destructive' });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleToggleShareCredits = async (checked: boolean) => {
+    if (guardReadOnly()) return;
+    if (!isOwner || !activeWorkspace) return;
+    setIsTogglingShare(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('workspace-management', {
+        body: { action: 'update_workspace', workspace_id: activeWorkspace.id, share_ai_credits: checked },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setShareAiCredits(checked);
+      await refreshWorkspaces();
+      toast({ title: tc.saved, description: tw.shareAiCreditsSaved });
+    } catch (err: any) {
+      toast({ title: tc.error, description: err.message, variant: 'destructive' });
+    } finally {
+      setIsTogglingShare(false);
     }
   };
 
@@ -252,6 +276,34 @@ export default function WorkspaceSettings() {
               )}
             </CardContent>
           </Card>
+
+          {/* AI Credit Sharing — only for owner and Pro+ plans */}
+          {isOwner && isPremium && (
+            <Card className="mt-4">
+              <CardContent className="p-6 space-y-4">
+                <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-muted-foreground" />
+                  {tw.shareAiCredits}
+                </h2>
+                <p className="text-sm text-muted-foreground">{tw.shareAiCreditsDesc}</p>
+                <div className="flex items-center gap-3">
+                  <Switch
+                    checked={shareAiCredits}
+                    onCheckedChange={handleToggleShareCredits}
+                    disabled={isTogglingShare}
+                  />
+                  <span className="text-sm font-medium">
+                    {shareAiCredits ? tw.sharedPool : tw.personalCredit}
+                  </span>
+                </div>
+                {shareAiCredits && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 rounded-lg p-3">
+                    ⚠️ {tw.shareAiCreditsWarning}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* Plan Tab — owner's real plan */}

@@ -61,8 +61,21 @@ export default function AIAssistantPanel({
     try {
       const effectiveOwnerId = activeWorkspace?.owner_id || user.id;
 
+      // Check share_ai_credits setting
+      let shareMode = false;
+      if (activeWorkspace?.id) {
+        const { data: wsData } = await supabase
+          .from('workspaces')
+          .select('share_ai_credits')
+          .eq('id', activeWorkspace.id)
+          .single();
+        shareMode = (wsData as any)?.share_ai_credits === true;
+      }
+
       const [usageRes, ownerProfileRes] = await Promise.all([
-        supabase.rpc('get_owner_ai_credit_usage_month', { _owner_id: effectiveOwnerId, _month_start: monthStart, _month_end: monthEnd }),
+        shareMode
+          ? supabase.rpc('get_owner_ai_credit_usage_month', { _owner_id: effectiveOwnerId, _month_start: monthStart, _month_end: monthEnd })
+          : supabase.rpc('get_user_ai_credit_usage_month' as any, { _user_id: user.id, _month_start: monthStart, _month_end: monthEnd }),
         supabase.from('profiles').select('user_plan').eq('id', effectiveOwnerId).single(),
       ]);
 

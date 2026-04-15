@@ -1127,6 +1127,13 @@ export const vi: Translations = {
       inviteMembers: 'Mời thành viên',
       createProject: 'Tạo dự án',
       viewAllProjects: 'Xem tất cả dự án',
+      // AI Credit Sharing
+      shareAiCredits: 'Chia sẻ Credit AI trong Workspace',
+      shareAiCreditsDesc: 'Khi bật, tất cả thành viên sẽ sử dụng chung pool credit AI của chủ workspace.',
+      shareAiCreditsWarning: 'Tất cả thành viên sẽ dùng chung credit AI của workspace. Theo dõi credit cá nhân sẽ bị tắt.',
+      personalCredit: 'Credit cá nhân',
+      sharedPool: 'Pool chung',
+      shareAiCreditsSaved: 'Đã cập nhật cài đặt chia sẻ credit AI.',
     },
     wsMembers: {
       title: 'Thành viên Workspace',
