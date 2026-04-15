@@ -255,10 +255,6 @@ export default function TopBar() {
       <div className="flex items-center gap-2 shrink-0">
         {isAIRoute && aiTopBarProps && (
           <>
-            <div className="flex items-center gap-1">
-              <TNexusLogo width={60} />
-              <span className="text-[10px] text-muted-foreground">AI</span>
-            </div>
             {!aiTopBarProps.isUnlimited && (
               <div className="flex items-center gap-2">
                 <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
@@ -299,7 +295,12 @@ export default function TopBar() {
             </TooltipContent>
           </Tooltip>
 
-          {!isAIRoute && (
+          {isAIRoute ? (
+            <div className="flex items-center gap-1 ml-1">
+              <TNexusLogo width={60} />
+              <span className="text-[10px] text-muted-foreground">AI</span>
+            </div>
+          ) : (
             <Link to="/dashboard" className="flex items-center gap-1.5 ml-1 opacity-70 hover:opacity-100 transition-opacity">
               <img
                 src={tNexusTextWhite}
