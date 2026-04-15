@@ -96,8 +96,19 @@ export default function AIAssistant() {
   const { toast } = useToast();
   const { translations: t } = useLanguage();
   const { setAITopBarProps } = useDashboardLayoutContext();
+  const navigate = useNavigate();
 
-  const suggestions = [
+  const isFreePlan = maxCredits === null;
+  const creditPercent = maxCredits ? Math.min(Math.round((creditsUsed / maxCredits) * 100), 100) : 0;
+  const creditRemaining = maxCredits ? maxCredits - creditsUsed : null;
+  const isLowCredit = maxCredits !== null && creditPercent >= 85;
+  const isCriticalCredit = maxCredits !== null && creditPercent >= 95;
+
+  const getProgressColorClass = () => {
+    if (isCriticalCredit) return '[&>div]:bg-destructive';
+    if (isLowCredit) return '[&>div]:bg-amber-500';
+    return '[&>div]:bg-emerald-500';
+  };
     { icon: FileText, label: t?.sidebar?.aiSuggestion1Label || 'Tóm tắt dự án', prompt: 'Tóm tắt nội dung và tiến độ dự án hiện tại của tôi' },
     { icon: ListChecks, label: t?.sidebar?.aiSuggestion2Label || 'Lên kế hoạch', prompt: 'Giúp tôi lên kế hoạch và phân chia công việc cho dự án' },
     { icon: BarChart3, label: t?.sidebar?.aiSuggestion3Label || 'Phân tích tiến độ', prompt: 'Phân tích tiến độ và hiệu suất làm việc của nhóm tôi' },
