@@ -18,6 +18,15 @@ export interface ProjectNavProps {
   onRenameProject?: (newName: string) => void;
 }
 
+export interface AIAssistantTopBarProps {
+  onToggleHistory: () => void;
+  onClearChat: () => void;
+  hasMessages: boolean;
+  questionsToday: number;
+  maxQuestions: number | null;
+  isUnlimited: boolean;
+}
+
 interface DashboardLayoutContextType {
   projectInfo: ProjectInfo;
   setProjectInfo: (info: ProjectInfo) => void;
@@ -26,6 +35,8 @@ interface DashboardLayoutContextType {
   toggleSidebar: () => void;
   projectNavProps: ProjectNavProps | null;
   setProjectNavProps: (props: ProjectNavProps | null) => void;
+  aiTopBarProps: AIAssistantTopBarProps | null;
+  setAITopBarProps: (props: AIAssistantTopBarProps | null) => void;
 }
 
 const DashboardLayoutContext = createContext<DashboardLayoutContextType | null>(null);
