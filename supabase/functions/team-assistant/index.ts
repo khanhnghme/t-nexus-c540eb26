@@ -578,27 +578,27 @@ serve(async (req) => {
 
     const { data: planLimitData } = await supabase
       .from('plan_limits')
-      .select('max_ai_messages_per_month')
+      .select('max_ai_messages_per_month, max_ai_credits_per_month')
       .eq('plan', ownerPlan)
       .maybeSingle();
 
-    const maxMessages = planLimitData?.max_ai_messages_per_month ?? 20; // default 20
+    const maxCredits = planLimitData?.max_ai_credits_per_month ?? null; // null = unlimited (Free/Plus/Custom)
 
-    // Get total usage across all members in owner's workspaces for current month
-    const { data: totalUsage } = await supabase.rpc('get_owner_ai_usage_month', { 
+    // Get total credit usage across all members in owner's workspaces for current month
+    const { data: totalCredits } = await supabase.rpc('get_owner_ai_credit_usage_month', { 
       _owner_id: effectiveOwnerId, 
       _month_start: monthStart,
       _month_end: monthEnd,
     });
 
-    const currentCount = totalUsage ?? 0;
+    const currentCredits = totalCredits ?? 0;
 
-    // Check limit (null = unlimited)
-    if (maxMessages !== null && currentCount >= maxMessages) {
+    // Check credit limit (null = unlimited for Free/Plus/Custom)
+    if (maxCredits !== null && currentCredits >= maxCredits) {
       return new Response(JSON.stringify({ 
-        error: `Nhóm của bạn đã sử dụng hết ${maxMessages} lượt hỏi AI tháng này. Vui lòng quay lại tháng sau hoặc nâng cấp gói.`,
+        error: `Nhóm của bạn đã sử dụng hết ${maxCredits} credit AI tháng này. Vui lòng quay lại tháng sau hoặc nâng cấp gói.`,
         code: "AI_LIMIT_EXCEEDED",
-        usage: { used: currentCount, max: maxMessages }
+        usage: { used: currentCredits, max: maxCredits }
       }), {
         status: 429,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -722,6 +722,7 @@ serve(async (req) => {
       ],
       stream: true,
       temperature: 0.3,
+      stream_options: { include_usage: true },
     });
 
     let response = await fetch(apiUrl, {
@@ -754,6 +755,7 @@ serve(async (req) => {
           ],
           stream: true,
           temperature: 0.3,
+          stream_options: { include_usage: true },
         }),
       });
     }
@@ -785,20 +787,52 @@ serve(async (req) => {
       });
     }
 
-    // ─── Increment usage AFTER successful AI call ──────────────────
-    try {
-      await supabase.rpc('increment_ai_usage', { _user_id: userId, _date: today });
-    } catch (e) {
-      // Fallback: upsert directly
-      await supabase
-        .from('ai_daily_usage')
-        .upsert(
-          { user_id: userId, usage_date: today, message_count: currentCount + 1, updated_at: new Date().toISOString() },
-          { onConflict: 'user_id,usage_date' }
-        );
-    }
+    // ─── Intercept stream to capture token usage from final chunk ───
+    let totalTokens = 0;
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
 
-    return new Response(response.body, {
+    const transformStream = new TransformStream({
+      transform(chunk, controller) {
+        // Forward chunk to client immediately
+        controller.enqueue(chunk);
+        
+        // Try to parse usage from the chunk
+        const text = decoder.decode(chunk, { stream: true });
+        const lines = text.split('\n');
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            if (parsed.usage?.total_tokens) {
+              totalTokens = parsed.usage.total_tokens;
+            }
+          } catch {}
+        }
+      },
+      async flush() {
+        // After stream ends, record token usage to DB
+        try {
+          await supabase.rpc('increment_ai_token_usage', { 
+            _user_id: userId, 
+            _date: today, 
+            _tokens: totalTokens || 0 
+          });
+        } catch (e) {
+          console.error('Failed to record token usage:', e);
+          // Fallback: at least increment message count
+          try {
+            await supabase.rpc('increment_ai_usage', { _user_id: userId, _date: today });
+          } catch {}
+        }
+      }
+    });
+
+    const transformedStream = response.body!.pipeThrough(transformStream);
+
+    return new Response(transformedStream, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream", "X-AI-Model": modelName },
     });
   } catch (e) {

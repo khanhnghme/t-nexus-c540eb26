@@ -293,7 +293,7 @@ export const en = {
           'Max upload 5 MB / file',
           'Total 5 unique seats (shared across all WSs, free)',
           'Meetings up to 15 min',
-          'AI Assistant (Gemini Flash): 20 messages/month',
+          'AI Assistant (Gemini Flash): Free',
         ],
         features: [
           'Basic task management',
@@ -313,7 +313,7 @@ export const en = {
           'Total 15 unique seats (shared across all WSs, free)',
           'Meetings up to 60 min',
           'Activity logs (30 days)',
-          'AI Assistant (Gemini Flash): 60 messages/month',
+          'AI Assistant (Gemini Flash): Free',
         ],
         features: [
           'Unlock Plus features for all members',
@@ -334,7 +334,7 @@ export const en = {
           'Total 50 unique seats (shared across all WSs, free)',
           'Unlimited meeting time',
           'Unlimited activity logs',
-          'AI Assistant (DeepSeek V3.2): 150 messages/month',
+          'AI Assistant (DeepSeek V3.2): 1,000 credits/month',
         ],
         features: [
           'Unlock Pro features for all members',
@@ -355,7 +355,7 @@ export const en = {
           'Total 200 unique seats (shared across all WSs, free)',
           'Unlimited meeting time',
           'Unlimited activity logs',
-          'AI Assistant (DeepSeek V3.2): 300 messages/month',
+          'AI Assistant (DeepSeek V3.2): 2,500 credits/month',
         ],
         features: [
           'Unlock Business features for all members',
@@ -419,7 +419,7 @@ export const en = {
         rows: [
           { label: 'Meeting duration', free: '15 min', plus: '60 min', pro: 'Unlimited', business: 'Unlimited', enterprise: 'Unlimited (DeepSeek V3.2)' },
           { label: 'Activity logs', free: false, plus: '30 days', pro: 'Unlimited', business: 'Unlimited', enterprise: 'Unlimited (DeepSeek V3.2)' },
-          { label: 'AI Assistant', free: '20/month (Gemini Flash)', plus: '60/month (Gemini Flash)', pro: '150/month (DeepSeek V3.2)', business: '300/month (DeepSeek V3.2)', enterprise: 'Unlimited (DeepSeek V3.2)' },
+          { label: 'AI Assistant', free: 'Free (Gemini Flash)', plus: 'Free (Gemini Flash)', pro: '1,000 credits/month (DeepSeek V3.2)', business: '2,500 credits/month (DeepSeek V3.2)', enterprise: 'Unlimited (DeepSeek V3.2)' },
         ],
       },
       {
@@ -3134,10 +3134,10 @@ export const en = {
   },
 
   servicePlanFeatures: {
-    plan_free: ['1 Workspace', '5 total projects', '5 total unique seats', '500 MB total storage', 'Upload 5 MB/file', 'AI Assistant (Gemini Flash): 20/month'],
-    plan_plus: ['5 Workspaces', '15 total projects', '15 total unique seats', '10 GB total storage', 'Upload 100 MB/file', 'AI Assistant (Gemini Flash): 60/month'],
-    plan_pro: ['20 Workspaces', '50 total projects', '50 total unique seats', '50 GB total storage', 'Upload 5 GB/file', 'AI Assistant (DeepSeek V3.2): 150/month'],
-    plan_business: ['50 Workspaces', '500 total projects', '200 total unique seats', '200 GB total storage', 'Upload 5 GB/file', 'AI Assistant (DeepSeek V3.2): 300/month'],
+    plan_free: ['1 Workspace', '5 total projects', '5 total unique seats', '500 MB total storage', 'Upload 5 MB/file', 'AI Assistant (Gemini Flash): Free'],
+    plan_plus: ['5 Workspaces', '15 total projects', '15 total unique seats', '10 GB total storage', 'Upload 100 MB/file', 'AI Assistant (Gemini Flash): Free'],
+    plan_pro: ['20 Workspaces', '50 total projects', '50 total unique seats', '50 GB total storage', 'Upload 5 GB/file', 'AI Assistant (DeepSeek V3.2): 1,000 credits/month'],
+    plan_business: ['50 Workspaces', '500 total projects', '200 total unique seats', '200 GB total storage', 'Upload 5 GB/file', 'AI Assistant (DeepSeek V3.2): 2,500 credits/month'],
     plan_custom: ['Unlimited', 'Unlimited projects', 'Unlimited seats', 'Unlimited storage', 'Upload 5 GB/file', 'AI Assistant (DeepSeek V3.2): Unlimited'],
   },
 
@@ -3151,7 +3151,7 @@ export const en = {
       'Basic task management',
       'Group chat',
       'Meetings up to 15 minutes',
-      'AI Assistant (Gemini Flash): 20 messages/month',
+      'AI Assistant (Gemini Flash): Free',
       'Standard Email Support',
     ],
     plan_plus: [
@@ -3165,7 +3165,7 @@ export const en = {
       'Activity log (30 days)',
       'Member scoring',
       'Full data export',
-      'AI Assistant (Gemini Flash): 60 messages/month',
+      'AI Assistant (Gemini Flash): Free',
       'Add-ons available',
     ],
     plan_pro: [
@@ -3181,7 +3181,7 @@ export const en = {
       'Stage management',
       'Advanced scoring system',
       'Priority Support (24h-48h)',
-      'AI Assistant (DeepSeek V3.2): 150 messages/month',
+      'AI Assistant (DeepSeek V3.2): 1,000 credits/month',
       'Bundled add-ons, 10% off',
     ],
     plan_business: [
@@ -3195,7 +3195,7 @@ export const en = {
       'Unlimited meetings',
       'System administration',
       'Express Support (same day)',
-      'AI Assistant (DeepSeek V3.2): 300 messages/month',
+      'AI Assistant (DeepSeek V3.2): 2,500 credits/month',
       'Bundled add-ons, 20% off',
     ],
     plan_custom: [

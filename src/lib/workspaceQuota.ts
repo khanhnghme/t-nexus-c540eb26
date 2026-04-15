@@ -18,7 +18,8 @@ export type QuotaKey =
   | 'workspace:limit_file_size_mb' // max single file size in MB
   | 'workspace:limit_meeting_min'  // max meeting duration in minutes
   | 'workspace:limit_log_days'     // max activity log retention days
-  | 'workspace:limit_ai_messages'; // max AI messages per day
+  | 'workspace:limit_ai_messages'  // max AI messages per day (deprecated)
+  | 'workspace:limit_ai_credits';  // max AI credits per month
 
 // ─── Feature Keys (resource:feature) ───────────────────────────────────────────
 export type FeatureKey =
@@ -35,6 +36,7 @@ const QUOTA_COLUMN_MAP: Record<QuotaKey, string> = {
   'workspace:limit_meeting_min': 'max_meeting_duration_minutes',
   'workspace:limit_log_days': 'max_activity_log_days',
   'workspace:limit_ai_messages': 'max_ai_messages_per_month',
+  'workspace:limit_ai_credits': 'max_ai_credits_per_month',
 };
 
 // ─── Column mapping: plan_limits table → FeatureKey ────────────────────────────

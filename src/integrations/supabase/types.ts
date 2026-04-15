@@ -116,6 +116,7 @@ export type Database = {
         Row: {
           id: string
           message_count: number
+          token_count: number
           updated_at: string | null
           usage_date: string
           user_id: string
@@ -123,6 +124,7 @@ export type Database = {
         Insert: {
           id?: string
           message_count?: number
+          token_count?: number
           updated_at?: string | null
           usage_date?: string
           user_id: string
@@ -130,6 +132,7 @@ export type Database = {
         Update: {
           id?: string
           message_count?: number
+          token_count?: number
           updated_at?: string | null
           usage_date?: string
           user_id?: string
@@ -1806,6 +1809,7 @@ export type Database = {
           created_at: string
           id: string
           max_activity_log_days: number | null
+          max_ai_credits_per_month: number | null
           max_ai_messages_per_month: number | null
           max_file_size_mb: number
           max_meeting_duration_minutes: number | null
@@ -1821,6 +1825,7 @@ export type Database = {
           created_at?: string
           id?: string
           max_activity_log_days?: number | null
+          max_ai_credits_per_month?: number | null
           max_ai_messages_per_month?: number | null
           max_file_size_mb?: number
           max_meeting_duration_minutes?: number | null
@@ -1836,6 +1841,7 @@ export type Database = {
           created_at?: string
           id?: string
           max_activity_log_days?: number | null
+          max_ai_credits_per_month?: number | null
           max_ai_messages_per_month?: number | null
           max_file_size_mb?: number
           max_meeting_duration_minutes?: number | null
@@ -3484,6 +3490,10 @@ export type Database = {
           bonus_storage_mb: number
         }[]
       }
+      get_owner_ai_credit_usage_month: {
+        Args: { _month_end: string; _month_start: string; _owner_id: string }
+        Returns: number
+      }
       get_owner_ai_usage_month: {
         Args: { _month_end: string; _month_start: string; _owner_id: string }
         Returns: number
@@ -3518,6 +3528,10 @@ export type Database = {
       has_system_role: {
         Args: { _role: string; _user_id: string }
         Returns: boolean
+      }
+      increment_ai_token_usage: {
+        Args: { _date: string; _tokens: number; _user_id: string }
+        Returns: undefined
       }
       increment_ai_usage: {
         Args: { _date: string; _user_id: string }
