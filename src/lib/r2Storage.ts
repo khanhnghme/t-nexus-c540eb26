@@ -249,7 +249,7 @@ export async function getR2FilePublicUrlAsync(bucket: string, path: string): Pro
 const ALL_BUCKETS = [
   'avatars', 'task-submissions', 'appeal-attachments', 'task-note-attachments',
   'group-images', 'project-resources', 'system-assets', 'profile-achievements', 'invoices',
-  'feedback-attachments',
+  'feedback-attachments', 'ai-attachments',
 ];
 
 /**
