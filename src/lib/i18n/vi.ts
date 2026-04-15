@@ -1394,6 +1394,12 @@ export const vi: Translations = {
     groups: {
       title: 'Dự án của tôi',
       subtitle: 'Quản lý các dự án bạn tham gia',
+      filterAllDesc: 'Bạn đang xem tất cả dự án trong workspace này',
+      filterAllSub: 'Bao gồm toàn bộ project bạn có quyền truy cập',
+      filterCreatedDesc: 'Bạn đang xem các project bạn tạo trong workspace này',
+      filterCreatedSub: 'Chỉ bao gồm các project do bạn sở hữu',
+      filterSharedDesc: 'Bạn đang xem tất cả project được chia sẻ với bạn',
+      filterSharedSub: 'Các project này thuộc người khác nhưng bạn có quyền truy cập',
       createNew: 'Tạo dự án mới',
       createNewNoPermission: 'Tạo dự án mới — Bạn không có quyền tạo',
       createDesc: 'Thiết lập project, thêm thành viên và bắt đầu quản lý công việc',

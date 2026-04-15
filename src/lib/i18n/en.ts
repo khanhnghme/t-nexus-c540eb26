@@ -1410,6 +1410,12 @@ export const en = {
     groups: {
       title: 'My Projects',
       subtitle: 'Manage projects you participate in',
+      filterAllDesc: 'You are viewing all projects in this workspace',
+      filterAllSub: 'Includes all projects you have access to',
+      filterCreatedDesc: 'You are viewing projects you created in this workspace',
+      filterCreatedSub: 'Only includes projects you own',
+      filterSharedDesc: 'You are viewing all projects shared with you',
+      filterSharedSub: 'These projects belong to others but you have access',
       createNew: 'Create new project',
       createNewNoPermission: 'Create new project — No permission',
       createDesc: 'Set up project, add members and start managing tasks',
