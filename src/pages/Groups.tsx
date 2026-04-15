@@ -503,8 +503,11 @@ export default function Groups() {
         <div className="space-y-4">
           <div>
             <h1 className="text-2xl font-heading font-bold tracking-tight">{g.title}</h1>
-            <p className="text-muted-foreground mt-1">
-              {g.subtitle}
+            <p className="text-sm text-muted-foreground mt-1">
+              {activeFilter === 'created' ? (g.filterCreatedDesc || g.subtitle) : activeFilter === 'shared' ? (g.filterSharedDesc || g.subtitle) : (g.filterAllDesc || g.subtitle)}
+            </p>
+            <p className="text-xs text-muted-foreground/70 mt-0.5">
+              {activeFilter === 'created' ? (g.filterCreatedSub || '') : activeFilter === 'shared' ? (g.filterSharedSub || '') : (g.filterAllSub || '')}
             </p>
           </div>
 
