@@ -1,88 +1,51 @@
 
 
-# Hệ thống Upload File cho AI + Giới hạn lưu trữ Chat
+# Thêm rule cho AI đọc và xử lý file đính kèm
 
-## Tổng quan
-Cho phép user upload tối đa 5 file (mỗi file ≤5MB) kèm câu hỏi AI. Giới hạn tối đa 10 cuộc trò chuyện, tự động xóa chat + file cũ nhất khi vượt quá.
+## Vấn đề
+Hiện tại system prompt không có hướng dẫn nào về việc xử lý file đính kèm. AI chỉ nhận nội dung file dưới dạng context block nhưng không có rule rõ ràng về cách phản hồi dựa trên file.
 
 ## Thay đổi
 
-### 1. DB Migration
-- Thêm bảng `ai_message_attachments`:
-  ```
-  id uuid PK
-  message_id uuid FK → ai_messages(id) ON DELETE CASCADE
-  file_path text NOT NULL
-  file_name text NOT NULL
-  file_size integer NOT NULL
-  content_type text
-  created_at timestamptz
-  ```
-- RLS: user chỉ truy cập attachment thuộc message của mình
-- Tạo DB function `cleanup_old_ai_conversations(_user_id uuid, _max_conversations int DEFAULT 10)`:
-  - Tìm conversation cũ nhất vượt quá limit (trừ pinned)
-  - Trả về danh sách file_path cần xóa từ `ai_message_attachments`
-  - Xóa conversation (CASCADE tự xóa messages + attachments)
+### 1. Cập nhật System Prompt (`team-assistant/index.ts`)
+Thêm section mới trong `buildSystemPrompt` — quy tắc xử lý file đính kèm:
 
-### 2. R2 Storage — Bucket `ai-attachments`
-- Thêm bucket mới `ai-attachments` vào `ALLOWED_BUCKETS` trong `r2-storage` EF
-- Thêm `BUCKET_URL_KEYS` mapping cho `ai-attachments`
-- Cập nhật `r2Storage.ts` client-side: thêm `'ai-attachments'` vào `ALL_BUCKETS`
-- Cần user cung cấp secret `R2_URL_AI_ATTACHMENTS` (public URL cho bucket)
-
-### 3. Edge Function `team-assistant` — Nhận file content
-- Thêm field `attachments` trong request body (array of `{ file_path, file_name, content_type }`)
-- Với mỗi file: download từ R2, extract text content (text/csv/json → đọc trực tiếp, PDF/docx → ghi nhận metadata)
-- Append nội dung file vào user message cuối cùng dưới dạng context block
-- Validate: max 5 attachments, tổng kích thước ≤ 25MB
-
-### 4. Frontend `AIAssistant.tsx` — UI Upload
-- Thêm state `pendingFiles: File[]`
-- Nút attach (📎) bên cạnh input, mở file picker (multiple, max 5)
-- Hiển thị preview chips (tên file + kích thước + nút xóa)
-- Validate client-side: ≤5MB/file, ≤5 file
-- Khi send: upload files lên R2 trước → gửi message với attachments metadata → lưu `ai_message_attachments`
-- Sau khi tạo conversation mới: gọi cleanup function xóa chat cũ + file R2
-
-### 5. Frontend `AIAssistantPanel.tsx` — Tương tự
-- Thêm upload UI compact cho side panel
-- Cùng logic upload + cleanup
-
-### 6. Cleanup Logic (Client-side after send)
-- Sau `ensureConversation()`, đếm số conversation hiện tại
-- Nếu > 10: gọi RPC `cleanup_old_ai_conversations` → nhận danh sách file paths
-- Xóa file từ R2 via `r2Storage.from('ai-attachments').remove(paths)`
-- Conversation bị pin không bị xóa tự động
-
-### 7. Hiển thị file trong chat history
-- Khi load messages, fetch attachments kèm theo
-- Hiển thị file chips dưới user message (tên file + icon theo loại)
-- Không cần download lại file — chỉ hiển thị metadata
-
-### 8. i18n labels (EN/VI)
 ```
-aiAttachFiles: 'Attach files' / 'Đính kèm file'
-aiMaxFiles: 'Maximum 5 files per message' / 'Tối đa 5 file mỗi tin nhắn'
-aiMaxFileSize: 'Maximum 5MB per file' / 'Tối đa 5MB mỗi file'
-aiFileTooLarge: 'File exceeds 5MB limit' / 'File vượt quá giới hạn 5MB'
-aiTooManyFiles: 'Maximum 5 files allowed' / 'Tối đa 5 file'
-aiOldChatsDeleted: 'Old conversations cleaned up' / 'Đã dọn dẹp cuộc trò chuyện cũ'
-aiChatLimit: 'Only the 10 most recent conversations are kept' / 'Chỉ giữ 10 cuộc trò chuyện gần nhất'
+## XỬ LÝ FILE ĐÍNH KÈM
+Khi người dùng gửi file kèm câu hỏi:
+1. ✅ ĐỌC và PHÂN TÍCH nội dung file text (txt, csv, json, js, py, md, xml, yaml...)
+2. ✅ THỰC HIỆN yêu cầu hợp lệ: tóm tắt, phân tích, giải thích, sửa lỗi, chuyển đổi format, trả lời câu hỏi dựa trên nội dung
+3. ✅ Với file CSV/bảng: đọc dữ liệu, thống kê, trả lời câu hỏi cụ thể
+4. ✅ Với file code: review, giải thích, gợi ý sửa lỗi
+5. ✅ Với file JSON/XML: parse và trích xuất thông tin theo yêu cầu
+6. ❌ KHÔNG thực thi code hoặc chạy script
+7. ❌ KHÔNG tạo/sửa/xóa dữ liệu hệ thống dựa trên file
+8. ❌ KHÔNG xử lý file chứa nội dung độc hại, spam, hoặc vi phạm
+9. ⚠️ Với file nhị phân (PDF, docx, ảnh...): thông báo chỉ đọc được file văn bản thuần
+10. ⚠️ Nếu file quá lớn bị cắt ngắn: thông báo cho người dùng biết
 ```
 
-## Thứ tự triển khai
-1. DB migration (bảng + RPC cleanup)
-2. R2 bucket setup + cập nhật r2-storage EF
-3. Edge Function team-assistant (nhận attachments)
-4. i18n labels
-5. AIAssistant.tsx (upload UI + cleanup logic)
-6. AIAssistantPanel.tsx (compact upload UI)
+### 2. Mở rộng khả năng đọc file (`team-assistant/index.ts`)
+Hiện tại `isTextBased` regex chỉ bao gồm một số MIME type cơ bản. Mở rộng thêm:
+- `text/*` (đã có)
+- `application/pdf` → ghi nhận metadata (không đọc được nội dung)
+- Thêm các MIME: `application/x-python`, `application/sql`, `application/x-sh`, `application/x-httpd-php`
+- Fallback: nếu file_name có extension `.py`, `.sql`, `.sh`, `.log`, `.env`, `.ini`, `.cfg`, `.toml` → cũng coi là text
+
+### 3. i18n labels
+Thêm label thông báo:
+```
+aiFileReadSuccess: 'File content loaded' / 'Đã đọc nội dung file'
+aiFileNotReadable: 'This file type cannot be read directly' / 'Loại file này không thể đọc trực tiếp'
+```
+
+## Files thay đổi
+1. `supabase/functions/team-assistant/index.ts` — thêm rules vào system prompt + mở rộng MIME detection
+2. `src/lib/i18n/en.ts` — thêm labels
+3. `src/lib/i18n/vi.ts` — thêm labels
 
 ## Không thay đổi
-- Billing / credit logic
-- Existing conversation/message schema (chỉ thêm bảng mới)
-- AI model routing logic
-
-## Yêu cầu từ user
-- Cung cấp R2 public URL cho bucket `ai-attachments` (secret `R2_URL_AI_ATTACHMENTS`)
+- DB, RLS, R2 storage
+- Frontend upload UI
+- Credit/billing logic
 
