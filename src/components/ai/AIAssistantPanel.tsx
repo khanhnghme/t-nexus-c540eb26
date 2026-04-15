@@ -64,22 +64,22 @@ export default function AIAssistantPanel({
     try {
       const effectiveOwnerId = activeWorkspace?.owner_id || user.id;
 
-      // Check share_ai_credits setting
-      let shareMode = false;
+      let isShared = false;
       if (activeWorkspace?.id) {
         const { data: wsData } = await supabase
           .from('workspaces')
-          .select('share_ai_credits')
+          .select('share_ai_credits, name')
           .eq('id', activeWorkspace.id)
           .single();
-        shareMode = (wsData as any)?.share_ai_credits === true;
+        isShared = (wsData as any)?.share_ai_credits === true;
+        setWorkspaceName((wsData as any)?.name || '');
       }
+      setShareMode(isShared);
 
-      // When OFF: use user's own plan limit; when ON: use owner's plan limit
-      const planForLimit = shareMode ? effectiveOwnerId : user.id;
+      const planForLimit = isShared ? effectiveOwnerId : user.id;
 
       const [usageRes, planProfileRes] = await Promise.all([
-        shareMode
+        isShared
           ? supabase.rpc('get_owner_ai_credit_usage_month', { _owner_id: effectiveOwnerId, _month_start: monthStart, _month_end: monthEnd })
           : supabase.rpc('get_user_ai_credit_usage_month' as any, { _user_id: user.id, _month_start: monthStart, _month_end: monthEnd }),
         supabase.from('profiles').select('user_plan').eq('id', planForLimit).single(),
@@ -88,6 +88,9 @@ export default function AIAssistantPanel({
       setCreditsUsed(typeof usageRes.data === 'number' ? usageRes.data : 0);
 
       const relevantPlan = (planProfileRes.data as any)?.user_plan || 'plan_free';
+      const planLabels: Record<string, string> = { plan_free: 'Free', plan_plus: 'Plus', plan_pro: 'Pro', plan_business: 'Business', plan_custom: 'Custom' };
+      setUserPlanLabel(planLabels[relevantPlan] || 'Free');
+
       const { data: limitData } = await supabase
         .from('plan_limits')
         .select('max_ai_credits_per_month')
