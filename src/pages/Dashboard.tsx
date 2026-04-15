@@ -338,58 +338,12 @@ export default function Dashboard() {
 
   // fetchHiddenProjects now handled by useHiddenProjects hook
 
-  const handleFilterChange = (value: string) => {
-    if (!value) return;
-    const f = value as DashboardFilter;
-    setFilter(f);
-    if (user?.id) {
-      localStorage.setItem(`dashboard_filter_${user.id}`, f);
-    }
-  };
-
-  const handleToggleHide = async (groupId: string) => {
-    if (!user) return;
-    const isCurrentlyHidden = hiddenProjectIds.has(groupId);
-    if (isCurrentlyHidden) {
-      await supabase.from('hidden_projects').delete().eq('user_id', user.id).eq('group_id', groupId);
-    } else {
-      await supabase.from('hidden_projects').insert({ user_id: user.id, group_id: groupId });
-    }
-    queryClient.invalidateQueries({ queryKey: ['hidden-projects', user.id] });
-  };
-
   // Permission: workspace_owner, workspace_admin, or system_admin can create projects
   const wsRole = (activeWorkspace as any)?.my_role;
   const canCreateProject = isSystemAdmin || wsRole === 'workspace:owner' || wsRole === 'workspace:admin';
-  // projectLimit removed — use plan_limits table dynamically instead
-
-  const filteredGroups = useMemo(() => {
-    if (filter === 'pending') return []; // pending uses separate list
-    let result: Group[];
-    switch (filter) {
-      case 'hidden':
-        result = groups.filter(g => hiddenProjectIds.has(g.id));
-        break;
-      case 'active':
-        result = groups.filter(g => !hiddenProjectIds.has(g.id));
-        break;
-      case 'all':
-      default:
-        result = groups;
-    }
-    if (modeFilter !== 'all') {
-      result = result.filter(g => g.project_mode === modeFilter);
-    }
-    return result;
-  }, [groups, hiddenProjectIds, filter, modeFilter]);
-
-  const activeCount = groups.filter(g => !hiddenProjectIds.has(g.id)).length;
-  const hiddenCount = groups.filter(g => hiddenProjectIds.has(g.id)).length;
-  const pendingCount = pendingApprovalGroups.length;
 
   const refreshDashboard = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['dashboard-data', user?.id] });
-    queryClient.invalidateQueries({ queryKey: ['pending-approvals', user?.id] });
   }, [queryClient, user?.id]);
 
   const getRoleBadge = () => {
