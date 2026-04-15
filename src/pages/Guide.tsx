@@ -22,6 +22,7 @@ export default function Guide() {
       title: isVi ? 'Tài liệu' : 'Documentation',
       links: [
         { label: isVi ? 'Hướng dẫn định giá' : 'Pricing Documentation', href: `${prefix}/guide/pricing` },
+        { label: isVi ? 'Hướng dẫn sử dụng AI' : 'AI Usage Guide', href: `${prefix}/guide/ai` },
       ],
     },
   ];
