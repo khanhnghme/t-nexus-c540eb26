@@ -691,6 +691,10 @@ serve(async (req) => {
 
     const systemPrompt = buildSystemPrompt(userName, projectContexts, isProjectSpecific, currentProjectName, systemPolicy, userExtraContext);
 
+    // IMPORTANT:
+    // Only use DeepSeek V3 standard model (deepseek-chat)
+    // Do NOT switch to deepseek-reasoner to avoid higher cost
+
     // Tier-based model routing: Pro+ uses DeepSeek, Free/Plus uses Lovable AI
     const isPro = ownerPlan === 'plan_pro' || ownerPlan === 'plan_business' || ownerPlan === 'plan_custom';
     const DEEPSEEK_API_KEY = Deno.env.get("DEEPSEEK_API_KEY") || "";
@@ -730,9 +734,12 @@ serve(async (req) => {
     });
 
     // Fallback: if DeepSeek fails with 5xx, retry with Lovable Gateway
+    let usedFallback = false;
     if (useDeepSeek && response.status >= 500) {
       console.warn(`DeepSeek returned ${response.status}, falling back to Lovable Gateway`);
       try { await response.text(); } catch {}
+      usedFallback = true;
+      modelName = "google/gemini-2.5-flash-lite";
       response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -792,7 +799,7 @@ serve(async (req) => {
     }
 
     return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      headers: { ...corsHeaders, "Content-Type": "text/event-stream", "X-AI-Model": modelName },
     });
   } catch (e) {
     console.error("team-assistant error:", e);

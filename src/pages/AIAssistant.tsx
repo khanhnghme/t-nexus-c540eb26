@@ -31,6 +31,12 @@ const MAX_MESSAGE_WORDS = 100;
 const countWords = (text: string): number =>
   text.trim().split(/\s+/).filter(w => w.length > 0).length;
 
+const MODEL_LABELS: Record<string, string> = {
+  'deepseek-chat': 'DeepSeek V3',
+  'google/gemini-2.5-flash-lite': 'Gemini Flash',
+};
+const getModelLabel = (model: string | null) => model ? (MODEL_LABELS[model] || model) : null;
+
 function groupConversations(conversations: Conversation[], t: any) {
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -67,6 +73,7 @@ export default function AIAssistant() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [activeModel, setActiveModel] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -225,6 +232,9 @@ export default function AIAssistant() {
         throw new Error(errorData.error || `HTTP ${response.status}`);
       }
       if (!response.body) throw new Error('No response body');
+
+      const modelHeader = response.headers.get('X-AI-Model');
+      if (modelHeader) setActiveModel(modelHeader);
 
       incrementUsage();
       const reader = response.body.getReader();
@@ -581,6 +591,14 @@ export default function AIAssistant() {
 
         <div className="shrink-0 border-t border-border/30 bg-background/80 backdrop-blur-sm px-4 md:px-6 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <div className="max-w-[48rem] mx-auto">
+            {activeModel && (
+              <div className="mb-1.5">
+                <span className="text-[10px] text-muted-foreground/60 bg-muted/50 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/70" />
+                  {getModelLabel(activeModel)}
+                </span>
+              </div>
+            )}
             {renderInput('chat')}
           </div>
         </div>
@@ -612,9 +630,16 @@ export default function AIAssistant() {
           <h1 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-2 tracking-tight">
             {t?.sidebar?.aiGreeting || 'Hôm nay tôi có thể giúp gì cho bạn?'}
           </h1>
-          <p className="text-sm text-muted-foreground/70 text-center mb-10">
+          <p className="text-sm text-muted-foreground/70 text-center mb-3">
             {t?.sidebar?.aiSubGreeting || 'Chọn một gợi ý bên dưới hoặc nhập câu hỏi của bạn'}
           </p>
+          {activeModel && (
+            <span className="text-[10px] text-muted-foreground/60 bg-muted/50 px-2 py-0.5 rounded-full mb-10 inline-flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/70" />
+              {getModelLabel(activeModel)}
+            </span>
+          )}
+          {!activeModel && <div className="mb-10" />}
 
           {/* Large Input */}
           <div className="w-full mb-8">
