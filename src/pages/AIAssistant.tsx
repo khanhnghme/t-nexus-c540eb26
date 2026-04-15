@@ -546,9 +546,6 @@ export default function AIAssistant() {
 
       <div className="flex-1 flex flex-col items-center justify-center px-5">
         <div className="max-w-2xl w-full flex flex-col items-center">
-          <div className="mb-6">
-            <TNexusLogo width={140} />
-          </div>
           <h1 className="text-2xl md:text-3xl font-semibold text-foreground text-center mb-8">
             {t?.sidebar?.aiGreeting || 'Hôm nay tôi có thể giúp gì cho bạn?'}
           </h1>
