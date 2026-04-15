@@ -654,7 +654,13 @@ export default function AIAssistant() {
                   className="w-full resize-none border-0 bg-transparent placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:ring-offset-0 px-6 py-5 pr-16 min-h-[64px] max-h-[180px] text-base"
                   rows={1}
                 />
-                <div className="absolute right-4 bottom-4">
+                <div className="absolute right-4 bottom-4 flex items-center gap-1.5">
+                  {activeModel && (
+                    <span className="text-[10px] text-muted-foreground/50 bg-muted/40 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 select-none">
+                      <span className="w-1 h-1 rounded-full bg-emerald-500/70" />
+                      {getModelLabel(activeModel)}
+                    </span>
+                  )}
                   <button
                     type="submit"
                     disabled={!input.trim() || isLoading || isOverLimit}
