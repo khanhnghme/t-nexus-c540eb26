@@ -105,6 +105,9 @@ export default function AIAssistant() {
         ]);
         setQuestionsToday(typeof usageRes.data === 'number' ? usageRes.data : 0);
         const ownerPlan = (ownerProfileRes.data as any)?.user_plan || 'plan_free';
+        // Set initial model based on owner's plan
+        const isPro = ['plan_pro', 'plan_business', 'plan_custom'].includes(ownerPlan);
+        setActiveModel(isPro ? 'deepseek-chat' : 'google/gemini-2.5-flash-lite');
         const { data: limitData } = await supabase
           .from('plan_limits').select('max_ai_messages_per_month')
           .eq('plan', ownerPlan as any).maybeSingle();
@@ -506,7 +509,13 @@ export default function AIAssistant() {
           )}
           rows={1}
         />
-        <div className={cn("absolute flex items-center", variant === 'empty' ? "right-3 bottom-3" : "right-2.5 bottom-2.5")}>
+        <div className={cn("absolute flex items-center gap-1.5", variant === 'empty' ? "right-3 bottom-3" : "right-2.5 bottom-2.5")}>
+          {activeModel && (
+            <span className="text-[10px] text-muted-foreground/50 bg-muted/40 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 select-none">
+              <span className="w-1 h-1 rounded-full bg-emerald-500/70" />
+              {getModelLabel(activeModel)}
+            </span>
+          )}
           <button
             type="submit"
             disabled={!input.trim() || isLoading || isOverLimit}
@@ -591,14 +600,6 @@ export default function AIAssistant() {
 
         <div className="shrink-0 border-t border-border/30 bg-background/80 backdrop-blur-sm px-4 md:px-6 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <div className="max-w-[48rem] mx-auto">
-            {activeModel && (
-              <div className="mb-1.5">
-                <span className="text-[10px] text-muted-foreground/60 bg-muted/50 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/70" />
-                  {getModelLabel(activeModel)}
-                </span>
-              </div>
-            )}
             {renderInput('chat')}
           </div>
         </div>
@@ -630,16 +631,9 @@ export default function AIAssistant() {
           <h1 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-2 tracking-tight">
             {t?.sidebar?.aiGreeting || 'Hôm nay tôi có thể giúp gì cho bạn?'}
           </h1>
-          <p className="text-sm text-muted-foreground/70 text-center mb-3">
+          <p className="text-sm text-muted-foreground/70 text-center mb-10">
             {t?.sidebar?.aiSubGreeting || 'Chọn một gợi ý bên dưới hoặc nhập câu hỏi của bạn'}
           </p>
-          {activeModel && (
-            <span className="text-[10px] text-muted-foreground/60 bg-muted/50 px-2 py-0.5 rounded-full mb-10 inline-flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/70" />
-              {getModelLabel(activeModel)}
-            </span>
-          )}
-          {!activeModel && <div className="mb-10" />}
 
           {/* Large Input */}
           <div className="w-full mb-8">
