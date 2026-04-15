@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, Loader2, Sparkles, AlertCircle, FolderKanban, Globe, Trash2 } from 'lucide-react';
+import { Send, Loader2, Sparkles, AlertCircle, FolderKanban, Globe, Trash2, Link2, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
@@ -46,6 +46,9 @@ export default function AIAssistantPanel({
   const [creditsUsed, setCreditsUsed] = useState(0);
   const [maxCredits, setMaxCredits] = useState<number | null>(null);
   const [usageLoading, setUsageLoading] = useState(true);
+  const [shareMode, setShareMode] = useState(false);
+  const [workspaceName, setWorkspaceName] = useState('');
+  const [userPlanLabel, setUserPlanLabel] = useState('Free');
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { user, profile } = useAuth();
