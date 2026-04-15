@@ -199,7 +199,6 @@ export default function AIAssistant() {
     setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
     let assistantContent = '';
 
-    // Save user message to DB
     const convId = await ensureConversation(messageText);
     await saveMessage(convId, 'user', messageText);
 
@@ -288,10 +287,8 @@ export default function AIAssistant() {
         }
       }
 
-      // Save assistant response to DB
       if (assistantContent) {
         await saveMessage(convId, 'assistant', assistantContent);
-        // Update conversation updated_at
         await supabase.from('ai_conversations').update({ updated_at: new Date().toISOString() } as any).eq('id', convId);
       }
     } catch (err) {
@@ -356,7 +353,6 @@ export default function AIAssistant() {
       "fixed inset-y-0 left-0 z-50 w-72 bg-card border-r border-border shadow-xl flex flex-col transition-transform duration-200",
       showHistory ? "translate-x-0" : "-translate-x-full"
     )} style={{ top: 56 }}>
-      {/* Sidebar header */}
       <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border/40">
         <span className="text-sm font-medium text-foreground">{t?.sidebar?.chatHistory || 'Lịch sử trò chuyện'}</span>
         <button onClick={() => setShowHistory(false)} className="p-1 rounded-md hover:bg-muted text-muted-foreground">
@@ -364,7 +360,6 @@ export default function AIAssistant() {
         </button>
       </div>
 
-      {/* New chat button */}
       <div className="shrink-0 px-3 py-2">
         <button
           onClick={handleNewChat}
@@ -375,7 +370,6 @@ export default function AIAssistant() {
         </button>
       </div>
 
-      {/* Conversation list */}
       <ScrollArea className="flex-1">
         <div className="px-2 py-1">
           {conversations.length === 0 ? (
@@ -412,7 +406,6 @@ export default function AIAssistant() {
     </div>
   );
 
-  // Overlay when sidebar is open
   const overlay = showHistory && (
     <div className="fixed inset-0 z-40 bg-black/20" style={{ top: 56 }} onClick={() => setShowHistory(false)} />
   );
@@ -438,9 +431,6 @@ export default function AIAssistant() {
           rows={variant === 'empty' ? 2 : 1}
         />
         <div className={cn("absolute flex items-center gap-2", variant === 'empty' ? "right-3 bottom-3" : "right-2 bottom-2")}>
-          {!isUnlimited && variant === 'empty' && (
-            <span className="text-[10px] text-muted-foreground tabular-nums">{questionsToday}/{maxQuestions}</span>
-          )}
           {input.trim() && (
             <span className={cn("text-[10px] tabular-nums", isOverLimit ? "text-destructive font-semibold" : "text-muted-foreground")}>
               {wordCount}/{MAX_MESSAGE_WORDS}
@@ -458,44 +448,48 @@ export default function AIAssistant() {
     </form>
   );
 
+  // ── Shared top bar (history, logo, credits, clear) ──
+  const topBar = (
+    <header className="shrink-0 flex items-center justify-between px-5 py-2 border-b border-border/40">
+      <div className="flex items-center gap-2">
+        <button onClick={() => setShowHistory(prev => !prev)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+          <History className="h-4 w-4" />
+        </button>
+        <TNexusLogo width={80} />
+        <span className="text-xs text-muted-foreground">AI</span>
+      </div>
+      <div className="flex items-center gap-3">
+        {!isUnlimited && (
+          <div className="flex items-center gap-2">
+            <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
+              <div
+                className={cn("h-full rounded-full transition-all duration-500", usagePercent > 80 ? "bg-destructive" : "bg-primary")}
+                style={{ width: `${usagePercent}%` }}
+              />
+            </div>
+            <span className="text-[10px] text-muted-foreground tabular-nums">{questionsToday}/{maxQuestions}</span>
+          </div>
+        )}
+        {hasMessages && (
+          <button
+            onClick={handleClearChat}
+            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+    </header>
+  );
+
   // ── Chat state ──
   if (hasMessages) {
     return (
       <div className="flex flex-col h-[calc(100dvh-56px)] bg-background">
         {overlay}
         {historySidebar}
+        {topBar}
 
-        {/* Minimal header */}
-        <header className="shrink-0 flex items-center justify-between px-5 py-2.5 border-b border-border/40">
-          <div className="flex items-center gap-2">
-            <button onClick={() => setShowHistory(prev => !prev)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-              <History className="h-4 w-4" />
-            </button>
-            <TNexusLogo width={80} />
-            <span className="text-xs text-muted-foreground">AI</span>
-          </div>
-          <div className="flex items-center gap-3">
-            {!isUnlimited && (
-              <div className="flex items-center gap-2">
-                <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className={cn("h-full rounded-full transition-all duration-500", usagePercent > 80 ? "bg-destructive" : "bg-primary")}
-                    style={{ width: `${usagePercent}%` }}
-                  />
-                </div>
-                <span className="text-[10px] text-muted-foreground tabular-nums">{questionsToday}/{maxQuestions}</span>
-              </div>
-            )}
-            <button
-              onClick={handleClearChat}
-              className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        </header>
-
-        {/* Messages */}
         <main ref={chatContainerRef} className="flex-1 overflow-y-auto">
           {historyLoading ? (
             <div className="flex items-center justify-center h-full">
@@ -541,8 +535,7 @@ export default function AIAssistant() {
           )}
         </main>
 
-        {/* Input fixed bottom */}
-        <div className="shrink-0 border-t border-border/40 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="shrink-0 border-t border-border/40 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <div className="max-w-2xl mx-auto">
             {renderInput('chat')}
           </div>
@@ -564,32 +557,19 @@ export default function AIAssistant() {
     <div className="flex flex-col h-[calc(100dvh-56px)] bg-background">
       {overlay}
       {historySidebar}
+      {topBar}
 
       <div className="flex-1 flex flex-col items-center justify-center px-5">
-        {/* History toggle in top-left */}
-        <div className="absolute top-2 left-2">
-          <button onClick={() => setShowHistory(prev => !prev)} className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-            <History className="h-4 w-4" />
-          </button>
-        </div>
-
         <div className="max-w-2xl w-full flex flex-col items-center">
-          {/* Logo */}
           <div className="mb-6">
             <TNexusLogo width={140} />
           </div>
-
-          {/* Greeting */}
           <h1 className="text-2xl md:text-3xl font-semibold text-foreground text-center mb-8">
             {t?.sidebar?.aiGreeting || 'Hôm nay tôi có thể giúp gì cho bạn?'}
           </h1>
-
-          {/* Input */}
           <div className="w-full mb-8">
             {renderInput('empty')}
           </div>
-
-          {/* Suggestion cards */}
           <div className="grid grid-cols-2 gap-3 w-full max-w-lg">
             {suggestions.map((s, idx) => (
               <button
@@ -606,7 +586,6 @@ export default function AIAssistant() {
               </button>
             ))}
           </div>
-
           {remainingQuestions <= 0 && (
             <p className="text-[11px] text-muted-foreground text-center mt-4">Bạn đã hết lượt hỏi tháng này. Quay lại tháng sau nhé!</p>
           )}
