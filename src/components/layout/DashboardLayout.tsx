@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect, useMemo } from 'react';
+import { ReactNode, useState, useEffect, useMemo, Suspense } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardLayoutContext } from '@/contexts/DashboardLayoutContext';
@@ -582,7 +582,15 @@ export default function DashboardLayout({
           <div className="grid-cell-content">
             <div className="max-w-[1100px] mx-auto px-12 py-8 space-y-4">
               {location.pathname !== '/dashboard' && <ReadOnlyBanner compact />}
-              {useOutlet ? <Outlet /> : children}
+              {useOutlet ? (
+                <Suspense fallback={
+                  <div className="flex items-center justify-center py-20">
+                    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                }>
+                  <Outlet />
+                </Suspense>
+              ) : children}
             </div>
           </div>
         </div>
