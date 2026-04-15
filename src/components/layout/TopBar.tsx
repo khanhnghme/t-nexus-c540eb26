@@ -3,7 +3,10 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useDashboardLayoutContext } from '@/contexts/DashboardLayoutContext';
-import { Moon, Sun, LayoutDashboard, Layers, Users, Award, FolderOpen, Video, Activity, Settings, PanelLeft, FileText, ChevronRight, MoreHorizontal, ArrowLeft } from 'lucide-react';
+import { Moon, Sun, LayoutDashboard, Layers, Users, Award, FolderOpen, Video, Activity, Settings, PanelLeft, FileText, ChevronRight, MoreHorizontal, ArrowLeft, History, Trash2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import tNexusTextWhite from '@/assets/t-nexus-text-white.png';
+import { TNexusLogo } from '@/components/TNexusLogo';
 import { cn } from '@/lib/utils';
 import tNexusTextWhite from '@/assets/t-nexus-text-white.png';
 import {
@@ -72,9 +75,10 @@ export default function TopBar() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { locale, translations: { app: { projectNav: navT } } } = useLanguage();
-  const { projectNavProps, projectInfo, toggleSidebar } = useDashboardLayoutContext();
+  const { projectNavProps, projectInfo, toggleSidebar, aiTopBarProps } = useDashboardLayoutContext();
   const isDark = theme === 'dark';
   const pageTitle = getBreadcrumb(location.pathname, locale);
+  const isAIRoute = location.pathname === '/ai-assistant';
 
   const isProjectMode = !!projectNavProps;
   const isCustomMode = projectNavProps?.projectMode === 'custom';
