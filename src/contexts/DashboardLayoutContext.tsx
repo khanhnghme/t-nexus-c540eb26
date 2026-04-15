@@ -22,9 +22,6 @@ export interface AIAssistantTopBarProps {
   onToggleHistory: () => void;
   onClearChat: () => void;
   hasMessages: boolean;
-  questionsToday: number;
-  maxQuestions: number | null;
-  isUnlimited: boolean;
 }
 
 interface DashboardLayoutContextType {
