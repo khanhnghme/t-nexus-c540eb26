@@ -1,138 +1,82 @@
 
 
-## Plan: Redesign Dashboard theo phong cách Notion tối giản
+## Plan: Fix đồng bộ workspace_members khi join project
 
-### Phân tích hiện trạng
+### Root Cause
 
-Dashboard hiện tại có:
-- **Welcome section** lớn (avatar, stats, badges, invitations) chiếm nhiều diện tích
-- **Project grid** với bộ lọc phức tạp (Active/Hidden/Pending + Basic/Custom)
-- **Sidebar** theo cấu trúc workspace-centric (workspace switcher, Overview, Members...)
-- Chưa có hệ thống **Starred** hoặc **Recent** projects
+Trong `JoinByCodeDialog.tsx`, hàm `handleConfirmJoin` khi user join project trực tiếp (không cần duyệt):
+- Insert vào `group_members` ✅
+- **KHÔNG gọi `ensure_workspace_member`** ❌
 
-### Thay đổi tổng thể
+So sánh các luồng khác:
+- **Accept invitation (Dashboard.tsx):** có gọi `ensure_workspace_member` ✅
+- **Approve request (MemberManagementCard.tsx):** có gọi `ensure_workspace_member` ✅
+- **Join by code (JoinByCodeDialog.tsx):** **THIẾU** ❌
 
-```text
-┌──────────────┬──────────────────────────────────────┐
-│  Sidebar     │  Main Content                        │
-│              │                                      │
-│ 🏠 Home      │  ┌─ Quick Actions ────────────────┐  │
-│ ⭐ Starred   │  │ Search · Join · Invitations     │  │
-│ 🕑 Recent    │  └────────────────────────────────-┘  │
-│ ─────────    │                                      │
-│ 📂 All       │  ┌─ Section (based on sidebar) ───┐  │
-│ 👤 Owned     │  │                                 │  │
-│ 🤝 Shared    │  │  Project cards grid             │  │
-│ ─────────    │  │                                 │  │
-│ + New Project│  └─────────────────────────────────┘  │
-│              │                                      │
-│ ─── Admin ── │                                      │
-│ 🛡️ Admin     │                                      │
-└──────────────┴──────────────────────────────────────┘
-```
+→ User join qua code/QR thành công nhưng không được add vào workspace → không thấy project.
 
----
+### Giải pháp: 3 thay đổi
 
-### Chi tiết từng thay đổi
+#### 1. Fix `JoinByCodeDialog.tsx` — thêm `ensure_workspace_member` sau khi join
 
-#### 1. Database: Thêm bảng `starred_projects` + `project_access_log`
+Sau khi insert `group_members` thành công (line 344-360), thêm logic:
+- Fetch `workspace_id` từ group
+- Gọi `ensure_workspace_member` với workspace_id đó
+
+Tương tự cho flow approval (sau khi insert `pending_approvals`), khi approval được duyệt đã có sync rồi nên không cần thêm.
+
+#### 2. DB trigger safeguard — auto-sync khi insert `group_members`
+
+Tạo DB trigger `after insert on group_members` để tự động gọi upsert vào `workspace_members`. Đây là lưới an toàn cuối cùng, đảm bảo mọi luồng insert member (code, invite, manual add, future flows) đều được sync.
 
 ```sql
--- Starred projects
-CREATE TABLE public.starred_projects (
-  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  group_id uuid REFERENCES public.groups(id) ON DELETE CASCADE NOT NULL,
-  created_at timestamptz DEFAULT now(),
-  PRIMARY KEY (user_id, group_id)
-);
-ALTER TABLE public.starred_projects ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users manage own stars"
-  ON public.starred_projects FOR ALL TO authenticated
-  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE OR REPLACE FUNCTION public.auto_ensure_workspace_member()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$
+DECLARE _ws_id uuid;
+BEGIN
+  SELECT workspace_id INTO _ws_id FROM public.groups WHERE id = NEW.group_id;
+  IF _ws_id IS NOT NULL THEN
+    -- Skip if user is already workspace owner
+    IF NOT EXISTS (SELECT 1 FROM public.workspaces WHERE id = _ws_id AND owner_id = NEW.user_id) THEN
+      INSERT INTO public.workspace_members (workspace_id, user_id, role)
+      VALUES (_ws_id, NEW.user_id, 'workspace:member')
+      ON CONFLICT (workspace_id, user_id) DO NOTHING;
+    END IF;
+  END IF;
+  RETURN NEW;
+END; $$;
 
--- Recent access tracking
-CREATE TABLE public.project_access_log (
-  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  group_id uuid REFERENCES public.groups(id) ON DELETE CASCADE NOT NULL,
-  accessed_at timestamptz DEFAULT now(),
-  PRIMARY KEY (user_id, group_id)
-);
-ALTER TABLE public.project_access_log ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users manage own access log"
-  ON public.project_access_log FOR ALL TO authenticated
-  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE TRIGGER trg_auto_ensure_workspace_member
+  AFTER INSERT ON public.group_members
+  FOR EACH ROW EXECUTE FUNCTION public.auto_ensure_workspace_member();
 ```
 
-#### 2. Sidebar: Thay thế navigation items trong `SidebarTreeNav.tsx`
+#### 3. Data fix — script repair dữ liệu hiện tại
 
-Thay toàn bộ workspace section bằng cấu trúc Notion-style:
+Migration SQL để fix tất cả user đang ở project nhưng thiếu workspace:
 
-| Mục | Icon | Hành vi |
-|-----|------|---------|
-| Home | 🏠 | `/dashboard` — trang chính, hiển thị recent + starred |
-| Starred | ⭐ | `/dashboard?view=starred` — chỉ hiện project đã đánh dấu sao |
-| Recent | 🕑 | `/dashboard?view=recent` — 10 project truy cập gần nhất |
-| --- separator --- | | |
-| All Projects | 📂 | `/dashboard?view=all` hoặc `/groups` |
-| Owned by Me | 👤 | `/dashboard?view=owned` — project user tạo ra |
-| Shared with Me | 🤝 | `/dashboard?view=shared` — project user được mời vào |
-| --- separator --- | | |
-| + New Project | ➕ | Mở dialog tạo project mới |
+```sql
+INSERT INTO public.workspace_members (workspace_id, user_id, role)
+SELECT DISTINCT g.workspace_id, gm.user_id, 'workspace:member'
+FROM public.group_members gm
+JOIN public.groups g ON g.id = gm.group_id
+WHERE g.workspace_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM public.workspaces w WHERE w.id = g.workspace_id AND w.owner_id = gm.user_id
+  )
+  AND NOT EXISTS (
+    SELECT 1 FROM public.workspace_members wm WHERE wm.workspace_id = g.workspace_id AND wm.user_id = gm.user_id
+  )
+ON CONFLICT (workspace_id, user_id) DO NOTHING;
+```
 
-Giữ lại phía dưới: Calendar, Communication, Account, Admin (không đổi).
+### Tổng kết
 
-**Interaction:**
-- Hover: highlight nhẹ bg
-- Click: chuyển view, sidebar item active
-- Collapsed mode: chỉ hiện icon với tooltip
+| # | Thay đổi | File/Type |
+|---|----------|-----------|
+| 1 | Gọi `ensure_workspace_member` sau join by code | `src/components/JoinByCodeDialog.tsx` |
+| 2 | DB trigger auto-sync | Migration SQL (trigger) |
+| 3 | Data fix cho dữ liệu cũ | Migration SQL (one-time insert) |
 
-#### 3. Dashboard content: Đơn giản hóa `Dashboard.tsx`
-
-**Bỏ:**
-- Welcome section lớn (avatar, stats, badges) → thu gọn thành greeting 1 dòng
-- Bộ lọc phức tạp (ToggleGroup Active/Hidden/All + Basic/Custom)
-
-**Thay bằng:**
-- **Greeting line:** "Good morning, {name}" nhỏ gọn
-- **Quick actions bar:** Search input + Join button + Invitation badge
-- **Content section:** Thay đổi theo `view` param từ sidebar:
-  - `home`: Hiện "Starred" (nếu có) + "Recent" (10 gần nhất)
-  - `starred`: Chỉ hiện starred projects
-  - `recent`: 10 project gần nhất theo `project_access_log`
-  - `all`: Tất cả project (giữ filter Basic/Custom dạng nhỏ)
-  - `owned`: Lọc `created_by = user.id`
-  - `shared`: Lọc project user được invite/join (không phải owner)
-
-**Project cards:** Giữ nguyên `DashboardProjectCard` hiện tại (đã Notion-style). Thêm nút star (⭐) khi hover.
-
-#### 4. Hook mới: `useProjectViews.ts`
-
-Hook quản lý logic cho các view khác nhau:
-- Fetch starred projects từ `starred_projects`
-- Fetch recent từ `project_access_log` (top 10, order by accessed_at desc)
-- Toggle star (insert/delete `starred_projects`)
-- Log access (upsert `project_access_log` khi user mở project)
-
-#### 5. Ghi nhận Recent: Tự động log khi vào project
-
-Trong `GroupDetail.tsx` hoặc layout project, upsert vào `project_access_log` khi mount.
-
-#### 6. Giữ nguyên workspace logic phía backend
-
-Workspace vẫn hoạt động bình thường ở backend. Chỉ ẩn khỏi UI sidebar. Workspace switcher vẫn có thể truy cập từ Account Settings nếu cần.
-
----
-
-### Tổng kết files
-
-| # | File | Thay đổi |
-|---|------|----------|
-| 1 | Migration SQL | Tạo `starred_projects` + `project_access_log` + RLS |
-| 2 | `src/hooks/useProjectViews.ts` | Hook mới: starred, recent, toggle, log access |
-| 3 | `src/components/SidebarTreeNav.tsx` | Thay workspace nav bằng Notion-style items |
-| 4 | `src/pages/Dashboard.tsx` | Đơn giản hóa: bỏ welcome section, thêm view-based content |
-| 5 | `src/components/dashboard/DashboardProjectCard.tsx` | Thêm star toggle button |
-| 6 | `src/pages/GroupDetail.tsx` | Thêm upsert access log khi mount |
-
-**Không thay đổi:** Backend workspace logic, DashboardLayout, TopBar, các trang khác.
+**Impact:** Fix hoàn toàn vấn đề mất đồng bộ. Trigger đảm bảo không bao giờ xảy ra lại bất kể luồng nào insert member.
 

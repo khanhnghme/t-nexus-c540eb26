@@ -1,33 +1,50 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { useWorkspaceProjects, WorkspaceProject } from '@/hooks/useWorkspaceProjects';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useWorkspaceBilling, formatPlanName } from '@/hooks/useWorkspaceBilling';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import {
   Home,
-  Star,
-  Clock,
-  FolderOpen,
-  User,
-  Handshake,
-  Plus,
+  Building2,
+  Users,
+  FolderKanban,
+  ChevronRight,
+  Lock,
+  Globe,
   CalendarDays,
   MessageSquare,
   UserCircle,
+  Settings,
   BookOpen,
   Lightbulb,
   Shield,
-  ChevronRight,
+  Plus,
+  LayoutGrid,
+  Sparkles,
+  ChevronsUpDown,
+  Check,
+  FolderOpen,
+  Bell,
+  Zap,
   CreditCard,
   Search,
-  Bell,
 } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface SidebarTreeNavProps {
   collapsed?: boolean;
@@ -36,17 +53,40 @@ interface SidebarTreeNavProps {
 export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { profile, isAdmin } = useAuth();
-  const { activeWorkspace } = useWorkspace();
+  const { activeWorkspace, workspaces, switchWorkspace, isAvailable, workspaceRole } = useWorkspace();
+  const { projects, isGuest } = useWorkspaceProjects();
+  const { user } = useAuth();
   const { translations } = useLanguage();
+  const billing = useWorkspaceBilling();
+  const ownerPlan = billing?.ownerPlan;
   const t = translations.app?.sidebar;
 
   const hiddenNav = Array.isArray(profile?.nav_hidden_pages)
     ? (profile.nav_hidden_pages as string[])
     : [];
 
+  // Expanded state — accordion: only one submenu open at a time
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
+
+  // Fetch hidden project ids
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('hidden_projects')
+      .select('group_id')
+      .eq('user_id', user.id)
+      .then(({ data }) => {
+        setHiddenIds(new Set((data || []).map(d => d.group_id)));
+      });
+  }, [user]);
+
+  // If >9 projects, filter out hidden ones from sidebar
+  const MAX_SIDEBAR_PROJECTS = 9;
+  const visibleProjects = projects.length > MAX_SIDEBAR_PROJECTS
+    ? projects.filter(p => !hiddenIds.has(p.id))
+    : projects;
 
   const toggle = useCallback((key: string) => {
     setExpanded(prev => (prev === key ? null : key));
@@ -55,40 +95,38 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
   // Auto-expand based on current route
   useEffect(() => {
     const path = location.pathname;
-    if (path === '/personal-info' || path === '/account-settings') {
+    if (path === '/workspace/new') return;
+    if (path.startsWith('/pr/') || path.startsWith('/p/')) {
+      setExpanded('projects');
+    } else if (path === '/personal-info' || path === '/account-settings') {
       setExpanded('account');
     } else if (path === '/service-plan' || path === '/billing-history') {
       setExpanded('billing');
     }
   }, [location.pathname]);
 
-  const currentView = searchParams.get('view') || '';
-  const isDashboard = location.pathname === '/dashboard';
+  const isProjectsExpanded = expanded === 'projects';
 
-  const isViewActive = (view: string) => {
-    if (view === 'home') return isDashboard && !currentView;
-    return isDashboard && currentView === view;
+  const getRoleBadge = (role?: string | null) => {
+    switch (role) {
+      case 'workspace:owner': return '👑';
+      case 'workspace:admin': return '🛡️';
+      case 'workspace:member': return '🎫';
+      default: return '🎫';
+    }
   };
 
-  const isPathActive = (href: string) => {
-    if (href === '/dashboard') return isDashboard && !currentView;
-    return location.pathname === href || location.pathname.startsWith(href + '/');
+  const getRoleLabel = (role?: string | null) => {
+    switch (role) {
+      case 'workspace:owner': return 'Owner';
+      case 'workspace:admin': return 'Admin';
+      case 'workspace:member': return 'Member';
+      default: return '';
+    }
   };
 
   // Navigation items
   const accountExpanded = expanded === 'account';
-
-  const projectNavItems = [
-    { name: '🏠 ' + (t?.home || 'Home'), href: '/dashboard', view: 'home', icon: Home },
-    { name: '⭐ Starred', href: '/dashboard?view=starred', view: 'starred', icon: Star },
-    { name: '🕑 Recent', href: '/dashboard?view=recent', view: 'recent', icon: Clock },
-  ];
-
-  const projectFilterItems = [
-    { name: '📂 ' + (t?.allProjects || 'All Projects'), href: '/dashboard?view=all', view: 'all', icon: FolderOpen },
-    { name: '👤 Owned by Me', href: '/dashboard?view=owned', view: 'owned', icon: User },
-    { name: '🤝 Shared with Me', href: '/dashboard?view=shared', view: 'shared', icon: Handshake },
-  ];
 
   const personalItems = [
     { name: t?.calendar || 'Calendar', href: '/calendar', icon: CalendarDays },
@@ -105,26 +143,54 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
   const adminHref = '/admin';
   const isAdminActive = location.pathname.startsWith('/admin');
 
+  const isPathActive = (href: string) => {
+    if (href === '/dashboard') return location.pathname === '/dashboard';
+    return location.pathname === href || location.pathname.startsWith(href + '/');
+  };
+
+  const hasActiveChild = (paths: string[]) => paths.some(p => isPathActive(p));
+  const getProjectHref = (p: WorkspaceProject) => {
+    if (!activeWorkspace?.short_id) return `/p/${p.slug || p.id}`;
+    const prefix = p.project_mode === 'custom' ? '/pa' : '/pr';
+    return `${prefix}/ws-${activeWorkspace.short_id}/${p.slug || p.id}`;
+  };
+  const projectPaths = visibleProjects.map(p => getProjectHref(p));
+
   /* ─── Collapsed mode ─── */
   if (collapsed) {
     return (
       <div className="tree-nav">
-        <TreeItemCollapsed icon={Home} label={t?.home || 'Home'} href="/dashboard" active={isViewActive('home')} />
-        <TreeItemCollapsed icon={Star} label="Starred" href="/dashboard?view=starred" active={isViewActive('starred')} />
-        <TreeItemCollapsed icon={Clock} label="Recent" href="/dashboard?view=recent" active={isViewActive('recent')} />
-        <div className="sidebar-nav-separator" />
-        <TreeItemCollapsed icon={FolderOpen} label={t?.allProjects || 'All Projects'} href="/dashboard?view=all" active={isViewActive('all')} />
-        <TreeItemCollapsed icon={User} label="Owned" href="/dashboard?view=owned" active={isViewActive('owned')} />
-        <TreeItemCollapsed icon={Handshake} label="Shared" href="/dashboard?view=shared" active={isViewActive('shared')} />
-        <div className="sidebar-nav-separator" />
+        {/* Dashboard */}
+        <TreeItemCollapsed icon={Home} label={t?.home || 'Home'} href="/dashboard" active={isPathActive('/dashboard')} />
+
+        {/* Search */}
         <TreeItemCollapsed icon={Search} label={t?.search || 'Search'} href="/search" active={isPathActive('/search')} />
+
+        {/* Notifications */}
         <TreeItemCollapsed icon={Bell} label={t?.notifications || 'Notifications'} href="/notifications" active={isPathActive('/notifications')} />
+
+        {/* All Projects */}
+        <TreeItemCollapsed icon={FolderKanban} label={t?.projects || 'Projects'} href="/groups" active={isPathActive('/groups')} />
+
+        {/* Workspace pages */}
+        {isAvailable && activeWorkspace && !isGuest && (
+          <>
+            <TreeItemCollapsed icon={LayoutGrid} label={t?.overview || 'Overview'} href="/workspace/settings" active={isPathActive('/workspace/settings')} />
+            <TreeItemCollapsed icon={Sparkles} label={t?.aiAssistant || 'AI Assistant'} href="/ai-assistant" active={isPathActive('/ai-assistant')} />
+            <TreeItemCollapsed icon={Users} label={t?.members || 'Members'} href="/workspace/members" active={isPathActive('/workspace/members')} />
+          </>
+        )}
+
         <div className="sidebar-nav-separator" />
+
+        {/* Personal */}
         {personalItems.map(item => (
           <TreeItemCollapsed key={item.href} icon={item.icon} label={item.name} href={item.href} active={isPathActive(item.href)} />
         ))}
         <TreeItemCollapsed icon={UserCircle} label={t?.account || 'Account'} href="/personal-info" active={isPathActive('/personal-info') || isPathActive('/account-settings')} />
         <TreeItemCollapsed icon={CreditCard} label={t?.servicePlan || 'Service Plan'} href="/service-plan" active={isPathActive('/service-plan') || isPathActive('/billing-history')} />
+
+        {/* Admin — single item */}
         {isAdmin && (
           <TreeItemCollapsed icon={Shield} label={t?.system || 'Admin'} href={adminHref} active={isAdminActive} />
         )}
@@ -135,112 +201,198 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
   /* ─── Expanded mode ─── */
   return (
     <div className="tree-nav">
-      {/* ── Project navigation ── */}
-      {projectNavItems.map(item => (
-        <Link
-          key={item.view}
-          to={item.href}
-          className={cn('sidebar-nav-item', isViewActive(item.view) && 'active')}
-        >
-          <item.icon className="nav-icon" strokeWidth={1.8} />
-          <span className="nav-label">{item.name.replace(/^.\s/, '')}</span>
-        </Link>
-      ))}
 
-      <div className="sidebar-nav-separator" />
-
-      {projectFilterItems.map(item => (
-        <Link
-          key={item.view}
-          to={item.href}
-          className={cn('sidebar-nav-item', isViewActive(item.view) && 'active')}
-        >
-          <item.icon className="nav-icon" strokeWidth={1.8} />
-          <span className="nav-label">{item.name.replace(/^.\s/, '')}</span>
-        </Link>
-      ))}
-
-      {/* + New Project */}
-      {activeWorkspace && (
-        <Link
-          to="/groups"
-          className="sidebar-nav-item text-primary hover:bg-primary/5"
-        >
-          <Plus className="nav-icon" strokeWidth={2} />
-          <span className="nav-label font-medium">{t?.newProject || 'New Project'}</span>
-        </Link>
+      {isGuest && (
+        <div className="tree-guest-hint">
+          {t?.guestHint || '👽 You are accessing as a guest'}
+        </div>
       )}
 
-      <div className="sidebar-nav-separator" />
+      {/* ══ Workspace Navigation ══ */}
+      {isAvailable && activeWorkspace ? (
+        <div className="ws-nav-section">
+          {/* Dashboard */}
+          <Link to="/dashboard" className={cn('sidebar-nav-item', isPathActive('/dashboard') && 'active')}>
+            <Home className="nav-icon" strokeWidth={1.8} />
+            <span className="nav-label">{t?.home || 'Home'}</span>
+          </Link>
 
-      {/* Search & Notifications */}
-      <Link to="/search" className={cn('sidebar-nav-item', isPathActive('/search') && 'active')}>
-        <Search className="nav-icon" strokeWidth={1.8} />
-        <span className="nav-label">{t?.search || 'Search'}</span>
-      </Link>
-      <Link to="/notifications" className={cn('sidebar-nav-item', isPathActive('/notifications') && 'active')}>
-        <Bell className="nav-icon" strokeWidth={1.8} />
-        <span className="nav-label">{t?.notifications || 'Notifications'}</span>
-      </Link>
+          {/* Search */}
+          <Link to="/search" className={cn('sidebar-nav-item', isPathActive('/search') && 'active')}>
+            <Search className="nav-icon" strokeWidth={1.8} />
+            <span className="nav-label">{t?.search || 'Search'}</span>
+          </Link>
+
+          {/* Notifications */}
+          <Link to="/notifications" className={cn('sidebar-nav-item', isPathActive('/notifications') && 'active')}>
+            <Bell className="nav-icon" strokeWidth={1.8} />
+            <span className="nav-label">{t?.notifications || 'Notifications'}</span>
+          </Link>
+
+          {/* Workspace management - only for non-guest */}
+          {!isGuest && (
+            <>
+              <Link to="/workspace/settings" className={cn('sidebar-nav-item', isPathActive('/workspace/settings') && 'active')}>
+                <LayoutGrid className="nav-icon" strokeWidth={1.8} />
+                <span className="nav-label">{t?.overview || 'Overview'}</span>
+              </Link>
+              <Link to="/ai-assistant" className={cn('sidebar-nav-item', isPathActive('/ai-assistant') && 'active')}>
+                <Sparkles className="nav-icon" strokeWidth={1.8} />
+                <span className="nav-label">{t?.aiAssistant || 'AI Assistant'}</span>
+              </Link>
+              <Link to="/workspace/members" className={cn('sidebar-nav-item', isPathActive('/workspace/members') && 'active')}>
+                <Users className="nav-icon" strokeWidth={1.8} />
+                <span className="nav-label">{t?.members || 'Members'}</span>
+              </Link>
+            </>
+          )}
+
+          {/* Projects sub-tree */}
+          <button
+            onClick={() => toggle('projects')}
+            className={cn(
+              'sidebar-nav-item w-full text-left group',
+              hasActiveChild(projectPaths) && !isProjectsExpanded && 'semi-active'
+            )}
+          >
+            <ChevronRight className={cn('nav-chevron', isProjectsExpanded && 'expanded')} />
+            <FolderKanban className="nav-icon" strokeWidth={1.8} />
+            <span className="nav-label">{t?.projects || 'Projects'}</span>
+            <span className="text-[10px] opacity-40 tabular-nums">{projects.length}</span>
+          </button>
+
+          {isProjectsExpanded && (
+            <div className="tree-children tree-level-1">
+              {/* View all projects link */}
+              <Link
+                to="/groups"
+                className={cn('sidebar-nav-item', location.pathname === '/groups' && 'active')}
+              >
+                <span className="nav-label text-muted-foreground">{t?.viewAll || 'View all'}</span>
+              </Link>
+
+              {visibleProjects.map(p => {
+                const href = getProjectHref(p);
+                const active = location.pathname === href || location.pathname.startsWith(href + '/');
+                return (
+                  <Link
+                    key={p.id}
+                    to={href}
+                    className={cn('sidebar-nav-item', active && 'active', !p.isMember && 'opacity-60')}
+                  >
+                    <span className="nav-label truncate">{p.name}</span>
+                    {!p.isMember && (
+                      <span className="text-[9px] px-1 py-0.5 rounded bg-muted text-muted-foreground shrink-0">{t?.newLabel || 'New'}</span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="ws-nav-section">
+          <Link to="/dashboard" className={cn('sidebar-nav-item', isPathActive('/dashboard') && 'active')}>
+            <Home className="nav-icon" strokeWidth={1.8} />
+            <span className="nav-label">{t?.home || 'Home'}</span>
+          </Link>
+          <Link to="/search" className={cn('sidebar-nav-item', isPathActive('/search') && 'active')}>
+            <Search className="nav-icon" strokeWidth={1.8} />
+            <span className="nav-label">{t?.search || 'Search'}</span>
+          </Link>
+          <Link to="/notifications" className={cn('sidebar-nav-item', isPathActive('/notifications') && 'active')}>
+            <Bell className="nav-icon" strokeWidth={1.8} />
+            <span className="nav-label">{t?.notifications || 'Notifications'}</span>
+          </Link>
+          <div className="mx-2 my-3 p-3 rounded-xl border border-dashed border-muted-foreground/30 text-center">
+            <Building2 className="w-6 h-6 mx-auto mb-2 text-muted-foreground/50" />
+            <p className="text-xs text-muted-foreground mb-2">
+              {translations.app?.sidebar?.noWorkspace || 'You don\'t have a workspace yet'}
+            </p>
+            <button
+              onClick={() => navigate('/workspace/new')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              {translations.app?.sidebar?.createWorkspace || 'Create Workspace'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Personal section ── */}
-      <div className="sidebar-nav-separator" />
-      <div className="sidebar-section-label">{t?.personal || 'PERSONAL'}</div>
-      {personalItems.map(item => (
-        <Link key={item.href} to={item.href} className={cn('sidebar-nav-item', isPathActive(item.href) && 'active')}>
-          <item.icon className="nav-icon" strokeWidth={1.8} />
-          <span className="nav-label">{item.name}</span>
-        </Link>
-      ))}
-
-      {/* Account tree */}
-      <button
-        onClick={() => toggle('account')}
-        className={cn(
-          'sidebar-nav-item w-full text-left group',
-          (isPathActive('/personal-info') || isPathActive('/account-settings')) && !accountExpanded && 'semi-active'
-        )}
-      >
-        <ChevronRight className={cn('nav-chevron', accountExpanded && 'expanded')} />
-        <UserCircle className="nav-icon" strokeWidth={1.8} />
-        <span className="nav-label">{t?.account || 'Account'}</span>
-      </button>
-
-      {accountExpanded && (
-        <div className="tree-children tree-level-1">
-          {accountChildren.map(child => (
-            <Link key={child.href} to={child.href} className={cn('sidebar-nav-item', isPathActive(child.href) && 'active')}>
-              <span className="nav-label">{child.name}</span>
+      {(personalItems.length > 0 || true) && (
+        <>
+          <div className="sidebar-nav-separator" />
+          <div className="sidebar-section-label">{t?.personal || 'PERSONAL'}</div>
+          {personalItems.map(item => (
+            <Link key={item.href} to={item.href} className={cn('sidebar-nav-item', isPathActive(item.href) && 'active')}>
+              <item.icon className="nav-icon" strokeWidth={1.8} />
+              <span className="nav-label">{item.name}</span>
             </Link>
           ))}
-        </div>
+
+          {/* Account tree node */}
+          <button
+            onClick={() => toggle('account')}
+            className={cn(
+              'sidebar-nav-item w-full text-left group',
+              (isPathActive('/personal-info') || isPathActive('/account-settings')) && !accountExpanded && 'semi-active'
+            )}
+          >
+            <ChevronRight className={cn('nav-chevron', accountExpanded && 'expanded')} />
+            <UserCircle className="nav-icon" strokeWidth={1.8} />
+            <span className="nav-label">{t?.account || 'Account'}</span>
+          </button>
+
+          {accountExpanded && (
+            <div className="tree-children tree-level-1">
+              {accountChildren.map(child => (
+                <Link
+                  key={child.href}
+                  to={child.href}
+                  className={cn('sidebar-nav-item', isPathActive(child.href) && 'active')}
+                >
+                  <span className="nav-label">{child.name}</span>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* Service Plan — tree with billing history */}
+          <button
+            onClick={() => toggle('billing')}
+            className={cn(
+              'sidebar-nav-item w-full text-left group',
+              (isPathActive('/service-plan') || isPathActive('/billing-history')) && expanded !== 'billing' && 'semi-active'
+            )}
+          >
+            <ChevronRight className={cn('nav-chevron', expanded === 'billing' && 'expanded')} />
+            <CreditCard className="nav-icon" strokeWidth={1.8} />
+            <span className="nav-label">{t?.servicePlan || 'Service Plan'}</span>
+          </button>
+
+          {expanded === 'billing' && (
+            <div className="tree-children tree-level-1">
+              <Link
+                to="/service-plan"
+                className={cn('sidebar-nav-item', isPathActive('/service-plan') && 'active')}
+              >
+                <span className="nav-label">{t?.myPlan || 'My Plan'}</span>
+              </Link>
+              <Link
+                to="/billing-history"
+                className={cn('sidebar-nav-item', isPathActive('/billing-history') && 'active')}
+              >
+                <span className="nav-label">{t?.billingHistory || 'Billing History'}</span>
+              </Link>
+            </div>
+          )}
+        </>
       )}
 
-      {/* Service Plan */}
-      <button
-        onClick={() => toggle('billing')}
-        className={cn(
-          'sidebar-nav-item w-full text-left group',
-          (isPathActive('/service-plan') || isPathActive('/billing-history')) && expanded !== 'billing' && 'semi-active'
-        )}
-      >
-        <ChevronRight className={cn('nav-chevron', expanded === 'billing' && 'expanded')} />
-        <CreditCard className="nav-icon" strokeWidth={1.8} />
-        <span className="nav-label">{t?.servicePlan || 'Service Plan'}</span>
-      </button>
 
-      {expanded === 'billing' && (
-        <div className="tree-children tree-level-1">
-          <Link to="/service-plan" className={cn('sidebar-nav-item', isPathActive('/service-plan') && 'active')}>
-            <span className="nav-label">{t?.myPlan || 'My Plan'}</span>
-          </Link>
-          <Link to="/billing-history" className={cn('sidebar-nav-item', isPathActive('/billing-history') && 'active')}>
-            <span className="nav-label">{t?.billingHistory || 'Billing History'}</span>
-          </Link>
-        </div>
-      )}
-
-      {/* ── Admin ── */}
+      {/* ── Admin — single link ── */}
       {isAdmin && (
         <>
           <div className="sidebar-nav-separator" />
