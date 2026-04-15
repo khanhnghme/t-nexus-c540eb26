@@ -72,6 +72,7 @@ export default function AIAssistant() {
   const { activeWorkspace } = useWorkspace();
   const { toast } = useToast();
   const { translations: t } = useLanguage();
+  const { setAITopBarProps } = useDashboardLayoutContext();
 
   const suggestions = [
     { icon: FileText, label: t?.sidebar?.aiSuggestion1Label || 'Tóm tắt dự án', desc: t?.sidebar?.aiSuggestion1Desc || '', prompt: 'Tóm tắt nội dung và tiến độ dự án hiện tại của tôi' },
