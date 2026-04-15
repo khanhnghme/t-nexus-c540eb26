@@ -756,31 +756,33 @@ export default function AIAssistant() {
           ) : (
             <div className="max-w-4xl mx-auto px-4 md:px-6 py-6 space-y-6">
               {messages.map((message, idx) => (
-                <div key={idx} className={cn("animate-fade-in", message.role === 'user' ? 'flex justify-end' : '')}>
+                <div key={idx} className={cn("animate-fade-in", message.role === 'user' ? 'flex flex-col items-end gap-1.5' : '')}>
                   {message.role === 'user' ? (
-                    <div className="flex items-start gap-2.5 max-w-[85%]">
-                      <div className="bg-primary/10 text-foreground rounded-2xl rounded-br-md px-4 py-3 text-[14px] leading-relaxed">
-                        <div className="whitespace-pre-wrap">{message.content}</div>
-                        {message.attachments && message.attachments.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-primary/10">
-                            {message.attachments.map((att, ai) => (
-                              <div key={ai} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-[11px] text-foreground/70">
-                                <FileIcon className="h-3 w-3 shrink-0" />
-                                <span className="truncate max-w-[120px]">{att.file_name}</span>
-                                <span className="text-foreground/40">{formatFileSize(att.file_size)}</span>
-                              </div>
-                            ))}
+                    <>
+                      {message.attachments && message.attachments.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 justify-end max-w-[85%]">
+                          {message.attachments.map((att, ai) => (
+                            <div key={ai} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-muted/60 border border-border/40 text-[11px]">
+                              <FileIcon className="h-3 w-3 text-muted-foreground shrink-0" />
+                              <span className="truncate max-w-[120px] text-foreground">{att.file_name}</span>
+                              <span className="text-muted-foreground/60">{formatFileSize(att.file_size)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex items-start gap-2.5 max-w-[85%]">
+                        <div className="bg-primary/10 text-foreground rounded-2xl rounded-br-md px-4 py-3 text-[14px] leading-relaxed">
+                          <div className="whitespace-pre-wrap">{message.content}</div>
+                        </div>
+                        {profile?.avatar_url ? (
+                          <img src={profile.avatar_url} alt="You" className="w-7 h-7 rounded-full shrink-0 mt-0.5 object-cover ring-1 ring-border/30" />
+                        ) : (
+                          <div className="w-7 h-7 rounded-full shrink-0 mt-0.5 bg-primary/15 flex items-center justify-center text-[11px] font-semibold text-primary ring-1 ring-primary/20">
+                            {(profile?.full_name || 'U').charAt(0).toUpperCase()}
                           </div>
                         )}
                       </div>
-                      {profile?.avatar_url ? (
-                        <img src={profile.avatar_url} alt="You" className="w-7 h-7 rounded-full shrink-0 mt-0.5 object-cover ring-1 ring-border/30" />
-                      ) : (
-                        <div className="w-7 h-7 rounded-full shrink-0 mt-0.5 bg-primary/15 flex items-center justify-center text-[11px] font-semibold text-primary ring-1 ring-primary/20">
-                          {(profile?.full_name || 'U').charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                    </div>
+                    </>
                   ) : (
                     <div className="flex gap-3">
                       <img src={tNexusIcon} alt="AI" className="w-7 h-7 shrink-0 mt-0.5 dark:invert" />
