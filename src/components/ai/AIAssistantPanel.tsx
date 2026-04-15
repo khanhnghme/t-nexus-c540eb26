@@ -261,6 +261,11 @@ export default function AIAssistantPanel({
           } catch {}
         }
       }
+
+      // Re-fetch credits after successful stream
+      if (assistantContent) {
+        loadUsage();
+      }
     } catch (err) {
       console.error('AI Assistant error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Có lỗi xảy ra';
