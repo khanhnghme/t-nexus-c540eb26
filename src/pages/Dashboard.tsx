@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Spinner } from '@/components/ui/spinner';
 
 import { Link } from 'react-router-dom';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -54,6 +55,7 @@ import {
   Check,
   Users,
   Building2,
+  HelpCircle,
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { vi as viLocale, enUS } from 'date-fns/locale';
@@ -124,7 +126,7 @@ export default function Dashboard() {
   const videoOpacity = videoSettings?.opacity || 0.2;
   const videoUrl = videoSettings?.url || '';
 
-  const { data: recentProjects = [] } = useRecentProjects(user?.id, groups);
+  const { data: recentProjects = [] } = useRecentProjects(user?.id);
 
   const [showJoinDialog, setShowJoinDialog] = useState(false);
   const [showInvitationDialog, setShowInvitationDialog] = useState(false);
@@ -810,7 +812,17 @@ export default function Dashboard() {
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-lg font-heading font-semibold">{t?.recentProjects || 'Recent Projects'}</CardTitle>
+                <CardTitle className="text-lg font-heading font-semibold flex items-center gap-1.5">
+                  {t?.recentProjects || 'Recent Projects'}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs text-xs">
+                      {t?.recentProjectsTooltip || 'Shows the 5 most recently accessed projects across all workspaces, not limited to the current one'}
+                    </TooltipContent>
+                  </Tooltip>
+                </CardTitle>
                 <CardDescription>{t?.projectsYouJoined || 'Projects you are participating in'}</CardDescription>
               </div>
               <Link to="/groups">

@@ -97,8 +97,8 @@ export function usePendingApprovals(userId: string | undefined) {
   });
 }
 
-async function fetchRecentProjectsFn(userId: string, allGroups: Group[]): Promise<Group[]> {
-  // Try project_access_log first
+async function fetchRecentProjectsFn(userId: string): Promise<Group[]> {
+  // Try project_access_log first — cross-workspace
   const { data: accessLogs } = await supabase
     .from('project_access_log')
     .select('group_id')
@@ -108,21 +108,37 @@ async function fetchRecentProjectsFn(userId: string, allGroups: Group[]): Promis
 
   if (accessLogs && accessLogs.length > 0) {
     const orderedIds = accessLogs.map(l => l.group_id);
-    const groupMap = new Map(allGroups.map(g => [g.id, g]));
+    const { data: groupsData } = await supabase
+      .from('groups')
+      .select('*')
+      .in('id', orderedIds);
+    const groupMap = new Map((groupsData || []).map(g => [g.id, g as unknown as Group]));
     return orderedIds
       .map(id => groupMap.get(id))
       .filter((g): g is Group => !!g);
   }
 
-  // Fallback: 5 newest groups
-  return allGroups.slice(0, 5);
+  // Fallback: 5 newest projects user is member of (cross-workspace)
+  const { data: memberData } = await supabase
+    .from('group_members')
+    .select('group_id')
+    .eq('user_id', userId);
+  if (!memberData || memberData.length === 0) return [];
+  const ids = memberData.map(m => m.group_id);
+  const { data: groupsData } = await supabase
+    .from('groups')
+    .select('*')
+    .in('id', ids)
+    .order('created_at', { ascending: false })
+    .limit(5);
+  return (groupsData || []) as Group[];
 }
 
-export function useRecentProjects(userId: string | undefined, allGroups: Group[]) {
+export function useRecentProjects(userId: string | undefined) {
   return useQuery({
-    queryKey: ['recent-projects', userId, allGroups.map(g => g.id).join(',')],
-    queryFn: () => fetchRecentProjectsFn(userId!, allGroups),
-    enabled: !!userId && allGroups.length > 0,
+    queryKey: ['recent-projects', userId],
+    queryFn: () => fetchRecentProjectsFn(userId!),
+    enabled: !!userId,
     staleTime: 30_000,
   });
 }
