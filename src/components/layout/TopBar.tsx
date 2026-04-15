@@ -7,8 +7,6 @@ import { Moon, Sun, LayoutDashboard, Layers, Users, Award, FolderOpen, Video, Ac
 import { cn } from '@/lib/utils';
 import tNexusTextWhite from '@/assets/t-nexus-text-white.png';
 import { TNexusLogo } from '@/components/TNexusLogo';
-import { cn } from '@/lib/utils';
-import tNexusTextWhite from '@/assets/t-nexus-text-white.png';
 import {
   Tooltip,
   TooltipContent,
