@@ -3,6 +3,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Trash2, ArrowUp, FileText, ListChecks, BarChart3, PenLine, History, Plus, X, MessageSquare, MoreHorizontal, Pin, PinOff } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import tNexusIcon from '@/assets/t-nexus-icon.png';
+import deepseekIcon from '@/assets/deepseek-icon.png';
+import geminiIcon from '@/assets/gemini-icon.png';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
