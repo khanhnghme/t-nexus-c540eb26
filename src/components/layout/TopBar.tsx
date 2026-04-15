@@ -297,14 +297,16 @@ export default function TopBar() {
             </TooltipContent>
           </Tooltip>
 
-          <Link to="/dashboard" className="flex items-center gap-1.5 ml-1 opacity-70 hover:opacity-100 transition-opacity">
-            <img
-              src={tNexusTextWhite}
-              alt="T-Nexus"
-              className="h-[13px] w-auto hidden sm:block"
-              style={{ filter: isDark ? 'none' : 'invert(1)' }}
-            />
-          </Link>
+          {!isAIRoute && (
+            <Link to="/dashboard" className="flex items-center gap-1.5 ml-1 opacity-70 hover:opacity-100 transition-opacity">
+              <img
+                src={tNexusTextWhite}
+                alt="T-Nexus"
+                className="h-[13px] w-auto hidden sm:block"
+                style={{ filter: isDark ? 'none' : 'invert(1)' }}
+              />
+            </Link>
+          )}
         </div>
       </div>
     </div>
