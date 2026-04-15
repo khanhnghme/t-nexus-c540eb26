@@ -459,6 +459,12 @@ export default function Groups() {
 
   const filteredGroups = useMemo(() => {
     let result = groups;
+    // Apply sidebar filter
+    if (activeFilter === 'created') {
+      result = result.filter(g => g.created_by === user?.id);
+    } else if (activeFilter === 'shared') {
+      result = result.filter(g => g.created_by !== user?.id && g.myRole);
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(g => g.name.toLowerCase().includes(q));
@@ -470,7 +476,7 @@ export default function Groups() {
       result = result.filter(g => g.visibility === visibilityFilter);
     }
     return result;
-  }, [groups, searchQuery, modeFilter, visibilityFilter]);
+  }, [groups, searchQuery, modeFilter, visibilityFilter, activeFilter, user?.id]);
 
   const trimmedMemberSearch = memberSearch.trim();
   const memberEmailSearchReady = isMemberEmailSearchReady(trimmedMemberSearch);
