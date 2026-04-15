@@ -306,6 +306,7 @@ export default function TopBar() {
             />
           </Link>
         </div>
+      </div>
     </div>
   );
 }
