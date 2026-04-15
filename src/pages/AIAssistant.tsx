@@ -761,6 +761,17 @@ export default function AIAssistant() {
                     <div className="flex items-start gap-2.5 max-w-[85%]">
                       <div className="bg-primary/10 text-foreground rounded-2xl rounded-br-md px-4 py-3 text-[14px] leading-relaxed">
                         <div className="whitespace-pre-wrap">{message.content}</div>
+                        {message.attachments && message.attachments.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-primary/10">
+                            {message.attachments.map((att, ai) => (
+                              <div key={ai} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-[11px] text-foreground/70">
+                                <FileIcon className="h-3 w-3 shrink-0" />
+                                <span className="truncate max-w-[120px]">{att.file_name}</span>
+                                <span className="text-foreground/40">{formatFileSize(att.file_size)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       {profile?.avatar_url ? (
                         <img src={profile.avatar_url} alt="You" className="w-7 h-7 rounded-full shrink-0 mt-0.5 object-cover ring-1 ring-border/30" />
