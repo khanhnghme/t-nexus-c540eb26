@@ -453,11 +453,6 @@ export default function AIAssistant() {
           rows={variant === 'empty' ? 2 : 1}
         />
         <div className={cn("absolute flex items-center gap-2", variant === 'empty' ? "right-3 bottom-3" : "right-2 bottom-2")}>
-          {input.trim() && (
-            <span className={cn("text-[10px] tabular-nums", isOverLimit ? "text-destructive font-semibold" : "text-muted-foreground")}>
-              {wordCount}/{MAX_MESSAGE_WORDS}
-            </span>
-          )}
           <button
             type="submit"
             disabled={!input.trim() || isLoading || isOverLimit || remainingQuestions <= 0}
@@ -484,7 +479,7 @@ export default function AIAssistant() {
               <Spinner size="default" />
             </div>
           ) : (
-            <div className="max-w-2xl mx-auto px-5 py-6 space-y-5">
+            <div className="max-w-3xl mx-auto px-5 py-6 space-y-5">
               {messages.map((message, idx) => (
                 <div key={idx} className={cn("animate-fade-in", message.role === 'user' ? 'flex justify-end' : '')}>
                   {message.role === 'user' ? (
@@ -536,7 +531,7 @@ export default function AIAssistant() {
         </main>
 
         <div className="shrink-0 border-t border-border/40 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-3xl mx-auto">
             {renderInput('chat')}
           </div>
         </div>
@@ -560,7 +555,7 @@ export default function AIAssistant() {
       
 
       <div className="flex-1 flex flex-col items-center justify-center px-5">
-        <div className="max-w-2xl w-full flex flex-col items-center">
+        <div className="max-w-3xl w-full flex flex-col items-center">
           <img src={tNexusIcon} alt="T-Nexus" className="w-20 h-20 mb-4 dark:invert" />
           <h1 className="text-2xl md:text-3xl font-semibold text-foreground text-center mb-8">
             {t?.sidebar?.aiGreeting || 'Hôm nay tôi có thể giúp gì cho bạn?'}
