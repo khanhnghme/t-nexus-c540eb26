@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Textarea } from '@/components/ui/textarea';
-import { Trash2, ArrowUp, FileText, ListChecks, BarChart3, PenLine, History, Plus, X, MessageSquare, MoreHorizontal, Pin, PinOff, Sparkles, AlertTriangle, Share2, User, Link2 } from 'lucide-react';
+import { Trash2, ArrowUp, FileText, ListChecks, BarChart3, PenLine, History, Plus, X, MessageSquare, MoreHorizontal, Pin, PinOff, Sparkles, AlertTriangle, Share2, User, Link2, Paperclip, File as FileIcon } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { r2Storage } from '@/lib/r2Storage';
 
 import { useNavigate } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
