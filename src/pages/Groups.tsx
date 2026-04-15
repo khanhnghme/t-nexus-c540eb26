@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { Spinner } from '@/components/ui/spinner';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { fixStorageUrl } from '@/lib/urlUtils';
 import { Link, useNavigate } from 'react-router-dom';
@@ -91,8 +91,8 @@ export default function Groups() {
   const { translations: { app: t } } = useLanguage();
   const g = t.groups;
   const tc = t.common;
-  const [searchParams, setSearchParams] = useSearchParams();
-  const activeFilter = (searchParams.get('filter') as 'all' | 'created' | 'shared') || 'all';
+  const loc = useLocation();
+  const activeFilter: 'all' | 'created' | 'shared' = loc.pathname.endsWith('/created') ? 'created' : loc.pathname.endsWith('/shared') ? 'shared' : 'all';
 
   // Permission: workspace_owner, workspace_admin, or system_admin can create projects
   const canCreateProject = isSystemAdmin || workspaceRole === 'workspace:owner' || workspaceRole === 'workspace:admin';
@@ -517,7 +517,7 @@ export default function Groups() {
             ].map(tab => (
               <button
                 key={tab.value}
-                onClick={() => setSearchParams({ filter: tab.value })}
+                onClick={() => navigate(tab.value === 'all' ? '/groups' : `/groups/${tab.value}`)}
                 className={cn(
                   'px-3 py-1.5 rounded-md text-sm font-medium transition-all',
                   activeFilter === tab.value

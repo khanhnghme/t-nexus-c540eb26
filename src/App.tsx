@@ -238,6 +238,8 @@ function AppRoutes() {
           <Route path="/search" element={<SearchPage />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/groups" element={<Groups />} />
+          <Route path="/groups/created" element={<Groups />} />
+          <Route path="/groups/shared" element={<Groups />} />
           {/* New URL format: /pr/ws-{wsShortId}/{projectSlug} */}
           <Route path="/pr/:wsParam/:projectSlug" element={<GroupDetail />} />
           <Route path="/pr/:wsParam/:projectSlug/t/:taskSlug" element={<GroupDetail />} />
