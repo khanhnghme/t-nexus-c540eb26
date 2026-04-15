@@ -603,37 +603,70 @@ export default function AIAssistant() {
       {historySidebar}
 
       <div className="flex-1 flex flex-col items-center justify-center px-4 md:px-6">
-        <div className="max-w-[40rem] w-full flex flex-col items-center">
+        <div className="max-w-[44rem] w-full flex flex-col items-center animate-fade-in">
           {/* Logo + Greeting */}
-          <div className="mb-5 relative">
-            <div className="absolute inset-0 bg-primary/8 rounded-full blur-3xl scale-[2]" />
-            <img src={tNexusIcon} alt="T-Nexus" className="relative w-14 h-14 dark:invert" />
+          <div className="mb-6 relative">
+            <div className="absolute inset-0 bg-primary/10 rounded-full blur-3xl scale-[2.5] animate-pulse" />
+            <img src={tNexusIcon} alt="T-Nexus" className="relative w-16 h-16 dark:invert drop-shadow-lg" />
           </div>
-          <h1 className="text-xl md:text-2xl font-semibold text-foreground text-center mb-1 tracking-tight">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-2 tracking-tight">
             {t?.sidebar?.aiGreeting || 'Hôm nay tôi có thể giúp gì cho bạn?'}
           </h1>
-          <p className="text-[13px] text-muted-foreground/70 text-center mb-8">
+          <p className="text-sm text-muted-foreground/70 text-center mb-10">
             {t?.sidebar?.aiSubGreeting || 'Chọn một gợi ý bên dưới hoặc nhập câu hỏi của bạn'}
           </p>
 
-          {/* Input first */}
-          <div className="w-full mb-6">
-            {renderInput('empty')}
+          {/* Large Input */}
+          <div className="w-full mb-8">
+            <form onSubmit={handleSubmit} className="w-full">
+              <div className={cn(
+                "relative rounded-2xl transition-all duration-300 shadow-lg shadow-primary/5",
+                isOverLimit
+                  ? "border-2 border-destructive/60 bg-destructive/5"
+                  : "border-2 border-border/50 bg-card focus-within:border-primary/50 focus-within:shadow-xl focus-within:shadow-primary/10"
+              )}>
+                <Textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={t?.sidebar?.aiPlaceholder || "Hỏi bất cứ điều gì..."}
+                  disabled={isLoading}
+                  className="w-full resize-none border-0 bg-transparent placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:ring-offset-0 px-6 py-5 pr-16 min-h-[64px] max-h-[180px] text-base"
+                  rows={1}
+                />
+                <div className="absolute right-4 bottom-4">
+                  <button
+                    type="submit"
+                    disabled={!input.trim() || isLoading || isOverLimit}
+                    className="p-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-20 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
+                  >
+                    {isLoading ? <Spinner size="sm" className="text-primary-foreground" /> : <ArrowUp className="h-4.5 w-4.5" />}
+                  </button>
+                </div>
+              </div>
+              {isOverLimit && (
+                <p className="text-[11px] text-destructive mt-2 text-center">
+                  Vượt giới hạn {MAX_MESSAGE_WORDS} từ ({wordCount}/{MAX_MESSAGE_WORDS})
+                </p>
+              )}
+            </form>
           </div>
 
-          {/* Suggestions */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 w-full">
+          {/* Suggestions with staggered animation */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
             {suggestions.map((s, idx) => (
               <button
                 key={idx}
                 onClick={() => sendMessage(s.prompt)}
                 disabled={isLoading}
-                className="flex flex-col items-center gap-2 p-3.5 rounded-xl border border-border/40 bg-card/50 hover:bg-muted/60 hover:border-border transition-all text-center group disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex flex-col items-center gap-2.5 p-4 rounded-xl border border-border/40 bg-card/60 hover:bg-primary/5 hover:border-primary/30 hover:shadow-md transition-all duration-200 text-center group disabled:opacity-30 disabled:cursor-not-allowed hover:-translate-y-0.5 animate-fade-in"
+                style={{ animationDelay: `${idx * 80}ms`, animationFillMode: 'backwards' }}
               >
-                <div className="w-9 h-9 rounded-lg bg-primary/8 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-                  <s.icon className="h-4 w-4 text-primary/80 group-hover:text-primary transition-colors" />
+                <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center group-hover:bg-primary/15 group-hover:scale-110 transition-all duration-200">
+                  <s.icon className="h-4.5 w-4.5 text-primary/70 group-hover:text-primary transition-colors" />
                 </div>
-                <p className="text-[12px] font-medium text-muted-foreground group-hover:text-foreground leading-tight transition-colors">{s.label}</p>
+                <p className="text-xs font-medium text-muted-foreground group-hover:text-foreground leading-tight transition-colors">{s.label}</p>
               </button>
             ))}
           </div>
