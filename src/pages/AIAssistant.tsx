@@ -377,6 +377,42 @@ export default function AIAssistant() {
     return () => setAITopBarProps(null);
   }, [hasMessages, setAITopBarProps]);
 
+  // ── Conversation Item ──
+  const renderConvItem = (conv: Conversation) => (
+    <div
+      key={conv.id}
+      onClick={() => loadConversation(conv.id)}
+      className={cn(
+        "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-sm transition-colors group cursor-pointer overflow-hidden min-w-0",
+        activeConversationId === conv.id ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+      )}
+    >
+      {conv.is_pinned ? (
+        <Pin className="h-3.5 w-3.5 shrink-0 text-primary/60" />
+      ) : (
+        <MessageSquare className="h-3.5 w-3.5 shrink-0 opacity-50" />
+      )}
+      <span className="truncate flex-1 min-w-0">{conv.title || 'Untitled'}</span>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+          <button className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-muted text-muted-foreground transition-all shrink-0">
+            <MoreHorizontal className="h-3.5 w-3.5" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuItem onClick={(e) => handleTogglePin(e as any, conv.id)}>
+            {conv.is_pinned ? <PinOff className="h-3.5 w-3.5 mr-2" /> : <Pin className="h-3.5 w-3.5 mr-2" />}
+            {conv.is_pinned ? 'Bỏ ghim' : 'Ghim'}
+          </DropdownMenuItem>
+          <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => handleDeleteConversation(e as any, conv.id)}>
+            <Trash2 className="h-3.5 w-3.5 mr-2" />
+            Xóa
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+
   // ── History Sidebar ──
   const historySidebar = (
     <div className={cn(
