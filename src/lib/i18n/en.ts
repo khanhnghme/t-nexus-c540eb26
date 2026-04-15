@@ -770,6 +770,8 @@ export const en = {
       aiTooManyFiles: 'Maximum 5 files allowed',
       aiOldChatsDeleted: 'Old conversations cleaned up',
       aiChatLimit: 'Only the 10 most recent conversations are kept',
+      aiFileReadSuccess: 'File content loaded',
+      aiFileNotReadable: 'This file type cannot be read directly',
       aiFileAttached: 'file(s) attached',
       aiRemoveFile: 'Remove file',
     },
