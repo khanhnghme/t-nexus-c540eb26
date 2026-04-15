@@ -72,22 +72,26 @@ export function useAdminPlanActions() {
 
       case 'downgrade':
         if (!newPlan) throw new Error('New plan required');
-        if (newPlan === 'plan_free') {
-          // Immediate downgrade to free
+        if (effectiveMode === 'immediate') {
           profileUpdate.user_plan = newPlan;
           profileUpdate.plan = newPlan;
           profileUpdate.plan_status = 'active';
           profileUpdate.plan_source = 'admin_assigned';
-          profileUpdate.plan_expires_at = null;
-          profileUpdate.downgraded_at = new Date().toISOString();
           profileUpdate.next_plan = null;
           profileUpdate.next_billing_cycle = null;
+          if (newPlan === 'plan_free') {
+            profileUpdate.plan_expires_at = null;
+            profileUpdate.downgraded_at = new Date().toISOString();
+          } else {
+            const expires = new Date();
+            expires.setDate(expires.getDate() + 30);
+            profileUpdate.plan_expires_at = expires.toISOString();
+            logNewExpires = expires.toISOString();
+          }
         } else {
-          // Schedule downgrade for next cycle
           profileUpdate.next_plan = newPlan;
-          profileUpdate.next_billing_cycle = effectiveMode === 'immediate' ? 'monthly' : 'monthly';
+          profileUpdate.next_billing_cycle = 'monthly';
           logNewPlan = newPlan;
-          // Override action_type for logging
         }
         break;
 
