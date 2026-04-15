@@ -492,25 +492,28 @@ export default function AIAssistant() {
                       <div className="whitespace-pre-wrap">{message.content}</div>
                     </div>
                   ) : (
-                    <div className="text-sm leading-relaxed text-foreground">
-                      {message.content ? (
-                        <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground prose-headings:text-sm">
-                          <ReactMarkdown components={{
-                            p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                            ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
-                            ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
-                            li: ({ children }) => <li className="text-sm">{children}</li>,
-                            strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                            code: ({ children }) => <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>,
-                          }}>{message.content}</ReactMarkdown>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 py-1">
-                          <span className="w-1.5 h-1.5 rounded-full ai-typing-dot bg-muted-foreground/40" style={{ animationDelay: '0ms' }} />
-                          <span className="w-1.5 h-1.5 rounded-full ai-typing-dot bg-muted-foreground/40" style={{ animationDelay: '200ms' }} />
-                          <span className="w-1.5 h-1.5 rounded-full ai-typing-dot bg-muted-foreground/40" style={{ animationDelay: '400ms' }} />
-                        </div>
-                      )}
+                    <div className="flex gap-3">
+                      <img src={tNexusIcon} alt="AI" className="w-6 h-6 shrink-0 mt-0.5 dark:invert" />
+                      <div className="text-sm leading-relaxed text-foreground flex-1 min-w-0">
+                        {message.content ? (
+                          <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground prose-headings:text-sm">
+                            <ReactMarkdown components={{
+                              p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                              ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+                              ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+                              li: ({ children }) => <li className="text-sm">{children}</li>,
+                              strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                              code: ({ children }) => <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>,
+                            }}>{message.content}</ReactMarkdown>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 py-1">
+                            <span className="w-1.5 h-1.5 rounded-full ai-typing-dot bg-muted-foreground/40" style={{ animationDelay: '0ms' }} />
+                            <span className="w-1.5 h-1.5 rounded-full ai-typing-dot bg-muted-foreground/40" style={{ animationDelay: '200ms' }} />
+                            <span className="w-1.5 h-1.5 rounded-full ai-typing-dot bg-muted-foreground/40" style={{ animationDelay: '400ms' }} />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -549,7 +552,7 @@ export default function AIAssistant() {
 
       <div className="flex-1 flex flex-col items-center justify-center px-5">
         <div className="max-w-2xl w-full flex flex-col items-center">
-          <img src={tNexusIcon} alt="T-Nexus" className="w-16 h-16 mb-4 dark:invert" />
+          <img src={tNexusIcon} alt="T-Nexus" className="w-20 h-20 mb-4 dark:invert" />
           <h1 className="text-2xl md:text-3xl font-semibold text-foreground text-center mb-8">
             {t?.sidebar?.aiGreeting || 'Hôm nay tôi có thể giúp gì cho bạn?'}
           </h1>
