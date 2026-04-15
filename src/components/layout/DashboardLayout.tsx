@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardLayoutContext } from '@/contexts/DashboardLayoutContext';
@@ -43,7 +43,10 @@ import {
   Plus,
   ChevronsUpDown,
   ArrowLeft,
+  Settings,
+  Users,
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import SidebarTreeNav from '@/components/SidebarTreeNav';
 import AdminSidebarNav from '@/components/AdminSidebarNav';
 import { useTheme } from 'next-themes';
@@ -107,6 +110,16 @@ function WorkspaceSwitcherCell({ collapsed }: { collapsed: boolean }) {
   const ownerPlan = billing?.ownerPlan;
   const { locale } = useLanguage();
 
+  const [memberCount, setMemberCount] = useState<number>(0);
+  useEffect(() => {
+    if (!activeWorkspace?.id) { setMemberCount(0); return; }
+    supabase
+      .from('workspace_members')
+      .select('id', { count: 'exact', head: true })
+      .eq('workspace_id', activeWorkspace.id)
+      .then(({ count }) => setMemberCount((count ?? 0) + 1));
+  }, [activeWorkspace?.id]);
+
   const getRoleBadge = (role?: string | null) => {
     switch (role) {
       case 'workspace:owner': return '👑';
@@ -123,6 +136,71 @@ function WorkspaceSwitcherCell({ collapsed }: { collapsed: boolean }) {
       default: return '';
     }
   };
+
+  const planLabel = formatPlanName(ownerPlan);
+  const isPaid = ownerPlan && ownerPlan !== 'plan_free';
+
+  const dropdownBody = (
+    <>
+      {activeWorkspace && (
+        <div className="p-3">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center text-primary font-bold text-lg shrink-0">
+              {activeWorkspace.name.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold truncate">{activeWorkspace.name}</p>
+              <p className="text-[11px] text-muted-foreground">
+                {planLabel}
+                {memberCount > 0 && ` · ${memberCount} ${locale === 'vi' ? 'thành viên' : (memberCount === 1 ? 'member' : 'members')}`}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={(e) => { e.stopPropagation(); navigate('/workspace/settings'); }}
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-muted/60 hover:bg-muted transition-colors"
+            >
+              <Settings className="w-3.5 h-3.5" />
+              {locale === 'vi' ? 'Cài đặt' : 'Settings'}
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); navigate('/workspace/members'); }}
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-muted/60 hover:bg-muted transition-colors"
+            >
+              <Users className="w-3.5 h-3.5" />
+              {locale === 'vi' ? 'Thành viên' : 'Members'}
+            </button>
+          </div>
+        </div>
+      )}
+      <DropdownMenuSeparator />
+      <div className="px-3 py-1.5">
+        <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          {locale === 'vi' ? 'Tất cả workspace' : 'All workspaces'}
+        </p>
+      </div>
+      {workspaces.map(ws => {
+        return (
+          <DropdownMenuItem key={ws.id} onClick={() => switchWorkspace(ws.id)} className={cn('gap-2 mx-1', ws.id === activeWorkspace?.id && 'bg-accent')}>
+            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs shrink-0">
+              {ws.name.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex flex-col flex-1 min-w-0">
+              <span className="truncate text-sm font-medium">{ws.name}</span>
+              <span className="text-[10px] text-muted-foreground">{getRoleBadge(ws.my_role)} {getRoleLabel(ws.my_role)}</span>
+            </div>
+            {ws.id === activeWorkspace?.id && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+          </DropdownMenuItem>
+        );
+      })}
+      <DropdownMenuSeparator />
+      <DropdownMenuItem onClick={() => navigate('/workspace/new')} className="gap-2 mx-1">
+        <Plus className="w-3.5 h-3.5" />
+        <span>{locale === 'vi' ? 'Tạo Workspace mới' : 'Create new Workspace'}</span>
+      </DropdownMenuItem>
+    </>
+  );
 
   if (!isAvailable || !activeWorkspace) {
     if (collapsed) {
@@ -172,19 +250,8 @@ function WorkspaceSwitcherCell({ collapsed }: { collapsed: boolean }) {
             <p className="text-[10px] text-muted-foreground">{getRoleBadge(workspaceRole)} {getRoleLabel(workspaceRole)}</p>
           </TooltipContent>
         </Tooltip>
-        <DropdownMenuContent side="right" align="start" className="w-56">
-          {workspaces.map(ws => (
-            <DropdownMenuItem key={ws.id} onClick={() => switchWorkspace(ws.id)} className={cn(ws.id === activeWorkspace.id && 'bg-accent')}>
-              <div className="ws-avatar-mini mr-2 text-[10px]">{ws.name.charAt(0).toUpperCase()}</div>
-              <span className="truncate flex-1">{ws.name}</span>
-              {ws.id === activeWorkspace.id && <Check className="w-3.5 h-3.5 ml-1 text-primary" />}
-            </DropdownMenuItem>
-          ))}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => navigate('/workspace/new')}>
-            <Plus className="w-3.5 h-3.5 mr-2" />
-            {locale === 'vi' ? 'Tạo Workspace mới' : 'Create new Workspace'}
-          </DropdownMenuItem>
+        <DropdownMenuContent side="right" align="start" className="w-72">
+          {dropdownBody}
         </DropdownMenuContent>
       </DropdownMenu>
     );
@@ -201,35 +268,16 @@ function WorkspaceSwitcherCell({ collapsed }: { collapsed: boolean }) {
           {ownerPlan && (
             <span className={cn(
               "ws-plan-badge",
-              ownerPlan !== 'plan_free'
-                ? 'ws-plan-badge--pro'
-                : 'ws-plan-badge--free'
+              isPaid ? 'ws-plan-badge--pro' : 'ws-plan-badge--free'
             )}>
-              {formatPlanName(ownerPlan)}
+              {planLabel}
             </span>
           )}
           <ChevronsUpDown className="w-3 h-3 shrink-0" style={{ color: 'var(--_sb-fg)' }} />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width] min-w-56">
-        <div className="px-2 py-1.5">
-          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Workspaces</p>
-        </div>
-        {workspaces.map(ws => (
-          <DropdownMenuItem key={ws.id} onClick={() => switchWorkspace(ws.id)} className={cn('gap-2', ws.id === activeWorkspace.id && 'bg-accent')}>
-            <div className="ws-avatar-mini">{ws.name.charAt(0).toUpperCase()}</div>
-            <div className="flex flex-col flex-1 min-w-0">
-              <span className="truncate text-sm font-medium">{ws.name}</span>
-              <span className="text-[10px] text-muted-foreground">{getRoleBadge(ws.my_role)} {getRoleLabel(ws.my_role)}</span>
-            </div>
-            {ws.id === activeWorkspace.id && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
-          </DropdownMenuItem>
-        ))}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate('/workspace/new')} className="gap-2">
-          <Plus className="w-3.5 h-3.5" />
-          <span>{locale === 'vi' ? 'Tạo Workspace mới' : 'Create new Workspace'}</span>
-        </DropdownMenuItem>
+      <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width] min-w-72">
+        {dropdownBody}
       </DropdownMenuContent>
     </DropdownMenu>
   );
