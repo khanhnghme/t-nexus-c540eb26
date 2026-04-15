@@ -237,39 +237,75 @@ export default function TopBar() {
               {tabButtons}
             </div>
           ) : (
-            <h1 className="text-sm font-semibold truncate" style={{ color: 'var(--_sb-fg, hsl(var(--foreground)))' }}>
-              {pageTitle}
-            </h1>
+            isAIRoute && aiTopBarProps ? (
+              <div className="flex items-center gap-2">
+                <button onClick={aiTopBarProps.onToggleHistory} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+                  <History className="h-4 w-4" />
+                </button>
+                <TNexusLogo width={80} />
+                <span className="text-xs text-muted-foreground">AI</span>
+              </div>
+            ) : (
+              <h1 className="text-sm font-semibold truncate" style={{ color: 'var(--_sb-fg, hsl(var(--foreground)))' }}>
+                {pageTitle}
+              </h1>
+            )
           )}
         </div>
       )}
 
-      <div className="hidden md:flex items-center gap-2 shrink-0">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors hover:bg-accent"
-              onClick={() => setTheme(isDark ? 'light' : 'dark')}
-            >
-              {isDark
-                ? <Moon className="w-4 h-4 text-muted-foreground" />
-                : <Sun className="w-4 h-4 text-muted-foreground" />}
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            <p>{isDark ? 'Light mode' : 'Dark mode'}</p>
-          </TooltipContent>
-        </Tooltip>
+      <div className="flex items-center gap-2 shrink-0">
+        {isAIRoute && aiTopBarProps && (
+          <>
+            {!aiTopBarProps.isUnlimited && (
+              <div className="flex items-center gap-2">
+                <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className={cn("h-full rounded-full transition-all duration-500",
+                      aiTopBarProps.maxQuestions && (aiTopBarProps.questionsToday / aiTopBarProps.maxQuestions) > 0.8 ? "bg-destructive" : "bg-primary"
+                    )}
+                    style={{ width: `${aiTopBarProps.maxQuestions ? Math.min(100, (aiTopBarProps.questionsToday / aiTopBarProps.maxQuestions) * 100) : 0}%` }}
+                  />
+                </div>
+                <span className="text-[10px] text-muted-foreground tabular-nums">{aiTopBarProps.questionsToday}/{aiTopBarProps.maxQuestions}</span>
+              </div>
+            )}
+            {aiTopBarProps.hasMessages && (
+              <button
+                onClick={aiTopBarProps.onClearChat}
+                className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </>
+        )}
+        <div className="hidden md:flex items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors hover:bg-accent"
+                onClick={() => setTheme(isDark ? 'light' : 'dark')}
+              >
+                {isDark
+                  ? <Moon className="w-4 h-4 text-muted-foreground" />
+                  : <Sun className="w-4 h-4 text-muted-foreground" />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>{isDark ? 'Light mode' : 'Dark mode'}</p>
+            </TooltipContent>
+          </Tooltip>
 
-        <Link to="/dashboard" className="flex items-center gap-1.5 ml-1 opacity-70 hover:opacity-100 transition-opacity">
-          <img
-            src={tNexusTextWhite}
-            alt="T-Nexus"
-            className="h-[13px] w-auto hidden sm:block"
-            style={{ filter: isDark ? 'none' : 'invert(1)' }}
-          />
-        </Link>
-      </div>
+          <Link to="/dashboard" className="flex items-center gap-1.5 ml-1 opacity-70 hover:opacity-100 transition-opacity">
+            <img
+              src={tNexusTextWhite}
+              alt="T-Nexus"
+              className="h-[13px] w-auto hidden sm:block"
+              style={{ filter: isDark ? 'none' : 'invert(1)' }}
+            />
+          </Link>
+        </div>
     </div>
   );
 }
