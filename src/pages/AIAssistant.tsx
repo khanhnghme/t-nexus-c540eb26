@@ -36,6 +36,10 @@ const MODEL_LABELS: Record<string, string> = {
   'google/gemini-2.5-flash-lite': 'Gemini Flash',
 };
 const getModelLabel = (model: string | null) => model ? (MODEL_LABELS[model] || model) : null;
+const getModelFromPlan = (plan?: string | null) =>
+  ['plan_pro', 'plan_business', 'plan_custom'].includes(plan || '')
+    ? 'deepseek-chat'
+    : 'google/gemini-2.5-flash-lite';
 
 function groupConversations(conversations: Conversation[], t: any) {
   const now = new Date();
@@ -73,7 +77,7 @@ export default function AIAssistant() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
-  const [activeModel, setActiveModel] = useState<string | null>(null);
+  const [activeModel, setActiveModel] = useState<string | null>('google/gemini-2.5-flash-lite');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -90,6 +94,10 @@ export default function AIAssistant() {
     { icon: PenLine, label: t?.sidebar?.aiSuggestion4Label || 'Viết báo cáo', prompt: 'Giúp tôi viết báo cáo tiến độ dự án' },
   ];
 
+  useEffect(() => {
+    setActiveModel(getModelFromPlan(profile?.user_plan));
+  }, [profile?.user_plan]);
+
   // ── Load usage (internal only — no UI) ──
   useEffect(() => {
     const loadUsage = async () => {
@@ -105,9 +113,7 @@ export default function AIAssistant() {
         ]);
         setQuestionsToday(typeof usageRes.data === 'number' ? usageRes.data : 0);
         const ownerPlan = (ownerProfileRes.data as any)?.user_plan || 'plan_free';
-        // Set initial model based on owner's plan
-        const isPro = ['plan_pro', 'plan_business', 'plan_custom'].includes(ownerPlan);
-        setActiveModel(isPro ? 'deepseek-chat' : 'google/gemini-2.5-flash-lite');
+        setActiveModel(getModelFromPlan(ownerPlan));
         const { data: limitData } = await supabase
           .from('plan_limits').select('max_ai_messages_per_month')
           .eq('plan', ownerPlan as any).maybeSingle();
