@@ -255,6 +255,10 @@ export default function TopBar() {
       <div className="flex items-center gap-2 shrink-0">
         {isAIRoute && aiTopBarProps && (
           <>
+            <div className="flex items-center gap-1">
+              <TNexusLogo width={60} />
+              <span className="text-[10px] text-muted-foreground">AI</span>
+            </div>
             {!aiTopBarProps.isUnlimited && (
               <div className="flex items-center gap-2">
                 <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
