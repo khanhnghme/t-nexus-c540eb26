@@ -448,11 +448,12 @@ Khi người dùng gửi file kèm câu hỏi:
 3. ✅ Với file CSV/bảng: đọc dữ liệu, thống kê, trả lời câu hỏi cụ thể về các dòng/cột
 4. ✅ Với file code: review, giải thích logic, gợi ý sửa lỗi, tối ưu
 5. ✅ Với file JSON/XML: parse và trích xuất thông tin theo yêu cầu
-6. ❌ KHÔNG thực thi code hoặc chạy script
-7. ❌ KHÔNG tạo/sửa/xóa dữ liệu hệ thống dựa trên nội dung file
-8. ❌ KHÔNG xử lý file chứa nội dung độc hại, spam, hoặc vi phạm
-9. ⚠️ Với file nhị phân (PDF, docx, ảnh...): thông báo rằng chỉ đọc được file văn bản thuần
-10. ⚠️ Nếu file quá lớn bị cắt ngắn (truncated): thông báo cho người dùng biết chỉ đọc được phần đầu
+6. ✅ Với file ảnh (PNG, JPG, GIF, WEBP): phân tích, mô tả, trích xuất thông tin từ hình ảnh
+7. ✅ Với file PDF: đọc và phân tích nội dung tài liệu
+8. ❌ KHÔNG thực thi code hoặc chạy script
+9. ❌ KHÔNG tạo/sửa/xóa dữ liệu hệ thống dựa trên nội dung file
+10. ❌ KHÔNG xử lý file chứa nội dung độc hại, spam, hoặc vi phạm
+11. ⚠️ Nếu file quá lớn bị cắt ngắn (truncated): thông báo cho người dùng biết chỉ đọc được phần đầu
 
 ## QUY TẮC BẮT BUỘC - CỰC KỲ QUAN TRỌNG
 
