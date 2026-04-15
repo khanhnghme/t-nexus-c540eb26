@@ -1,37 +1,53 @@
 
 
-## Plan: Tách 3 filter projects thành 3 route URL riêng
+## Plan: Đổi Dashboard hiển thị 5 project sử dụng gần nhất
+
+### Mô tả
+Xóa toàn bộ bộ lọc (Active/Hidden/Pending/All, Basic/Custom) tại phần "My Projects" trên Dashboard. Thay bằng hiển thị tối đa 5 project được truy cập gần nhất, dựa trên bảng `project_access_log` (đã có sẵn trong DB với cột `accessed_at`).
 
 ### Thay đổi
 
-#### 1. `src/App.tsx` — Thêm 2 route mới
-```
-/groups          → All projects (giữ nguyên)
-/groups/created  → Created by me
-/groups/shared   → Shared with me
-```
+#### `src/pages/Dashboard.tsx`
 
-#### 2. `src/components/SidebarTreeNav.tsx` — Đổi href
-- `/groups?filter=all` → `/groups`
-- `/groups?filter=created` → `/groups/created`
-- `/groups?filter=shared` → `/groups/shared`
-- Đổi `isProjectFilterActive` để match theo pathname thay vì query param
+**Xóa:**
+- State `filter`, `modeFilter` và `DashboardFilter`, `ProjectModeFilter` types
+- `handleFilterChange`, localStorage logic cho filter
+- `filteredGroups` useMemo với logic Active/Hidden/All/Pending + mode filter
+- `activeCount`, `hiddenCount`, `pendingCount` computed values
+- `useHiddenProjects` hook import và usage
+- `usePendingApprovals` hook import và usage (phần pending approval groups hiển thị trong card)
+- Toàn bộ ToggleGroup filter UI (desktop + mobile select)
+- Phần hiển thị `pendingApprovalGroups` grid
+- Import `ToggleGroup`, `ToggleGroupItem`, `EyeOff`, `Eye`, `Layers`, `Clock` (nếu không dùng nơi khác)
+- Prop `onToggleHide` và `isHidden` khi render `DashboardProjectCard`
 
-#### 3. `src/pages/Groups.tsx` — Đọc filter từ route thay vì query param
-- Thêm nhận `useParams` hoặc dùng `useLocation().pathname` để xác định filter:
-  - `/groups` hoặc `/groups/` → `all`
-  - `/groups/created` → `created`
-  - `/groups/shared` → `shared`
-- Xóa `useSearchParams` logic
-- Đổi tab navigation từ `setSearchParams` sang `navigate('/groups/created')` etc.
+**Thêm:**
+- Query `project_access_log` lấy 5 `group_id` gần nhất của user (sort by `accessed_at` desc, limit 5)
+- Join với `groups` data đã có để lấy thông tin project
+- Nếu `project_access_log` trống (user mới), fallback hiển thị 5 project mới nhất từ `groups`
+
+**UI mới:**
+- Header: "Dự án gần đây" / "Recent Projects" + nút "View all" → `/groups`
+- Grid 5 project cards (giữ nguyên `DashboardProjectCard`, bỏ props `isHidden`/`onToggleHide`)
+- Empty state đơn giản khi chưa có project nào
+
+#### `src/hooks/useDashboardData.ts`
+- Xóa `useHiddenProjects` export (không dùng nữa ở Dashboard)
+- Xóa `usePendingApprovals` export (không dùng nữa ở Dashboard)
+- Thêm `useRecentProjects(userId)` hook: query `project_access_log` order by `accessed_at` desc limit 5, rồi fetch groups data
+
+#### i18n updates (`src/lib/i18n/en.ts`, `src/lib/i18n/vi.ts`)
+- Thêm key `recentProjects` / `viewAll`
+- Có thể xóa các key filter cũ không dùng nữa
 
 ### Files thay đổi
 
 | # | File | Thay đổi |
 |---|------|----------|
-| 1 | `App.tsx` | Thêm route `/groups/created` và `/groups/shared` |
-| 2 | `SidebarTreeNav.tsx` | Đổi href sang pathname-based |
-| 3 | `Groups.tsx` | Đọc filter từ pathname, đổi tab navigation |
+| 1 | `src/pages/Dashboard.tsx` | Xóa filters, hiển thị 5 recent projects |
+| 2 | `src/hooks/useDashboardData.ts` | Thêm `useRecentProjects` hook |
+| 3 | `src/lib/i18n/en.ts` | Thêm keys mới |
+| 4 | `src/lib/i18n/vi.ts` | Thêm keys mới |
 
-**3 files. Không thêm dependencies.**
+**4 files. Không thêm dependencies.**
 
