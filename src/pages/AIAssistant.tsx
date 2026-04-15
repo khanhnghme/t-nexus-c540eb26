@@ -109,6 +109,8 @@ export default function AIAssistant() {
     if (isLowCredit) return '[&>div]:bg-amber-500';
     return '[&>div]:bg-emerald-500';
   };
+
+  const suggestions = [
     { icon: FileText, label: t?.sidebar?.aiSuggestion1Label || 'Tóm tắt dự án', prompt: 'Tóm tắt nội dung và tiến độ dự án hiện tại của tôi' },
     { icon: ListChecks, label: t?.sidebar?.aiSuggestion2Label || 'Lên kế hoạch', prompt: 'Giúp tôi lên kế hoạch và phân chia công việc cho dự án' },
     { icon: BarChart3, label: t?.sidebar?.aiSuggestion3Label || 'Phân tích tiến độ', prompt: 'Phân tích tiến độ và hiệu suất làm việc của nhóm tôi' },
