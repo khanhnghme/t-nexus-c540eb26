@@ -341,7 +341,7 @@ export default function AIAssistant() {
 
     // Upload files to R2 and save attachment records
     let attachmentsMeta: { file_path: string; file_name: string; content_type: string }[] = [];
-    if (filesToUploadCopy.length > 0) {
+    if (filesToUpload.length > 0) {
       try {
         const { data: lastMsg } = await supabase
           .from('ai_messages')
@@ -352,7 +352,7 @@ export default function AIAssistant() {
           .single();
         const messageId = lastMsg?.id;
 
-        for (const file of filesToUploadCopy) {
+        for (const file of filesToUpload) {
           const filePath = `${user!.id}/${convId}/${Date.now()}-${file.name}`;
           const { error: uploadErr } = await r2Storage.from('ai-attachments').upload(filePath, file, {
             contentType: file.type || 'application/octet-stream',
