@@ -126,7 +126,7 @@ export default function ServicePlan() {
       const detailPromises = ownedWs.map(async (ws) => {
         const [storageRes, aiRes] = await Promise.all([
           supabase.rpc('get_workspace_storage_usage', { _workspace_id: ws.id }),
-          supabase.rpc('get_workspace_ai_usage_month', { _workspace_id: ws.id, _month_start: monthStart, _month_end: monthEnd }),
+          supabase.rpc('get_workspace_ai_credit_usage_month', { _workspace_id: ws.id, _month_start: monthStart, _month_end: monthEnd }),
         ]);
         return {
           wsId: ws.id,
@@ -160,11 +160,11 @@ export default function ServicePlan() {
 
       // Fetch aggregate AI usage for the account summary card
       const [aiUsageRes, aiLimitRes] = await Promise.all([
-        supabase.rpc('get_owner_ai_usage_month', { _owner_id: user.id, _month_start: monthStart, _month_end: monthEnd }),
-        supabase.from('plan_limits').select('max_ai_messages_per_month').eq('plan', plan as any).maybeSingle(),
+        supabase.rpc('get_owner_ai_credit_usage_month', { _owner_id: user.id, _month_start: monthStart, _month_end: monthEnd }),
+        supabase.from('plan_limits').select('max_ai_credits_per_month').eq('plan', plan as any).maybeSingle(),
       ]);
       setAiUsage(Number(aiUsageRes.data) || 0);
-      setAiLimit((aiLimitRes.data as any)?.max_ai_messages_per_month ?? null);
+      setAiLimit((aiLimitRes.data as any)?.max_ai_credits_per_month ?? null);
     } catch (err) {
       console.warn('Error fetching service plan data:', err);
     } finally {
@@ -583,7 +583,7 @@ export default function ServicePlan() {
                      formatMax: (v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)} GB` : `${v} MB`,
                   },
                   {
-                    label: t.aiMessages,
+                    label: t.aiCredits || t.aiMessages,
                     icon: <Bot className="w-4 h-4" />,
                     current: aiUsage,
                     max: aiLimit,
@@ -591,7 +591,7 @@ export default function ServicePlan() {
                     bonus: 0,
                     suffix: '/month',
                     iconColor: 'text-purple-500',
-                    note: t.aiMessagesNote,
+                    note: t.aiCreditsNote || t.aiMessagesNote,
                   },
                 ];
 
@@ -731,10 +731,10 @@ export default function ServicePlan() {
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-muted-foreground flex items-center gap-1.5">
-                                <Bot className="w-3 h-3" /> {t.aiMessages}
+                                <Bot className="w-3 h-3" /> {t.aiCredits || t.aiMessages}
                               </span>
                               <span className="font-medium tabular-nums">
-                                {ws.aiUsage} {t.aiMessagesUnit || 'lượt'}
+                                {ws.aiUsage} {t.aiCreditsUnit || 'credit'}
                                 {totalAiAll > 0 && <span className="text-muted-foreground ml-1">({aiContribPct}%)</span>}
                               </span>
                             </div>

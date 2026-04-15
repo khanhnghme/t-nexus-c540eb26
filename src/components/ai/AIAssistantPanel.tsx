@@ -379,7 +379,7 @@ export default function AIAssistantPanel({
                   />
                 </div>
                 <span className="text-[10px] text-muted-foreground tabular-nums">
-                  {remainingQuestions}/{maxQuestions}
+                  {remainingQuestions}/{maxCredits}
                 </span>
               </>
             )}
