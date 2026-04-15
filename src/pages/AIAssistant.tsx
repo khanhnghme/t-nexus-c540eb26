@@ -14,7 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import ReactMarkdown from 'react-markdown';
+import AIMessageRenderer from '@/components/ai/AIMessageRenderer';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 import { useDashboardLayoutContext } from '@/contexts/DashboardLayoutContext';
