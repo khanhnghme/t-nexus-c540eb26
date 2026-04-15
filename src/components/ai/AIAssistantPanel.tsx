@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, Loader2, Sparkles, AlertCircle, FolderKanban, Globe, Trash2, Link2, User } from 'lucide-react';
+import { Send, Loader2, Sparkles, AlertCircle, FolderKanban, Globe, Trash2, Link2, User, Paperclip, X, File as FileIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { r2Storage } from '@/lib/r2Storage';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useToast } from '@/hooks/use-toast';
@@ -51,6 +52,8 @@ export default function AIAssistantPanel({
   const [userPlanLabel, setUserPlanLabel] = useState('Free');
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const { user, profile } = useAuth();
   const { activeWorkspace } = useWorkspace();
   const { toast } = useToast();
@@ -146,6 +149,35 @@ export default function AIAssistantPanel({
     setCreditsUsed(prev => prev + 1);
   };
 
+  const MAX_FILES = 5;
+  const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    if (pendingFiles.length + files.length > MAX_FILES) {
+      toast({ title: 'Tối đa 5 file', variant: 'destructive' });
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+    const oversized = files.filter(f => f.size > MAX_FILE_SIZE);
+    if (oversized.length > 0) {
+      toast({ title: 'File vượt quá giới hạn 5MB', variant: 'destructive' });
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+    setPendingFiles(prev => [...prev, ...files]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeFile = (index: number) => setPendingFiles(prev => prev.filter((_, i) => i !== index));
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes}B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)}KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+  };
+
   const sendMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
 
@@ -173,11 +205,31 @@ export default function AIAssistantPanel({
     const userMessage: Message = { role: 'user', content: messageText };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
+    const filesToUpload = [...pendingFiles];
+    setPendingFiles([]);
     setIsLoading(true);
 
     setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
     let assistantContent = '';
+
+    // Upload files
+    let attachmentsMeta: { file_path: string; file_name: string; content_type: string }[] = [];
+    if (filesToUpload.length > 0 && user?.id) {
+      try {
+        for (const file of filesToUpload) {
+          const filePath = `${user.id}/panel/${Date.now()}-${file.name}`;
+          const { error: uploadErr } = await r2Storage.from('ai-attachments').upload(filePath, file, {
+            contentType: file.type || 'application/octet-stream',
+          });
+          if (!uploadErr) {
+            attachmentsMeta.push({ file_path: filePath, file_name: file.name, content_type: file.type || 'application/octet-stream' });
+          }
+        }
+      } catch (err) {
+        console.error('File upload error:', err);
+      }
+    }
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -198,6 +250,7 @@ export default function AIAssistantPanel({
               content: m.content,
             })),
             projectId: projectId || undefined,
+            attachments: attachmentsMeta.length > 0 ? attachmentsMeta : undefined,
           }),
         }
       );
@@ -503,6 +556,28 @@ export default function AIAssistantPanel({
 
         {/* Input Area — Simple */}
         <div className="border-t p-3 bg-background">
+          {/* File preview chips */}
+          {pendingFiles.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-2">
+              {pendingFiles.map((file, idx) => (
+                <div key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted/60 border border-border/40 text-[11px]">
+                  <FileIcon className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+                  <span className="truncate max-w-[80px] text-foreground">{file.name}</span>
+                  <button type="button" onClick={() => removeFile(idx)} className="p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive">
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={handleFileSelect}
+            accept="*/*"
+          />
           <form onSubmit={handleSubmit} className="flex gap-2 items-end">
             <div className="flex-1 relative">
               <Textarea
@@ -527,10 +602,21 @@ export default function AIAssistantPanel({
                 </span>
               )}
             </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isLoading || pendingFiles.length >= MAX_FILES}
+              className="shrink-0 h-11 w-11 rounded-xl text-muted-foreground"
+              title="Đính kèm file"
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
             <Button 
               type="submit" 
               size="icon" 
-              disabled={!input.trim() || isLoading || isOverLimit || remainingQuestions <= 0}
+              disabled={(!input.trim() && pendingFiles.length === 0) || isLoading || isOverLimit || remainingQuestions <= 0}
               className="shrink-0 h-11 w-11 rounded-xl"
             >
               {isLoading ? (
