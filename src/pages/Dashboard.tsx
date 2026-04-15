@@ -118,8 +118,6 @@ export default function Dashboard() {
 
   // React Query hooks for data fetching with caching
   const { data: dashboardResult, isLoading } = useDashboardData(user?.id, activeWorkspace?.id, wsAvailable);
-  const { data: hiddenProjectIds = new Set<string>() } = useHiddenProjects(user?.id);
-  const { data: pendingApprovalGroups = [] } = usePendingApprovals(user?.id);
   const { data: videoSettings } = useVideoSettings();
 
   const groups = dashboardResult?.groups || [];
@@ -129,30 +127,16 @@ export default function Dashboard() {
   const videoOpacity = videoSettings?.opacity || 0.2;
   const videoUrl = videoSettings?.url || '';
 
+  const { data: recentProjects = [] } = useRecentProjects(user?.id, groups);
+
   const [showJoinDialog, setShowJoinDialog] = useState(false);
   const [showInvitationDialog, setShowInvitationDialog] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [processingInvitation, setProcessingInvitation] = useState<string | null>(null);
   const [pendingWsInvites, setPendingWsInvites] = useState<PendingWorkspaceInvite[]>([]);
   const [inviteTab, setInviteTab] = useState<'all' | 'project' | 'workspace'>('all');
-  const [modeFilter, setModeFilter] = useState<ProjectModeFilter>('all');
-  
-  const [filter, setFilter] = useState<DashboardFilter>(() => {
-    if (typeof window !== 'undefined' && user?.id) {
-      return (localStorage.getItem(`dashboard_filter_${user.id}`) as DashboardFilter) || 'active';
-    }
-    return 'active';
-  });
-  const { isConnected } = useUserPresence('system-global');
 
-  useEffect(() => {
-    if (user?.id) {
-      const saved = localStorage.getItem(`dashboard_filter_${user.id}`) as DashboardFilter;
-      if (saved && ['all', 'active', 'hidden', 'pending'].includes(saved)) {
-        setFilter(saved);
-      }
-    }
-  }, [user?.id]);
+  const { isConnected } = useUserPresence('system-global');
 
   useEffect(() => {
     if (user) {
