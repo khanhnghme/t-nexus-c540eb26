@@ -1,0 +1,1 @@
+ALTER TABLE public.ai_conversations ADD COLUMN is_pinned boolean NOT NULL DEFAULT false;
