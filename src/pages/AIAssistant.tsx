@@ -383,25 +383,23 @@ export default function AIAssistant() {
       onClick={() => loadConversation(conv.id)}
       title={conv.title || 'Untitled'}
       className={cn(
-        "relative w-full min-w-0 max-w-full overflow-hidden rounded-lg text-left text-sm transition-colors group cursor-pointer px-2 py-1.5 pr-8",
+        "grid grid-cols-[1fr_28px] items-center gap-1 rounded-lg text-left text-sm transition-colors group cursor-pointer px-2 py-1.5",
         activeConversationId === conv.id ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
       )}
     >
-      {conv.is_pinned && (
-        <Pin className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 shrink-0 text-primary/60" />
-      )}
       <span
         className={cn(
-          "block w-full min-w-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap",
-          conv.is_pinned && "pl-5"
+          "truncate min-w-0",
+          conv.is_pinned && "flex items-center gap-1.5"
         )}
       >
-        {conv.title || 'Untitled'}
+        {conv.is_pinned && <Pin className="h-3 w-3 shrink-0 text-primary/60 inline-block" />}
+        <span className="truncate">{conv.title || 'Untitled'}</span>
       </span>
-      <div className="absolute right-1 top-1/2 -translate-y-1/2 shrink-0">
+      <div className="flex items-center justify-center shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-            <button className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-muted text-muted-foreground transition-all">
+            <button className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-0.5 rounded hover:bg-muted text-muted-foreground transition-all">
               <MoreHorizontal className="h-3.5 w-3.5" />
             </button>
           </DropdownMenuTrigger>
@@ -450,8 +448,8 @@ export default function AIAssistant() {
         </button>
       </div>
 
-      <ScrollArea className="flex-1 min-w-0 max-w-full overflow-hidden [&_[data-radix-scroll-area-viewport]]:max-w-full [&_[data-radix-scroll-area-viewport]]:overflow-x-hidden">
-        <div className="w-full min-w-0 max-w-full px-2 py-1 overflow-x-hidden">
+      <div className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
+        <div className="px-2 py-1">
           {conversations.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center py-8">{t?.sidebar?.noHistory || 'Chưa có lịch sử trò chuyện'}</p>
           ) : (
@@ -475,7 +473,7 @@ export default function AIAssistant() {
             </>
           )}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 
