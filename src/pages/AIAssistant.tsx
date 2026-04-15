@@ -570,7 +570,7 @@ export default function AIAssistant() {
       
 
       <div className="flex-1 flex flex-col items-center justify-center px-5">
-        <div className="max-w-2xl w-full flex flex-col items-center">
+        <div className="max-w-3xl w-full flex flex-col items-center">
           <div className="mb-6 relative">
             <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl scale-150" />
             <img src={tNexusIcon} alt="T-Nexus" className="relative w-16 h-16 dark:invert" />
