@@ -560,7 +560,7 @@ export default function AIAssistant() {
 
   // ── Empty State ──
   return (
-    <div className="flex flex-col h-[calc(100dvh-56px)] bg-background overflow-hidden">
+    <div className="flex flex-col h-full bg-background overflow-hidden">
       {overlay}
       {historySidebar}
 
@@ -589,7 +589,7 @@ export default function AIAssistant() {
               <button
                 key={idx}
                 onClick={() => sendMessage(s.prompt)}
-                disabled={isLoading || remainingQuestions <= 0}
+                disabled={isLoading}
                 className="flex flex-col items-center gap-2 p-3.5 rounded-xl border border-border/40 bg-card/50 hover:bg-muted/60 hover:border-border transition-all text-center group disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <div className="w-9 h-9 rounded-lg bg-primary/8 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
@@ -599,10 +599,6 @@ export default function AIAssistant() {
               </button>
             ))}
           </div>
-
-          {remainingQuestions <= 0 && (
-            <p className="text-[11px] text-muted-foreground text-center mt-5">Bạn đã hết lượt hỏi tháng này. Quay lại tháng sau nhé!</p>
-          )}
         </div>
       </div>
     </div>
