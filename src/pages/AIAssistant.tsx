@@ -134,28 +134,42 @@ export default function AIAssistant() {
     try {
       const effectiveOwnerId = activeWorkspace?.owner_id || user.id;
 
-      // Check share_ai_credits setting
-      let shareMode = false;
+      // Check share_ai_credits setting + workspace name
+      let isShared = false;
       if (activeWorkspace?.id) {
         const { data: wsData } = await supabase
           .from('workspaces')
-          .select('share_ai_credits')
+          .select('share_ai_credits, name')
           .eq('id', activeWorkspace.id)
           .single();
-        shareMode = (wsData as any)?.share_ai_credits === true;
+        isShared = (wsData as any)?.share_ai_credits === true;
+        setWorkspaceName((wsData as any)?.name || '');
       }
+      setShareMode(isShared);
 
       // Determine which plan to use for limit
-      const planForLimit = shareMode ? effectiveOwnerId : user.id;
+      const planForLimit = isShared ? effectiveOwnerId : user.id;
 
       const [creditRes, planProfileRes] = await Promise.all([
-        shareMode
+        isShared
           ? supabase.rpc('get_owner_ai_credit_usage_month', { _owner_id: effectiveOwnerId, _month_start: monthStart, _month_end: monthEnd })
           : supabase.rpc('get_user_ai_credit_usage_month' as any, { _user_id: user.id, _month_start: monthStart, _month_end: monthEnd }),
-        supabase.from('profiles').select('user_plan').eq('id', planForLimit).single(),
+        supabase.from('profiles').select('user_plan, full_name').eq('id', planForLimit).single(),
       ]);
       setCreditsUsed(typeof creditRes.data === 'number' ? creditRes.data : 0);
       const relevantPlan = (planProfileRes.data as any)?.user_plan || 'plan_free';
+      
+      // Set owner name when shared
+      if (isShared && effectiveOwnerId !== user.id) {
+        setOwnerName((planProfileRes.data as any)?.full_name || '');
+      } else {
+        setOwnerName('');
+      }
+
+      // Set plan label
+      const planLabels: Record<string, string> = { plan_free: 'Free', plan_plus: 'Plus', plan_pro: 'Pro', plan_business: 'Business', plan_custom: 'Custom' };
+      setUserPlanLabel(planLabels[relevantPlan] || 'Free');
+
       setActiveModel(getModelFromPlan(relevantPlan));
       const { data: limitData } = await supabase
         .from('plan_limits').select('max_ai_credits_per_month')
