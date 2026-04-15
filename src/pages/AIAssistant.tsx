@@ -778,46 +778,89 @@ export default function AIAssistant() {
             ))}
           </div>
 
-          {/* Credit Usage Bar - Empty State */}
+          {/* Credit Usage Card - Empty State */}
           {!usageLoading && (
             <div className="w-full mt-8 animate-fade-in" style={{ animationDelay: '350ms', animationFillMode: 'backwards' }}>
-              {isFreePlan ? (
-                <div className="flex items-center justify-center">
-                  <Badge variant="secondary" className="gap-1.5 px-3 py-1.5 text-xs font-medium">
-                    <Sparkles className="h-3 w-3 text-primary" />
-                    {t?.sidebar?.aiFreeLabel || 'Miễn phí'} · {getModelLabel(activeModel)}
-                  </Badge>
-                </div>
-              ) : maxCredits ? (
-                <div className="max-w-sm mx-auto space-y-2.5 p-4 rounded-xl border border-border/40 bg-card/60">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground font-medium">
-                      {t?.sidebar?.aiCreditsUsed || 'Đã sử dụng'}
-                    </span>
-                    <span className={cn(
-                      "font-semibold tabular-nums",
-                      isCriticalCredit ? "text-destructive" : isLowCredit ? "text-amber-500" : "text-foreground"
-                    )}>
-                      {creditsUsed.toLocaleString()} / {maxCredits.toLocaleString()} credit
-                    </span>
-                  </div>
-                  <Progress value={creditPercent} className={cn("h-2", getProgressColorClass())} />
-                  {isLowCredit && (
-                    <div className="flex items-center justify-between pt-1">
-                      <span className="text-[11px] text-amber-500 flex items-center gap-1">
-                        <AlertTriangle className="h-3 w-3" />
-                        {t?.sidebar?.aiCreditLow || 'Sắp hết credit'}
-                      </span>
-                      <button
-                        onClick={() => navigate('/upgrade')}
-                        className="text-[11px] font-medium text-primary hover:underline"
-                      >
-                        {t?.sidebar?.aiUpgrade || 'Nâng cấp'}
-                      </button>
-                    </div>
+              <div className="max-w-sm mx-auto p-4 rounded-xl border border-border/40 bg-card/60 space-y-3">
+                {/* Header: mode + context */}
+                <div className="flex items-center gap-2 text-sm">
+                  {shareMode ? (
+                    <>
+                      <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Link2 className="h-3.5 w-3.5 text-primary" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-foreground truncate">{t?.sidebar?.aiSharedPool || 'Shared Pool'} · {workspaceName}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {ownerName ? `${t?.sidebar?.aiCreditOwner || 'Owner'}: ${ownerName} · ` : ''}{userPlanLabel}
+                        </p>
+                      </div>
+                    </>
+                  ) : isFreePlan ? (
+                    <>
+                      <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Sparkles className="h-3.5 w-3.5 text-primary" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-foreground">{t?.sidebar?.aiFreeLabel || 'Free'} · {getModelLabel(activeModel)}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {workspaceName ? `${workspaceName} · ` : ''}{t?.sidebar?.aiNotShared || 'Not shared'}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <User className="h-3.5 w-3.5 text-primary" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-foreground">{t?.sidebar?.aiPersonalCredit || 'Personal Credit'} · {userPlanLabel}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {workspaceName ? `${workspaceName} · ` : ''}{t?.sidebar?.aiNotShared || 'Not shared'}
+                        </p>
+                      </div>
+                    </>
                   )}
                 </div>
-              ) : null}
+
+                {/* Progress bar or unlimited */}
+                {isFreePlan ? (
+                  <p className="text-[11px] text-muted-foreground">{t?.sidebar?.aiFreeUnlimited || 'Unlimited (speed may vary under load)'}</p>
+                ) : maxCredits ? (
+                  <>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">{t?.sidebar?.aiCreditsUsed || 'Used'}</span>
+                        <span className={cn(
+                          "font-semibold tabular-nums",
+                          isCriticalCredit ? "text-destructive" : isLowCredit ? "text-amber-500" : "text-foreground"
+                        )}>
+                          {creditsUsed.toLocaleString()} / {maxCredits.toLocaleString()} credit
+                        </span>
+                      </div>
+                      <Progress value={creditPercent} className={cn("h-2", getProgressColorClass())} />
+                    </div>
+                    {isLowCredit && (
+                      <div className="flex items-center justify-between pt-0.5">
+                        <span className="text-[11px] text-amber-500 flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          {t?.sidebar?.aiCreditLow || 'Running low'}
+                        </span>
+                        <button onClick={() => navigate('/upgrade')} className="text-[11px] font-medium text-primary hover:underline">
+                          {t?.sidebar?.aiUpgrade || 'Upgrade'}
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : null}
+
+                {/* Description */}
+                <p className="text-[11px] text-muted-foreground/70">
+                  {shareMode
+                    ? (t?.sidebar?.aiSharedDesc || 'All members share the same credit pool')
+                    : (t?.sidebar?.aiPersonalDesc || 'Credit is counted individually by your plan')}
+                </p>
+              </div>
             </div>
           )}
         </div>
