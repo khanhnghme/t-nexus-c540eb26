@@ -37,6 +37,7 @@ interface RequestBody {
   new_role?: string;
   new_owner_id?: string;
   idempotency_key?: string;
+  share_ai_credits?: boolean;
 }
 
 function json(data: unknown, status = 200) {
@@ -171,6 +172,7 @@ serve(async (req: Request) => {
       if (body.name !== undefined) updates.name = body.name;
       if (body.description !== undefined) updates.description = body.description;
       if (body.logo_url !== undefined) updates.logo_url = body.logo_url;
+      if (body.share_ai_credits !== undefined) updates.share_ai_credits = body.share_ai_credits;
 
       const { data: ws, error: wsErr } = await supabaseAdmin
         .from("workspaces")
