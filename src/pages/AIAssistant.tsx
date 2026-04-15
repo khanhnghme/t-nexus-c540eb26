@@ -37,7 +37,12 @@ const MODEL_LABELS: Record<string, string> = {
   'deepseek-chat': 'DeepSeek V3.2',
   'google/gemini-2.5-flash-lite': 'Gemini Flash',
 };
+const MODEL_ICONS: Record<string, string> = {
+  'deepseek-chat': deepseekIcon,
+  'google/gemini-2.5-flash-lite': geminiIcon,
+};
 const getModelLabel = (model: string | null) => model ? (MODEL_LABELS[model] || model) : null;
+const getModelIcon = (model: string | null) => model ? (MODEL_ICONS[model] || null) : null;
 const getModelFromPlan = (plan?: string | null) =>
   ['plan_pro', 'plan_business', 'plan_custom'].includes(plan || '')
     ? 'deepseek-chat'
