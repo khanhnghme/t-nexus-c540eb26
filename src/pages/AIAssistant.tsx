@@ -11,6 +11,7 @@ import { TNexusLogo } from '@/components/TNexusLogo';
 import ReactMarkdown from 'react-markdown';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useDashboardLayoutContext } from '@/contexts/DashboardLayoutContext';
 
 interface Message {
   role: 'user' | 'assistant';
