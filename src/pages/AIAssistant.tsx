@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Send, Trash2, ArrowUp, FileText, ListChecks, BarChart3, PenLine, History, Plus, X, MessageSquare } from 'lucide-react';
+import tNexusIcon from '@/assets/t-nexus-icon.png';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -548,6 +549,7 @@ export default function AIAssistant() {
 
       <div className="flex-1 flex flex-col items-center justify-center px-5">
         <div className="max-w-2xl w-full flex flex-col items-center">
+          <img src={tNexusIcon} alt="T-Nexus" className="w-16 h-16 mb-4 dark:invert" />
           <h1 className="text-2xl md:text-3xl font-semibold text-foreground text-center mb-8">
             {t?.sidebar?.aiGreeting || 'Hôm nay tôi có thể giúp gì cho bạn?'}
           </h1>
