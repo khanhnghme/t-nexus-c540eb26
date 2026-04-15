@@ -255,6 +255,54 @@ export default function AIAssistant() {
 
   const incrementCredits = (delta: number) => setCreditsUsed(prev => prev + delta);
 
+  const MAX_FILES = 5;
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    
+    const totalFiles = pendingFiles.length + files.length;
+    if (totalFiles > MAX_FILES) {
+      toast({ title: t?.sidebar?.aiTooManyFiles || 'Tối đa 5 file', variant: 'destructive' });
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    const oversized = files.filter(f => f.size > MAX_FILE_SIZE);
+    if (oversized.length > 0) {
+      toast({ title: t?.sidebar?.aiFileTooLarge || 'File vượt quá giới hạn 5MB', description: oversized.map(f => f.name).join(', '), variant: 'destructive' });
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    setPendingFiles(prev => [...prev, ...files]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeFile = (index: number) => {
+    setPendingFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes}B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)}KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+  };
+
+  const cleanupOldConversations = async () => {
+    if (!user?.id) return;
+    try {
+      const { data: filePaths } = await supabase.rpc('cleanup_old_ai_conversations' as any, { _user_id: user.id });
+      if (filePaths && Array.isArray(filePaths) && filePaths.length > 0) {
+        await r2Storage.from('ai-attachments').remove(filePaths);
+        toast({ title: t?.sidebar?.aiOldChatsDeleted || 'Đã dọn dẹp cuộc trò chuyện cũ' });
+      }
+    } catch (err) {
+      console.error('Cleanup old conversations error:', err);
+    }
+  };
+
   const sendMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
     const wc = countWords(messageText);
