@@ -77,16 +77,16 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
 
   // Project filter links
   const projectItems = [
-    { name: t?.allProjects || 'All projects', href: '/groups?filter=all', icon: FolderKanban, matchFilter: 'all' },
-    { name: t?.createdByMe || 'Created by me', href: '/groups?filter=created', icon: FolderOpen, matchFilter: 'created' },
-    { name: t?.sharedWithMe || 'Shared with me', href: '/groups?filter=shared', icon: Users, matchFilter: 'shared' },
+    { name: t?.allProjects || 'All projects', href: '/groups', icon: FolderKanban, matchPath: '/groups' },
+    { name: t?.createdByMe || 'Created by me', href: '/groups/created', icon: FolderOpen, matchPath: '/groups/created' },
+    { name: t?.sharedWithMe || 'Shared with me', href: '/groups/shared', icon: Users, matchPath: '/groups/shared' },
   ];
 
-  const isProjectFilterActive = (filterVal: string) => {
-    if (location.pathname !== '/groups') return false;
-    const params = new URLSearchParams(location.search);
-    const f = params.get('filter') || 'all';
-    return f === filterVal;
+  const isProjectFilterActive = (matchPath: string) => {
+    if (matchPath === '/groups') {
+      return location.pathname === '/groups' || location.pathname === '/groups/';
+    }
+    return location.pathname === matchPath || location.pathname.startsWith(matchPath + '/');
   };
 
   const getRoleBadge = (role?: string | null) => {

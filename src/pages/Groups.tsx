@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { Spinner } from '@/components/ui/spinner';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { fixStorageUrl } from '@/lib/urlUtils';
 import { Link, useNavigate } from 'react-router-dom';
