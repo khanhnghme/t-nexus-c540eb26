@@ -139,6 +139,44 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_message_attachments: {
+        Row: {
+          content_type: string | null
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          message_id: string
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id?: string
+          message_id: string
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          message_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_message_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "ai_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_messages: {
         Row: {
           content: string
@@ -3454,6 +3492,10 @@ export type Database = {
           ws_owner_id: string
           ws_role: string
         }[]
+      }
+      cleanup_old_ai_conversations: {
+        Args: { _max_conversations?: number; _user_id: string }
+        Returns: string[]
       }
       delete_email: {
         Args: { message_id: number; queue_name: string }

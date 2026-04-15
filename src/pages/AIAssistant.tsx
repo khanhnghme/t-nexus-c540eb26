@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Textarea } from '@/components/ui/textarea';
-import { Trash2, ArrowUp, FileText, ListChecks, BarChart3, PenLine, History, Plus, X, MessageSquare, MoreHorizontal, Pin, PinOff, Sparkles, AlertTriangle, Share2, User, Link2 } from 'lucide-react';
+import { Trash2, ArrowUp, FileText, ListChecks, BarChart3, PenLine, History, Plus, X, MessageSquare, MoreHorizontal, Pin, PinOff, Sparkles, AlertTriangle, Share2, User, Link2, Paperclip, File as FileIcon } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { r2Storage } from '@/lib/r2Storage';
 
 import { useNavigate } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -95,6 +96,8 @@ export default function AIAssistant() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const { user, profile } = useAuth();
   const { activeWorkspace } = useWorkspace();
   const { toast } = useToast();
@@ -252,6 +255,54 @@ export default function AIAssistant() {
 
   const incrementCredits = (delta: number) => setCreditsUsed(prev => prev + delta);
 
+  const MAX_FILES = 5;
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    
+    const totalFiles = pendingFiles.length + files.length;
+    if (totalFiles > MAX_FILES) {
+      toast({ title: t?.sidebar?.aiTooManyFiles || 'Tối đa 5 file', variant: 'destructive' });
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    const oversized = files.filter(f => f.size > MAX_FILE_SIZE);
+    if (oversized.length > 0) {
+      toast({ title: t?.sidebar?.aiFileTooLarge || 'File vượt quá giới hạn 5MB', description: oversized.map(f => f.name).join(', '), variant: 'destructive' });
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    setPendingFiles(prev => [...prev, ...files]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeFile = (index: number) => {
+    setPendingFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes}B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)}KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+  };
+
+  const cleanupOldConversations = async () => {
+    if (!user?.id) return;
+    try {
+      const { data: filePaths } = await supabase.rpc('cleanup_old_ai_conversations' as any, { _user_id: user.id });
+      if (filePaths && Array.isArray(filePaths) && filePaths.length > 0) {
+        await r2Storage.from('ai-attachments').remove(filePaths);
+        toast({ title: t?.sidebar?.aiOldChatsDeleted || 'Đã dọn dẹp cuộc trò chuyện cũ' });
+      }
+    } catch (err) {
+      console.error('Cleanup old conversations error:', err);
+    }
+  };
+
   const sendMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
     const wc = countWords(messageText);
@@ -268,12 +319,50 @@ export default function AIAssistant() {
     const userMessage: Message = { role: 'user', content: messageText };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
+    const filesToUpload = [...pendingFiles];
+    setPendingFiles([]);
     setIsLoading(true);
     setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
     let assistantContent = '';
 
     const convId = await ensureConversation(messageText);
     await saveMessage(convId, 'user', messageText);
+
+    // Upload files to R2 and save attachment records
+    let attachmentsMeta: { file_path: string; file_name: string; content_type: string }[] = [];
+    if (filesToUpload.length > 0) {
+      try {
+        const { data: lastMsg } = await supabase
+          .from('ai_messages')
+          .select('id')
+          .eq('conversation_id', convId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        const messageId = lastMsg?.id;
+
+        for (const file of filesToUpload) {
+          const filePath = `${user!.id}/${convId}/${Date.now()}-${file.name}`;
+          const { error: uploadErr } = await r2Storage.from('ai-attachments').upload(filePath, file, {
+            contentType: file.type || 'application/octet-stream',
+          });
+          if (!uploadErr) {
+            attachmentsMeta.push({ file_path: filePath, file_name: file.name, content_type: file.type || 'application/octet-stream' });
+            if (messageId) {
+              await supabase.from('ai_message_attachments').insert({
+                message_id: messageId,
+                file_path: filePath,
+                file_name: file.name,
+                file_size: file.size,
+                content_type: file.type || 'application/octet-stream',
+              } as any);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('File upload error:', err);
+      }
+    }
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -289,6 +378,7 @@ export default function AIAssistant() {
           },
           body: JSON.stringify({
             messages: [...messages, userMessage].map(m => ({ role: m.role, content: m.content })),
+            attachments: attachmentsMeta.length > 0 ? attachmentsMeta : undefined,
           }),
         }
       );
@@ -366,8 +456,9 @@ export default function AIAssistant() {
       if (assistantContent) {
         await saveMessage(convId, 'assistant', assistantContent);
         await supabase.from('ai_conversations').update({ updated_at: new Date().toISOString() } as any).eq('id', convId);
-        // Re-fetch credit usage after successful message
         loadUsage();
+        // Cleanup old conversations (keep max 10)
+        cleanupOldConversations();
       }
     } catch (err) {
       console.error('AI Assistant error:', err);
@@ -553,6 +644,21 @@ export default function AIAssistant() {
   // ── Shared Input ──
   const renderInput = (variant: 'empty' | 'chat') => (
     <form onSubmit={handleSubmit} className="w-full">
+      {/* File preview chips */}
+      {pendingFiles.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-2 px-1">
+          {pendingFiles.map((file, idx) => (
+            <div key={idx} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted/60 border border-border/40 text-xs">
+              <FileIcon className="h-3 w-3 text-muted-foreground shrink-0" />
+              <span className="truncate max-w-[120px] text-foreground">{file.name}</span>
+              <span className="text-muted-foreground/60">{formatFileSize(file.size)}</span>
+              <button type="button" onClick={() => removeFile(idx)} className="p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
       <div className={cn(
         "relative rounded-2xl transition-all duration-200",
         isOverLimit
@@ -569,10 +675,18 @@ export default function AIAssistant() {
           className={cn(
             "w-full resize-none border-0 bg-transparent placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0",
             variant === 'empty'
-              ? "px-5 py-4 pr-16 min-h-[56px] max-h-[160px] text-[15px]"
-              : "px-5 py-3.5 pr-14 min-h-[48px] max-h-[140px] text-sm"
+              ? "px-5 py-4 pr-28 min-h-[56px] max-h-[160px] text-[15px]"
+              : "px-5 py-3.5 pr-24 min-h-[48px] max-h-[140px] text-sm"
           )}
           rows={1}
+        />
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={handleFileSelect}
+          accept="*/*"
         />
         <div className={cn("absolute flex items-center gap-1.5", variant === 'empty' ? "right-3 bottom-3" : "right-2.5 bottom-2.5")}>
           {activeModel && (
@@ -582,8 +696,17 @@ export default function AIAssistant() {
             </span>
           )}
           <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isLoading || pendingFiles.length >= MAX_FILES}
+            className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+            title={t?.sidebar?.aiAttachFiles || 'Đính kèm file'}
+          >
+            <Paperclip className="h-4 w-4" />
+          </button>
+          <button
             type="submit"
-            disabled={!input.trim() || isLoading || isOverLimit}
+            disabled={(!input.trim() && pendingFiles.length === 0) || isLoading || isOverLimit}
             className="p-2 rounded-xl bg-foreground text-background hover:bg-foreground/80 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
           >
             {isLoading ? <Spinner size="sm" className="text-background" /> : <ArrowUp className="h-4 w-4" />}
@@ -593,6 +716,11 @@ export default function AIAssistant() {
       {isOverLimit && (
         <p className="text-[11px] text-destructive mt-1.5 text-center">
           Vượt giới hạn {MAX_MESSAGE_WORDS} từ ({wordCount}/{MAX_MESSAGE_WORDS})
+        </p>
+      )}
+      {pendingFiles.length > 0 && (
+        <p className="text-[10px] text-muted-foreground mt-1 text-center">
+          {pendingFiles.length} {t?.sidebar?.aiFileAttached || 'file đính kèm'} · {t?.sidebar?.aiMaxFileSize || 'Tối đa 5MB mỗi file'}
         </p>
       )}
     </form>

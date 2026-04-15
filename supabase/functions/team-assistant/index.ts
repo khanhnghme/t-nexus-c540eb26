@@ -498,7 +498,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, projectId } = await req.json();
+    const { messages, projectId, attachments } = await req.json();
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -747,11 +747,69 @@ serve(async (req) => {
       modelName = "google/gemini-2.5-flash-lite";
     }
 
+    // ─── Process file attachments ─
+    let processedMessages = [...messages];
+    if (attachments && Array.isArray(attachments) && attachments.length > 0) {
+      const validAttachments = attachments.slice(0, 5); // Max 5 files
+      const fileContextParts: string[] = [];
+
+      const r2Config = {
+        accessKeyId: Deno.env.get('R2_ACCESS_KEY_ID')!,
+        secretAccessKey: Deno.env.get('R2_SECRET_ACCESS_KEY')!,
+        endpoint: Deno.env.get('R2_ENDPOINT')!.replace(/\/+$/, ''),
+      };
+
+      const { AwsClient } = await import('https://esm.sh/aws4fetch@1.0.20');
+      const r2 = new AwsClient({
+        accessKeyId: r2Config.accessKeyId,
+        secretAccessKey: r2Config.secretAccessKey,
+      });
+
+      for (const att of validAttachments) {
+        const { file_path, file_name, content_type } = att;
+        if (!file_path || !file_name) continue;
+
+        try {
+          const isTextBased = /^(text\/|application\/(json|csv|xml|javascript|typescript|x-yaml|yaml|markdown))/.test(content_type || '');
+          
+          if (isTextBased) {
+            const r2Url = `${r2Config.endpoint}/ai-attachments/${file_path}`;
+            const dlResp = await r2.fetch(r2Url, { method: 'GET' });
+            if (dlResp.ok) {
+              const textContent = await dlResp.text();
+              const truncated = textContent.length > 10000 ? textContent.substring(0, 10000) + '\n... (truncated)' : textContent;
+              fileContextParts.push(`\n📎 File "${file_name}" (${content_type}):\n\`\`\`\n${truncated}\n\`\`\``);
+            } else {
+              await dlResp.text();
+              fileContextParts.push(`\n📎 File "${file_name}" — Không thể đọc nội dung`);
+            }
+          } else {
+            // Non-text files: just mention metadata
+            fileContextParts.push(`\n📎 File "${file_name}" (${content_type || 'unknown'}) — File nhị phân, không thể đọc trực tiếp`);
+          }
+        } catch (e) {
+          console.error(`Failed to process attachment ${file_name}:`, e);
+          fileContextParts.push(`\n📎 File "${file_name}" — Lỗi khi xử lý file`);
+        }
+      }
+
+      if (fileContextParts.length > 0) {
+        // Append file context to the last user message
+        const lastIdx = processedMessages.length - 1;
+        if (lastIdx >= 0 && processedMessages[lastIdx].role === 'user') {
+          processedMessages[lastIdx] = {
+            ...processedMessages[lastIdx],
+            content: processedMessages[lastIdx].content + '\n\n--- File đính kèm ---' + fileContextParts.join('\n'),
+          };
+        }
+      }
+    }
+
     const requestBody = JSON.stringify({
       model: modelName,
       messages: [
         { role: "system", content: systemPrompt },
-        ...messages,
+        ...processedMessages,
       ],
       stream: true,
       temperature: 0.3,
@@ -784,7 +842,7 @@ serve(async (req) => {
           model: "google/gemini-2.5-flash-lite",
           messages: [
             { role: "system", content: systemPrompt },
-            ...messages,
+            ...processedMessages,
           ],
           stream: true,
           temperature: 0.3,
