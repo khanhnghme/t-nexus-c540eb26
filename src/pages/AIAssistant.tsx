@@ -24,6 +24,7 @@ interface Conversation {
   title: string;
   created_at: string;
   updated_at: string;
+  is_pinned: boolean;
 }
 
 const MAX_MESSAGE_WORDS = 100;
@@ -112,11 +113,12 @@ export default function AIAssistant() {
     if (!user?.id) return;
     const { data } = await supabase
       .from('ai_conversations')
-      .select('id, title, created_at, updated_at')
+      .select('id, title, created_at, updated_at, is_pinned')
       .eq('user_id', user.id)
+      .order('is_pinned', { ascending: false })
       .order('updated_at', { ascending: false })
       .limit(50);
-    if (data) setConversations(data);
+    if (data) setConversations(data.map(c => ({ ...c, is_pinned: !!(c as any).is_pinned })));
   }, [user?.id]);
 
   useEffect(() => { loadConversations(); }, [loadConversations]);
@@ -347,6 +349,16 @@ export default function AIAssistant() {
     toast({ title: t?.sidebar?.allDeleted || 'Đã xóa tất cả lịch sử' });
   };
 
+  const handleTogglePin = async (e: React.MouseEvent, convId: string) => {
+    e.stopPropagation();
+    const conv = conversations.find(c => c.id === convId);
+    if (!conv) return;
+    const newPinned = !conv.is_pinned;
+    await supabase.from('ai_conversations').update({ is_pinned: newPinned } as any).eq('id', convId);
+    setConversations(prev => prev.map(c => c.id === convId ? { ...c, is_pinned: newPinned } : c));
+    toast({ title: newPinned ? 'Đã ghim cuộc trò chuyện' : 'Đã bỏ ghim' });
+  };
+
   const wordCount = countWords(input);
   const isOverLimit = wordCount > MAX_MESSAGE_WORDS;
 
@@ -400,31 +412,24 @@ export default function AIAssistant() {
           {conversations.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center py-8">{t?.sidebar?.noHistory || 'Chưa có lịch sử trò chuyện'}</p>
           ) : (
-            grouped.map(group => (
-              <div key={group.label} className="mb-3">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70 px-2 py-1.5 font-medium">{group.label}</p>
-                {group.items.map(conv => (
-                  <div
-                    key={conv.id}
-                    onClick={() => loadConversation(conv.id)}
-                    className={cn(
-                      "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-sm transition-colors group cursor-pointer overflow-hidden min-w-0",
-                      activeConversationId === conv.id ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                    )}
-                  >
-                    <MessageSquare className="h-3.5 w-3.5 shrink-0 opacity-50" />
-                    <span className="truncate flex-1 min-w-0">{conv.title || 'Untitled'}</span>
-                    <button
-                      onClick={(e) => handleDeleteConversation(e, conv.id)}
-                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all shrink-0"
-                      title={t?.sidebar?.deleteConversation || 'Xóa'}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ))
+            <>
+              {/* Pinned section */}
+              {conversations.filter(c => c.is_pinned).length > 0 && (
+                <div className="mb-3">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70 px-2 py-1.5 font-medium flex items-center gap-1">
+                    <Pin className="h-2.5 w-2.5" /> Đã ghim
+                  </p>
+                  {conversations.filter(c => c.is_pinned).map(conv => renderConvItem(conv))}
+                </div>
+              )}
+              {/* Grouped unpinned */}
+              {groupConversations(conversations.filter(c => !c.is_pinned), t).map(group => (
+                <div key={group.label} className="mb-3">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70 px-2 py-1.5 font-medium">{group.label}</p>
+                  {group.items.map(conv => renderConvItem(conv))}
+                </div>
+              ))}
+            </>
           )}
         </div>
       </ScrollArea>
