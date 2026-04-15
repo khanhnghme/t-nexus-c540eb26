@@ -341,6 +341,17 @@ export default function AIAssistant() {
     loadConversations();
   };
 
+  const handleDeleteAllConversations = async () => {
+    if (!user?.id || conversations.length === 0) return;
+    const confirmed = window.confirm(t?.sidebar?.confirmDeleteAll || 'Xóa tất cả lịch sử trò chuyện?');
+    if (!confirmed) return;
+    await supabase.from('ai_conversations').delete().eq('user_id', user.id);
+    setMessages([]);
+    setActiveConversationId(null);
+    setConversations([]);
+    toast({ title: t?.sidebar?.allDeleted || 'Đã xóa tất cả lịch sử' });
+  };
+
   const isUnlimited = maxQuestions === null;
   const remainingQuestions = isUnlimited ? Infinity : maxQuestions - questionsToday;
   const wordCount = countWords(input);
@@ -375,9 +386,16 @@ export default function AIAssistant() {
     )} style={{ top: 56 }}>
       <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border/40">
         <span className="text-sm font-medium text-foreground">{t?.sidebar?.chatHistory || 'Lịch sử trò chuyện'}</span>
-        <button onClick={() => setShowHistory(false)} className="p-1 rounded-md hover:bg-muted text-muted-foreground">
-          <X className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          {conversations.length > 0 && (
+            <button onClick={handleDeleteAllConversations} className="p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title={t?.sidebar?.deleteAll || 'Xóa tất cả'}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+          <button onClick={() => setShowHistory(false)} className="p-1 rounded-md hover:bg-muted text-muted-foreground">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       <div className="shrink-0 px-3 py-2">
@@ -533,17 +551,6 @@ export default function AIAssistant() {
         <div className="shrink-0 border-t border-border/40 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <div className="max-w-3xl mx-auto">
             {renderInput('chat')}
-            {!isUnlimited && (
-              <div className="flex items-center justify-center gap-2 mt-2">
-                <div className="w-20 h-1 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className={cn("h-full rounded-full transition-all duration-500", usagePercent > 80 ? "bg-destructive" : "bg-primary")}
-                    style={{ width: `${usagePercent}%` }}
-                  />
-                </div>
-                <span className="text-[10px] text-muted-foreground tabular-nums">{questionsToday}/{maxQuestions}</span>
-              </div>
-            )}
           </div>
         </div>
 
