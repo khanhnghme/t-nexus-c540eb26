@@ -67,6 +67,7 @@ export default function AIAssistant() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [activeModel, setActiveModel] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -225,6 +226,9 @@ export default function AIAssistant() {
         throw new Error(errorData.error || `HTTP ${response.status}`);
       }
       if (!response.body) throw new Error('No response body');
+
+      const modelHeader = response.headers.get('X-AI-Model');
+      if (modelHeader) setActiveModel(modelHeader);
 
       incrementUsage();
       const reader = response.body.getReader();
