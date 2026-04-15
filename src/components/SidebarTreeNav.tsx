@@ -77,7 +77,19 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
     }
   }, [location.pathname]);
 
-  const isProjectsExpanded = expanded === 'projects';
+  // Project filter links
+  const projectItems = [
+    { name: t?.allProjects || 'All projects', href: '/groups?filter=all', icon: FolderKanban, matchFilter: 'all' },
+    { name: t?.createdByMe || 'Created by me', href: '/groups?filter=created', icon: FolderOpen, matchFilter: 'created' },
+    { name: t?.sharedWithMe || 'Shared with me', href: '/groups?filter=shared', icon: Users, matchFilter: 'shared' },
+  ];
+
+  const isProjectFilterActive = (filterVal: string) => {
+    if (location.pathname !== '/groups') return false;
+    const params = new URLSearchParams(location.search);
+    const f = params.get('filter') || 'all';
+    return f === filterVal;
+  };
 
   const getRoleBadge = (role?: string | null) => {
     switch (role) {
@@ -117,16 +129,9 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
 
   const isPathActive = (href: string) => {
     if (href === '/dashboard') return location.pathname === '/dashboard';
+    if (href.startsWith('/groups?')) return false; // handled by isProjectFilterActive
     return location.pathname === href || location.pathname.startsWith(href + '/');
   };
-
-  const hasActiveChild = (paths: string[]) => paths.some(p => isPathActive(p));
-  const getProjectHref = (p: WorkspaceProject) => {
-    if (!activeWorkspace?.short_id) return `/p/${p.slug || p.id}`;
-    const prefix = p.project_mode === 'custom' ? '/pa' : '/pr';
-    return `${prefix}/ws-${activeWorkspace.short_id}/${p.slug || p.id}`;
-  };
-  const projectPaths = visibleProjects.map(p => getProjectHref(p));
 
   /* ─── Collapsed mode ─── */
   if (collapsed) {
