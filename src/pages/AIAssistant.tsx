@@ -597,17 +597,7 @@ export default function AIAssistant() {
                       <img src={tNexusIcon} alt="AI" className="w-7 h-7 shrink-0 mt-0.5 dark:invert" />
                       <div className="text-[14px] leading-[1.7] text-foreground flex-1 min-w-0">
                         {message.content ? (
-                          <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground prose-headings:text-sm prose-code:text-[13px]">
-                            <ReactMarkdown components={{
-                              p: ({ children }) => <p className="mb-2.5 last:mb-0">{children}</p>,
-                              ul: ({ children }) => <ul className="list-disc list-inside mb-2.5 space-y-1">{children}</ul>,
-                              ol: ({ children }) => <ol className="list-decimal list-inside mb-2.5 space-y-1">{children}</ol>,
-                              li: ({ children }) => <li className="text-[14px]">{children}</li>,
-                              strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                              code: ({ children }) => <code className="bg-muted px-1.5 py-0.5 rounded text-[12px] font-mono">{children}</code>,
-                              pre: ({ children }) => <pre className="bg-muted/50 border border-border/40 rounded-xl p-4 overflow-x-auto my-3 text-[13px]">{children}</pre>,
-                            }}>{message.content}</ReactMarkdown>
-                          </div>
+                          <AIMessageRenderer content={message.content} />
                         ) : (
                           <div className="flex items-center gap-1.5 py-2">
                             <span className="w-1.5 h-1.5 rounded-full ai-typing-dot bg-muted-foreground/40" style={{ animationDelay: '0ms' }} />
