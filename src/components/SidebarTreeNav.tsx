@@ -68,9 +68,7 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
   useEffect(() => {
     const path = location.pathname;
     if (path === '/workspace/new') return;
-    if (path.startsWith('/pr/') || path.startsWith('/p/')) {
-      setExpanded('projects');
-    } else if (path === '/personal-info' || path === '/account-settings') {
+    if (path === '/personal-info' || path === '/account-settings') {
       setExpanded('account');
     } else if (path === '/service-plan' || path === '/billing-history') {
       setExpanded('billing');
