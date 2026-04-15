@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Textarea } from '@/components/ui/textarea';
-import { Trash2, ArrowUp, FileText, ListChecks, BarChart3, PenLine, History, Plus, X, MessageSquare } from 'lucide-react';
+import { Trash2, ArrowUp, FileText, ListChecks, BarChart3, PenLine, History, Plus, X, MessageSquare, MoreHorizontal, Pin, PinOff } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import tNexusIcon from '@/assets/t-nexus-icon.png';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
