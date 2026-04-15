@@ -808,113 +808,24 @@ export default function Dashboard() {
           </DialogContent>
         </Dialog>
 
-        {/* My Projects */}
+        {/* Recent Projects */}
         <Card>
           <CardHeader className="pb-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-lg font-heading font-semibold">{t?.myProjects || 'My Projects'}</CardTitle>
+                <CardTitle className="text-lg font-heading font-semibold">{t?.recentProjects || 'Recent Projects'}</CardTitle>
                 <CardDescription>{t?.projectsYouJoined || 'Projects you are participating in'}</CardDescription>
               </div>
-              <div className="flex items-center gap-2">
-                {/* Mobile/Tablet: single compact select */}
-                <select
-                  value={`${filter}|${modeFilter}`}
-                  onChange={(e) => {
-                    const [f, m] = e.target.value.split('|') as [DashboardFilter, ProjectModeFilter];
-                    handleFilterChange(f);
-                    setModeFilter(m);
-                  }}
-                  className="lg:hidden h-8 text-xs rounded-full border border-border bg-background px-3 pr-7 text-foreground appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23888%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_8px_center] focus:outline-none focus:ring-2 focus:ring-primary/50"
-                >
-                  <option value="active|all">{t?.active || 'Active'} ({activeCount})</option>
-                  <option value="active|basic">{t?.active || 'Active'} · Basic</option>
-                  <option value="active|custom">{t?.active || 'Active'} · Custom</option>
-                  {pendingCount > 0 && (
-                    <option value="pending|all">{t?.pendingApproval || 'Pending'} ({pendingCount})</option>
-                  )}
-                  <option value="hidden|all">{t?.hidden || 'Hidden'} ({hiddenCount})</option>
-                  <option value="all|all">{t?.all || 'All'} ({groups.length})</option>
-                  <option value="all|basic">{t?.all || 'All'} · Basic</option>
-                  <option value="all|custom">{t?.all || 'All'} · Custom</option>
-                </select>
-
-                {/* Desktop: original toggle groups */}
-                <ToggleGroup type="single" value={filter} onValueChange={handleFilterChange} className="bg-transparent gap-1 hidden lg:flex">
-                  <ToggleGroupItem value="active" className="text-xs px-3 sm:px-3.5 py-1.5 h-8 rounded-full border border-transparent data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=off]:bg-muted/50 data-[state=off]:text-muted-foreground hover:data-[state=off]:bg-muted gap-1.5 transition-all">
-                    <Layers className="w-3 h-3" />
-                    {t?.active || 'Active'}
-                    <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 min-w-[16px] justify-center bg-muted-foreground/15 text-foreground">{activeCount}</Badge>
-                  </ToggleGroupItem>
-                  {pendingCount > 0 && (
-                    <ToggleGroupItem value="pending" className="text-xs px-3 sm:px-3.5 py-1.5 h-8 rounded-full border border-transparent data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=off]:bg-muted/50 data-[state=off]:text-muted-foreground hover:data-[state=off]:bg-muted gap-1.5 transition-all">
-                      <Clock className="w-3 h-3" />
-                      {t?.pendingApproval || 'Pending'}
-                      <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 min-w-[16px] justify-center bg-warning/20 text-warning">{pendingCount}</Badge>
-                    </ToggleGroupItem>
-                  )}
-                  <ToggleGroupItem value="hidden" className="text-xs px-3 sm:px-3.5 py-1.5 h-8 rounded-full border border-transparent data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=off]:bg-muted/50 data-[state=off]:text-muted-foreground hover:data-[state=off]:bg-muted gap-1.5 transition-all">
-                    <EyeOff className="w-3 h-3" />
-                    {t?.hidden || 'Hidden'}
-                    <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 min-w-[16px] justify-center bg-muted-foreground/15 text-foreground">{hiddenCount}</Badge>
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="all" className="text-xs px-3 sm:px-3.5 py-1.5 h-8 rounded-full border border-transparent data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=off]:bg-muted/50 data-[state=off]:text-muted-foreground hover:data-[state=off]:bg-muted gap-1.5 transition-all">
-                    {t?.all || 'All'}
-                    <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 min-w-[16px] justify-center bg-muted-foreground/15 text-foreground">{groups.length}</Badge>
-                  </ToggleGroupItem>
-                </ToggleGroup>
-                <div className="w-px h-6 bg-border hidden lg:block" />
-                <ToggleGroup type="single" value={modeFilter} onValueChange={(v) => v && setModeFilter(v as ProjectModeFilter)} className="bg-transparent gap-1 hidden lg:flex">
-                  <ToggleGroupItem value="all" className="text-xs px-2.5 py-1.5 h-8 rounded-full border border-transparent data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=off]:bg-muted/50 data-[state=off]:text-muted-foreground hover:data-[state=off]:bg-muted transition-all">
-                    {locale === 'vi' ? 'Tất cả' : 'All'}
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="basic" className="text-xs px-2.5 py-1.5 h-8 rounded-full border border-transparent data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=off]:bg-muted/50 data-[state=off]:text-muted-foreground hover:data-[state=off]:bg-muted transition-all">
-                    Basic
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="custom" className="text-xs px-2.5 py-1.5 h-8 rounded-full border border-transparent data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-primary data-[state=off]:bg-muted/50 data-[state=off]:text-muted-foreground hover:data-[state=off]:bg-muted transition-all">
-                    Custom
-                  </ToggleGroupItem>
-                </ToggleGroup>
-                {activeWorkspace ? (
-                  <Link to="/groups">
-                    <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md transition-all" size="sm">
-                      <FolderKanban className="w-4 h-4" />
-                      <span className="hidden md:inline">{t?.viewAndCreate || 'View & Create Project'}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </Button>
-                  </Link>
-                ) : (
-                  <Link to="/workspace/new">
-                    <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md transition-all" size="sm">
-                      <Plus className="w-4 h-4" />
-                      <span className="hidden md:inline">{locale === 'vi' ? 'Tạo Workspace' : 'Create Workspace'}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </Button>
-                  </Link>
-                )}
-              </div>
+              <Link to="/groups">
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  {t?.viewAllProj || (locale === 'vi' ? 'Xem tất cả' : 'View all')}
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Button>
+              </Link>
             </div>
           </CardHeader>
           <CardContent>
-            {filter === 'pending' ? (
-              pendingApprovalGroups.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Clock className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                  <p className="text-lg font-medium mb-1">{t?.noPendingRequests || 'No pending approval requests'}</p>
-                  <p className="text-sm">{t?.useCodeToJoin || 'Use a join code to request access to a new project'}</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                  {pendingApprovalGroups.map((group) => (
-                    <DashboardProjectCard
-                      key={group.id}
-                      group={group}
-                      isPending
-                    />
-                  ))}
-                </div>
-              )
-            ) : filteredGroups.length === 0 ? (
+            {recentProjects.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <FolderKanban className="w-16 h-16 mx-auto mb-4 opacity-30" />
                 {!activeWorkspace ? (
@@ -935,22 +846,20 @@ export default function Dashboard() {
                 ) : (
                   <>
                     <p className="text-lg font-medium mb-1">
-                      {filter === 'hidden' ? (t?.noHiddenProjects || 'No hidden projects') : filter === 'all' ? (t?.notJoinedYet || "You haven't joined any projects yet") : (t?.noActiveProjects || 'No active projects')}
+                      {t?.notJoinedYet || "You haven't joined any projects yet"}
                     </p>
                     <p className="text-sm">
-                      {filter === 'hidden' ? (t?.hoverToHide || 'Hover over a project and click the eye icon to hide') : (t?.contactLeader || 'Contact Leader to be added to a project')}
+                      {t?.contactLeader || 'Contact Leader to be added to a project'}
                     </p>
                   </>
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                {filteredGroups.map((group) => (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-3">
+                {recentProjects.map((group) => (
                   <DashboardProjectCard
                     key={group.id}
                     group={group}
-                    isHidden={hiddenProjectIds.has(group.id)}
-                    onToggleHide={handleToggleHide}
                   />
                 ))}
               </div>
