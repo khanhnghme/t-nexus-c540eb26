@@ -691,22 +691,65 @@ serve(async (req) => {
 
     const systemPrompt = buildSystemPrompt(userName, projectContexts, isProjectSpecific, currentProjectName, systemPolicy, userExtraContext);
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // Tier-based model routing: Pro+ uses DeepSeek, Free/Plus uses Lovable AI
+    const isPro = ownerPlan === 'plan_pro' || ownerPlan === 'plan_business' || ownerPlan === 'plan_custom';
+    const DEEPSEEK_API_KEY = Deno.env.get("DEEPSEEK_API_KEY") || "";
+    const useDeepSeek = isPro && DEEPSEEK_API_KEY;
+
+    let apiUrl: string;
+    let apiKey: string;
+    let modelName: string;
+
+    if (useDeepSeek) {
+      apiUrl = "https://api.deepseek.com/chat/completions";
+      apiKey = DEEPSEEK_API_KEY;
+      modelName = "deepseek-chat";
+    } else {
+      apiUrl = "https://ai.gateway.lovable.dev/v1/chat/completions";
+      apiKey = LOVABLE_API_KEY || "";
+      modelName = "google/gemini-2.5-flash-lite";
+    }
+
+    const requestBody = JSON.stringify({
+      model: modelName,
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...messages,
+      ],
+      stream: true,
+      temperature: 0.3,
+    });
+
+    let response = await fetch(apiUrl, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
-        stream: true,
-        temperature: 0.3,
-      }),
+      body: requestBody,
     });
+
+    // Fallback: if DeepSeek fails with 5xx, retry with Lovable Gateway
+    if (useDeepSeek && response.status >= 500) {
+      console.warn(`DeepSeek returned ${response.status}, falling back to Lovable Gateway`);
+      try { await response.text(); } catch {}
+      response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash-lite",
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...messages,
+          ],
+          stream: true,
+          temperature: 0.3,
+        }),
+      });
+    }
 
     if (!response.ok) {
       if (response.status === 429) {
