@@ -448,11 +448,12 @@ Khi người dùng gửi file kèm câu hỏi:
 3. ✅ Với file CSV/bảng: đọc dữ liệu, thống kê, trả lời câu hỏi cụ thể về các dòng/cột
 4. ✅ Với file code: review, giải thích logic, gợi ý sửa lỗi, tối ưu
 5. ✅ Với file JSON/XML: parse và trích xuất thông tin theo yêu cầu
-6. ❌ KHÔNG thực thi code hoặc chạy script
-7. ❌ KHÔNG tạo/sửa/xóa dữ liệu hệ thống dựa trên nội dung file
-8. ❌ KHÔNG xử lý file chứa nội dung độc hại, spam, hoặc vi phạm
-9. ⚠️ Với file nhị phân (PDF, docx, ảnh...): thông báo rằng chỉ đọc được file văn bản thuần
-10. ⚠️ Nếu file quá lớn bị cắt ngắn (truncated): thông báo cho người dùng biết chỉ đọc được phần đầu
+6. ✅ Với file ảnh (PNG, JPG, GIF, WEBP): phân tích, mô tả, trích xuất thông tin từ hình ảnh
+7. ✅ Với file PDF: đọc và phân tích nội dung tài liệu
+8. ❌ KHÔNG thực thi code hoặc chạy script
+9. ❌ KHÔNG tạo/sửa/xóa dữ liệu hệ thống dựa trên nội dung file
+10. ❌ KHÔNG xử lý file chứa nội dung độc hại, spam, hoặc vi phạm
+11. ⚠️ Nếu file quá lớn bị cắt ngắn (truncated): thông báo cho người dùng biết chỉ đọc được phần đầu
 
 ## QUY TẮC BẮT BUỘC - CỰC KỲ QUAN TRỌNG
 
@@ -761,7 +762,10 @@ serve(async (req) => {
     }
 
     // ─── Process file attachments ─
+    const useMultimodal = !useDeepSeek; // Gemini supports multimodal, DeepSeek does not
     let processedMessages = [...messages];
+    const multimodalParts: Array<{ type: string; image_url?: { url: string } }> = [];
+
     if (attachments && Array.isArray(attachments) && attachments.length > 0) {
       const validAttachments = attachments.slice(0, 5); // Max 5 files
       const fileContextParts: string[] = [];
@@ -778,6 +782,10 @@ serve(async (req) => {
         secretAccessKey: r2Config.secretAccessKey,
       });
 
+      const imageMimeRegex = /^image\/(png|jpe?g|gif|webp)$/i;
+      const pdfMimeRegex = /^application\/pdf$/i;
+      const MAX_BINARY_SIZE = 5 * 1024 * 1024; // 5MB
+
       for (const att of validAttachments) {
         const { file_path, file_name, content_type } = att;
         if (!file_path || !file_name) continue;
@@ -786,6 +794,8 @@ serve(async (req) => {
           const textMimeRegex = /^(text\/|application\/(json|csv|xml|javascript|typescript|x-yaml|yaml|markdown|x-python|sql|x-sh|x-httpd-php|x-perl|x-ruby|toml))/.test(content_type || '');
           const textExtRegex = /\.(py|sql|sh|log|env|ini|cfg|toml|rb|pl|lua|r|go|rs|kt|swift|c|cpp|h|hpp|cs|java|scala|ts|tsx|jsx|vue|svelte|bat|ps1|makefile|dockerfile)$/i.test(file_name || '');
           const isTextBased = textMimeRegex || textExtRegex;
+          const isImage = imageMimeRegex.test(content_type || '');
+          const isPdf = pdfMimeRegex.test(content_type || '');
           
           if (isTextBased) {
             const r2Url = `${r2Config.endpoint}/ai-attachments/${file_path}`;
@@ -798,9 +808,33 @@ serve(async (req) => {
               await dlResp.text();
               fileContextParts.push(`\n📎 File "${file_name}" — Không thể đọc nội dung`);
             }
+          } else if ((isImage || isPdf) && useMultimodal) {
+            // Multimodal: fetch binary, convert to base64, send as content part
+            const r2Url = `${r2Config.endpoint}/ai-attachments/${file_path}`;
+            const dlResp = await r2.fetch(r2Url, { method: 'GET' });
+            if (dlResp.ok) {
+              const arrayBuf = await dlResp.arrayBuffer();
+              if (arrayBuf.byteLength <= MAX_BINARY_SIZE) {
+                const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuf)));
+                const mimeType = content_type || (isImage ? 'image/png' : 'application/pdf');
+                multimodalParts.push({
+                  type: "image_url",
+                  image_url: { url: `data:${mimeType};base64,${base64}` }
+                });
+                fileContextParts.push(`\n📎 File "${file_name}" (${content_type}) — Đã tải để phân tích`);
+              } else {
+                await dlResp.arrayBuffer(); // drain
+                fileContextParts.push(`\n📎 File "${file_name}" — File quá lớn (>5MB), không thể phân tích`);
+              }
+            } else {
+              await dlResp.text();
+              fileContextParts.push(`\n📎 File "${file_name}" — Không thể tải file`);
+            }
+          } else if ((isImage || isPdf) && !useMultimodal) {
+            fileContextParts.push(`\n📎 File "${file_name}" (${content_type}) — Model hiện tại không hỗ trợ đọc file ${isImage ? 'ảnh' : 'PDF'}`);
           } else {
-            // Non-text files: just mention metadata
-            fileContextParts.push(`\n📎 File "${file_name}" (${content_type || 'unknown'}) — File nhị phân, không thể đọc trực tiếp`);
+            // Non-text, non-image, non-PDF files
+            fileContextParts.push(`\n📎 File "${file_name}" (${content_type || 'unknown'}) — Định dạng file không được hỗ trợ`);
           }
         } catch (e) {
           console.error(`Failed to process attachment ${file_name}:`, e);
@@ -812,10 +846,23 @@ serve(async (req) => {
         // Append file context to the last user message
         const lastIdx = processedMessages.length - 1;
         if (lastIdx >= 0 && processedMessages[lastIdx].role === 'user') {
-          processedMessages[lastIdx] = {
-            ...processedMessages[lastIdx],
-            content: processedMessages[lastIdx].content + '\n\n--- File đính kèm ---' + fileContextParts.join('\n'),
-          };
+          const textContent = processedMessages[lastIdx].content + '\n\n--- File đính kèm ---' + fileContextParts.join('\n');
+          
+          if (multimodalParts.length > 0) {
+            // Use array content format for multimodal
+            processedMessages[lastIdx] = {
+              ...processedMessages[lastIdx],
+              content: [
+                { type: "text", text: textContent },
+                ...multimodalParts,
+              ],
+            };
+          } else {
+            processedMessages[lastIdx] = {
+              ...processedMessages[lastIdx],
+              content: textContent,
+            };
+          }
         }
       }
     }
