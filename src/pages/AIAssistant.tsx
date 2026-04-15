@@ -573,29 +573,36 @@ export default function AIAssistant() {
       
 
       <div className="flex-1 flex flex-col items-center justify-center px-5">
-        <div className="max-w-3xl w-full flex flex-col items-center">
-          <img src={tNexusIcon} alt="T-Nexus" className="w-20 h-20 mb-4 dark:invert" />
-          <h1 className="text-2xl md:text-3xl font-semibold text-foreground text-center mb-8">
+        <div className="max-w-2xl w-full flex flex-col items-center">
+          <div className="mb-6 relative">
+            <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl scale-150" />
+            <img src={tNexusIcon} alt="T-Nexus" className="relative w-16 h-16 dark:invert" />
+          </div>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-2 tracking-tight">
             {t?.sidebar?.aiGreeting || 'Hôm nay tôi có thể giúp gì cho bạn?'}
           </h1>
-          <div className="w-full mb-8">
-            {renderInput('empty')}
-          </div>
-          <div className="grid grid-cols-2 gap-3 w-full max-w-lg">
+          <p className="text-sm text-muted-foreground text-center mb-8">
+            {t?.sidebar?.aiSubGreeting || 'Chọn một gợi ý bên dưới hoặc nhập câu hỏi của bạn'}
+          </p>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full mb-8">
             {suggestions.map((s, idx) => (
               <button
                 key={idx}
                 onClick={() => sendMessage(s.prompt)}
                 disabled={isLoading || remainingQuestions <= 0}
-                className="flex items-start gap-3 p-3.5 rounded-xl border border-border/50 bg-card hover:bg-muted/50 hover:border-border transition-all text-left group disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border border-border/50 bg-card hover:bg-muted/50 hover:border-primary/30 hover:shadow-sm transition-all text-center group disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <s.icon className="h-4 w-4 mt-0.5 text-muted-foreground group-hover:text-foreground shrink-0 transition-colors" />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground leading-tight">{s.label}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{s.desc}</p>
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <s.icon className="h-5 w-5 text-primary shrink-0 transition-colors" />
                 </div>
+                <p className="text-sm font-medium text-foreground leading-tight">{s.label}</p>
               </button>
             ))}
+          </div>
+
+          <div className="w-full">
+            {renderInput('empty')}
           </div>
           {remainingQuestions <= 0 && (
             <p className="text-[11px] text-muted-foreground text-center mt-4">Bạn đã hết lượt hỏi tháng này. Quay lại tháng sau nhé!</p>
