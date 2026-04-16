@@ -29,8 +29,8 @@ self.addEventListener('fetch', (event) => {
   // Skip non-GET and cross-origin
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
 
-  // Skip API / Supabase calls
-  if (url.pathname.startsWith('/rest/') || url.pathname.startsWith('/auth/') || url.pathname.includes('supabase')) return;
+  // Skip API / Supabase calls / OAuth
+  if (url.pathname.startsWith('/rest/') || url.pathname.startsWith('/auth/') || url.pathname.includes('supabase') || url.pathname.startsWith('/~oauth')) return;
 
   // Network-first for navigation, cache-first for static assets
   if (request.mode === 'navigate') {
