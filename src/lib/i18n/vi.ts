@@ -734,7 +734,7 @@ export const vi: Translations = {
       older: 'Cũ hơn',
       deleteConversation: 'Xóa cuộc trò chuyện',
       noHistory: 'Chưa có lịch sử trò chuyện',
-      allProjects: 'Tất cả dự án',
+      allProjects: 'Workspace của tôi',
       createdByMe: 'Tôi tạo',
       sharedWithMe: 'Được chia sẻ',
       aiSharedPool: 'Pool chung',

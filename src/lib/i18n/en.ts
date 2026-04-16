@@ -746,7 +746,7 @@ export const en = {
       older: 'Older',
       deleteConversation: 'Delete conversation',
       noHistory: 'No conversation history yet',
-      allProjects: 'All projects',
+      allProjects: 'Our Workspace',
       createdByMe: 'Created by me',
       sharedWithMe: 'Shared with me',
       aiSharedPool: 'Shared Pool',
