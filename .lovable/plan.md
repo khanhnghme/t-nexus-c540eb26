@@ -1,25 +1,29 @@
 
 
-# Plan: Fix ERESOLVE dependency conflict on Vercel
+# Plan: Fix Google OAuth 404 on Vercel
 
-## Problem
-`@blocknote/shadcn@0.47.3` requires `tailwindcss@^4.1.12`, but the project uses Tailwind v3. Upgrading to Tailwind v4 is **not viable** — the project has 2,400+ lines of CSS using v3 syntax (`@tailwind`, `@apply`, `@layer base`, `theme()`), a complex `tailwind.config.ts`, and the `tailwindcss-animate` plugin which is v3-only. A full migration would break the entire UI.
+## Root Cause
+`vercel.json` rewrites ALL paths to `index.html`, including `/~oauth/initiate` and `/~oauth/callback` used by `@lovable.dev/cloud-auth-js`. On Lovable hosting these are intercepted by a proxy — on Vercel they are not.
 
-## Solution: Add `.npmrc` with `legacy-peer-deps`
-Create a `.npmrc` file at the project root with `legacy-peer-deps=true`. This tells npm (used by Vercel) to skip strict peer dependency resolution, matching the behavior of npm v6. BlockNote will still work fine — the peer dependency on Tailwind v4 is a soft requirement since BlockNote ships its own pre-built CSS.
+## Solution
 
-## Changes
+Since this project is self-hosted on Vercel but uses Lovable Cloud's managed OAuth, the `/~oauth` routes need to reach `oauth.lovable.app` instead of being swallowed by the SPA rewrite.
 
-### 1. Create `.npmrc` (new file)
+### Option: Add Vercel rewrite to proxy `~oauth` to Lovable
+
+Update `vercel.json` to add a rewrite rule **before** the catch-all that forwards `/~oauth/*` to the Lovable OAuth broker:
+
+```json
+{
+  "rewrites": [
+    { "source": "/~oauth/:path*", "destination": "https://oauth.lovable.app/~oauth/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
 ```
-legacy-peer-deps=true
-```
 
-One file, one line. No other changes needed.
+### Files changed
+1. `vercel.json` — Add `~oauth` proxy rewrite before SPA fallback
 
-## Why not upgrade Tailwind?
-- 2,400+ lines of `index.css` using v3 directives (`@tailwind base/components/utilities`)
-- Complex `tailwind.config.ts` with custom theme, `tailwindcss-animate` plugin
-- shadcn/ui components all built for v3
-- Migration would require rewriting CSS, config, and testing every component
+One file, one change. No code or backend modifications needed.
 
