@@ -1,6 +1,5 @@
-const CACHE_NAME = 'tnexus-v1';
+const CACHE_NAME = 'tnexus-v2';
 const STATIC_ASSETS = [
-  '/',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
@@ -32,14 +31,26 @@ self.addEventListener('fetch', (event) => {
   // Skip API / Supabase calls / OAuth
   if (url.pathname.startsWith('/rest/') || url.pathname.startsWith('/auth/') || url.pathname.includes('supabase') || url.pathname.startsWith('/~oauth')) return;
 
-  // Network-first for navigation, cache-first for static assets
+  // Network-first for navigation
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).catch(() => caches.match('/'))
     );
-  } else {
-    event.respondWith(
-      caches.match(request).then((cached) => cached || fetch(request))
-    );
+    return;
   }
+
+  // Stale-while-revalidate for static assets
+  event.respondWith(
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.match(request).then((cached) => {
+        const fetched = fetch(request).then((response) => {
+          if (response.ok) {
+            cache.put(request, response.clone());
+          }
+          return response;
+        }).catch(() => cached);
+        return cached || fetched;
+      })
+    )
+  );
 });
