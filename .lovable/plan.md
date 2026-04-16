@@ -1,79 +1,25 @@
 
 
-# Plan: Thiết kế logic hiển thị project 3 tab
+# Plan: Fix ERESOLVE dependency conflict on Vercel
 
-## Tổng quan
+## Problem
+`@blocknote/shadcn@0.47.3` requires `tailwindcss@^4.1.12`, but the project uses Tailwind v3. Upgrading to Tailwind v4 is **not viable** — the project has 2,400+ lines of CSS using v3 syntax (`@tailwind`, `@apply`, `@layer base`, `theme()`), a complex `tailwind.config.ts`, and the `tailwindcss-animate` plugin which is v3-only. A full migration would break the entire UI.
 
-Hiện tại `fetchGroups()` chỉ lấy project mà user đã join (qua `group_members`) + project public trong workspace. Tab "Shared" hiện filter sai (`created_by !== user.id`). Cần refactor cả logic fetch và RLS.
+## Solution: Add `.npmrc` with `legacy-peer-deps`
+Create a `.npmrc` file at the project root with `legacy-peer-deps=true`. This tells npm (used by Vercel) to skip strict peer dependency resolution, matching the behavior of npm v6. BlockNote will still work fine — the peer dependency on Tailwind v4 is a soft requirement since BlockNote ships its own pre-built CSS.
 
-## Thay đổi
+## Changes
 
-### 1. Migration — Thêm RLS policy cho workspace members
-
-RLS hiện tại trên bảng `groups` chỉ cho phép SELECT nếu user là member, creator, admin, hoặc project public. Workspace members **không thể** xem project khác trong cùng workspace nếu chưa join.
-
-```sql
-CREATE POLICY "Workspace participants can view workspace projects"
-ON public.groups FOR SELECT TO authenticated
-USING (
-  workspace_id IS NOT NULL
-  AND public.is_workspace_participant(auth.uid(), workspace_id)
-);
+### 1. Create `.npmrc` (new file)
+```
+legacy-peer-deps=true
 ```
 
-### 2. `src/pages/Groups.tsx` — Refactor `fetchGroups()`
+One file, one line. No other changes needed.
 
-**Tab `all` (Our Workspace):**
-- Query trực tiếp `groups` table với `workspace_id = activeWorkspace.id` (RLS mới sẽ cho phép)
-- Không cần qua `group_members` trước
-- Vẫn lấy `group_members` riêng để xác định `myRole` cho mỗi project
-
-**Tab `created`:**
-- Giống `all` nhưng thêm filter `.eq('created_by', user.id)` trên query
-
-**Tab `shared`:**
-- Query `group_members` lấy tất cả `group_id` user là member
-- Lấy các groups từ những `group_id` đó
-- Filter client-side: `workspace_id !== activeWorkspace.id` (hoặc `workspace_id IS NULL`)
-
-**Cụ thể:**
-
-```typescript
-// all / created: lấy TẤT CẢ project trong workspace
-let q = supabase.from('groups').select('*')
-  .eq('workspace_id', activeWorkspace.id)
-  .order('created_at', { ascending: false });
-if (activeFilter === 'created') q = q.eq('created_by', user.id);
-
-// shared: lấy project user là member nhưng NGOÀI workspace hiện tại  
-const { data: memberData } = await supabase
-  .from('group_members').select('group_id').eq('user_id', user.id);
-// Then fetch groups NOT in current workspace
-```
-
-### 3. `src/pages/Groups.tsx` — Cập nhật `filteredGroups`
-
-- Xóa logic filter `activeFilter === 'created'` và `activeFilter === 'shared'` trong `useMemo` vì đã filter ở query level
-- Chỉ giữ lại `searchQuery`, `modeFilter`, `visibilityFilter`
-
-### 4. `src/components/SidebarTreeNav.tsx` — Đổi label
-
-- "All projects" → "Our Workspace"
-- "Created by me" giữ nguyên
-- "Shared with me" giữ nguyên
-
-### 5. `src/lib/i18n/en.ts` & `vi.ts` — Cập nhật labels
-
-- `allProjects`: "Our Workspace" / "Workspace của tôi"
-- Thêm mô tả phụ nếu cần
-
-## Files thay đổi
-1. `supabase/migrations/` — RLS policy mới
-2. `src/pages/Groups.tsx` — Refactor fetch + filter logic
-3. `src/components/SidebarTreeNav.tsx` — Label update
-4. `src/lib/i18n/en.ts` — i18n
-5. `src/lib/i18n/vi.ts` — i18n
-
-## Không thay đổi
-- DB schema (không thêm cột), Edge Functions, Dashboard, billing, auth
+## Why not upgrade Tailwind?
+- 2,400+ lines of `index.css` using v3 directives (`@tailwind base/components/utilities`)
+- Complex `tailwind.config.ts` with custom theme, `tailwindcss-animate` plugin
+- shadcn/ui components all built for v3
+- Migration would require rewriting CSS, config, and testing every component
 
