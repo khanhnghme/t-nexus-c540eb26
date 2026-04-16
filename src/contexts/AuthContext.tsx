@@ -197,7 +197,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/`,
+        emailRedirectTo: 'https://t-nexus.io.vn/',
         data: {
           student_id: studentId,
           full_name: fullName,

@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
   const error = url.searchParams.get("error");
 
   const appOrigin = SUPABASE_URL.includes("supabase.co")
-    ? "https://t-nexus.lovable.app"
+    ? "https://t-nexus.io.vn"
     : "http://localhost:5173";
 
   if (error || !code || !userId) {
