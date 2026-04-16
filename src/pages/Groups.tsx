@@ -126,98 +126,125 @@ export default function Groups() {
 
   useEffect(() => {
     fetchGroups();
-  }, [user, activeWorkspace]);
+  }, [user, activeWorkspace, activeFilter]);
 
   const fetchGroups = async () => {
     if (!user) return;
 
     try {
-      // Get groups where user is a member
-      const { data: memberData } = await supabase
-        .from('group_members')
-        .select('group_id, role')
-        .eq('user_id', user.id);
+      if (activeFilter === 'shared') {
+        // === SHARED TAB: projects user is member of but NOT in current workspace ===
+        const { data: memberData } = await supabase
+          .from('group_members')
+          .select('group_id, role')
+          .eq('user_id', user.id);
 
-      const groupIds = (memberData || []).map((m) => m.group_id);
-      const roleMap = new Map((memberData || []).map((m) => [m.group_id, m.role]));
-      const joinedSet = new Set(groupIds);
+        const groupIds = (memberData || []).map(m => m.group_id);
+        const roleMap = new Map((memberData || []).map(m => [m.group_id, m.role]));
 
-      // Get joined group details
-      let joinedGroups: any[] = [];
-      if (groupIds.length > 0) {
-        let q = supabase
+        if (groupIds.length === 0) {
+          setGroups([]);
+          return;
+        }
+
+        const { data: sharedGroups } = await supabase
           .from('groups')
           .select('*')
           .in('id', groupIds)
           .order('created_at', { ascending: false });
-        if (wsAvailable && activeWorkspace) {
-          q = q.eq('workspace_id', activeWorkspace.id);
-        }
-        const { data } = await q;
-        joinedGroups = data || [];
-      }
 
-      // If WS member, also fetch workspace_public projects user hasn't joined
-      let publicGroups: any[] = [];
-      if (wsAvailable && activeWorkspace && workspaceRole) {
-        const { data } = await supabase
+        // Filter out projects belonging to current workspace
+        const filtered = (sharedGroups || []).filter(g =>
+          !wsAvailable || !activeWorkspace || g.workspace_id !== activeWorkspace.id
+        );
+
+        if (filtered.length > 0) {
+          const enriched = await enrichGroupsWithMembers(filtered, roleMap);
+          setGroups(enriched);
+        } else {
+          setGroups([]);
+        }
+      } else {
+        // === ALL / CREATED TAB: all projects in current workspace ===
+        if (!wsAvailable || !activeWorkspace) {
+          setGroups([]);
+          return;
+        }
+
+        let q = supabase
           .from('groups')
           .select('*')
           .eq('workspace_id', activeWorkspace.id)
-          .in('visibility', ['workspace_public', 'public_link'])
           .order('created_at', { ascending: false });
-        publicGroups = (data || []).filter(g => !joinedSet.has(g.id));
-      }
 
-      const allGroups = [...joinedGroups, ...publicGroups];
+        if (activeFilter === 'created') {
+          q = q.eq('created_by', user.id);
+        }
 
-      if (allGroups.length > 0) {
-        // Get member counts + avatars
-        const allGroupIds = allGroups.map(g => g.id);
-        const memberEntries = await Promise.all(
-          allGroupIds.map(async (groupId) => {
-            const { count } = await supabase
-              .from('group_members')
-              .select('*', { count: 'exact', head: true })
-              .eq('group_id', groupId);
+        const { data: wsGroups } = await q;
 
-            const { data: members } = await supabase
-              .from('group_members')
-              .select('user_id')
-              .eq('group_id', groupId)
-              .limit(4);
+        // Get user's roles in these projects
+        const { data: memberData } = await supabase
+          .from('group_members')
+          .select('group_id, role')
+          .eq('user_id', user.id);
 
-            let avatars: MemberAvatar[] = [];
-            if (members && members.length > 0) {
-              const { data: profiles } = await supabase
-                .from('profiles')
-                .select('avatar_url, full_name')
-                .in('id', members.map(m => m.user_id));
-              avatars = (profiles || []).map(p => ({ avatar_url: p.avatar_url, full_name: p.full_name }));
-            }
+        const roleMap = new Map((memberData || []).map(m => [m.group_id, m.role]));
 
-            return [groupId, { count: count ?? 0, avatars }] as const;
-          })
-        );
-
-        const memberMap = new Map(memberEntries);
-
-        const groupsWithMembers: GroupWithMembers[] = allGroups.map((g) => ({
-          ...g,
-          memberCount: memberMap.get(g.id)?.count || 0,
-          myRole: roleMap.get(g.id) || (joinedSet.has(g.id) ? 'project_basic:member' : ''),
-          memberAvatars: memberMap.get(g.id)?.avatars || [],
-        }));
-
-        setGroups(groupsWithMembers);
-      } else {
-        setGroups([]);
+        if ((wsGroups || []).length > 0) {
+          const enriched = await enrichGroupsWithMembers(wsGroups || [], roleMap);
+          setGroups(enriched);
+        } else {
+          setGroups([]);
+        }
       }
     } catch (error) {
       console.error('Error fetching groups:', error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  /** Enrich groups with member count + avatars + role */
+  const enrichGroupsWithMembers = async (
+    allGroups: any[],
+    roleMap: Map<string, string>
+  ): Promise<GroupWithMembers[]> => {
+    const allGroupIds = allGroups.map(g => g.id);
+    const memberEntries = await Promise.all(
+      allGroupIds.map(async (groupId) => {
+        const { count } = await supabase
+          .from('group_members')
+          .select('*', { count: 'exact', head: true })
+          .eq('group_id', groupId);
+
+        const { data: members } = await supabase
+          .from('group_members')
+          .select('user_id')
+          .eq('group_id', groupId)
+          .limit(4);
+
+        let avatars: MemberAvatar[] = [];
+        if (members && members.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('avatar_url, full_name')
+            .in('id', members.map(m => m.user_id));
+          avatars = (profiles || []).map(p => ({ avatar_url: p.avatar_url, full_name: p.full_name }));
+        }
+
+        return [groupId, { count: count ?? 0, avatars }] as const;
+      })
+    );
+
+    const memberMap = new Map(memberEntries);
+
+    return allGroups.map((g) => ({
+      ...g,
+      memberCount: memberMap.get(g.id)?.count || 0,
+      myRole: roleMap.get(g.id) || '',
+      memberAvatars: memberMap.get(g.id)?.avatars || [],
+    }));
   };
 
   const handleSearchMembers = async (query: string) => {
@@ -459,12 +486,7 @@ export default function Groups() {
 
   const filteredGroups = useMemo(() => {
     let result = groups;
-    // Apply sidebar filter
-    if (activeFilter === 'created') {
-      result = result.filter(g => g.created_by === user?.id);
-    } else if (activeFilter === 'shared') {
-      result = result.filter(g => g.created_by !== user?.id && g.myRole);
-    }
+    // Filter already applied at query level (all/created/shared)
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(g => g.name.toLowerCase().includes(q));
@@ -476,7 +498,7 @@ export default function Groups() {
       result = result.filter(g => g.visibility === visibilityFilter);
     }
     return result;
-  }, [groups, searchQuery, modeFilter, visibilityFilter, activeFilter, user?.id]);
+  }, [groups, searchQuery, modeFilter, visibilityFilter]);
 
   const trimmedMemberSearch = memberSearch.trim();
   const memberEmailSearchReady = isMemberEmailSearchReady(trimmedMemberSearch);

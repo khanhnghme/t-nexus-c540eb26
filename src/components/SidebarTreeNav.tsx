@@ -77,7 +77,7 @@ export default function SidebarTreeNav({ collapsed }: SidebarTreeNavProps) {
 
   // Project filter links
   const projectItems = [
-    { name: t?.allProjects || 'All projects', href: '/groups', icon: FolderKanban, matchPath: '/groups' },
+    { name: t?.allProjects || 'Our Workspace', href: '/groups', icon: FolderKanban, matchPath: '/groups' },
     { name: t?.createdByMe || 'Created by me', href: '/groups/created', icon: FolderOpen, matchPath: '/groups/created' },
     { name: t?.sharedWithMe || 'Shared with me', href: '/groups/shared', icon: Users, matchPath: '/groups/shared' },
   ];
